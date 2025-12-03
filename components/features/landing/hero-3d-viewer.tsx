@@ -36,17 +36,17 @@ function Model() {
                 if (Array.isArray(child.material)) {
                     child.material = child.material.map(mat => {
                         const newMat = mat.clone()
-                        // Dark mode: bright blue, Light mode: darker blue with less emissive
-                        newMat.color = new THREE.Color(isDark ? 0x3b82f6 : 0x1e40af)
-                        newMat.emissive = new THREE.Color(isDark ? 0x1e40af : 0x1e3a8a)
-                        newMat.emissiveIntensity = isDark ? 0.2 : 0.4
+                        // Dark mode: white, Light mode: greyish-black
+                        newMat.color = new THREE.Color(isDark ? 0xe5e5e5 : 0x2a2a2a)
+                        newMat.emissive = new THREE.Color(isDark ? 0xcccccc : 0x1a1a1a)
+                        newMat.emissiveIntensity = isDark ? 0.3 : 0.2
                         return newMat
                     })
                 } else {
                     const newMat = child.material.clone()
-                    newMat.color = new THREE.Color(isDark ? 0x3b82f6 : 0x1e40af)
-                    newMat.emissive = new THREE.Color(isDark ? 0x1e40af : 0x1e3a8a)
-                    newMat.emissiveIntensity = isDark ? 0.2 : 0.4
+                    newMat.color = new THREE.Color(isDark ? 0xe5e5e5 : 0x2a2a2a)
+                    newMat.emissive = new THREE.Color(isDark ? 0xcccccc : 0x1a1a1a)
+                    newMat.emissiveIntensity = isDark ? 0.3 : 0.2
                     child.material = newMat
                 }
             }
@@ -67,13 +67,13 @@ export function Hero3DViewer() {
                         <Model />
                     </Center>
 
-                    {/* Blue ambient light */}
-                    <ambientLight intensity={0.6} color="#3b82f6" />
-                    {/* Blue point lights for highlights */}
-                    <pointLight position={[10, 10, 10]} intensity={1.2} color="#60a5fa" />
-                    <pointLight position={[-10, -10, -10]} intensity={0.5} color="#3b82f6" />
-                    {/* Blue directional light for depth */}
-                    <directionalLight position={[-5, 5, 5]} intensity={0.6} color="#60a5fa" />
+                    {/* Neutral ambient light */}
+                    <ambientLight intensity={0.7} color="#ffffff" />
+                    {/* Neutral point lights for highlights */}
+                    <pointLight position={[10, 10, 10]} intensity={1.0} color="#ffffff" />
+                    <pointLight position={[-10, -10, -10]} intensity={0.5} color="#e5e5e5" />
+                    {/* Neutral directional light for depth */}
+                    <directionalLight position={[-5, 5, 5]} intensity={0.6} color="#f5f5f5" />
 
                     <OrbitControls
                         autoRotate
