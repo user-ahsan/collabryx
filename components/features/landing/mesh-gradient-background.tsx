@@ -35,15 +35,15 @@ export const MeshGradientBackground = ({ className }: { className?: string }) =>
             } as React.CSSProperties}
         >
             {/* Base Gradient */}
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.1),transparent_50%)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.1),transparent_50%)] dark:bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.1),transparent_50%)]" />
 
             {/* Moving Orbs */}
-            <div className="absolute top-[-10%] left-[-10%] h-[50vh] w-[50vh] rounded-full bg-purple-500/20 blur-[100px] animate-float-slow" />
-            <div className="absolute bottom-[-10%] right-[-10%] h-[50vh] w-[50vh] rounded-full bg-blue-500/20 blur-[100px] animate-float-delayed" />
+            <div className="absolute top-[-10%] left-[-10%] h-[50vh] w-[50vh] rounded-full bg-purple-500/10 dark:bg-purple-500/20 blur-[100px] animate-float-slow" />
+            <div className="absolute bottom-[-10%] right-[-10%] h-[50vh] w-[50vh] rounded-full bg-blue-500/10 dark:bg-blue-500/20 blur-[100px] animate-float-delayed" />
 
             {/* Mouse Follower */}
             <div
-                className="absolute h-[60vh] w-[60vh] -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-500/10 blur-[120px] transition-transform duration-1000 ease-out will-change-transform"
+                className="absolute h-[60vh] w-[60vh] -translate-x-1/2 -translate-y-1/2 rounded-full bg-cyan-500/5 dark:bg-cyan-500/10 blur-[120px] transition-transform duration-1000 ease-out will-change-transform"
                 style={{
                     left: "var(--mouse-x)",
                     top: "var(--mouse-y)",
@@ -51,10 +51,10 @@ export const MeshGradientBackground = ({ className }: { className?: string }) =>
             />
 
             {/* Grid Overlay for texture */}
-            <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))]" />
+            <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] opacity-30 dark:opacity-100" />
 
             {/* Noise Overlay for texture */}
-            <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+            <div className="absolute inset-0 opacity-[0.02] dark:opacity-[0.03] mix-blend-overlay pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
         </div>
     )
 }

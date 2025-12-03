@@ -35,7 +35,7 @@ const Clapperboard = ({
   width = 28,
   height = 28,
   strokeWidth = 2,
-  stroke = "#ffffff",
+  stroke = "currentColor",
   ...props
 }: ClapperboardProps) => {
   const controls = useAnimation();

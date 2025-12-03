@@ -37,7 +37,7 @@ const Bike = ({
   width = 28,
   height = 28,
   strokeWidth = 2,
-  stroke = "#ffffff",
+  stroke = "currentColor",
   ...props
 }: BikeProps) => {
   const controls = useAnimation();

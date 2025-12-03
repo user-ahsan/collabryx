@@ -11,29 +11,47 @@ useGLTF.preload("/Models/scene.gltf")
 
 function Model() {
     const { scene } = useGLTF("/Models/scene.gltf")
+    const [isDark, setIsDark] = useState(true)
 
     useEffect(() => {
-        // Apply blue color to all materials in the model
+        // Detect theme
+        const checkTheme = () => {
+            const isDarkMode = document.documentElement.classList.contains('dark')
+            setIsDark(isDarkMode)
+        }
+
+        checkTheme()
+
+        // Watch for theme changes
+        const observer = new MutationObserver(checkTheme)
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] })
+
+        return () => observer.disconnect()
+    }, [])
+
+    useEffect(() => {
+        // Apply colors based on theme
         scene.traverse((child) => {
             if (child instanceof THREE.Mesh) {
                 if (Array.isArray(child.material)) {
                     child.material = child.material.map(mat => {
                         const newMat = mat.clone()
-                        newMat.color = new THREE.Color(0x3b82f6)
-                        newMat.emissive = new THREE.Color(0x1e40af)
-                        newMat.emissiveIntensity = 0.2
+                        // Dark mode: bright blue, Light mode: darker blue with less emissive
+                        newMat.color = new THREE.Color(isDark ? 0x3b82f6 : 0x1e40af)
+                        newMat.emissive = new THREE.Color(isDark ? 0x1e40af : 0x1e3a8a)
+                        newMat.emissiveIntensity = isDark ? 0.2 : 0.4
                         return newMat
                     })
                 } else {
                     const newMat = child.material.clone()
-                    newMat.color = new THREE.Color(0x3b82f6)
-                    newMat.emissive = new THREE.Color(0x1e40af)
-                    newMat.emissiveIntensity = 0.2
+                    newMat.color = new THREE.Color(isDark ? 0x3b82f6 : 0x1e40af)
+                    newMat.emissive = new THREE.Color(isDark ? 0x1e40af : 0x1e3a8a)
+                    newMat.emissiveIntensity = isDark ? 0.2 : 0.4
                     child.material = newMat
                 }
             }
         })
-    }, [scene])
+    }, [scene, isDark])
 
     return <primitive object={scene} scale={0.035} />
 }

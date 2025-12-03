@@ -37,7 +37,7 @@ export const StatCard: React.FC<StatCardProps> = ({
             )}
         >
             {/* Gradient background on hover */}
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-blue-500/5 to-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700 ease-out" />
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-primary/10 to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 ease-out dark:from-primary/10 dark:via-primary/20 dark:to-primary/10" />
 
             {/* Spotlight effect */}
             <div className="absolute -inset-px bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-0 group-hover:opacity-100 blur-sm transition-opacity duration-700" />
@@ -50,7 +50,7 @@ export const StatCard: React.FC<StatCardProps> = ({
 
                 {/* Animated number */}
                 <div className="mb-2">
-                    <span className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary via-blue-500 to-cyan-500 bg-clip-text text-transparent drop-shadow-sm">
+                    <span className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-foreground via-primary to-foreground/80 bg-clip-text text-transparent drop-shadow-sm">
                         {prefix}
                         <CountUp
                             to={value}

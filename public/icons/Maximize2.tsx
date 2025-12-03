@@ -20,7 +20,7 @@ const Maximize2 = ({
   width = 28,
   height = 28,
   strokeWidth = 2,
-  stroke = "#ffffff",
+  stroke = "currentColor",
   ...props
 }: Maximize2Props) => {
   const controls = useAnimation();

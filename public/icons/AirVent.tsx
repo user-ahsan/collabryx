@@ -34,7 +34,7 @@ const AirVent = ({
   width = 28,
   height = 28,
   strokeWidth = 2,
-  stroke = "#ffffff",
+  stroke = "currentColor",
   ...props
 }: AirVentProps) => {
   const controls = useAnimation();

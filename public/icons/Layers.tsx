@@ -54,7 +54,7 @@ const Layers = ({
   width = 28,
   height = 28,
   strokeWidth = 2,
-  stroke = "#ffffff",
+  stroke = "currentColor",
   ...props
 }: LayersProps) => {
   const controls = useAnimation();

@@ -66,7 +66,7 @@ export const FeatureCard: React.FC<FeatureCardProps> = ({
                 className="pointer-events-none absolute -inset-px opacity-0 transition-opacity duration-300"
                 style={{
                     opacity,
-                    background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, rgba(59,130,246,0.1), transparent 40%)`,
+                    background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, rgba(59,130,246,0.15), transparent 40%)`,
                 }}
             />
 
@@ -75,7 +75,7 @@ export const FeatureCard: React.FC<FeatureCardProps> = ({
                 className="pointer-events-none absolute -inset-px opacity-0 transition-opacity duration-300"
                 style={{
                     opacity,
-                    background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, rgba(59,130,246,0.4), transparent 40%)`,
+                    background: `radial-gradient(600px circle at ${position.x}px ${position.y}px, rgba(59,130,246,0.5), transparent 40%)`,
                     maskImage: "linear-gradient(black, black) content-box, linear-gradient(black, black)",
                     maskComposite: "exclude",
                     WebkitMaskComposite: "xor",

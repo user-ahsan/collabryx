@@ -20,7 +20,7 @@ const Link2 = ({
   width = 28,
   height = 28,
   strokeWidth = 2,
-  stroke = "#ffffff",
+  stroke = "currentColor",
   ...props
 }: Link2Props) => {
   const controls = useAnimation();

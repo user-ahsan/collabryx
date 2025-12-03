@@ -44,7 +44,7 @@ const Anchor = ({
   width = 28,
   height = 28,
   strokeWidth = 2,
-  stroke = "#ffffff",
+  stroke = "currentColor",
   ...props
 }: AnchorProps) => {
   const controls = useAnimation();

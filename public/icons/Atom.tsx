@@ -38,7 +38,7 @@ const Atom = ({
   width = 28,
   height = 28,
   strokeWidth = 2,
-  stroke = "#ffffff",
+  stroke = "currentColor",
   ...props
 }: AtomProps) => {
   const controls = useAnimation();

@@ -43,7 +43,7 @@ const BookMarked = ({
   width = 28,
   height = 28,
   strokeWidth = 2,
-  stroke = "#ffffff",
+  stroke = "currentColor",
   ...props
 }: BookMarkedProps) => {
   const controls = useAnimation();

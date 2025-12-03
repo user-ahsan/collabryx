@@ -43,7 +43,7 @@ const Compass = ({
   width = 28,
   height = 28,
   strokeWidth = 2,
-  stroke = "#ffffff",
+  stroke = "currentColor",
   ...props
 }: CompassProps) => {
   const controls = useAnimation();

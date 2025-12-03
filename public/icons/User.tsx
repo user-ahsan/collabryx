@@ -36,7 +36,7 @@ const User = ({
   width = 28,
   height = 28,
   strokeWidth = 2,
-  stroke = "#ffffff",
+  stroke = "currentColor",
   ...props
 }: UserProps) => {
   const controls = useAnimation();

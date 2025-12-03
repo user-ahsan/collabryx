@@ -26,7 +26,7 @@ const Grip = ({
   width = 28,
   height = 28,
   strokeWidth = 2,
-  stroke = "#ffffff",
+  stroke = "currentColor",
   ...props
 }: GripProps) => {
   const [isHovered, setIsHovered] = useState(false);

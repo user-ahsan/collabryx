@@ -45,7 +45,7 @@ const Heater = ({
   width = 28,
   height = 28,
   strokeWidth = 2,
-  stroke = "#ffffff",
+  stroke = "currentColor",
   ...props
 }: HeaterProps) => {
   const controls = useAnimation();

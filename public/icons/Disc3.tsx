@@ -25,7 +25,7 @@ const Disc3 = ({
   width = 28,
   height = 28,
   strokeWidth = 2,
-  stroke = "#ffffff",
+  stroke = "currentColor",
   ...props
 }: Disc3Props) => {
   const controls = useAnimation();

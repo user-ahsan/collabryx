@@ -44,7 +44,7 @@ const Airplay = ({
   width = 28,
   height = 28,
   strokeWidth = 2,
-  stroke = "#ffffff",
+  stroke = "currentColor",
   ...props
 }: AirplayProps) => {
   const controls = useAnimation();

@@ -51,7 +51,7 @@ const Angry = ({
   width = 28,
   height = 28,
   strokeWidth = 2,
-  stroke = "#ffffff",
+  stroke = "currentColor",
   ...props
 }: AngryProps) => {
   const controls = useAnimation();

@@ -29,7 +29,7 @@ const ChevronDown = ({
   width = 28,
   height = 28,
   strokeWidth = 2,
-  stroke = "#ffffff",
+  stroke = "currentColor",
   ...props
 }: ChevronDownProps) => {
   const controls = useAnimation();

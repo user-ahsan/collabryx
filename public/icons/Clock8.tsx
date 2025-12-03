@@ -42,7 +42,7 @@ const Clock8 = ({
   width = 28,
   height = 28,
   strokeWidth = 2,
-  stroke = "#ffffff",
+  stroke = "currentColor",
   ...props
 }: Clock8Props) => {
   const controls = useAnimation();

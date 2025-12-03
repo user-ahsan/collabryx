@@ -34,7 +34,7 @@ const HeartHandshake = ({
   width = 28,
   height = 28,
   strokeWidth = 2,
-  stroke = "#ffffff",
+  stroke = "currentColor",
   ...props
 }: HeartHandshakeProps) => {
   const controls = useAnimation();

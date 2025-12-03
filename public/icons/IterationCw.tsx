@@ -34,7 +34,7 @@ const IterationCw = ({
   width = 28,
   height = 28,
   strokeWidth = 2,
-  stroke = "#ffffff",
+  stroke = "currentColor",
   ...props
 }: IterationCwProps) => {
   const controls = useAnimation();

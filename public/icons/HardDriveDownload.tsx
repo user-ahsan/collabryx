@@ -20,7 +20,7 @@ const HardDriveDownload = ({
   width = 28,
   height = 28,
   strokeWidth = 2,
-  stroke = "#ffffff",
+  stroke = "currentColor",
   ...props
 }: HardDriveDownloadProps) => {
   const controls = useAnimation();

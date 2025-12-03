@@ -127,7 +127,7 @@ export default function LandingPage() {
             {/* Hero Section with Background Model */}
             <section className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
                 {/* Background 3D Model */}
-                <div className="absolute inset-0 z-0 opacity-80 mix-blend-screen">
+                <div className="absolute inset-0 z-0 opacity-60 dark:opacity-80 mix-blend-normal dark:mix-blend-screen">
                     <Hero3DViewer />
                 </div>
 
@@ -150,7 +150,7 @@ export default function LandingPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-                            className="mb-10 text-lg leading-8 text-muted-foreground sm:text-xl max-w-2xl mx-auto drop-shadow-md bg-background/30 backdrop-blur-sm p-4 rounded-xl border border-white/10"
+                            className="mb-10 text-lg leading-8 text-muted-foreground sm:text-xl max-w-2xl mx-auto drop-shadow-md bg-background/50 dark:bg-background/30 backdrop-blur-sm p-4 rounded-xl border border-border/20 dark:border-white/10"
                         >
                             The ultimate collaboration platform for modern teams.
                             Connect, create, and innovate together with powerful tools designed for success.
@@ -313,7 +313,7 @@ export default function LandingPage() {
                         transition={{ duration: 0.8 }}
                         className="rounded-3xl border border-border/50 bg-card/30 backdrop-blur-xl p-12 sm:p-16 shadow-2xl relative overflow-hidden group"
                     >
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-purple-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
 
                         <div className="text-center relative z-10">
                             <h2 className="text-4xl font-bold tracking-tight sm:text-6xl mb-6 text-foreground">

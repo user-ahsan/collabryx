@@ -29,7 +29,7 @@ const CheckCheck = ({
   width = 28,
   height = 28,
   strokeWidth = 2,
-  stroke = "#ffffff",
+  stroke = "currentColor",
   ...props
 }: CheckCheckProps) => {
   const controls = useAnimation();
