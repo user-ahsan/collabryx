@@ -37,7 +37,7 @@ export const StatCard: React.FC<StatCardProps> = ({
             )}
         >
             {/* Gradient background on hover */}
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-purple-500/5 to-blue-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-blue-500/5 to-cyan-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
             <div className="relative z-10">
                 {/* Icon */}
@@ -47,7 +47,7 @@ export const StatCard: React.FC<StatCardProps> = ({
 
                 {/* Animated number */}
                 <div className="mb-2">
-                    <span className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary via-purple-500 to-blue-500 bg-clip-text text-transparent">
+                    <span className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary via-blue-500 to-cyan-500 bg-clip-text text-transparent">
                         {prefix}
                         <CountUp
                             to={value}

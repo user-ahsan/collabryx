@@ -1,0 +1,11 @@
+Model Information:
+* title:	Knowledge Network
+* source:	https://sketchfab.com/3d-models/knowledge-network-37448fd3933f4394aea66ee92b8f2053
+* author:	camaal (https://sketchfab.com/camaal)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Knowledge Network" (https://sketchfab.com/3d-models/knowledge-network-37448fd3933f4394aea66ee92b8f2053) by camaal (https://sketchfab.com/camaal) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

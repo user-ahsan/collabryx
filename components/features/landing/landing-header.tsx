@@ -38,10 +38,10 @@ export const LandingHeader: React.FC = () => {
                 {/* Logo */}
                 <div className="flex lg:flex-1">
                     <Link href="/" className="-m-1.5 p-1.5 flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-purple-600 to-blue-500 flex items-center justify-center">
-                            <span className="text-white font-bold text-lg">C</span>
+                        <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+                            <span className="text-primary-foreground font-bold text-lg">C</span>
                         </div>
-                        <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">
+                        <span className="text-xl font-bold text-foreground">
                             Collabryx
                         </span>
                     </Link>

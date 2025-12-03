@@ -5,16 +5,14 @@ import * as React from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { LandingHeader } from "@/components/features/landing/landing-header"
-import { Hero3DBackground } from "@/components/features/landing/hero-3d-background"
 import { FeatureCard } from "@/components/features/landing/feature-card"
 import { StatCard } from "@/components/features/landing/stat-card"
-import { GridScan } from "@/components/GridScan"
+import { Hero3DViewer } from "@/components/features/landing/hero-3d-viewer"
+import ScrollFloat from "@/components/ScrollFloat"
 import Orb from "@/components/Orb"
 import { LogoLoop } from "@/components/LogoLoop"
 
 // Import animated icons from public/icons
-import { Rocket } from "@/public/icons/Rocket"
-import { Sparkles } from "@/public/icons/Sparkles"
 import { Network } from "@/public/icons/Network"
 import { Users } from "@/public/icons/Users"
 import { Layers } from "@/public/icons/Layers"
@@ -29,6 +27,7 @@ import { Linkedin } from "@/public/icons/Linkedin"
 import { AtSign } from "@/public/icons/AtSign"
 import { Globe } from "@/public/icons/Globe"
 import { HeartHandshake } from "@/public/icons/HeartHandshake"
+import { BadgeCheck } from "@/public/icons/BadgeCheck"
 
 const features = [
     {
@@ -80,6 +79,13 @@ const stats = [
         description: "Growing community worldwide",
     },
     {
+        icon: BadgeCheck,
+        value: 5000,
+        suffix: "+",
+        label: "Early Adopters",
+        description: "Pioneering the future",
+    },
+    {
         icon: ChartColumn,
         value: 1000000,
         suffix: "+",
@@ -113,96 +119,62 @@ const partnerLogos = [
 
 export default function LandingPage() {
     return (
-        <div className="min-h-screen overflow-x-hidden">
+        <div className="min-h-screen overflow-x-hidden bg-background">
             <LandingHeader />
 
-            {/* Hero Section */}
-            <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-                <Hero3DBackground />
-
-                <div className="relative z-10 mx-auto max-w-7xl px-6 py-32 lg:px-8">
-                    <div className="text-center">
-                        {/* Icon decoration */}
-                        <div className="mb-6 flex justify-center gap-4">
-                            <div className="animate-bounce">
-                                <Rocket className="h-12 w-12 text-primary" />
-                            </div>
-                            <div className="animate-pulse">
-                                <Sparkles className="h-12 w-12 text-purple-500" />
-                            </div>
-                        </div>
-
-                        {/* Main headline */}
-                        <h1 className="mb-6 text-5xl font-bold tracking-tight sm:text-7xl lg:text-8xl">
-                            <span className="bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
+            {/* Hero Section with Split Layout */}
+            <section className="relative min-h-screen flex items-center pt-20 overflow-hidden">
+                <div className="container mx-auto px-6 lg:px-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                        {/* Left Column: Text Content */}
+                        <div className="text-left z-10">
+                            <h1 className="text-5xl font-bold tracking-tight sm:text-7xl lg:text-8xl mb-6 text-foreground">
                                 Innovate.
-                            </span>
-                            <br />
-                            <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                                <br />
                                 Collaborate.
-                            </span>
-                            <br />
-                            <span className="bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 bg-clip-text text-transparent">
+                                <br />
                                 Create.
-                            </span>
-                        </h1>
-
-                        {/* Subtitle */}
-                        <p className="mx-auto mb-10 max-w-2xl text-lg leading-8 text-foreground/80 sm:text-xl">
-                            The ultimate collaboration platform for modern teams.
-                            Connect, create, and innovate together with powerful tools designed for success.
-                        </p>
-
-                        {/* CTA Buttons */}
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <Button size="lg" asChild className="text-lg px-8">
-                                <Link href="/register">Get Started Free</Link>
-                            </Button>
-                            <Button size="lg" variant="outline" asChild className="text-lg px-8">
-                                <Link href="#features">Learn More</Link>
-                            </Button>
+                            </h1>
+                            <p className="mb-10 text-lg leading-8 text-muted-foreground sm:text-xl max-w-lg">
+                                The ultimate collaboration platform for modern teams.
+                                Connect, create, and innovate together with powerful tools designed for success.
+                            </p>
+                            <div className="flex flex-col sm:flex-row gap-4">
+                                <Button size="lg" asChild className="text-lg px-8">
+                                    <Link href="/register">Get Started Free</Link>
+                                </Button>
+                                <Button size="lg" variant="outline" asChild className="text-lg px-8">
+                                    <Link href="#features">Learn More</Link>
+                                </Button>
+                            </div>
                         </div>
 
-                        {/* Scroll indicator */}
-                        <div className="mt-16 animate-bounce">
-                            <svg
-                                className="mx-auto h-6 w-6 text-foreground/50"
-                                fill="none"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth="2"
-                                viewBox="0 0 24 24"
-                                stroke="currentColor"
-                            >
-                                <path d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
-                            </svg>
+                        {/* Right Column: 3D Model Viewer */}
+                        <div className="h-[500px] lg:h-[700px] w-full flex items-center justify-center relative z-10">
+                            <Hero3DViewer />
                         </div>
                     </div>
                 </div>
             </section>
 
             {/* Features Section */}
-            <section id="features" className="relative py-24 sm:py-32">
-                <GridScan
-                    gridScale={0.1}
-                    lineThickness={1}
-                    linesColor="#392e4e"
-                    scanColor="#FF9FFC"
-                    scanDuration={5}
-                    className="absolute inset-0 opacity-30"
-                />
-
+            <section id="features" className="relative py-24 sm:py-32 bg-muted/30">
                 <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
                     <div className="mx-auto max-w-2xl text-center mb-16">
-                        <h2 className="text-3xl font-bold tracking-tight sm:text-5xl mb-4">
+                        <ScrollFloat
+                            containerClassName="mb-4"
+                            scrollStart="top bottom"
+                            scrollEnd="center center"
+                            textClassName="text-3xl sm:text-4xl font-bold tracking-tight"
+                        >
                             Powerful Features for Modern Teams
-                        </h2>
+                        </ScrollFloat>
                         <p className="text-lg text-muted-foreground">
                             Everything you need to collaborate effectively and build amazing things together.
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
                         {features.map((feature, idx) => (
                             <FeatureCard
                                 key={idx}
@@ -217,8 +189,9 @@ export default function LandingPage() {
 
             {/* Technology Section */}
             <section id="technology" className="relative py-24 sm:py-32 overflow-hidden">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px]">
-                    <Orb hue={270} hoverIntensity={0.3} rotateOnHover />
+                {/* Orb positioned behind the text */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] opacity-50 z-0">
+                    <Orb hue={210} hoverIntensity={0.6} rotateOnHover forceHoverState={false} />
                 </div>
 
                 <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
@@ -235,9 +208,9 @@ export default function LandingPage() {
                         {technologies.map((tech, idx) => (
                             <div
                                 key={idx}
-                                className="p-8 rounded-2xl border border-border/50 bg-card/50 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:shadow-xl"
+                                className="p-8 rounded-2xl border border-border/50 bg-card/80 backdrop-blur-sm transition-all duration-300 hover:scale-105 hover:shadow-xl"
                             >
-                                <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary/20 text-primary">
+                                <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary">
                                     <tech.icon className="h-7 w-7" />
                                 </div>
                                 <h3 className="mb-3 text-xl font-semibold">{tech.title}</h3>
@@ -249,29 +222,35 @@ export default function LandingPage() {
             </section>
 
             {/* Partners Section */}
-            <section id="partners" className="py-24 sm:py-32 bg-muted/30">
-                <div className="mx-auto max-w-7xl px-6 lg:px-8">
-                    <div className="mx-auto max-w-2xl text-center mb-16">
-                        <div className="mb-4 flex justify-center">
-                            <HeartHandshake className="h-12 w-12 text-primary" />
+            <section id="partners" className="py-32 sm:py-40 bg-muted/30 relative overflow-hidden">
+                <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
+                    <div className="mx-auto max-w-3xl text-center mb-20">
+                        <div className="mb-6 flex justify-center">
+                            <div className="p-4 rounded-full bg-primary/10 backdrop-blur-sm">
+                                <HeartHandshake className="h-16 w-16 text-primary" />
+                            </div>
                         </div>
-                        <h2 className="text-3xl font-bold tracking-tight sm:text-5xl mb-4">
+                        <h2 className="text-4xl font-bold tracking-tight sm:text-6xl mb-6 text-foreground">
                             Trusted by Industry Leaders
                         </h2>
-                        <p className="text-lg text-muted-foreground">
+                        <p className="text-xl text-muted-foreground">
                             Join thousands of companies already collaborating on Collabryx.
+                            <br />
+                            From startups to enterprises, teams trust us to power their collaboration.
                         </p>
                     </div>
 
-                    <LogoLoop
-                        logos={partnerLogos}
-                        speed={50}
-                        direction="left"
-                        pauseOnHover
-                        fadeOut
-                        logoHeight={60}
-                        gap={60}
-                    />
+                    <div className="relative">
+                        <LogoLoop
+                            logos={partnerLogos}
+                            speed={50}
+                            direction="left"
+                            pauseOnHover
+                            fadeOut
+                            logoHeight={80}
+                            gap={80}
+                        />
+                    </div>
                 </div>
             </section>
 
@@ -287,7 +266,7 @@ export default function LandingPage() {
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-5">
                         {stats.map((stat, idx) => (
                             <StatCard
                                 key={idx}
@@ -303,42 +282,42 @@ export default function LandingPage() {
             </section>
 
             {/* CTA Section */}
-            <section id="contact" className="relative py-24 sm:py-32 overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-purple-600/10 via-blue-600/10 to-pink-600/10" />
+            <section id="contact" className="relative py-32 sm:py-40 overflow-hidden">
+                <div className="relative z-10 mx-auto max-w-4xl px-6 lg:px-8">
+                    <div className="rounded-3xl border border-border/50 bg-card/50 backdrop-blur-xl p-12 sm:p-16 shadow-2xl">
+                        <div className="text-center">
+                            <h2 className="text-4xl font-bold tracking-tight sm:text-6xl mb-6 text-foreground">
+                                Ready to find your perfect match?
+                            </h2>
+                            <p className="mb-12 text-xl text-muted-foreground max-w-2xl mx-auto">
+                                Join thousands of students and founders who are building the future together.
+                                Start your free trial today—no credit card required.
+                            </p>
 
-                <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
-                    <div className="mx-auto max-w-2xl text-center">
-                        <h2 className="text-3xl font-bold tracking-tight sm:text-5xl mb-6">
-                            Ready to Get Started?
-                        </h2>
-                        <p className="mb-10 text-lg text-muted-foreground">
-                            Join thousands of teams already collaborating on Collabryx.
-                            Start your free trial today—no credit card required.
-                        </p>
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+                                <Button size="lg" asChild className="text-lg px-10 py-6 h-auto">
+                                    <Link href="/register">Get Started for Free</Link>
+                                </Button>
+                                <Button size="lg" variant="outline" asChild className="text-lg px-10 py-6 h-auto">
+                                    <Link href="/login">Sign In</Link>
+                                </Button>
+                            </div>
 
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-                            <Button size="lg" asChild className="text-lg px-8">
-                                <Link href="/register">Start Free Trial</Link>
-                            </Button>
-                            <Button size="lg" variant="outline" asChild className="text-lg px-8">
-                                <Link href="/login">Sign In</Link>
-                            </Button>
-                        </div>
-
-                        {/* Social Links */}
-                        <div className="flex justify-center gap-6">
-                            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
-                                <Linkedin className="h-6 w-6" />
-                                <span className="sr-only">LinkedIn</span>
-                            </a>
-                            <a href="mailto:hello@collabryx.com" className="text-muted-foreground hover:text-primary transition-colors">
-                                <AtSign className="h-6 w-6" />
-                                <span className="sr-only">Email</span>
-                            </a>
-                            <a href="https://collabryx.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors">
-                                <Globe className="h-6 w-6" />
-                                <span className="sr-only">Website</span>
-                            </a>
+                            {/* Social Links */}
+                            <div className="flex justify-center gap-8 pt-8 border-t border-border/50">
+                                <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-110">
+                                    <Linkedin className="h-7 w-7" />
+                                    <span className="sr-only">LinkedIn</span>
+                                </a>
+                                <a href="mailto:hello@collabryx.com" className="text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-110">
+                                    <AtSign className="h-7 w-7" />
+                                    <span className="sr-only">Email</span>
+                                </a>
+                                <a href="https://collabryx.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-110">
+                                    <Globe className="h-7 w-7" />
+                                    <span className="sr-only">Website</span>
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
