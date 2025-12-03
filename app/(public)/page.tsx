@@ -9,7 +9,6 @@ import { FeatureCard } from "@/components/features/landing/feature-card"
 import { StatCard } from "@/components/features/landing/stat-card"
 import { Hero3DViewer } from "@/components/features/landing/hero-3d-viewer"
 import ScrollFloat from "@/components/ScrollFloat"
-import Orb from "@/components/Orb"
 import { LogoLoop } from "@/components/LogoLoop"
 
 // Import animated icons from public/icons
@@ -165,7 +164,7 @@ export default function LandingPage() {
                             containerClassName="mb-4"
                             scrollStart="top bottom"
                             scrollEnd="center center"
-                            textClassName="text-3xl sm:text-4xl font-bold tracking-tight"
+                            textClassName="text-2xl sm:text-3xl font-bold tracking-tight"
                         >
                             Powerful Features for Modern Teams
                         </ScrollFloat>
@@ -189,11 +188,6 @@ export default function LandingPage() {
 
             {/* Technology Section */}
             <section id="technology" className="relative py-24 sm:py-32 overflow-hidden">
-                {/* Orb positioned behind the text */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] opacity-50 z-0">
-                    <Orb hue={210} hoverIntensity={0.6} rotateOnHover forceHoverState={false} />
-                </div>
-
                 <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
                     <div className="mx-auto max-w-2xl text-center mb-16">
                         <h2 className="text-3xl font-bold tracking-tight sm:text-5xl mb-4">
