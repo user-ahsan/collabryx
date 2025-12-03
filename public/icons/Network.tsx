@@ -59,6 +59,7 @@ const Network = ({
             duration: DURATION,
             delay: calculateDelay(0),
             opacity: { delay: calculateDelay(0) },
+            ease: "easeInOut",
           }}
           variants={{
             normal: {
@@ -80,6 +81,7 @@ const Network = ({
             duration: DURATION,
             delay: calculateDelay(1),
             opacity: { delay: calculateDelay(1) },
+            ease: "easeInOut",
           }}
           variants={{
             normal: {

@@ -24,10 +24,8 @@ const dropVariants: Variants = {
   animate: (custom: number) => ({
     y: [-100, 10, 0],
     transition: {
-      type: "spring",
-      stiffness: 200,
-      damping: 12,
-      mass: 1.2,
+      duration: 0.6,
+      ease: "easeInOut",
       delay: custom * 0.15,
     },
   }),
