@@ -5,6 +5,7 @@ import { motion, useScroll, useTransform } from "framer-motion"
 import { useIsMobile, usePrefersReducedMotion } from "@/hooks/use-media-query"
 import { Avatar } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { ShinyText } from "@/components/ui/shiny-text"
 import { HeartHandshake } from "@/public/icons/HeartHandshake"
 import { Code } from "@/public/icons/Code"
 import { ChartLine } from "@/public/icons/ChartLine"
@@ -41,15 +42,18 @@ export function CompatibilityScoreShowcase() {
                         </div>
                     </motion.div>
 
-                    <motion.h2
+                    <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.6, delay: 0.1 }}
-                        className="text-4xl sm:text-5xl font-bold tracking-tight mb-4"
                     >
-                        The Anatomy of a Perfect Match
-                    </motion.h2>
+                        <ShinyText
+                            text="The Anatomy of a Perfect Match"
+                            className="text-4xl sm:text-5xl font-bold tracking-tight mb-4"
+                            speed={7}
+                        />
+                    </motion.div>
 
                     <motion.p
                         initial={{ opacity: 0, y: 20 }}

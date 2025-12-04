@@ -19,6 +19,7 @@ import { LogoLoop } from "@/components/LogoLoop"
 import { Marquee } from "@/components/ui/marquee"
 import { BorderBeam } from "@/components/ui/border-beam"
 import { ScrollVelocityRow } from "@/components/ui/scroll-based-velocity"
+import { ShinyText } from "@/components/ui/shiny-text"
 import { motion } from "motion/react"
 
 // Import animated icons from public/icons
@@ -504,16 +505,15 @@ export default function LandingPage() {
             <section id="how-it-works" className="relative py-24 sm:py-32 overflow-hidden">
                 <div className="mx-auto max-w-7xl px-6 lg:px-8">
                     <div className="mx-auto max-w-2xl text-center mb-20">
-                        <ScrollReveal
-                            containerClassName="mb-4"
-                            textClassName="text-4xl sm:text-5xl font-bold tracking-tight"
-                            enableBlur={true}
-                            baseOpacity={0.2}
-                            baseRotation={2}
-                            blurStrength={6}
+                        <motion.h2
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.6 }}
+                            className="text-4xl sm:text-5xl font-bold tracking-tight mb-4"
                         >
                             How It Works
-                        </ScrollReveal>
+                        </motion.h2>
                         <p className="text-lg text-muted-foreground">
                             Get started in minutes and collaborate like never before.
                         </p>
@@ -521,26 +521,18 @@ export default function LandingPage() {
 
                     {/* Interactive Stepper */}
                     <div className="relative max-w-4xl mx-auto">
-                        {/* Step Indicator Dots */}
-                        <div className="flex justify-center gap-3 mb-12">
-                            {howItWorksSteps.map((_, idx) => (
-                                <button
-                                    key={idx}
-                                    onClick={() => setActiveStep(idx)}
-                                    className={`h-2 rounded-full transition-all duration-300 ${activeStep === idx ? 'w-12 bg-primary' : 'w-2 bg-border hover:bg-primary/50'
-                                        }`}
-                                    aria-label={`Go to step ${idx + 1}`}
-                                />
-                            ))}
-                        </div>
-
-                        {/* Step Content with Animation */}
+                        {/* Step Content with Spring Animation */}
                         <motion.div
                             key={activeStep}
                             initial={{ opacity: 0, x: 100 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -100 }}
-                            transition={{ duration: 0.5, ease: "easeInOut" }}
+                            transition={{
+                                duration: 0.5,
+                                type: "spring",
+                                stiffness: 100,
+                                damping: 15
+                            }}
                             className="relative p-12 min-h-[400px] flex flex-col items-center justify-center text-center"
                         >
 
@@ -627,16 +619,27 @@ export default function LandingPage() {
             {/* CTA Section */}
             <section id="contact" className="relative py-32 sm:py-40 overflow-hidden">
                 <div className="relative z-10 mx-auto max-w-4xl px-6 lg:px-8">
+                    {/* CTA Section with Enhanced Animations */}
                     <motion.div
                         initial={{ opacity: 0, y: 40 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
-                        transition={{ duration: 0.8 }}
-                        className="text-center"
+                        transition={{
+                            duration: 0.8,
+                            type: "spring",
+                            stiffness: 80,
+                            damping: 12
+                        }}
+                        className="relative text-center rounded-3xl border border-border/50 bg-card/30 backdrop-blur-sm p-12 overflow-hidden"
                     >
-                        <h2 className="text-4xl font-bold tracking-tight sm:text-6xl mb-6 text-foreground">
-                            Ready to Find Your Co-Founder?
-                        </h2>
+                        {/* BorderBeam Effect */}
+                        <BorderBeam size={300} duration={10} colorFrom="hsl(var(--primary))" colorTo="hsl(var(--primary) / 0.1)" />
+
+                        <ShinyText
+                            text="Ready to Find Your Co-Founder?"
+                            className="text-4xl font-bold tracking-tight sm:text-6xl mb-6 text-foreground"
+                            speed={6}
+                        />
                         <p className="mb-12 text-xl text-muted-foreground max-w-2xl mx-auto">
                             Join thousands of students and founders using AI-powered matching to build amazing projects.
                             Start discovering your perfect collaborators today—completely free.
@@ -670,14 +673,20 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            {/* Footer */}
-            <footer className="border-t border-border/40 py-12 bg-background/50 backdrop-blur-sm">
+            {/* Footer with Scroll-Reveal */}
+            <motion.footer
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="border-t border-border/40 py-12 bg-background/50 backdrop-blur-sm"
+            >
                 <div className="mx-auto max-w-7xl px-6 lg:px-8">
                     <p className="text-center text-sm text-muted-foreground">
                         &copy; {new Date().getFullYear()} Collabryx. All rights reserved.
                     </p>
                 </div>
-            </footer>
+            </motion.footer>
         </div>
     )
 }

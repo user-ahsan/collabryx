@@ -43,7 +43,7 @@ export function SemanticEngineComparison() {
                 <div className="grid md:grid-cols-2 gap-12 lg:gap-16 items-center">
                     {/* Left: Traditional Search (The Problem) */}
                     <motion.div
-                        initial={{ opacity: 0, x: -30 }}
+                        initial={{ opacity: 0, x: -20 }}
                         whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.7 }}
@@ -99,7 +99,7 @@ export function SemanticEngineComparison() {
 
                     {/* Right: Collabryx Semantic Search (The Solution) */}
                     <motion.div
-                        initial={{ opacity: 0, x: 30 }}
+                        initial={{ opacity: 0, x: 20 }}
                         whileInView={{ opacity: 1, x: 0 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.7, delay: 0.2 }}
@@ -161,8 +161,8 @@ function SemanticMatchCard({ enableAnimation }: { enableAnimation: boolean }) {
             whileInView={{ opacity: 1, scale: 1 }}
             onViewportEnter={() => setIsInView(true)}
             viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="relative p-6 rounded-xl border-2 border-primary/50 bg-card/60 backdrop-blur-sm shadow-lg shadow-primary/10"
+            transition={{ duration: 0.2 }}
+            className="relative p-6 rounded-xl border-2 border-primary/50 bg-card/60 backdrop-blur-sm shadow-lg hover:shadow-2xl transition-shadow duration-200"
         >
             {/* Vector Connection Lines (Desktop Only) */}
             {enableAnimation && isInView && <VectorLines />}

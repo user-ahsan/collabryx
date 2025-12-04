@@ -149,8 +149,8 @@ function InstantMessages({ messages }: { messages: Message[] }) {
             {messages.map((message, idx) => (
                 <motion.div
                     key={idx}
-                    initial={{ opacity: 0, y: 10 }}
-                    whileInView={{ opacity: 1, y: 0 }}
+                    initial={{ opacity: 0, scale: 0.9, y: 10 }}
+                    whileInView={{ opacity: 1, scale: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.4, delay: idx * 0.2 }}
                 >

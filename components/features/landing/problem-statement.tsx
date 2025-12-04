@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { motion } from "framer-motion"
+import { ShinyText } from "@/components/ui/shiny-text"
 import { Network } from "@/public/icons/Network"
 import { Users } from "@/public/icons/Users"
 import { BadgeCheck } from "@/public/icons/BadgeCheck"
@@ -23,15 +24,18 @@ export function ProblemStatement() {
                         <span>The Problem</span>
                     </motion.div>
 
-                    <motion.h2
+                    <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.6, delay: 0.1 }}
-                        className="text-4xl sm:text-5xl font-bold tracking-tight mb-6"
                     >
-                        Students Struggle to Find the Right Collaborators
-                    </motion.h2>
+                        <ShinyText
+                            text="Students Struggle to Find the Right Collaborators"
+                            className="text-4xl sm:text-5xl font-bold tracking-tight mb-6"
+                            speed={8}
+                        />
+                    </motion.div>
 
                     <motion.p
                         initial={{ opacity: 0, y: 20 }}
@@ -52,10 +56,10 @@ export function ProblemStatement() {
                     {painPoints.map((point, idx) => (
                         <motion.div
                             key={idx}
-                            initial={{ opacity: 0, y: 30 }}
+                            initial={{ opacity: 0, y: 40 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
-                            transition={{ duration: 0.5, delay: 0.3 + idx * 0.1 }}
+                            transition={{ duration: 0.5, delay: 0.3 + idx * 0.12 }}
                             className="relative p-6 rounded-xl border border-border bg-background/60 backdrop-blur-sm"
                         >
                             <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
