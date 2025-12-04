@@ -9,6 +9,11 @@ import { StatCard } from "@/components/features/landing/stat-card"
 import { MorphingText } from "@/components/ui/morphing-text"
 import { Globe as GlobeBackground } from "@/components/ui/globe"
 import { MeshGradientBackground } from "@/components/features/landing/mesh-gradient-background"
+import { ProblemStatement } from "@/components/features/landing/problem-statement"
+import { SemanticEngineComparison } from "@/components/features/landing/semantic-engine-comparison"
+import { CompatibilityScoreShowcase } from "@/components/features/landing/compatibility-score-showcase"
+import { AIMentorPreview } from "@/components/features/landing/ai-mentor-preview"
+import { PersonaUseCases } from "@/components/features/landing/persona-use-cases"
 import ScrollReveal from "@/components/ScrollReveal"
 import { LogoLoop } from "@/components/LogoLoop"
 import { Marquee } from "@/components/ui/marquee"
@@ -47,23 +52,23 @@ const navigation = [
 const features = [
     {
         icon: Network,
-        title: "Seamless Collaboration",
-        description: "Connect with team members in real-time. Share ideas, files, and feedback instantly across your organization.",
+        title: "AI-Powered Matching",
+        description: "Vector embeddings understand your profile semantically, matching you with collaborators who complement your skills and vision.",
     },
     {
         icon: Users,
-        title: "Powerful Community",
-        description: "Join a thriving community of innovators. Network, learn, and grow together with like-minded professionals.",
+        title: "Student & Founder Network",
+        description: "Join a community of ambitious students, fresh graduates, and early-stage founders building the future together.",
     },
     {
         icon: Layers,
-        title: "Advanced Platform",
-        description: "Enterprise-grade infrastructure built for scale. Reliable, secure, and lightning-fast performance.",
+        title: "Smart Compatibility Scores",
+        description: "See why you match with each person. Our AI breaks down compatibility by skills, interests, and availability.",
     },
     {
         icon: Code,
-        title: "Developer Tools",
-        description: "Comprehensive APIs and SDKs. Integrate seamlessly with your existing workflow and tools.",
+        title: "24/7 AI Mentor",
+        description: "Get personalized startup guidance, MVP checklists, and project planning help from our context-aware AI assistant.",
     },
 ]
 
@@ -255,8 +260,8 @@ export default function LandingPage() {
                                     transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
                                     className="mb-10 text-lg leading-8 text-muted-foreground sm:text-xl text-left"
                                 >
-                                    The ultimate collaboration platform for modern teams.
-                                    Connect, create, and innovate together with powerful tools designed for success.
+                                    Find your perfect collaborator with AI-powered semantic matching.
+                                    Connect students, founders, and mentors based on goals—not just keywords.
                                 </motion.p>
                                 <motion.div
                                     initial={{ opacity: 0, y: 20 }}
@@ -330,6 +335,21 @@ export default function LandingPage() {
                     </Marquee>
                 </div>
             </section>
+
+            {/* Problem Statement Section */}
+            <ProblemStatement />
+
+            {/* Semantic Engine Comparison */}
+            <SemanticEngineComparison />
+
+            {/* Compatibility Score Showcase */}
+            <CompatibilityScoreShowcase />
+
+            {/* AI Mentor Preview */}
+            <AIMentorPreview />
+
+            {/* Persona Use Cases */}
+            <PersonaUseCases />
 
             {/* Features Section with Scroll Velocity */}
             <section id="features" className="relative py-24 sm:py-32 overflow-hidden">
@@ -653,11 +673,11 @@ export default function LandingPage() {
                         className="text-center"
                     >
                         <h2 className="text-4xl font-bold tracking-tight sm:text-6xl mb-6 text-foreground">
-                            Ready to find your perfect match?
+                            Ready to Find Your Co-Founder?
                         </h2>
                         <p className="mb-12 text-xl text-muted-foreground max-w-2xl mx-auto">
-                            Join thousands of students and founders who are building the future together.
-                            Start your free trial today—no credit card required.
+                            Join thousands of students and founders using AI-powered matching to build amazing projects.
+                            Start discovering your perfect collaborators today—completely free.
                         </p>
 
                         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
