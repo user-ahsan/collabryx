@@ -29,10 +29,17 @@ import { AtSign } from "@/public/icons/AtSign"
 import { Globe } from "@/public/icons/Globe"
 import { HeartHandshake } from "@/public/icons/HeartHandshake"
 import { BadgeCheck } from "@/public/icons/BadgeCheck"
+import { Activity } from "@/public/icons/Activity"
+import { Blocks } from "@/public/icons/Blocks"
+import { CircleFadingArrowUp } from "@/public/icons/CircleFadingArrowUp"
+import { Bolt } from "@/public/icons/Bolt"
+import { ChevronLeft } from "@/public/icons/ChevronLeft"
+import { ChevronRight } from "@/public/icons/ChevronRight"
 
 const navigation = [
     { name: "Features", href: "#features" },
-    { name: "Technology", href: "#technology" },
+    { name: "Benefits", href: "#benefits" },
+    { name: "How It Works", href: "#how-it-works" },
     { name: "Partners", href: "#partners" },
     { name: "Contact", href: "#contact" },
 ]
@@ -146,7 +153,73 @@ const testimonials = [
     },
 ]
 
+const howItWorksSteps = [
+    {
+        step: 1,
+        icon: Activity,
+        title: "Create Your Profile",
+        description: "Sign up in seconds and build your professional profile. Add your skills, interests, and what you're looking to collaborate on."
+    },
+    {
+        step: 2,
+        icon: Network,
+        title: "Discover Opportunities",
+        description: "Browse curated matches, projects, and team opportunities. Our smart algorithm connects you with the right people and projects."
+    },
+    {
+        step: 3,
+        icon: Users,
+        title: "Connect & Collaborate",
+        description: "Reach out to potential collaborators, join teams, and start building amazing projects together in real-time."
+    },
+    {
+        step: 4,
+        icon: CircleFadingArrowUp,
+        title: "Build & Launch",
+        description: "Use our integrated tools to manage projects, track progress, and bring your ideas to life with your team."
+    }
+]
+
+const keyBenefits = [
+    {
+        icon: Layers,
+        title: "Enterprise-Grade Security",
+        description: "Bank-level encryption and SOC 2 compliance. Your data and intellectual property are always protected.",
+        highlight: "99.99% Uptime SLA"
+    },
+    {
+        icon: Bolt,
+        title: "Lightning Fast Performance",
+        description: "Built on cutting-edge infrastructure. Real-time collaboration with zero lag, anywhere in the world.",
+        highlight: "<50ms Response Time"
+    },
+    {
+        icon: Users,
+        title: "Smart Matching Algorithm",
+        description: "AI-powered recommendations connect you with complementary skills and shared goals for maximum synergy.",
+        highlight: "92% Match Success Rate"
+    },
+    {
+        icon: Blocks,
+        title: "Seamless Integrations",
+        description: "Works with tools you already love. GitHub, Slack, Figma, and 50+ more integrations out of the box.",
+        highlight: "50+ Native Integrations"
+    }
+]
+
+const integrations = [
+    { name: "GitHub", category: "Development" },
+    { name: "Slack", category: "Communication" },
+    { name: "Figma", category: "Design" },
+    { name: "Notion", category: "Productivity" },
+    { name: "Linear", category: "Project Management" },
+    { name: "Vercel", category: "Deployment" },
+    { name: "Discord", category: "Communication" },
+    { name: "Jira", category: "Project Management" },
+]
+
 export default function LandingPage() {
+    const [activeStep, setActiveStep] = React.useState(0)
     return (
         <div className="min-h-screen overflow-x-hidden bg-background">
             <MeshGradientBackground />
@@ -318,6 +391,71 @@ export default function LandingPage() {
             </section>
 
 
+            {/* Key Benefits Section */}
+            <section id="benefits" className="relative py-24 sm:py-32 overflow-hidden">
+                <div className="mx-auto max-w-7xl px-6 lg:px-8">
+                    <div className="mx-auto max-w-2xl text-center mb-16">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.6 }}
+                        >
+                            <h2 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
+                                Why Teams Choose Collabryx
+                            </h2>
+                            <p className="text-lg text-muted-foreground">
+                                Unique advantages that set us apart from the competition.
+                            </p>
+                        </motion.div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        {keyBenefits.map((benefit, idx) => {
+                            const Icon = benefit.icon
+                            return (
+                                <motion.div
+                                    key={idx}
+                                    initial={{ opacity: 0, y: 30 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ duration: 0.5, delay: idx * 0.1 }}
+                                    className="group relative rounded-2xl border border-border/50 bg-card/40 backdrop-blur-sm p-8 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:bg-card/60 overflow-hidden"
+                                >
+                                    {/* BorderBeam on hover */}
+                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                                        <BorderBeam
+                                            size={200}
+                                            duration={10}
+                                            delay={idx * 0.3}
+                                            colorFrom="hsl(var(--primary))"
+                                            colorTo="hsl(var(--primary) / 0.2)"
+                                        />
+                                    </div>
+
+                                    <div className="relative z-10">
+                                        {/* Transparent icon container with animated icon */}
+                                        <div className="mb-4 inline-flex h-16 w-16 items-center justify-center text-primary group-hover:scale-125 transition-all duration-500">
+                                            <Icon className="h-16 w-16 animate-pulse group-hover:animate-none" />
+                                        </div>
+                                        <h3 className="mb-3 text-xl font-semibold text-foreground group-hover:text-primary transition-colors">
+                                            {benefit.title}
+                                        </h3>
+                                        <p className="text-sm leading-relaxed text-muted-foreground mb-4">
+                                            {benefit.description}
+                                        </p>
+                                        <div className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold">
+                                            {benefit.highlight}
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )
+                        })}
+                    </div>
+                </div>
+            </section>
+
+
             {/* Partners Section */}
             <section id="partners" className="py-32 sm:py-40 relative overflow-hidden">
                 <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
@@ -351,6 +489,7 @@ export default function LandingPage() {
                 </div>
             </section>
 
+
             {/* Statistics Section */}
             <section className="py-24 sm:py-32">
                 <div className="mx-auto max-w-7xl px-6 lg:px-8">
@@ -379,6 +518,130 @@ export default function LandingPage() {
                 </div>
             </section>
 
+            {/* How It Works Section - Interactive Stepper */}
+            <section id="how-it-works" className="relative py-24 sm:py-32 overflow-hidden">
+                <div className="mx-auto max-w-7xl px-6 lg:px-8">
+                    <div className="mx-auto max-w-2xl text-center mb-20">
+                        <ScrollReveal
+                            containerClassName="mb-4"
+                            textClassName="text-4xl sm:text-5xl font-bold tracking-tight"
+                            enableBlur={true}
+                            baseOpacity={0.2}
+                            baseRotation={2}
+                            blurStrength={6}
+                        >
+                            How It Works
+                        </ScrollReveal>
+                        <p className="text-lg text-muted-foreground">
+                            Get started in minutes and collaborate like never before.
+                        </p>
+                    </div>
+
+                    {/* Interactive Stepper */}
+                    <div className="relative max-w-4xl mx-auto">
+                        {/* Step Indicator Dots */}
+                        <div className="flex justify-center gap-3 mb-12">
+                            {howItWorksSteps.map((_, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => setActiveStep(idx)}
+                                    className={`h-2 rounded-full transition-all duration-300 ${activeStep === idx ? 'w-12 bg-primary' : 'w-2 bg-border hover:bg-primary/50'
+                                        }`}
+                                    aria-label={`Go to step ${idx + 1}`}
+                                />
+                            ))}
+                        </div>
+
+                        {/* Step Content with Animation */}
+                        <motion.div
+                            key={activeStep}
+                            initial={{ opacity: 0, x: 100 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -100 }}
+                            transition={{ duration: 0.5, ease: "easeInOut" }}
+                            className="relative p-12 min-h-[400px] flex flex-col items-center justify-center text-center"
+                        >
+
+                            <div className="relative z-10 max-w-2xl flex flex-col items-center">
+                                {/* Step Number - ON TOP */}
+                                <div className="mb-6 inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground text-xl font-bold shadow-lg shadow-primary/25">
+                                    {howItWorksSteps[activeStep].step}
+                                </div>
+
+                                {/* Animated Icon - BELOW Step Number */}
+                                <div className="mb-8 inline-flex items-center justify-center text-primary">
+                                    <motion.div
+                                        initial={{ scale: 0, rotate: -180 }}
+                                        animate={{ scale: 1, rotate: 0 }}
+                                        transition={{ duration: 0.6, delay: 0.2, type: "spring" }}
+                                    >
+                                        {React.createElement(howItWorksSteps[activeStep].icon, {
+                                            className: "h-24 w-24 animate-pulse"
+                                        })}
+                                    </motion.div>
+                                </div>
+
+                                {/* Title and Description */}
+                                <motion.h3
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.5, delay: 0.3 }}
+                                    className="text-3xl font-bold text-foreground mb-6"
+                                >
+                                    {howItWorksSteps[activeStep].title}
+                                </motion.h3>
+                                <motion.p
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.5, delay: 0.4 }}
+                                    className="text-lg text-muted-foreground leading-relaxed"
+                                >
+                                    {howItWorksSteps[activeStep].description}
+                                </motion.p>
+                            </div>
+                        </motion.div>
+
+                        {/* Navigation Arrows */}
+                        <div className="flex justify-center items-center gap-6 mt-8">
+                            <Button
+                                variant="outline"
+                                size="lg"
+                                onClick={() => setActiveStep(Math.max(0, activeStep - 1))}
+                                disabled={activeStep === 0}
+                                className="group flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                                <ChevronLeft className="h-5 w-5 group-hover:-translate-x-1 transition-transform" />
+                                Previous
+                            </Button>
+
+                            <Button
+                                variant="outline"
+                                size="lg"
+                                onClick={() => setActiveStep(Math.min(howItWorksSteps.length - 1, activeStep + 1))}
+                                disabled={activeStep === howItWorksSteps.length - 1}
+                                className="group flex items-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
+                            >
+                                Next
+                                <ChevronRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                            </Button>
+                        </div>
+
+                        {/* Step Indicator Dots - NOW AT BOTTOM */}
+                        <div className="flex justify-center gap-3 mt-8">
+                            {howItWorksSteps.map((_, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => setActiveStep(idx)}
+                                    className={`h-2 rounded-full transition-all duration-300 ${activeStep === idx ? 'w-12 bg-primary' : 'w-2 bg-border hover:bg-primary/50'
+                                        }`}
+                                    aria-label={`Go to step ${idx + 1}`}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {/* CTA Section */}
             <section id="contact" className="relative py-32 sm:py-40 overflow-hidden">
                 <div className="relative z-10 mx-auto max-w-4xl px-6 lg:px-8">
@@ -387,43 +650,39 @@ export default function LandingPage() {
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}
                         transition={{ duration: 0.8 }}
-                        className="rounded-3xl border border-border/50 bg-card/30 backdrop-blur-xl p-12 sm:p-16 shadow-2xl relative overflow-hidden group"
+                        className="text-center"
                     >
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                        <h2 className="text-4xl font-bold tracking-tight sm:text-6xl mb-6 text-foreground">
+                            Ready to find your perfect match?
+                        </h2>
+                        <p className="mb-12 text-xl text-muted-foreground max-w-2xl mx-auto">
+                            Join thousands of students and founders who are building the future together.
+                            Start your free trial today—no credit card required.
+                        </p>
 
-                        <div className="text-center relative z-10">
-                            <h2 className="text-4xl font-bold tracking-tight sm:text-6xl mb-6 text-foreground">
-                                Ready to find your perfect match?
-                            </h2>
-                            <p className="mb-12 text-xl text-muted-foreground max-w-2xl mx-auto">
-                                Join thousands of students and founders who are building the future together.
-                                Start your free trial today—no credit card required.
-                            </p>
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+                            <Button size="lg" asChild className="text-lg px-10 py-6 h-auto shadow-lg hover:shadow-primary/25 transition-all duration-300">
+                                <Link href="/register">Get Started for Free</Link>
+                            </Button>
+                            <Button size="lg" variant="outline" asChild className="text-lg px-10 py-6 h-auto hover:bg-background/50">
+                                <Link href="/login">Sign In</Link>
+                            </Button>
+                        </div>
 
-                            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-                                <Button size="lg" asChild className="text-lg px-10 py-6 h-auto shadow-lg hover:shadow-primary/25 transition-all duration-300">
-                                    <Link href="/register">Get Started for Free</Link>
-                                </Button>
-                                <Button size="lg" variant="outline" asChild className="text-lg px-10 py-6 h-auto bg-transparent hover:bg-background/50">
-                                    <Link href="/login">Sign In</Link>
-                                </Button>
-                            </div>
-
-                            {/* Social Links */}
-                            <div className="flex justify-center gap-8 pt-8 border-t border-border/50">
-                                <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-110">
-                                    <Linkedin className="h-7 w-7" />
-                                    <span className="sr-only">LinkedIn</span>
-                                </a>
-                                <a href="mailto:hello@collabryx.com" className="text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-110">
-                                    <AtSign className="h-7 w-7" />
-                                    <span className="sr-only">Email</span>
-                                </a>
-                                <a href="https://collabryx.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-110">
-                                    <Globe className="h-7 w-7" />
-                                    <span className="sr-only">Website</span>
-                                </a>
-                            </div>
+                        {/* Social Links */}
+                        <div className="flex justify-center gap-8 pt-8 border-t border-border/50">
+                            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-110">
+                                <Linkedin className="h-7 w-7" />
+                                <span className="sr-only">LinkedIn</span>
+                            </a>
+                            <a href="mailto:hello@collabryx.com" className="text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-110">
+                                <AtSign className="h-7 w-7" />
+                                <span className="sr-only">Email</span>
+                            </a>
+                            <a href="https://collabryx.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-110">
+                                <Globe className="h-7 w-7" />
+                                <span className="sr-only">Website</span>
+                            </a>
                         </div>
                     </motion.div>
                 </div>
