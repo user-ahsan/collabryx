@@ -21,9 +21,6 @@ import { Network } from "@/public/icons/Network"
 import { Users } from "@/public/icons/Users"
 import { Layers } from "@/public/icons/Layers"
 import { Code } from "@/public/icons/Code"
-import { Cpu } from "@/public/icons/Cpu"
-import { Box } from "@/public/icons/Box"
-import { WandSparkles } from "@/public/icons/WandSparkles"
 import { ChartLine } from "@/public/icons/ChartLine"
 import { ChartColumn } from "@/public/icons/ChartColumn"
 import { ChartPie } from "@/public/icons/ChartPie"
@@ -60,24 +57,6 @@ const features = [
         icon: Code,
         title: "Developer Tools",
         description: "Comprehensive APIs and SDKs. Integrate seamlessly with your existing workflow and tools.",
-    },
-]
-
-const technologies = [
-    {
-        title: "Modern Frontend",
-        description: "Built with Next.js, React, and cutting-edge web technologies for the best user experience.",
-        icon: Cpu,
-    },
-    {
-        title: "Scalable Backend",
-        description: "Powered by cloud-native architecture ensuring 99.9% uptime and instant scalability.",
-        icon: Box,
-    },
-    {
-        title: "AI-Powered Features",
-        description: "Leverage machine learning and AI to automate workflows and gain intelligent insights.",
-        icon: WandSparkles,
     },
 ]
 
@@ -338,45 +317,6 @@ export default function LandingPage() {
                 </ScrollVelocityRow>
             </section>
 
-            {/* Technology Section */}
-            <section id="technology" className="relative py-24 sm:py-32 overflow-hidden">
-                <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
-                    <div className="mx-auto max-w-2xl text-center mb-16">
-                        <h2 className="text-3xl font-bold tracking-tight sm:text-5xl mb-4">
-                            Built with Cutting-Edge Technology
-                        </h2>
-                        <p className="text-lg text-muted-foreground">
-                            Leveraging the latest innovations to deliver exceptional performance and reliability.
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-                        {technologies.map((tech, idx) => (
-                            <motion.div
-                                key={idx}
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                whileInView={{ opacity: 1, scale: 1 }}
-                                viewport={{ once: true }}
-                                transition={{ duration: 0.5, delay: idx * 0.1 }}
-                                className="relative p-8 rounded-2xl border border-border/50 bg-card/30 backdrop-blur-md transition-all duration-300 hover:scale-105 hover:shadow-xl hover:bg-card/50 group overflow-hidden"
-                            >
-                                <BorderBeam
-                                    size={150}
-                                    duration={10 + idx * 2}
-                                    delay={idx}
-                                    colorFrom="hsl(var(--primary))"
-                                    colorTo="hsl(var(--primary) / 0.2)"
-                                />
-                                <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors relative z-10">
-                                    <tech.icon className="h-7 w-7" />
-                                </div>
-                                <h3 className="mb-3 text-xl font-semibold relative z-10">{tech.title}</h3>
-                                <p className="text-muted-foreground relative z-10">{tech.description}</p>
-                            </motion.div>
-                        ))}
-                    </div>
-                </div>
-            </section>
 
             {/* Partners Section */}
             <section id="partners" className="py-32 sm:py-40 relative overflow-hidden">
