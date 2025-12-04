@@ -22,7 +22,8 @@ const ProblemStatement = dynamic(() => import("@/components/features/landing/pro
 const SemanticEngineComparison = dynamic(() => import("@/components/features/landing/semantic-engine-comparison").then(m => ({ default: m.SemanticEngineComparison })), { ssr: true })
 const CompatibilityScoreShowcase = dynamic(() => import("@/components/features/landing/compatibility-score-showcase").then(m => ({ default: m.CompatibilityScoreShowcase })), { ssr: true })
 const AIMentorPreview = dynamic(() => import("@/components/features/landing/ai-mentor-preview").then(m => ({ default: m.AIMentorPreview })), { ssr: true })
-const PersonaUseCases = dynamic(() => import("@/components/features/landing/persona-use-cases").then(m => ({ default: m.PersonaUseCases })), { ssr: true })
+// Disable SSR for PersonaUseCases due to Radix Tabs hydration mismatch with auto-generated IDs
+const PersonaUseCases = dynamic(() => import("@/components/features/landing/persona-use-cases").then(m => ({ default: m.PersonaUseCases })), { ssr: false })
 
 // Import animated icons from public/icons
 import { Network } from "@/public/icons/Network"
