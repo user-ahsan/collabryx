@@ -10,7 +10,7 @@ import { StatCard } from "@/components/features/landing/stat-card"
 import { MorphingText } from "@/components/ui/morphing-text"
 import { Globe as GlobeBackground } from "@/components/ui/globe"
 import { MeshGradientBackground } from "@/components/features/landing/mesh-gradient-background"
-import ScrollFloat from "@/components/ScrollFloat"
+import ScrollReveal from "@/components/ScrollReveal"
 import { LogoLoop } from "@/components/LogoLoop"
 import { Marquee } from "@/components/ui/marquee"
 import { AnimatedBeam } from "@/components/ui/animated-beam"
@@ -285,14 +285,18 @@ export default function LandingPage() {
             <section id="features" className="relative py-24 sm:py-32">
                 <div ref={containerRef} className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
                     <div className="mx-auto max-w-2xl text-center mb-16">
-                        <ScrollFloat
+                        <ScrollReveal
                             containerClassName="mb-4"
-                            scrollStart="top bottom"
-                            scrollEnd="center center"
                             textClassName="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight"
+                            enableBlur={true}
+                            baseOpacity={0.2}
+                            baseRotation={2}
+                            blurStrength={6}
+                            rotationEnd="center center"
+                            wordAnimationEnd="center center"
                         >
                             Powerful Features for Modern Teams
-                        </ScrollFloat>
+                        </ScrollReveal>
                         <p className="text-lg text-muted-foreground">
                             Everything you need to collaborate effectively and build amazing things together.
                         </p>
