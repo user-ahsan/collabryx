@@ -1,7 +1,9 @@
 "use client"
+// Performance optimized - Dec 5, 2025
 
 import "./landing.css"
 import * as React from "react"
+import dynamic from "next/dynamic"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { LandingHeader } from "@/components/features/landing/landing-header"
@@ -9,18 +11,18 @@ import { StatCard } from "@/components/features/landing/stat-card"
 import { MorphingText } from "@/components/ui/morphing-text"
 import { Globe as GlobeBackground } from "@/components/ui/globe"
 import { MeshGradientBackground } from "@/components/features/landing/mesh-gradient-background"
-import { ProblemStatement } from "@/components/features/landing/problem-statement"
-import { SemanticEngineComparison } from "@/components/features/landing/semantic-engine-comparison"
-import { CompatibilityScoreShowcase } from "@/components/features/landing/compatibility-score-showcase"
-import { AIMentorPreview } from "@/components/features/landing/ai-mentor-preview"
-import { PersonaUseCases } from "@/components/features/landing/persona-use-cases"
-import ScrollReveal from "@/components/ScrollReveal"
-import { LogoLoop } from "@/components/LogoLoop"
 import { Marquee } from "@/components/ui/marquee"
 import { BorderBeam } from "@/components/ui/border-beam"
 import { ScrollVelocityRow } from "@/components/ui/scroll-based-velocity"
 import { ShinyText } from "@/components/ui/shiny-text"
 import { motion } from "motion/react"
+
+// Lazy load heavy sections for better performance
+const ProblemStatement = dynamic(() => import("@/components/features/landing/problem-statement").then(m => ({ default: m.ProblemStatement })), { ssr: true })
+const SemanticEngineComparison = dynamic(() => import("@/components/features/landing/semantic-engine-comparison").then(m => ({ default: m.SemanticEngineComparison })), { ssr: true })
+const CompatibilityScoreShowcase = dynamic(() => import("@/components/features/landing/compatibility-score-showcase").then(m => ({ default: m.CompatibilityScoreShowcase })), { ssr: true })
+const AIMentorPreview = dynamic(() => import("@/components/features/landing/ai-mentor-preview").then(m => ({ default: m.AIMentorPreview })), { ssr: true })
+const PersonaUseCases = dynamic(() => import("@/components/features/landing/persona-use-cases").then(m => ({ default: m.PersonaUseCases })), { ssr: true })
 
 // Import animated icons from public/icons
 import { Network } from "@/public/icons/Network"
@@ -237,9 +239,9 @@ export default function LandingPage() {
                     <div className="grid lg:grid-cols-2 gap-12 items-center">
                         {/* Left Column: Content - Centered and Left Aligned */}
                         <motion.div
-                            initial={{ opacity: 0, x: -50 }}
+                            initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.8, ease: "easeOut" }}
+                            transition={{ duration: 0.5, ease: "easeOut" }}
                             className="flex flex-col justify-center"
                         >
                             <div className="max-w-xl">
@@ -256,18 +258,18 @@ export default function LandingPage() {
                                     />
                                 </div>
                                 <motion.p
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ duration: 0.4, delay: 0.1 }}
                                     className="mb-10 text-lg leading-8 text-muted-foreground sm:text-xl text-left"
                                 >
                                     Find your perfect collaborator with AI-powered semantic matching.
                                     Connect students, founders, and mentors based on goals—not just keywords.
                                 </motion.p>
                                 <motion.div
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ duration: 0.4, delay: 0.2 }}
                                     className="flex flex-col sm:flex-row gap-4"
                                 >
                                     <div className="relative inline-block">
@@ -290,9 +292,9 @@ export default function LandingPage() {
 
                         {/* Right Column: Globe Only */}
                         <motion.div
-                            initial={{ opacity: 0, x: 50 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.6, delay: 0.3 }}
                             className="relative h-[500px] flex items-center justify-end"
                         >
                             <GlobeBackground className="max-w-[600px]" />
@@ -416,8 +418,8 @@ export default function LandingPage() {
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ duration: 0.6 }}
+                            viewport={{ once: true, margin: "0px 0px -100px 0px" }}
+                            transition={{ duration: 0.4 }}
                         >
                             <h2 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
                                 Why Teams Choose Collabryx
@@ -434,10 +436,10 @@ export default function LandingPage() {
                             return (
                                 <motion.div
                                     key={idx}
-                                    initial={{ opacity: 0, y: 30 }}
+                                    initial={{ opacity: 0, y: 20 }}
                                     whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true }}
-                                    transition={{ duration: 0.5, delay: idx * 0.1 }}
+                                    viewport={{ once: true, margin: "0px 0px -50px 0px" }}
+                                    transition={{ duration: 0.3, delay: idx * 0.05 }}
                                     className="group relative rounded-2xl border border-border/50 bg-card/40 backdrop-blur-sm p-8 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:bg-card/60 overflow-hidden"
                                 >
                                     {/* BorderBeam on hover */}
@@ -454,7 +456,7 @@ export default function LandingPage() {
                                     <div className="relative z-10">
                                         {/* Transparent icon container with animated icon */}
                                         <div className="mb-4 inline-flex h-16 w-16 items-center justify-center text-primary group-hover:scale-125 transition-all duration-500">
-                                            <Icon className="h-16 w-16 animate-pulse group-hover:animate-none" />
+                                            <Icon className="h-16 w-16 transition-transform" />
                                         </div>
                                         <h3 className="mb-3 text-xl font-semibold text-foreground group-hover:text-primary transition-colors">
                                             {benefit.title}
@@ -550,7 +552,7 @@ export default function LandingPage() {
                                         transition={{ duration: 0.6, delay: 0.2, type: "spring" }}
                                     >
                                         {React.createElement(howItWorksSteps[activeStep].icon, {
-                                            className: "h-24 w-24 animate-pulse"
+                                            className: "h-24 w-24"
                                         })}
                                     </motion.div>
                                 </div>

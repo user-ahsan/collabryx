@@ -106,22 +106,26 @@ export function PersonaUseCases() {
                     </TabsList>
 
                     {/* Tab Content */}
-                    <AnimatePresence mode="wait">
-                        {personas.map((persona) => {
-                            const Icon = persona.icon
-                            return (
-                                <TabsContent key={persona.id} value={persona.id} className="mt-0">
+                    {personas.map((persona) => {
+                        const activePersona = personas.find(p => p.id === activeTab)
+                        if (persona.id !== activeTab) return null
+
+                        return (
+                            <TabsContent key={persona.id} value={persona.id} className="mt-0">
+                                <AnimatePresence mode="wait">
                                     {useComplexTransitions ? (
                                         <motion.div
-                                            initial={{ opacity: 0, y: 20, filter: "blur(4px)" }}
-                                            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                                            exit={{ opacity: 0, y: -20, filter: "blur(4px)" }}
+                                            key={activeTab}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -20 }}
                                             transition={{ duration: 0.4 }}
                                         >
                                             <PersonaContent persona={persona} />
                                         </motion.div>
                                     ) : (
                                         <motion.div
+                                            key={activeTab}
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
                                             exit={{ opacity: 0 }}
@@ -130,27 +134,30 @@ export function PersonaUseCases() {
                                             <PersonaContent persona={persona} />
                                         </motion.div>
                                     )}
-                                </TabsContent>
-                            )
-                        })}
-                    </AnimatePresence>
+                                </AnimatePresence>
+                            </TabsContent>
+                        )
+                    })}
                 </Tabs>
             </div>
 
             {/* Background Gradient (changes per persona) */}
             <AnimatePresence mode="wait">
-                {personas.map((persona) => (
-                    activeTab === persona.id && (
+                {(() => {
+                    const activePersona = personas.find(p => p.id === activeTab)
+                    if (!activePersona) return null
+
+                    return (
                         <motion.div
-                            key={persona.id}
+                            key={activePersona.id}
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.6 }}
-                            className={`absolute inset-0 -z-10 bg-gradient-to-br ${persona.bgColor} blur-3xl`}
+                            className={`absolute inset-0 -z-10 bg-gradient-to-br ${activePersona.bgColor} blur-3xl`}
                         />
                     )
-                ))}
+                })()}
             </AnimatePresence>
         </section>
     )

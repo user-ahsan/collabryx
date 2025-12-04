@@ -32,18 +32,13 @@ body::-webkit-scrollbar {
 
     0%,
     100% {
-        transform: translate(0, 0) scale(1);
+        transform: translate3d(0, 0, 0) scale(1);
         opacity: 0.3;
     }
 
-    33% {
-        transform: translate(10%, -10%) scale(1.1);
-        opacity: 0.4;
-    }
-
-    66% {
-        transform: translate(-10%, 10%) scale(0.9);
-        opacity: 0.3;
+    50% {
+        transform: translate3d(5%, -5%, 0) scale(1.05);
+        opacity: 0.35;
     }
 }
 
@@ -51,18 +46,13 @@ body::-webkit-scrollbar {
 
     0%,
     100% {
-        transform: translate(0, 0) scale(1);
+        transform: translate3d(0, 0, 0) scale(1);
         opacity: 0.25;
     }
 
-    33% {
-        transform: translate(-15%, 15%) scale(1.15);
-        opacity: 0.35;
-    }
-
-    66% {
-        transform: translate(15%, -15%) scale(0.85);
-        opacity: 0.25;
+    50% {
+        transform: translate3d(-8%, 8%, 0) scale(1.08);
+        opacity: 0.3;
     }
 }
 
@@ -70,11 +60,11 @@ body::-webkit-scrollbar {
 
     0%,
     100% {
-        transform: translate(0, 0);
+        transform: translate3d(0, 0, 0);
     }
 
     50% {
-        transform: translate(-20px, 20px);
+        transform: translate3d(-10px, 10px, 0);
     }
 }
 
@@ -82,11 +72,11 @@ body::-webkit-scrollbar {
 
     0%,
     100% {
-        transform: translate(0, 0);
+        transform: translate3d(0, 0, 0);
     }
 
     50% {
-        transform: translate(20px, -20px);
+        transform: translate3d(10px, -10px, 0);
     }
 }
 
@@ -94,30 +84,35 @@ body::-webkit-scrollbar {
 
     0%,
     100% {
-        transform: translate(0, 0);
+        transform: translate3d(0, 0, 0);
     }
 
     50% {
-        transform: translate(30px, 30px);
+        transform: translate3d(15px, 15px, 0);
     }
 }
 
 .animate-gradient-shift {
+    will-change: transform, opacity;
     animation: gradient-shift 20s ease-in-out infinite;
 }
 
 .animate-gradient-shift-reverse {
+    will-change: transform, opacity;
     animation: gradient-shift-reverse 25s ease-in-out infinite;
 }
 
 .animate-float {
+    will-change: transform;
     animation: float 15s ease-in-out infinite;
 }
 
 .animate-float-delayed {
+    will-change: transform;
     animation: float-delayed 18s ease-in-out infinite 2s;
 }
 
 .animate-float-slow {
+    will-change: transform;
     animation: float-slow 25s ease-in-out infinite;
 }
