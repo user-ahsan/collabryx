@@ -5,7 +5,6 @@ import * as React from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { LandingHeader } from "@/components/features/landing/landing-header"
-import { FeatureCard } from "@/components/features/landing/feature-card"
 import { StatCard } from "@/components/features/landing/stat-card"
 import { MorphingText } from "@/components/ui/morphing-text"
 import { Globe as GlobeBackground } from "@/components/ui/globe"
@@ -13,8 +12,8 @@ import { MeshGradientBackground } from "@/components/features/landing/mesh-gradi
 import ScrollReveal from "@/components/ScrollReveal"
 import { LogoLoop } from "@/components/LogoLoop"
 import { Marquee } from "@/components/ui/marquee"
-import { AnimatedBeam } from "@/components/ui/animated-beam"
 import { BorderBeam } from "@/components/ui/border-beam"
+import { ScrollVelocityRow } from "@/components/ui/scroll-based-velocity"
 import { motion } from "motion/react"
 
 // Import animated icons from public/icons
@@ -33,6 +32,13 @@ import { AtSign } from "@/public/icons/AtSign"
 import { Globe } from "@/public/icons/Globe"
 import { HeartHandshake } from "@/public/icons/HeartHandshake"
 import { BadgeCheck } from "@/public/icons/BadgeCheck"
+
+const navigation = [
+    { name: "Features", href: "#features" },
+    { name: "Technology", href: "#technology" },
+    { name: "Partners", href: "#partners" },
+    { name: "Contact", href: "#contact" },
+]
 
 const features = [
     {
@@ -162,18 +168,10 @@ const testimonials = [
 ]
 
 export default function LandingPage() {
-    const containerRef = React.useRef<HTMLDivElement>(null)
-    const feature1Ref = React.useRef<HTMLDivElement>(null)
-    const feature2Ref = React.useRef<HTMLDivElement>(null)
-    const feature3Ref = React.useRef<HTMLDivElement>(null)
-    const feature4Ref = React.useRef<HTMLDivElement>(null)
-
-    const featureRefs = [feature1Ref, feature2Ref, feature3Ref, feature4Ref]
-
     return (
         <div className="min-h-screen overflow-x-hidden bg-background">
             <MeshGradientBackground />
-            <LandingHeader />
+            <LandingHeader navigation={navigation} />
 
             {/* Hero Section with Two Column Design */}
             <section className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
@@ -281,9 +279,9 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            {/* Features Section with Animated Beams */}
-            <section id="features" className="relative py-24 sm:py-32">
-                <div ref={containerRef} className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
+            {/* Features Section with Scroll Velocity */}
+            <section id="features" className="relative py-24 sm:py-32 overflow-hidden">
+                <div className="mx-auto max-w-7xl px-6 lg:px-8 mb-16">
                     <div className="mx-auto max-w-2xl text-center mb-16">
                         <ScrollReveal
                             containerClassName="mb-4"
@@ -301,67 +299,43 @@ export default function LandingPage() {
                             Everything you need to collaborate effectively and build amazing things together.
                         </p>
                     </div>
-
-                    <div className="grid grid-cols-1 gap-8 md:grid-cols-2 relative">
-                        {/* Animated Beams connecting cards */}
-                        {containerRef.current && (
-                            <>
-                                <AnimatedBeam
-                                    containerRef={containerRef}
-                                    fromRef={feature1Ref}
-                                    toRef={feature2Ref}
-                                    curvature={-50}
-                                    gradientStartColor="hsl(var(--primary))"
-                                    gradientStopColor="hsl(var(--primary) / 0.2)"
-                                />
-                                <AnimatedBeam
-                                    containerRef={containerRef}
-                                    fromRef={feature2Ref}
-                                    toRef={feature3Ref}
-                                    curvature={50}
-                                    reverse
-                                    gradientStartColor="hsl(var(--primary))"
-                                    gradientStopColor="hsl(var(--primary) / 0.2)"
-                                />
-                                <AnimatedBeam
-                                    containerRef={containerRef}
-                                    fromRef={feature3Ref}
-                                    toRef={feature4Ref}
-                                    curvature={-50}
-                                    gradientStartColor="hsl(var(--primary))"
-                                    gradientStopColor="hsl(var(--primary) / 0.2)"
-                                />
-                                <AnimatedBeam
-                                    containerRef={containerRef}
-                                    fromRef={feature4Ref}
-                                    toRef={feature1Ref}
-                                    curvature={50}
-                                    reverse
-                                    gradientStartColor="hsl(var(--primary))"
-                                    gradientStopColor="hsl(var(--primary) / 0.2)"
-                                />
-                            </>
-                        )}
-
-                        {features.map((feature, idx) => (
-                            <motion.div
-                                key={idx}
-                                ref={featureRefs[idx]}
-                                initial={{ opacity: 0, y: 20 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true, margin: "-100px" }}
-                                transition={{ duration: 0.5, delay: idx * 0.1 }}
-                            >
-                                <FeatureCard
-                                    icon={feature.icon}
-                                    title={feature.title}
-                                    description={feature.description}
-                                    showBorderBeam
-                                />
-                            </motion.div>
-                        ))}
-                    </div>
                 </div>
+
+                {/* Screen-wide scrolling feature cards */}
+                <ScrollVelocityRow baseVelocity={2} className="py-4">
+                    {features.map((feature, idx) => {
+                        const Icon = feature.icon
+                        return (
+                            <div
+                                key={idx}
+                                className="group relative mx-4 w-[380px] h-[280px] rounded-2xl border border-border/50 bg-card/40 backdrop-blur-sm p-8 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:bg-card/60 hover:border-primary/50 overflow-hidden flex flex-col whitespace-normal"
+                            >
+                                {/* BorderBeam on hover */}
+                                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                                    <BorderBeam
+                                        size={150}
+                                        duration={8}
+                                        delay={idx * 0.5}
+                                        colorFrom="hsl(var(--primary))"
+                                        colorTo="hsl(var(--primary) / 0.2)"
+                                    />
+                                </div>
+
+                                <div className="relative z-10 flex flex-col h-full">
+                                    <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary group-hover:bg-primary/20 transition-all duration-300 group-hover:scale-110 shrink-0">
+                                        <Icon className="h-7 w-7" />
+                                    </div>
+                                    <h3 className="mb-3 text-lg font-semibold text-foreground group-hover:text-primary transition-colors duration-300 shrink-0">
+                                        {feature.title}
+                                    </h3>
+                                    <p className="text-sm leading-relaxed text-muted-foreground flex-1">
+                                        {feature.description}
+                                    </p>
+                                </div>
+                            </div>
+                        )
+                    })}
+                </ScrollVelocityRow>
             </section>
 
             {/* Technology Section */}

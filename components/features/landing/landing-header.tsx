@@ -6,14 +6,16 @@ import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-const navigation = [
-    { name: "Features", href: "#features" },
-    { name: "Technology", href: "#technology" },
-    { name: "Partners", href: "#partners" },
-    { name: "Contact", href: "#contact" },
-]
+interface NavigationItem {
+    name: string
+    href: string
+}
 
-export const LandingHeader: React.FC = () => {
+interface LandingHeaderProps {
+    navigation: NavigationItem[]
+}
+
+export const LandingHeader: React.FC<LandingHeaderProps> = ({ navigation }) => {
     const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
     const [scrolled, setScrolled] = React.useState(false)
 
