@@ -32,7 +32,7 @@ export function AIMentorPreview() {
     const useTypewriter = !isMobile && !prefersReducedMotion
 
     return (
-        <section className="relative py-24 sm:py-32 overflow-hidden bg-muted/20">
+        <section className="relative py-24 sm:py-32 overflow-hidden">
             <div className="mx-auto max-w-5xl px-6 lg:px-8">
                 {/* Section Header */}
                 <div className="mx-auto max-w-2xl text-center mb-16">
@@ -239,8 +239,8 @@ function MessageBubble({
             {/* Message Content */}
             <div
                 className={`max-w-[80%] rounded-2xl px-4 py-3 ${isUser
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted text-foreground"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-foreground"
                     }`}
             >
                 {useTypewriter ? (

@@ -336,37 +336,34 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            {/* Problem Statement Section */}
+            {/* Problem Statement - Establish the Pain Point */}
             <ProblemStatement />
 
-            {/* Semantic Engine Comparison */}
+            {/* Semantic Engine - Show the Solution */}
             <SemanticEngineComparison />
 
-            {/* Compatibility Score Showcase */}
+            {/* Compatibility Score - Demonstrate Value */}
             <CompatibilityScoreShowcase />
 
-            {/* AI Mentor Preview */}
+            {/* AI Mentor - Additional Value Prop */}
             <AIMentorPreview />
 
-            {/* Persona Use Cases */}
+            {/* Persona Use Cases - Targeted Messaging */}
             <PersonaUseCases />
 
-            {/* Features Section with Scroll Velocity */}
+            {/* Features Section - Feature Details */}
             <section id="features" className="relative py-24 sm:py-32 overflow-hidden">
                 <div className="mx-auto max-w-7xl px-6 lg:px-8 mb-16">
                     <div className="mx-auto max-w-2xl text-center mb-16">
-                        <ScrollReveal
-                            containerClassName="mb-4"
-                            textClassName="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight"
-                            enableBlur={true}
-                            baseOpacity={0.2}
-                            baseRotation={2}
-                            blurStrength={6}
-                            rotationEnd="center center"
-                            wordAnimationEnd="center center"
+                        <motion.h2
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ duration: 0.6 }}
+                            className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-4"
                         >
                             Powerful Features for Modern Teams
-                        </ScrollReveal>
+                        </motion.h2>
                         <p className="text-lg text-muted-foreground">
                             Everything you need to collaborate effectively and build amazing things together.
                         </p>
@@ -475,42 +472,7 @@ export default function LandingPage() {
                 </div>
             </section>
 
-
-            {/* Partners Section */}
-            <section id="partners" className="py-32 sm:py-40 relative overflow-hidden">
-                <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
-                    <div className="mx-auto max-w-3xl text-center mb-20">
-                        <div className="mb-6 flex justify-center">
-                            <div className="p-4 rounded-full bg-primary/10 backdrop-blur-sm animate-pulse">
-                                <HeartHandshake className="h-16 w-16 text-primary" />
-                            </div>
-                        </div>
-                        <h2 className="text-4xl font-bold tracking-tight sm:text-6xl mb-6 text-foreground">
-                            Trusted by Industry Leaders
-                        </h2>
-                        <p className="text-xl text-muted-foreground">
-                            Join thousands of companies already collaborating on Collabryx.
-                            <br />
-                            From startups to enterprises, teams trust us to power their collaboration.
-                        </p>
-                    </div>
-
-                    <div className="relative">
-                        <LogoLoop
-                            logos={partnerLogos}
-                            speed={50}
-                            direction="left"
-                            pauseOnHover
-                            fadeOut
-                            logoHeight={80}
-                            gap={80}
-                        />
-                    </div>
-                </div>
-            </section>
-
-
-            {/* Statistics Section */}
+            {/* Statistics Section - Social Proof with Numbers */}
             <section className="py-24 sm:py-32">
                 <div className="mx-auto max-w-7xl px-6 lg:px-8">
                     <div className="mx-auto max-w-2xl text-center mb-16">
@@ -538,7 +500,7 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            {/* How It Works Section - Interactive Stepper */}
+            {/* How It Works - Process Breakdown */}
             <section id="how-it-works" className="relative py-24 sm:py-32 overflow-hidden">
                 <div className="mx-auto max-w-7xl px-6 lg:px-8">
                     <div className="mx-auto max-w-2xl text-center mb-20">

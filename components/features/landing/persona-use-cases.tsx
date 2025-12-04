@@ -89,17 +89,17 @@ export function PersonaUseCases() {
                 {/* Tabs */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-4xl mx-auto">
                     {/* Tab List */}
-                    <TabsList className="grid w-full grid-cols-3 mb-12 h-auto p-1">
+                    <TabsList className="grid w-full grid-cols-3 mb-12 h-auto p-0 bg-transparent gap-2">
                         {personas.map((persona) => {
                             const Icon = persona.icon
                             return (
                                 <TabsTrigger
                                     key={persona.id}
                                     value={persona.id}
-                                    className="flex flex-col sm:flex-row items-center gap-2 py-3 data-[state=active]:bg-primary/10"
+                                    className="flex flex-col sm:flex-row items-center justify-center gap-2 py-4 px-6 rounded-lg border border-border bg-card/40 backdrop-blur-sm transition-all duration-300 hover:bg-card/60 hover:border-primary/30 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary data-[state=active]:shadow-lg data-[state=active]:shadow-primary/20"
                                 >
                                     <Icon className="h-5 w-5" />
-                                    <span>{persona.label}</span>
+                                    <span className="font-medium">{persona.label}</span>
                                 </TabsTrigger>
                             )
                         })}
