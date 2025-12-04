@@ -2,12 +2,14 @@
 
 import * as React from "react"
 import { cn } from "@/lib/utils"
+import { BorderBeam } from "@/components/ui/border-beam"
 
 interface FeatureCardProps {
     icon: React.ComponentType<{ className?: string }>
     title: string
     description: string
     className?: string
+    showBorderBeam?: boolean
 }
 
 export const FeatureCard: React.FC<FeatureCardProps> = ({
@@ -15,6 +17,7 @@ export const FeatureCard: React.FC<FeatureCardProps> = ({
     title,
     description,
     className,
+    showBorderBeam = false,
 }) => {
     const divRef = React.useRef<HTMLDivElement>(null)
     const [isFocused, setIsFocused] = React.useState(false)
@@ -82,6 +85,16 @@ export const FeatureCard: React.FC<FeatureCardProps> = ({
                     padding: "1px",
                 }}
             />
+
+            {/* Border Beam on Hover */}
+            {showBorderBeam && opacity > 0 && (
+                <BorderBeam
+                    size={150}
+                    duration={8}
+                    colorFrom="hsl(var(--primary))"
+                    colorTo="hsl(var(--primary) / 0.3)"
+                />
+            )}
 
             <div className="relative z-10">
                 {/* Icon */}

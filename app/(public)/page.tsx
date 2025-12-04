@@ -7,10 +7,14 @@ import { Button } from "@/components/ui/button"
 import { LandingHeader } from "@/components/features/landing/landing-header"
 import { FeatureCard } from "@/components/features/landing/feature-card"
 import { StatCard } from "@/components/features/landing/stat-card"
-import { Hero3DViewer } from "@/components/features/landing/hero-3d-viewer"
+import { MorphingText } from "@/components/ui/morphing-text"
+import { Globe as GlobeBackground } from "@/components/ui/globe"
 import { MeshGradientBackground } from "@/components/features/landing/mesh-gradient-background"
 import ScrollFloat from "@/components/ScrollFloat"
 import { LogoLoop } from "@/components/LogoLoop"
+import { Marquee } from "@/components/ui/marquee"
+import { AnimatedBeam } from "@/components/ui/animated-beam"
+import { BorderBeam } from "@/components/ui/border-beam"
 import { motion } from "motion/react"
 
 // Import animated icons from public/icons
@@ -118,63 +122,168 @@ const partnerLogos = [
     { src: "/placeholder-logo.png", alt: "Partner 6" },
 ]
 
+const testimonials = [
+    {
+        name: "Sarah Johnson",
+        handle: "@sarahj_dev",
+        text: "Collabryx has completely transformed how our team collaborates. The real-time features are a game-changer!",
+        avatar: "SJ"
+    },
+    {
+        name: "Mike Chen",
+        handle: "@mikechen_tech",
+        text: "Finally, a platform that understands what modern teams need. Intuitive, powerful, and beautiful.",
+        avatar: "MC"
+    },
+    {
+        name: "Emma Watson",
+        handle: "@emmaw_pm",
+        text: "Best collaboration tool I've used in years. My team's productivity has skyrocketed! 🚀",
+        avatar: "EW"
+    },
+    {
+        name: "David Park",
+        handle: "@davidp_founder",
+        text: "We tried every tool out there. Collabryx is the only one that clicked with our entire team.",
+        avatar: "DP"
+    },
+    {
+        name: "Lisa Martinez",
+        handle: "@lisamartinez",
+        text: "The AI-powered features save us hours every week. It's like having an extra team member!",
+        avatar: "LM"
+    },
+    {
+        name: "James Wilson",
+        handle: "@jameswilson_cto",
+        text: "Seamless integration with our existing tools. Setup took minutes, not days.",
+        avatar: "JW"
+    },
+]
+
 export default function LandingPage() {
+    const containerRef = React.useRef<HTMLDivElement>(null)
+    const feature1Ref = React.useRef<HTMLDivElement>(null)
+    const feature2Ref = React.useRef<HTMLDivElement>(null)
+    const feature3Ref = React.useRef<HTMLDivElement>(null)
+    const feature4Ref = React.useRef<HTMLDivElement>(null)
+
+    const featureRefs = [feature1Ref, feature2Ref, feature3Ref, feature4Ref]
+
     return (
         <div className="min-h-screen overflow-x-hidden bg-background">
             <MeshGradientBackground />
             <LandingHeader />
 
-            {/* Hero Section with Background Model */}
+            {/* Hero Section with Two Column Design */}
             <section className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
-                {/* Background 3D Model */}
-                <div className="absolute inset-0 z-0 opacity-60 dark:opacity-80 mix-blend-normal dark:mix-blend-screen">
-                    <Hero3DViewer />
-                </div>
-
-                {/* Content Overlay */}
-                <div className="container relative z-10 mx-auto px-6 lg:px-8 text-center pointer-events-none">
-                    <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, ease: "easeOut" }}
-                        className="max-w-4xl mx-auto pointer-events-auto"
-                    >
-                        <h1 className="text-5xl font-bold tracking-tight sm:text-7xl lg:text-8xl mb-6 text-foreground drop-shadow-lg">
-                            Innovate.
-                            <br />
-                            Collaborate.
-                            <br />
-                            Create.
-                        </h1>
-                        <motion.p
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
-                            className="mb-10 text-lg leading-8 text-muted-foreground sm:text-xl max-w-2xl mx-auto drop-shadow-md bg-background/50 dark:bg-background/30 backdrop-blur-sm p-4 rounded-xl border border-border/20 dark:border-white/10"
-                        >
-                            The ultimate collaboration platform for modern teams.
-                            Connect, create, and innovate together with powerful tools designed for success.
-                        </motion.p>
+                <div className="container relative z-10 mx-auto px-6 lg:px-8">
+                    <div className="grid lg:grid-cols-2 gap-12 items-center">
+                        {/* Left Column: Content - Centered and Left Aligned */}
                         <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
-                            className="flex flex-col sm:flex-row gap-4 justify-center"
+                            initial={{ opacity: 0, x: -50 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.8, ease: "easeOut" }}
+                            className="flex flex-col justify-center"
                         >
-                            <Button size="lg" asChild className="text-lg px-8 shadow-lg hover:scale-105 transition-transform duration-300">
-                                <Link href="/register">Get Started Free</Link>
-                            </Button>
-                            <Button size="lg" variant="outline" asChild className="text-lg px-8 bg-background/50 backdrop-blur-sm hover:bg-background/80 hover:scale-105 transition-transform duration-300">
-                                <Link href="#features">Learn More</Link>
-                            </Button>
+                            <div className="max-w-xl">
+                                <div className="text-left mb-6">
+                                    <MorphingText
+                                        texts={[
+                                            "Innovate.",
+                                            "Collaborate.",
+                                            "Create.",
+                                            "Transform.",
+                                            "Connect."
+                                        ]}
+                                        className="text-foreground drop-shadow-lg"
+                                    />
+                                </div>
+                                <motion.p
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+                                    className="mb-10 text-lg leading-8 text-muted-foreground sm:text-xl text-left"
+                                >
+                                    The ultimate collaboration platform for modern teams.
+                                    Connect, create, and innovate together with powerful tools designed for success.
+                                </motion.p>
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
+                                    className="flex flex-col sm:flex-row gap-4"
+                                >
+                                    <div className="relative inline-block">
+                                        <Button size="lg" asChild className="text-lg px-8 shadow-lg hover:scale-105 transition-transform duration-300 relative z-10">
+                                            <Link href="/register">Get Started Free</Link>
+                                        </Button>
+                                        <BorderBeam
+                                            size={200}
+                                            duration={8}
+                                            colorFrom="hsl(var(--primary))"
+                                            colorTo="hsl(var(--primary) / 0.2)"
+                                        />
+                                    </div>
+                                    <Button size="lg" variant="outline" asChild className="text-lg px-8 bg-background/50 backdrop-blur-sm hover:bg-background/80 hover:scale-105 transition-transform duration-300">
+                                        <Link href="#features">Learn More</Link>
+                                    </Button>
+                                </motion.div>
+                            </div>
                         </motion.div>
-                    </motion.div>
+
+                        {/* Right Column: Globe Only */}
+                        <motion.div
+                            initial={{ opacity: 0, x: 50 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
+                            className="relative h-[500px] flex items-center justify-end"
+                        >
+                            <GlobeBackground className="max-w-[600px]" />
+                        </motion.div>
+                    </div>
                 </div>
             </section>
 
-            {/* Features Section */}
+            {/* Testimonials Marquee Section - Full Width */}
+            <section className="py-16 sm:py-20 relative overflow-hidden w-full">
+                <div className="w-full">
+                    <div className="mx-auto max-w-7xl px-6 lg:px-8 mb-12">
+                        <div className="mx-auto max-w-2xl text-center">
+                            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">
+                                Loved by Teams Worldwide
+                            </h2>
+                            <p className="text-lg text-muted-foreground">
+                                See what our users are saying about their experience.
+                            </p>
+                        </div>
+                    </div>
+
+                    <Marquee pauseOnHover className="[--duration:60s]">
+                        {testimonials.map((testimonial, idx) => (
+                            <div
+                                key={idx}
+                                className="mx-4 w-[350px] rounded-2xl border border-border/50 bg-card/30 backdrop-blur-sm p-6 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:bg-card/50"
+                            >
+                                <div className="mb-4 flex items-center gap-3">
+                                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
+                                        {testimonial.avatar}
+                                    </div>
+                                    <div>
+                                        <p className="font-semibold text-sm text-foreground">{testimonial.name}</p>
+                                        <p className="text-xs text-muted-foreground">{testimonial.handle}</p>
+                                    </div>
+                                </div>
+                                <p className="text-sm text-muted-foreground leading-relaxed">{testimonial.text}</p>
+                            </div>
+                        ))}
+                    </Marquee>
+                </div>
+            </section>
+
+            {/* Features Section with Animated Beams */}
             <section id="features" className="relative py-24 sm:py-32">
-                <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
+                <div ref={containerRef} className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
                     <div className="mx-auto max-w-2xl text-center mb-16">
                         <ScrollFloat
                             containerClassName="mb-4"
@@ -189,10 +298,51 @@ export default function LandingPage() {
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-8 md:grid-cols-2 relative">
+                        {/* Animated Beams connecting cards */}
+                        {containerRef.current && (
+                            <>
+                                <AnimatedBeam
+                                    containerRef={containerRef}
+                                    fromRef={feature1Ref}
+                                    toRef={feature2Ref}
+                                    curvature={-50}
+                                    gradientStartColor="hsl(var(--primary))"
+                                    gradientStopColor="hsl(var(--primary) / 0.2)"
+                                />
+                                <AnimatedBeam
+                                    containerRef={containerRef}
+                                    fromRef={feature2Ref}
+                                    toRef={feature3Ref}
+                                    curvature={50}
+                                    reverse
+                                    gradientStartColor="hsl(var(--primary))"
+                                    gradientStopColor="hsl(var(--primary) / 0.2)"
+                                />
+                                <AnimatedBeam
+                                    containerRef={containerRef}
+                                    fromRef={feature3Ref}
+                                    toRef={feature4Ref}
+                                    curvature={-50}
+                                    gradientStartColor="hsl(var(--primary))"
+                                    gradientStopColor="hsl(var(--primary) / 0.2)"
+                                />
+                                <AnimatedBeam
+                                    containerRef={containerRef}
+                                    fromRef={feature4Ref}
+                                    toRef={feature1Ref}
+                                    curvature={50}
+                                    reverse
+                                    gradientStartColor="hsl(var(--primary))"
+                                    gradientStopColor="hsl(var(--primary) / 0.2)"
+                                />
+                            </>
+                        )}
+
                         {features.map((feature, idx) => (
                             <motion.div
                                 key={idx}
+                                ref={featureRefs[idx]}
                                 initial={{ opacity: 0, y: 20 }}
                                 whileInView={{ opacity: 1, y: 0 }}
                                 viewport={{ once: true, margin: "-100px" }}
@@ -202,6 +352,7 @@ export default function LandingPage() {
                                     icon={feature.icon}
                                     title={feature.title}
                                     description={feature.description}
+                                    showBorderBeam
                                 />
                             </motion.div>
                         ))}
@@ -229,13 +380,20 @@ export default function LandingPage() {
                                 whileInView={{ opacity: 1, scale: 1 }}
                                 viewport={{ once: true }}
                                 transition={{ duration: 0.5, delay: idx * 0.1 }}
-                                className="p-8 rounded-2xl border border-border/50 bg-card/30 backdrop-blur-md transition-all duration-300 hover:scale-105 hover:shadow-xl hover:bg-card/50 group"
+                                className="relative p-8 rounded-2xl border border-border/50 bg-card/30 backdrop-blur-md transition-all duration-300 hover:scale-105 hover:shadow-xl hover:bg-card/50 group overflow-hidden"
                             >
-                                <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors">
+                                <BorderBeam
+                                    size={150}
+                                    duration={10 + idx * 2}
+                                    delay={idx}
+                                    colorFrom="hsl(var(--primary))"
+                                    colorTo="hsl(var(--primary) / 0.2)"
+                                />
+                                <div className="mb-4 inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary group-hover:bg-primary/20 transition-colors relative z-10">
                                     <tech.icon className="h-7 w-7" />
                                 </div>
-                                <h3 className="mb-3 text-xl font-semibold">{tech.title}</h3>
-                                <p className="text-muted-foreground">{tech.description}</p>
+                                <h3 className="mb-3 text-xl font-semibold relative z-10">{tech.title}</h3>
+                                <p className="text-muted-foreground relative z-10">{tech.description}</p>
                             </motion.div>
                         ))}
                     </div>
@@ -363,5 +521,4 @@ export default function LandingPage() {
             </footer>
         </div>
     )
-
 }

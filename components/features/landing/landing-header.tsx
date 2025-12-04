@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { ThemeToggle } from "./theme-toggle"
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -104,7 +104,7 @@ export const LandingHeader: React.FC = () => {
 
                 {/* Right side - Theme toggle and CTA */}
                 <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:gap-x-4 items-center">
-                    <ThemeToggle />
+                    <AnimatedThemeToggler className="h-9 w-9" />
                     <Button asChild size="sm">
                         <Link href="/login">Get Started</Link>
                     </Button>
@@ -126,7 +126,7 @@ export const LandingHeader: React.FC = () => {
                             </Link>
                         ))}
                         <div className="flex items-center gap-3 px-3 py-2">
-                            <ThemeToggle />
+                            <AnimatedThemeToggler className="h-9 w-9" />
                             <Button asChild className="flex-1">
                                 <Link href="/login">Get Started</Link>
                             </Button>
