@@ -208,7 +208,7 @@ const integrations = [
 export default function LandingPage() {
     const [activeStep, setActiveStep] = React.useState(0)
     return (
-        <div className="min-h-screen overflow-x-hidden bg-background">
+        <div className="min-h-screen overflow-x-hidden bg-background relative">
             <MeshGradientBackground />
             <LandingHeader navigation={navigation} />
 
