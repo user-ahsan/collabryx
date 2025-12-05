@@ -49,7 +49,7 @@ export function CompatibilityScoreShowcase() {
                         transition={{ duration: 0.6, delay: 0.1 }}
                     >
                         <ShinyText
-                            text="The Anatomy of a Perfect Match"
+                            text="What Makes a Perfect Match?"
                             className="text-4xl sm:text-5xl font-bold tracking-tight mb-4"
                             speed={7}
                         />
@@ -62,7 +62,8 @@ export function CompatibilityScoreShowcase() {
                         transition={{ duration: 0.6, delay: 0.2 }}
                         className="text-lg text-muted-foreground"
                     >
-                        Our AI analyzes compatibility across skills, interests, goals, and availability to find your ideal collaborator.
+                        Collabryx analyzes skills & expertise, interests & domain preferences, goals & project intentions, and availability & commitment.
+                        The result: high-quality collaborators with complementary strengths.
                     </motion.p>
                 </div>
 
@@ -355,7 +356,7 @@ function MatchBreakdown() {
             transition={{ duration: 0.6, delay: 0.4 }}
             className="mt-16 max-w-3xl mx-auto"
         >
-            <h3 className="text-xl font-bold text-center mb-8">Why They're a Perfect Match</h3>
+            <h3 className="text-xl font-bold text-center mb-8">The result: high-quality collaborators with complementary strengths</h3>
             <div className="grid sm:grid-cols-3 gap-6">
                 {matchReasons.map((reason, idx) => (
                     <motion.div

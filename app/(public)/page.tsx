@@ -56,61 +56,57 @@ const navigation = [
 const features = [
     {
         icon: Network,
-        title: "AI-Powered Matching",
-        description: "Vector embeddings understand your profile semantically, matching you with collaborators who complement your skills and vision.",
+        title: "Profile Management",
+        description: "Build rich profiles with skills, interests, and project goals that showcase who you are and what you're looking for.",
     },
     {
         icon: Users,
-        title: "Student & Founder Network",
-        description: "Join a community of ambitious students, fresh graduates, and early-stage founders building the future together.",
+        title: "AI-Based Semantic Matching",
+        description: "Vector embeddings understand your profile semantically, matching you with collaborators who complement your skills and vision.",
     },
     {
         icon: Layers,
-        title: "Smart Compatibility Scores",
-        description: "See why you match with each person. Our AI breaks down compatibility by skills, interests, and availability.",
+        title: "Opportunity Discovery",
+        description: "Browse curated matches, projects, and team opportunities. Our smart algorithm connects you with the right people and projects.",
     },
     {
         icon: Code,
-        title: "24/7 AI Mentor",
+        title: "AI Startup Assistant",
         description: "Get personalized startup guidance, MVP checklists, and project planning help from our context-aware AI assistant.",
+    },
+    {
+        icon: HeartHandshake,
+        title: "Secure Messaging",
+        description: "Real-time messaging for faster team formation. Connect and collaborate with matched users effectively.",
+    },
+    {
+        icon: BadgeCheck,
+        title: "Basic Verification & Trust Indicators",
+        description: "Build trust in the community with verification badges and reputation indicators for safer collaboration.",
     },
 ]
 
 const stats = [
     {
         icon: Users,
-        value: 50000,
+        value: 200,
         suffix: "+",
-        label: "Active Users",
-        description: "Growing community worldwide",
+        label: "Profile Records",
+        description: "Prototype dataset",
     },
     {
-        icon: BadgeCheck,
-        value: 5000,
+        icon: Network,
+        value: 80,
         suffix: "+",
-        label: "Early Adopters",
-        description: "Pioneering the future",
+        label: "Prototype Matches",
+        description: "AI-powered connections",
     },
     {
-        icon: ChartColumn,
-        value: 1000000,
+        icon: HeartHandshake,
+        value: 20,
         suffix: "+",
-        label: "Collaborations",
-        description: "Successful projects delivered",
-    },
-    {
-        icon: ChartPie,
-        value: 99,
-        suffix: "%",
-        label: "Success Rate",
-        description: "Client satisfaction score",
-    },
-    {
-        icon: ChartLine,
-        value: 300,
-        suffix: "%",
-        label: "Growth",
-        description: "Year-over-year expansion",
+        label: "Test Collaborations",
+        description: "Early success stories",
     },
 ]
 
@@ -125,40 +121,22 @@ const partnerLogos = [
 
 const testimonials = [
     {
-        name: "Sarah Johnson",
-        handle: "@sarahj_dev",
-        text: "Collabryx has completely transformed how our team collaborates. The real-time features are a game-changer!",
-        avatar: "SJ"
+        name: "CS Student",
+        handle: "@cs_undergrad",
+        text: "Collabryx finally helped me find a team with complementary skills for my FYP.",
+        avatar: "CS"
     },
     {
-        name: "Mike Chen",
-        handle: "@mikechen_tech",
-        text: "Finally, a platform that understands what modern teams need. Intuitive, powerful, and beautiful.",
-        avatar: "MC"
+        name: "Early-Stage Founder",
+        handle: "@startup_builder",
+        text: "Semantic matching removes the guesswork. It's better than browsing groups manually.",
+        avatar: "EF"
     },
     {
-        name: "Emma Watson",
-        handle: "@emmaw_pm",
-        text: "Best collaboration tool I've used in years. My team's productivity has skyrocketed! 🚀",
-        avatar: "EW"
-    },
-    {
-        name: "David Park",
-        handle: "@davidp_founder",
-        text: "We tried every tool out there. Collabryx is the only one that clicked with our entire team.",
-        avatar: "DP"
-    },
-    {
-        name: "Lisa Martinez",
-        handle: "@lisamartinez",
-        text: "The AI-powered features save us hours every week. It's like having an extra team member!",
-        avatar: "LM"
-    },
-    {
-        name: "James Wilson",
-        handle: "@jameswilson_cto",
-        text: "Seamless integration with our existing tools. Setup took minutes, not days.",
-        avatar: "JW"
+        name: "University Coordinator",
+        handle: "@uni_coordinator",
+        text: "Our student startup society uses Collabryx to help members form project teams efficiently.",
+        avatar: "UC"
     },
 ]
 
@@ -191,28 +169,28 @@ const howItWorksSteps = [
 
 const keyBenefits = [
     {
-        icon: Layers,
-        title: "Enterprise-Grade Security",
-        description: "Bank-level encryption and SOC 2 compliance. Your data and intellectual property are always protected.",
-        highlight: "99.99% Uptime SLA"
-    },
-    {
-        icon: Bolt,
-        title: "Lightning Fast Performance",
-        description: "Built on cutting-edge infrastructure. Real-time collaboration with zero lag, anywhere in the world.",
-        highlight: "<50ms Response Time"
+        icon: Network,
+        title: "Accurate Semantic Matching",
+        description: "Powered by modern embeddings that understand meaning, goals, and context—not just keywords.",
+        highlight: "AI-Powered Intelligence"
     },
     {
         icon: Users,
-        title: "Smart Matching Algorithm",
-        description: "AI-powered recommendations connect you with complementary skills and shared goals for maximum synergy.",
-        highlight: "92% Match Success Rate"
+        title: "Student & Founder Focused",
+        description: "Designed specifically for students and early-stage founders building projects and startups.",
+        highlight: "Built for Your Journey"
     },
     {
-        icon: Blocks,
-        title: "Seamless Integrations",
-        description: "Works with tools you already love. GitHub, Slack, Figma, and 50+ more integrations out of the box.",
-        highlight: "50+ Native Integrations"
+        icon: Code,
+        title: "Built-in AI Assistant",
+        description: "Get startup planning help, MVP checklists, and personalized guidance whenever you need it.",
+        highlight: "24/7 Mentorship"
+    },
+    {
+        icon: HeartHandshake,
+        title: "Real-Time Messaging",
+        description: "Simple, clean, student-friendly chat for faster team formation and collaboration.",
+        highlight: "Instant Communication"
     }
 ]
 
@@ -264,8 +242,7 @@ export default function LandingPage() {
                                     transition={{ duration: 0.4, delay: 0.1 }}
                                     className="mb-10 text-lg leading-8 text-muted-foreground sm:text-xl text-left"
                                 >
-                                    Find your perfect collaborator with AI-powered semantic matching.
-                                    Connect students, founders, and mentors based on goals—not just keywords.
+                                    Find co-founders, teammates, and opportunities using semantic matching powered by vector embeddings. Collabryx connects you based on skills, interests, and goals—not keywords.
                                 </motion.p>
                                 <motion.div
                                     initial={{ opacity: 0 }}
@@ -275,7 +252,7 @@ export default function LandingPage() {
                                 >
                                     <div className="relative inline-block">
                                         <Button size="lg" asChild className="text-lg px-8 shadow-lg hover:scale-105 transition-transform duration-300 relative z-10">
-                                            <Link href="/register">Get Started Free</Link>
+                                            <Link href="/register">Start Free</Link>
                                         </Button>
                                         <BorderBeam
                                             size={200}
@@ -285,7 +262,7 @@ export default function LandingPage() {
                                         />
                                     </div>
                                     <Button size="lg" variant="outline" asChild className="text-lg px-8 bg-background/50 backdrop-blur-sm hover:bg-background/80 hover:scale-105 transition-transform duration-300">
-                                        <Link href="#features">Learn More</Link>
+                                        <Link href="#features">See How It Works</Link>
                                     </Button>
                                 </motion.div>
                             </div>
@@ -310,10 +287,10 @@ export default function LandingPage() {
                     <div className="mx-auto max-w-7xl px-6 lg:px-8 mb-12">
                         <div className="mx-auto max-w-2xl text-center">
                             <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">
-                                Loved by Teams Worldwide
+                                Trusted by Students, Founders & University Communities
                             </h2>
                             <p className="text-lg text-muted-foreground">
-                                See what our users are saying about their experience.
+                                See how Collabryx helps users build projects faster and smarter.
                             </p>
                         </div>
                     </div>
@@ -369,7 +346,7 @@ export default function LandingPage() {
                             Powerful Features for Modern Teams
                         </motion.h2>
                         <p className="text-lg text-muted-foreground">
-                            Everything you need to collaborate effectively and build amazing things together.
+                            Everything you need to find collaborators and build amazing things together.
                         </p>
                     </div>
                 </div>
@@ -423,10 +400,10 @@ export default function LandingPage() {
                             transition={{ duration: 0.4 }}
                         >
                             <h2 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
-                                Why Teams Choose Collabryx
+                                Why Students & Founders Choose Collabryx
                             </h2>
                             <p className="text-lg text-muted-foreground">
-                                Unique advantages that set us apart from the competition.
+                                Unique advantages designed for your journey.
                             </p>
                         </motion.div>
                     </div>
@@ -481,14 +458,14 @@ export default function LandingPage() {
                 <div className="mx-auto max-w-7xl px-6 lg:px-8">
                     <div className="mx-auto max-w-2xl text-center mb-16">
                         <h2 className="text-3xl font-bold tracking-tight sm:text-5xl mb-4">
-                            Impact That Matters
+                            Prototype Metrics (Demo Dataset)
                         </h2>
                         <p className="text-lg text-muted-foreground">
-                            Real numbers from real teams making real progress.
+                            Early metrics from our prototype and testing phase.
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-5">
+                    <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
                         {stats.map((stat, idx) => (
                             <StatCard
                                 key={idx}
@@ -639,13 +616,12 @@ export default function LandingPage() {
                         <BorderBeam size={300} duration={10} colorFrom="hsl(var(--primary))" colorTo="hsl(var(--primary) / 0.1)" />
 
                         <ShinyText
-                            text="Ready to Find Your Co-Founder?"
+                            text="Build Your Team with AI-Powered Matching"
                             className="text-4xl font-bold tracking-tight sm:text-6xl mb-6 text-foreground"
                             speed={6}
                         />
                         <p className="mb-12 text-xl text-muted-foreground max-w-2xl mx-auto">
-                            Join thousands of students and founders using AI-powered matching to build amazing projects.
-                            Start discovering your perfect collaborators today—completely free.
+                            Start forming your project or startup team in minutes — free for all students and founders.
                         </p>
 
                         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">

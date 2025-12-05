@@ -31,7 +31,7 @@ export function ProblemStatement() {
                         transition={{ duration: 0.6, delay: 0.1 }}
                     >
                         <ShinyText
-                            text="Students Struggle to Find the Right Collaborators"
+                            text="The Problem"
                             className="text-4xl sm:text-5xl font-bold tracking-tight mb-6"
                             speed={8}
                         />
@@ -44,10 +44,9 @@ export function ProblemStatement() {
                         transition={{ duration: 0.6, delay: 0.2 }}
                         className="text-lg text-muted-foreground leading-relaxed"
                     >
-                        Many students and fresh graduates struggle to meet peers with{" "}
-                        <span className="text-foreground font-semibold">complementary skills</span> needed to start small teams or early-stage startups.
-                        Existing social and professional networks have{" "}
-                        <span className="text-foreground font-semibold">limited tools</span> for students to discover collaborators based on deep interests.
+                        Students and early founders struggle to discover collaborators with{" "}
+                        <span className="text-foreground font-semibold">complementary skills</span>. Traditional social and professional networks rely on{" "}
+                        <span className="text-foreground font-semibold">keywords and manual browsing</span>, making it difficult to understand deeper intent, goals, or startup interests.
                     </motion.p>
                 </div>
 
@@ -92,14 +91,14 @@ export function ProblemStatement() {
                         </div>
 
                         <h3 className="text-2xl font-bold text-foreground mb-4">
-                            AI-Powered Semantic Matching
+                            The Collabryx Solution
                         </h3>
 
                         <p className="text-muted-foreground leading-relaxed">
-                            Collabryx uses{" "}
-                            <span className="text-primary font-semibold">vector embeddings</span> and{" "}
-                            <span className="text-primary font-semibold">semantic search</span> to understand your profile,
-                            interests, skills, and goals—then automatically suggests high-quality collaborators who complement your ambitions.
+                            Collabryx converts user profiles into{" "}
+                            <span className="text-primary font-semibold">vector embeddings</span> and uses{" "}
+                            <span className="text-primary font-semibold">semantic similarity</span> to recommend collaborators who align with your interests, skills, and goals.
+                            The platform also includes an AI assistant for startup planning and a secure chat to help matched users communicate effectively.
                         </p>
                     </div>
 
@@ -116,16 +115,16 @@ const painPoints = [
     {
         icon: <Network className="h-6 w-6" />,
         title: "Poor Discovery",
-        description: "Keyword searches return thousands of generic results. Finding someone who truly matches your vision is like finding a needle in a haystack."
+        description: "Keyword search isn't enough for finding meaningful matches. Traditional search misses deeper intent and alignment."
     },
     {
         icon: <Users className="h-6 w-6" />,
         title: "Weak Collaboration",
-        description: "Students waste time on mismatched teams. Without proper vetting, projects fail due to skill gaps or misaligned goals."
+        description: "Mismatched teams lead to abandoned projects. Without proper discovery, collaboration falls apart."
     },
     {
-        icon: "🤔",
-        title: "No Guidance",
-        description: "Early-stage founders lack access to mentorship and structured startup planning tools tailored to students."
+        icon: <BadgeCheck className="h-6 w-6" />,
+        title: "No Structured Guidance",
+        description: "Founders lack early-stage planning support. Students need mentorship tailored to their startup journey."
     }
 ]

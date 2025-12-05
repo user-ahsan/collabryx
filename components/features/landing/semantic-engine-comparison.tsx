@@ -26,7 +26,7 @@ export function SemanticEngineComparison() {
                         transition={{ duration: 0.6 }}
                         className="text-4xl sm:text-5xl font-bold tracking-tight mb-4"
                     >
-                        Connect on Context, Not Just Keywords
+                        Traditional Search vs Collabryx Semantic Search
                     </motion.h2>
                     <motion.p
                         initial={{ opacity: 0, y: 20 }}
@@ -35,7 +35,7 @@ export function SemanticEngineComparison() {
                         transition={{ duration: 0.6, delay: 0.1 }}
                         className="text-lg text-muted-foreground"
                     >
-                        Our AI understands your goals, not just your tags. We match intent with capability using semantic intelligence.
+                        See how semantic matching goes beyond keywords to understand your true intent and goals.
                     </motion.p>
                 </div>
 
@@ -91,9 +91,15 @@ export function SemanticEngineComparison() {
                         </div>
 
                         {/* Problem Badge */}
-                        <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted/50 text-muted-foreground text-sm">
-                            <span>❌</span>
-                            <span>Too generic, no context</span>
+                        <div className="mt-6 space-y-2">
+                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted/50 text-muted-foreground text-sm">
+                                <span>✖</span>
+                                <span>Matches based on keywords only</span>
+                            </div>
+                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted/50 text-muted-foreground text-sm ml-3">
+                                <span>✖</span>
+                                <span>Thousands of generic results</span>
+                            </div>
                         </div>
                     </motion.div>
 
@@ -124,9 +130,19 @@ export function SemanticEngineComparison() {
                         <SemanticMatchCard enableAnimation={enableComplexAnimation} />
 
                         {/* Success Badge */}
-                        <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                            <BadgeCheck className="h-4 w-4" />
-                            <span>Perfect context match</span>
+                        <div className="mt-6 space-y-2">
+                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                                <BadgeCheck className="h-4 w-4" />
+                                <span>Matches based on meaning, goals, and context</span>
+                            </div>
+                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium ml-3">
+                                <BadgeCheck className="h-4 w-4" />
+                                <span>Understands how your skills complement others</span>
+                            </div>
+                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                                <BadgeCheck className="h-4 w-4" />
+                                <span>Suggests collaborators who truly align with your project vision</span>
+                            </div>
                         </div>
                     </motion.div>
                 </div>
