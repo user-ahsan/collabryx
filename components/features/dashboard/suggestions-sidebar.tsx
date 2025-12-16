@@ -3,72 +3,121 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus, Sparkles, ArrowRight } from "lucide-react"
+import { Sparkles, ArrowRight, UserPlus } from "lucide-react"
+import { cn } from "@/lib/utils"
 
-export function SuggestionsSidebar() {
-    const suggestions = [
-        {
-            name: "Sarah Miller",
-            role: "Growth Marketing Lead",
-            mutuals: 12,
-            avatar: "/avatars/02.png",
-            initials: "SM"
-        },
-        {
-            name: "David Chen",
-            role: "Full Stack Developer",
-            mutuals: 5,
-            avatar: "/avatars/03.png",
-            initials: "DC"
-        },
-        {
-            name: "Emily Zhang",
-            role: "UX Researcher",
-            mutuals: 8,
-            avatar: "/avatars/04.png",
-            initials: "EZ"
-        }
-    ]
+interface Suggestion {
+    id: string
+    name: string
+    role: string
+    avatar: string
+    initials: string
+    mutuals?: number
+}
 
+interface SuggestionsSidebarProps {
+    className?: string
+    suggestions?: Suggestion[]
+}
+
+const DEFAULT_SUGGESTIONS: Suggestion[] = [
+    {
+        id: "1",
+        name: "Sarah Miller",
+        role: "Growth Marketing Lead",
+        mutuals: 12,
+        avatar: "/avatars/02.png",
+        initials: "SM"
+    },
+    {
+        id: "2",
+        name: "David Chen",
+        role: "Full Stack Developer",
+        mutuals: 5,
+        avatar: "/avatars/03.png",
+        initials: "DC"
+    },
+    {
+        id: "3",
+        name: "Emily Zhang",
+        role: "UX Researcher",
+        mutuals: 8,
+        avatar: "/avatars/04.png",
+        initials: "EZ"
+    }
+]
+
+export function SuggestionsSidebar({
+    className,
+    suggestions = DEFAULT_SUGGESTIONS
+}: SuggestionsSidebarProps) {
     return (
-        <Card className="shadow-sm border bg-card sticky top-6">
-            <CardHeader className="pb-4 pt-6 px-6 flex flex-row items-center justify-between space-y-0">
-                <CardTitle className="text-base font-bold flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-primary fill-primary/20" />
+        <Card className={cn("shadow-sm border-border/60 bg-card/60 backdrop-blur-xl sticky top-6 overflow-hidden", className)}>
+            <CardHeader className="p-4 flex flex-row items-center justify-between space-y-0">
+                <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground/90">
+                    <Sparkles className="h-3.5 w-3.5 text-primary fill-primary/20" />
                     Smart Matches
                 </CardTitle>
-                <Button variant="link" size="sm" className="h-auto p-0 text-xs text-primary font-semibold">
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs text-muted-foreground hover:text-primary font-medium transition-colors"
+                >
                     See All
                 </Button>
             </CardHeader>
-            <CardContent className="px-4 pb-6">
-                <div className="space-y-4">
-                    {suggestions.map((person, i) => (
-                        <div key={i} className="group flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-all duration-300 border border-transparent hover:border-border/50">
-                            <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
-                                <AvatarImage src={person.avatar} />
-                                <AvatarFallback className="text-xs bg-primary/10 text-primary font-bold">{person.initials}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-sm font-bold text-foreground truncate">{person.name}</p>
-                                <p className="text-xs text-muted-foreground truncate">{person.role}</p>
-                                <div className="flex items-center gap-2 mt-2">
-                                    <Button size="sm" className="h-8 rounded-full text-xs font-semibold bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground shadow-none px-4 transition-all w-full">
-                                        Connect
-                                    </Button>
+            <CardContent className="p-4 pt-0">
+                <div className="space-y-1">
+                    {suggestions.map((person) => (
+                        <div
+                            key={person.id}
+                            className="group flex flex-col sm:flex-row sm:items-center gap-3 p-2.5 rounded-lg hover:bg-muted/60 transition-all duration-200 border border-transparent hover:border-border/40"
+                        >
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                                <Avatar className="h-9 w-9 border border-border/50 shadow-sm shrink-0">
+                                    <AvatarImage src={person.avatar} className="object-cover" />
+                                    <AvatarFallback className="text-[10px] bg-primary/5 text-primary font-bold">
+                                        {person.initials}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-semibold text-foreground truncate leading-none mb-1">
+                                        {person.name}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground truncate leading-tight">
+                                        {person.role}
+                                    </p>
                                 </div>
                             </div>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 w-full sm:w-auto px-3 rounded-md text-xs font-medium bg-background/50 hover:bg-primary hover:text-primary-foreground border-border/60 hover:border-primary/50 shadow-sm transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100"
+                            >
+                                <UserPlus className="h-3 w-3 sm:mr-1.5" />
+                                <span className="sm:inline">Connect</span>
+                            </Button>
                         </div>
                     ))}
                 </div>
 
-                <div className="mt-6 px-2">
-                    <div className="rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 p-4 text-center space-y-2 border border-primary/10">
-                        <p className="text-xs font-semibold text-foreground">Want more matches?</p>
-                        <p className="text-[10px] text-muted-foreground leading-snug">Complete your profile to get better recommendations.</p>
-                        <Button size="sm" variant="outline" className="w-full h-8 rounded-full text-xs mt-1 bg-background">
-                            Complete Profile
-                        </Button>
+                <div className="mt-4">
+                    <div className="relative overflow-hidden rounded-xl border border-primary/10 bg-primary/5 p-4">
+                        <div className="text-center space-y-3">
+                            <div className="space-y-1">
+                                <p className="text-xs font-bold text-foreground">Want more matches?</p>
+                                <p className="text-[10px] text-muted-foreground leading-relaxed px-2">
+                                    Complete your profile to unlock AI-powered recommendations.
+                                </p>
+                            </div>
+                            <Button
+                                size="sm"
+                                className="w-full h-8 rounded-lg text-xs shadow-none bg-primary text-primary-foreground hover:bg-primary/90"
+                            >
+                                Complete Profile
+                                <ArrowRight className="ml-1 h-3 w-3" />
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </CardContent>
