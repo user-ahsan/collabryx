@@ -1,4 +1,5 @@
-"use client"
+
+import * as React from "react"
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -24,7 +25,9 @@ import {
     ChevronLeft,
     ChevronRight,
     TrendingUp,
-    Briefcase
+    Briefcase,
+    Bell,
+    Settings
 } from "lucide-react"
 import { motion } from "framer-motion"
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
@@ -34,6 +37,18 @@ interface SidebarNavProps extends React.HTMLAttributes<HTMLDivElement> { }
 export function SidebarNav({ className, ...props }: SidebarNavProps) {
     const pathname = usePathname()
     const { isCollapsed, toggleSidebar } = useSidebar()
+    const [showTooltips, setShowTooltips] = React.useState(false)
+
+    React.useEffect(() => {
+        if (isCollapsed) {
+            const timer = setTimeout(() => {
+                setShowTooltips(true)
+            }, 500) // Match transition duration + buffer
+            return () => clearTimeout(timer)
+        } else {
+            setShowTooltips(false)
+        }
+    }, [isCollapsed])
 
     const items = [
         {
@@ -51,6 +66,7 @@ export function SidebarNav({ className, ...props }: SidebarNavProps) {
             href: "/dashboard/messages",
             icon: MessageSquare,
         },
+
         {
             title: "AI Mentor",
             href: "/dashboard/mentor",
@@ -64,12 +80,12 @@ export function SidebarNav({ className, ...props }: SidebarNavProps) {
     ]
 
     return (
-        <div className={cn("flex h-full flex-col relative bg-gradient-to-b from-background via-background to-muted/20", className)} {...props}>
+        <div className={cn("flex h-full flex-col relative bg-gradient-to-b from-background via-background to-muted/20 overflow-hidden", className)} {...props}>
             {/* Toggle Button - Refined */}
             <Button
                 variant="ghost"
                 size="icon"
-                className="absolute -right-3 top-6 z-50 h-7 w-7 rounded-full bg-background border shadow-sm hover:shadow-md transition-all flex items-center justify-center p-0 text-muted-foreground hover:text-foreground"
+                className="hidden md:flex absolute -right-3 top-6 z-50 h-7 w-7 rounded-full bg-background border shadow-sm hover:shadow-md transition-all items-center justify-center p-0 text-muted-foreground hover:text-foreground"
                 onClick={toggleSidebar}
                 aria-label="Toggle Sidebar"
             >
@@ -147,9 +163,11 @@ export function SidebarNav({ className, ...props }: SidebarNavProps) {
                                         <AvatarFallback>SC</AvatarFallback>
                                     </Avatar>
                                 </TooltipTrigger>
-                                <TooltipContent side="right" className="font-medium">
-                                    <p>Sophie Chen</p>
-                                </TooltipContent>
+                                {isCollapsed && showTooltips && (
+                                    <TooltipContent side="right" className="font-medium">
+                                        <p>Sophie Chen</p>
+                                    </TooltipContent>
+                                )}
                             </Tooltip>
                         </TooltipProvider>
                     )}
@@ -157,62 +175,108 @@ export function SidebarNav({ className, ...props }: SidebarNavProps) {
             </div>
 
             {/* Navigation Items */}
-            <ScrollArea className="flex-1 px-3 py-2">
-                <div className="flex flex-col gap-1.5">
-                    <TooltipProvider delayDuration={0}>
-                        {items.map((item) => {
-                            const isActive = pathname === item.href
-                            return (
-                                <Tooltip key={item.href}>
-                                    <TooltipTrigger asChild>
-                                        <Link
-                                            href={item.href}
-                                            className={cn(
-                                                "relative flex items-center rounded-xl px-3.5 py-3 text-sm font-medium transition-all duration-200 group overflow-hidden",
-                                                isActive
-                                                    ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                                                    : "text-muted-foreground hover:bg-muted/80 hover:text-foreground",
-                                                isCollapsed ? "justify-center px-2" : "justify-start"
-                                            )}
-                                        >
-                                            <item.icon className={cn("h-[1.15rem] w-[1.15rem] transition-colors",
-                                                isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground",
-                                                !isCollapsed && "mr-3"
-                                            )} />
-                                            {!isCollapsed && (
-                                                <span className="tracking-wide">{item.title}</span>
-                                            )}
-                                        </Link>
-                                    </TooltipTrigger>
-                                    {isCollapsed && (
-                                        <TooltipContent side="right" className="font-medium" sideOffset={10}>
-                                            {item.title}
-                                        </TooltipContent>
-                                    )}
-                                </Tooltip>
-                            )
-                        })}
-                    </TooltipProvider>
-                </div>
-            </ScrollArea>
+            <div className="flex-1 min-h-0 overflow-hidden w-full">
+                <ScrollArea className="h-full w-full px-3 py-2 [&_[data-slot=scroll-area-scrollbar]]:hidden">
+                    <div className="flex flex-col gap-2">
+                        <TooltipProvider delayDuration={0}>
+                            {items.map((item) => {
+                                const isActive = pathname === item.href
+                                return (
+                                    <Tooltip key={item.href}>
+                                        <TooltipTrigger asChild>
+                                            <Link
+                                                href={item.href}
+                                                className={cn(
+                                                    "relative flex items-center rounded-xl px-3.5 py-3 text-sm font-medium transition-all duration-200 group overflow-hidden",
+                                                    isActive
+                                                        ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                                                        : "text-muted-foreground hover:bg-muted/80 hover:text-foreground hover:translate-x-1",
+                                                    isCollapsed ? "justify-center px-2 hover:translate-x-0" : "justify-start"
+                                                )}
+                                            >
+                                                <item.icon className={cn("h-[1.15rem] w-[1.15rem] transition-colors",
+                                                    isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground",
+                                                    !isCollapsed && "mr-3"
+                                                )} />
+                                                {!isCollapsed && (
+                                                    <span className="tracking-wide">{item.title}</span>
+                                                )}
+                                            </Link>
+                                        </TooltipTrigger>
+                                        {isCollapsed && showTooltips && (
+                                            <TooltipContent side="right" className="font-medium" sideOffset={10}>
+                                                {item.title}
+                                            </TooltipContent>
+                                        )}
+                                    </Tooltip>
+                                )
+                            })}
+                        </TooltipProvider>
+                    </div>
+                </ScrollArea>
+            </div>
 
-            {/* Footer User Dropdown */}
+            {/* Footer Actions - Redesigned */}
             <div className="p-4 mt-auto shrink-0">
                 {!isCollapsed ? (
-                    <div className="flex items-center gap-1 w-full">
-                        <div className="flex-1 min-w-0">
-                            <UserNavDropdown />
+                    <div className="flex items-center justify-between gap-1 p-1.5 bg-card/30 rounded-xl border border-border/40 shadow-sm backdrop-blur-sm">
+                        <TooltipProvider delayDuration={0}>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Link href="/dashboard/notifications">
+                                        <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-muted/80 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
+                                            <Bell className="h-4.5 w-4.5" />
+                                            <span className="sr-only">Notifications</span>
+                                        </Button>
+                                    </Link>
+                                </TooltipTrigger>
+                                <TooltipContent>Notifications</TooltipContent>
+                            </Tooltip>
+
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-muted/80 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
+                                        <Settings className="h-4.5 w-4.5" />
+                                        <span className="sr-only">Settings</span>
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Settings</TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+
+                        <div className="h-5 w-px bg-border/40 mx-1" />
+
+                        <div className="flex justify-center">
+                            <AnimatedThemeToggler className="h-9 w-9 hover:bg-muted/80 rounded-lg" />
                         </div>
-                        <AnimatedThemeToggler className="shrink-0 h-10 w-10 hover:bg-muted rounded-xl" />
                     </div>
                 ) : (
                     <div className="flex flex-col gap-3 items-center">
+                        <TooltipProvider delayDuration={0}>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Link href="/dashboard/notifications">
+                                        <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-muted rounded-xl text-muted-foreground hover:text-foreground">
+                                            <Bell className="h-5 w-5" />
+                                            <span className="sr-only">Notifications</span>
+                                        </Button>
+                                    </Link>
+                                </TooltipTrigger>
+                                {showTooltips && <TooltipContent side="right">Notifications</TooltipContent>}
+                            </Tooltip>
+
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-muted rounded-xl text-muted-foreground hover:text-foreground">
+                                        <Settings className="h-5 w-5" />
+                                        <span className="sr-only">Settings</span>
+                                    </Button>
+                                </TooltipTrigger>
+                                {showTooltips && <TooltipContent side="right">Settings</TooltipContent>}
+                            </Tooltip>
+                        </TooltipProvider>
+
                         <AnimatedThemeToggler className="h-9 w-9 hover:bg-muted rounded-xl" />
-                        <div className="flex justify-center">
-                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full hover:bg-muted">
-                                <UserCircle className="h-5 w-5 text-muted-foreground" />
-                            </Button>
-                        </div>
                     </div>
                 )}
             </div>
