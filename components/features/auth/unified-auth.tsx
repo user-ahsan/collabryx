@@ -125,7 +125,7 @@ export function UnifiedAuth({ defaultView = "email" }: UnifiedAuthProps) {
     const buttonClasses = "w-full h-12 text-lg font-medium shadow-none hover:shadow-lg hover:shadow-primary/20 transition-all rounded-xl"
 
     return (
-        <div className="w-full relative min-h-[400px] overflow-hidden">
+        <div className="w-full relative min-h-[350px] sm:min-h-[400px] overflow-hidden">
             {/* No card background, just the content */}
             <div className="relative z-10 py-4">
                 <AnimatePresence mode="popLayout" custom={direction}>
@@ -141,8 +141,8 @@ export function UnifiedAuth({ defaultView = "email" }: UnifiedAuthProps) {
                             className="space-y-6"
                         >
                             <div className="text-left space-y-2 mb-8">
-                                <h1 className="text-4xl font-bold tracking-tight">Sign in</h1>
-                                <p className="text-muted-foreground text-lg">Enter your email below to sign in</p>
+                                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Sign in</h1>
+                                <p className="text-muted-foreground text-base sm:text-lg">Enter your email below to sign in</p>
                             </div>
 
                             <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-4">
@@ -221,7 +221,7 @@ export function UnifiedAuth({ defaultView = "email" }: UnifiedAuthProps) {
                         >
                             <div className="text-left space-y-2 mb-8">
                                 <div className="flex items-center justify-between">
-                                    <h1 className="text-3xl font-bold tracking-tight">Welcome back</h1>
+                                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Welcome back</h1>
                                     <button onClick={handleBack} className="text-sm text-muted-foreground hover:text-primary transition-colors">
                                         Not you?
                                     </button>
@@ -277,8 +277,8 @@ export function UnifiedAuth({ defaultView = "email" }: UnifiedAuthProps) {
                             className="space-y-6"
                         >
                             <div className="text-left space-y-2 mb-8">
-                                <h1 className="text-3xl font-bold tracking-tight">Create an account</h1>
-                                <p className="text-muted-foreground text-lg">Enter your details to get started</p>
+                                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Create an account</h1>
+                                <p className="text-muted-foreground text-base sm:text-lg">Enter your details to get started</p>
                             </div>
 
                             <form onSubmit={signupForm.handleSubmit(onSignupSubmit)} className="space-y-4">
