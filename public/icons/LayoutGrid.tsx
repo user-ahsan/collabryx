@@ -4,7 +4,7 @@ import { motion, useAnimation } from "motion/react";
 import type { Variants } from "motion/react";
 
 const boxVariants: Variants = {
-  normal: (i: number) => ({
+  normal: (_i: number) => ({
     x: 0,
     y: 0,
     transition: {

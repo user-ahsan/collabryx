@@ -35,7 +35,7 @@ const Chrome = ({
   height = 28,
   strokeWidth = 2,
   stroke = "currentColor",
-  ...props
+
 }: ChromeProps) => {
   const controls = useAnimation();
 

@@ -309,46 +309,78 @@ export const LogoLoop = React.memo<LogoLoopProps>(
             </li>
           );
         }
-        const isNodeItem = 'node' in item;
-        const content = isNodeItem ? (
-          <span className="logoloop__node" aria-hidden={!!item.href && !item.ariaLabel}>
-            {(item as any).node}
-          </span>
-        ) : (
-          <img
-            src={(item as any).src}
-            srcSet={(item as any).srcSet}
-            sizes={(item as any).sizes}
-            width={(item as any).width}
-            height={(item as any).height}
-            alt={(item as any).alt ?? ''}
-            title={(item as any).title}
-            loading="lazy"
-            decoding="async"
-            draggable={false}
-          />
-        );
-        const itemAriaLabel = isNodeItem
-          ? ((item as any).ariaLabel ?? (item as any).title)
-          : ((item as any).alt ?? (item as any).title);
-        const itemContent = (item as any).href ? (
-          <a
-            className="logoloop__link"
-            href={(item as any).href}
-            aria-label={itemAriaLabel || 'logo link'}
-            target="_blank"
-            rel="noreferrer noopener"
-          >
-            {content}
-          </a>
-        ) : (
-          content
-        );
-        return (
-          <li className="logoloop__item" key={key} role="listitem">
-            {itemContent}
-          </li>
-        );
+
+        if ('node' in item) {
+          // It's a node item
+          const content = (
+            <span className="logoloop__node" aria-hidden={!!item.href && !item.ariaLabel}>
+              {item.node}
+            </span>
+          );
+
+          const itemAriaLabel = item.ariaLabel ?? item.title;
+
+          if (item.href) {
+            return (
+              <li className="logoloop__item" key={key} role="listitem">
+                <a
+                  className="logoloop__link"
+                  href={item.href}
+                  aria-label={itemAriaLabel || 'logo link'}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  {content}
+                </a>
+              </li>
+            );
+          }
+          return (
+            <li className="logoloop__item" key={key} role="listitem">
+              {content}
+            </li>
+          );
+        } else {
+          // It's an image item
+          const content = (
+            <img
+              src={item.src}
+              srcSet={item.srcSet}
+              sizes={item.sizes}
+              width={item.width}
+              height={item.height}
+              alt={item.alt ?? ''}
+              title={item.title}
+              loading="lazy"
+              decoding="async"
+              draggable={false}
+            />
+          );
+
+          const itemAriaLabel = item.alt ?? item.title;
+
+          if (item.href) {
+            return (
+              <li className="logoloop__item" key={key} role="listitem">
+                <a
+                  className="logoloop__link"
+                  href={item.href}
+                  aria-label={itemAriaLabel || 'logo link'}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                >
+                  {content}
+                </a>
+              </li>
+            );
+          }
+
+          return (
+            <li className="logoloop__item" key={key} role="listitem">
+              {content}
+            </li>
+          );
+        }
       },
       [renderItem]
     );

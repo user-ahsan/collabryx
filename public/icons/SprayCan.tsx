@@ -47,7 +47,6 @@ const SprayCan = ({
   height = 28,
   strokeWidth = 2,
   stroke = "currentColor",
-  ...props
 }: SprayCanProps) => {
   const controls = useAnimation();
 

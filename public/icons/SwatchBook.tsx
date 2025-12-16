@@ -10,14 +10,7 @@ interface SwatchBookProps extends React.SVGAttributes<SVGSVGElement> {
   stroke?: string;
 }
 
-const staticVariants: Variants = {
-  normal: {
-    opacity: 1,
-  },
-  animate: {
-    opacity: 1,
-  },
-};
+
 
 const mergingVariants: Variants = {
   normal: {

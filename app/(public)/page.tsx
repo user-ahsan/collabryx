@@ -30,18 +30,13 @@ import { Network } from "@/public/icons/Network"
 import { Users } from "@/public/icons/Users"
 import { Layers } from "@/public/icons/Layers"
 import { Code } from "@/public/icons/Code"
-import { ChartLine } from "@/public/icons/ChartLine"
-import { ChartColumn } from "@/public/icons/ChartColumn"
-import { ChartPie } from "@/public/icons/ChartPie"
 import { Linkedin } from "@/public/icons/Linkedin"
 import { AtSign } from "@/public/icons/AtSign"
 import { Globe } from "@/public/icons/Globe"
 import { HeartHandshake } from "@/public/icons/HeartHandshake"
 import { BadgeCheck } from "@/public/icons/BadgeCheck"
 import { Activity } from "@/public/icons/Activity"
-import { Blocks } from "@/public/icons/Blocks"
 import { CircleFadingArrowUp } from "@/public/icons/CircleFadingArrowUp"
-import { Bolt } from "@/public/icons/Bolt"
 import { ChevronLeft } from "@/public/icons/ChevronLeft"
 import { ChevronRight } from "@/public/icons/ChevronRight"
 
@@ -110,14 +105,7 @@ const stats = [
     },
 ]
 
-const partnerLogos = [
-    { src: "/placeholder-logo.png", alt: "Partner 1" },
-    { src: "/placeholder-logo.png", alt: "Partner 2" },
-    { src: "/placeholder-logo.png", alt: "Partner 3" },
-    { src: "/placeholder-logo.png", alt: "Partner 4" },
-    { src: "/placeholder-logo.png", alt: "Partner 5" },
-    { src: "/placeholder-logo.png", alt: "Partner 6" },
-]
+
 
 const testimonials = [
     {
@@ -194,16 +182,7 @@ const keyBenefits = [
     }
 ]
 
-const integrations = [
-    { name: "GitHub", category: "Development" },
-    { name: "Slack", category: "Communication" },
-    { name: "Figma", category: "Design" },
-    { name: "Notion", category: "Productivity" },
-    { name: "Linear", category: "Project Management" },
-    { name: "Vercel", category: "Deployment" },
-    { name: "Discord", category: "Communication" },
-    { name: "Jira", category: "Project Management" },
-]
+
 
 export default function LandingPage() {
     const [activeStep, setActiveStep] = React.useState(0)

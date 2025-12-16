@@ -33,7 +33,6 @@ const ThumbsDown = ({
   height = 28,
   strokeWidth = 2,
   stroke = "currentColor",
-  ...props
 }: ThumbsDownProps) => {
   const controls = useAnimation();
 

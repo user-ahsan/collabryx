@@ -33,7 +33,6 @@ const Magnet = ({
   height = 28,
   strokeWidth = 2,
   stroke = "currentColor",
-  ...props
 }: MagnetProps) => {
   const controls = useAnimation();
 

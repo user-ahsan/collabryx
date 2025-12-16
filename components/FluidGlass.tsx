@@ -75,7 +75,7 @@ interface ZoomMaterial extends THREE.Material {
   zoom: number;
 }
 
-interface ZoomMesh extends THREE.Mesh<THREE.BufferGeometry, ZoomMaterial> {}
+type ZoomMesh = THREE.Mesh<THREE.BufferGeometry, ZoomMaterial>;
 
 type ZoomGroup = THREE.Group & { children: ZoomMesh[] };
 
@@ -188,19 +188,21 @@ function Bar({ modeProps = {}, ...p }: { modeProps?: ModeProps } & MeshProps) {
   );
 }
 
+const DEVICE = {
+  mobile: { max: 639, spacing: 0.2, fontSize: 0.035 },
+  tablet: { max: 1023, spacing: 0.24, fontSize: 0.045 },
+  desktop: { max: Infinity, spacing: 0.3, fontSize: 0.045 }
+};
+const getDevice = () => {
+  const w = window.innerWidth;
+  return w <= DEVICE.mobile.max ? 'mobile' : w <= DEVICE.tablet.max ? 'tablet' : 'desktop';
+};
+
 function NavItems({ items }: { items: NavItem[] }) {
   const group = useRef<THREE.Group>(null!);
   const { viewport, camera } = useThree();
 
-  const DEVICE = {
-    mobile: { max: 639, spacing: 0.2, fontSize: 0.035 },
-    tablet: { max: 1023, spacing: 0.24, fontSize: 0.045 },
-    desktop: { max: Infinity, spacing: 0.3, fontSize: 0.045 }
-  };
-  const getDevice = () => {
-    const w = window.innerWidth;
-    return w <= DEVICE.mobile.max ? 'mobile' : w <= DEVICE.tablet.max ? 'tablet' : 'desktop';
-  };
+
 
   const [device, setDevice] = useState<keyof typeof DEVICE>(getDevice());
 
@@ -224,7 +226,11 @@ function NavItems({ items }: { items: NavItem[] }) {
 
   const handleNavigate = (link: string) => {
     if (!link) return;
-    link.startsWith('#') ? (window.location.hash = link) : (window.location.href = link);
+    if (link.startsWith('#')) {
+      window.location.hash = link;
+    } else {
+      window.location.href = link;
+    }
   };
 
   return (
@@ -279,26 +285,26 @@ function Images() {
   );
 }
 
-function Typography() {
-  const DEVICE = {
-    mobile: { fontSize: 0.2 },
-    tablet: { fontSize: 0.4 },
-    desktop: { fontSize: 0.6 }
-  };
-  const getDevice = () => {
-    const w = window.innerWidth;
-    return w <= 639 ? 'mobile' : w <= 1023 ? 'tablet' : 'desktop';
-  };
+const TYPOGRAPHY_DEVICE = {
+  mobile: { fontSize: 0.2 },
+  tablet: { fontSize: 0.4 },
+  desktop: { fontSize: 0.6 }
+};
+const getTypographyDevice = () => {
+  const w = window.innerWidth;
+  return w <= 639 ? 'mobile' : w <= 1023 ? 'tablet' : 'desktop';
+};
 
-  const [device, setDevice] = useState<keyof typeof DEVICE>(getDevice());
+function Typography() {
+  const [device, setDevice] = useState<keyof typeof TYPOGRAPHY_DEVICE>(getTypographyDevice());
 
   useEffect(() => {
-    const onResize = () => setDevice(getDevice());
+    const onResize = () => setDevice(getTypographyDevice());
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  const { fontSize } = DEVICE[device];
+  const { fontSize } = TYPOGRAPHY_DEVICE[device];
 
   return (
     <Text

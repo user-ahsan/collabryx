@@ -54,7 +54,6 @@ const TestTubes = ({
   height = 28,
   strokeWidth = 2,
   stroke = "currentColor",
-  ...props
 }: TestTubesProps) => {
   const controls = useAnimation();
 

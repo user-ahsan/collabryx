@@ -54,7 +54,6 @@ const Rocket = ({
   height = 28,
   strokeWidth = 2,
   stroke = "currentColor",
-  ...props
 }: RocketProps) => {
   const controls = useAnimation();
 

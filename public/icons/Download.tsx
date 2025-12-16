@@ -10,11 +10,7 @@ interface DownloadProps extends React.SVGAttributes<SVGSVGElement> {
   stroke?: string;
 }
 
-const defaultTransition: Transition = {
-  type: "spring",
-  stiffness: 250,
-  damping: 25,
-};
+
 
 const Download = ({
   width = 28,

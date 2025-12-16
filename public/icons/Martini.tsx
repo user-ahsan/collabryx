@@ -34,7 +34,6 @@ const Martini = ({
   height = 28,
   strokeWidth = 2,
   stroke = "currentColor",
-  ...props
 }: MartiniProps) => {
   const controls = useAnimation();
 

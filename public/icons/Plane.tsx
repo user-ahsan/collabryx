@@ -36,7 +36,6 @@ const Plane = ({
   height = 28,
   strokeWidth = 2,
   stroke = "currentColor",
-  ...props
 }: PlaneProps) => {
   const controls = useAnimation();
 

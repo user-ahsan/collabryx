@@ -39,6 +39,19 @@ type GridScanProps = {
   style?: React.CSSProperties;
 };
 
+interface VideoFrameMetadata {
+  presentationTime: number;
+  expectedDisplayTime: number;
+  width: number;
+  height: number;
+  mediaTime: number;
+  presentedFrames: number;
+  processingDuration?: number;
+  captureTime?: number;
+  receiveTime?: number;
+  rtpTimestamp?: number;
+}
+
 const vert = `
 varying vec2 vUv;
 void main(){
@@ -415,8 +428,8 @@ export const GridScan: React.FC<GridScanProps> = ({
         (DeviceOrientationEvent as any).requestPermission
       ) {
         try {
-          await (DeviceOrientationEvent as any).requestPermission();
-        } catch {}
+          await (DeviceOrientationEvent as unknown as { requestPermission: () => Promise<PermissionState> }).requestPermission();
+        } catch { }
       }
     };
     const onEnter = () => {
@@ -779,7 +792,7 @@ export const GridScan: React.FC<GridScanProps> = ({
         }
 
         if ('requestVideoFrameCallback' in HTMLVideoElement.prototype) {
-          (video as any).requestVideoFrameCallback(() => detect(performance.now()));
+          (video as unknown as HTMLVideoElement & { requestVideoFrameCallback: (cb: (now: number, metadata: VideoFrameMetadata) => void) => number }).requestVideoFrameCallback((_now, _metadata) => detect(performance.now()));
         } else {
           requestAnimationFrame(detect);
         }

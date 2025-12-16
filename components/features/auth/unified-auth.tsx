@@ -5,11 +5,10 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { motion, AnimatePresence } from "motion/react"
-import { Loader2, Mail, Lock, User, ArrowRight, CheckCircle2 } from "lucide-react"
+import { Loader2, Mail, Lock, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { cn } from "@/lib/utils"
 import { GoogleIcon, GitHubIcon, AppleIcon } from "@/components/ui/social-icons"
 
 // --- Schemas ---
@@ -82,7 +81,7 @@ export function UnifiedAuth({ defaultView = "email" }: UnifiedAuthProps) {
         }
     }
 
-    const onLoginSubmit = async (data: z.infer<typeof loginSchema>) => {
+    const onLoginSubmit = async (_data: z.infer<typeof loginSchema>) => {
         setIsLoading(true)
         await new Promise((resolve) => setTimeout(resolve, 1500))
         setIsLoading(false)
@@ -203,7 +202,7 @@ export function UnifiedAuth({ defaultView = "email" }: UnifiedAuthProps) {
                             </div>
 
                             <p className="text-center text-sm text-muted-foreground mt-6">
-                                Don't have an account? <span className="text-foreground font-semibold cursor-pointer hover:underline" onClick={() => { setDirection(1); setView("signup"); }}>Sign up</span>
+                                Don&apos;t have an account? <span className="text-foreground font-semibold cursor-pointer hover:underline" onClick={() => { setDirection(1); setView("signup"); }}>Sign up</span>
                             </p>
 
                         </motion.div>

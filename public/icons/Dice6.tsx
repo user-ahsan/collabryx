@@ -32,7 +32,6 @@ const Dice6 = ({
   height = 28,
   strokeWidth = 2,
   stroke = "currentColor",
-  ...props
 }: Dice6Props) => {
   const controls = useAnimation();
 
