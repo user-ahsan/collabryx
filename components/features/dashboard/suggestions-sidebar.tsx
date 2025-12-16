@@ -3,7 +3,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Plus, Sparkles } from "lucide-react"
+import { Plus, Sparkles, ArrowRight } from "lucide-react"
 
 export function SuggestionsSidebar() {
     const suggestions = [
@@ -31,38 +31,45 @@ export function SuggestionsSidebar() {
     ]
 
     return (
-        <Card className="shadow-sm hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3 border-b bg-muted/20">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                    <Sparkles className="h-4 w-4 text-primary" />
+        <Card className="shadow-sm border bg-card sticky top-6">
+            <CardHeader className="pb-4 pt-6 px-6 flex flex-row items-center justify-between space-y-0">
+                <CardTitle className="text-base font-bold flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-primary fill-primary/20" />
                     Smart Matches
                 </CardTitle>
+                <Button variant="link" size="sm" className="h-auto p-0 text-xs text-primary font-semibold">
+                    See All
+                </Button>
             </CardHeader>
-            <CardContent className="p-0">
-                <div className="divide-y">
+            <CardContent className="px-4 pb-6">
+                <div className="space-y-4">
                     {suggestions.map((person, i) => (
-                        <div key={i} className="flex items-start gap-3 p-4 hover:bg-muted/30 transition-colors">
-                            <Avatar className="h-10 w-10 border shadow-sm">
+                        <div key={i} className="group flex items-center gap-3 p-3 rounded-xl hover:bg-muted/50 transition-all duration-300 border border-transparent hover:border-border/50">
+                            <Avatar className="h-12 w-12 border-2 border-background shadow-sm">
                                 <AvatarImage src={person.avatar} />
-                                <AvatarFallback className="text-xs bg-primary/10 text-primary">{person.initials}</AvatarFallback>
+                                <AvatarFallback className="text-xs bg-primary/10 text-primary font-bold">{person.initials}</AvatarFallback>
                             </Avatar>
                             <div className="flex-1 min-w-0">
-                                <div className="flex justify-between items-start">
-                                    <p className="text-sm font-medium leading-none truncate">{person.name}</p>
+                                <p className="text-sm font-bold text-foreground truncate">{person.name}</p>
+                                <p className="text-xs text-muted-foreground truncate">{person.role}</p>
+                                <div className="flex items-center gap-2 mt-2">
+                                    <Button size="sm" className="h-8 rounded-full text-xs font-semibold bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground shadow-none px-4 transition-all w-full">
+                                        Connect
+                                    </Button>
                                 </div>
-                                <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{person.role}</p>
-                                <p className="text-[10px] text-muted-foreground mt-0.5">{person.mutuals} mutual connections</p>
-                                <Button variant="outline" size="sm" className="h-7 w-full mt-3 text-xs font-medium bg-background hover:bg-primary hover:text-primary-foreground transition-all">
-                                    <Plus className="h-3 w-3 mr-1" /> Connect
-                                </Button>
                             </div>
                         </div>
                     ))}
                 </div>
-                <div className="p-2 border-t bg-muted/10">
-                    <Button variant="ghost" size="sm" className="w-full text-xs text-muted-foreground hover:text-primary">
-                        View all matches
-                    </Button>
+
+                <div className="mt-6 px-2">
+                    <div className="rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 p-4 text-center space-y-2 border border-primary/10">
+                        <p className="text-xs font-semibold text-foreground">Want more matches?</p>
+                        <p className="text-[10px] text-muted-foreground leading-snug">Complete your profile to get better recommendations.</p>
+                        <Button size="sm" variant="outline" className="w-full h-8 rounded-full text-xs mt-1 bg-background">
+                            Complete Profile
+                        </Button>
+                    </div>
                 </div>
             </CardContent>
         </Card>
