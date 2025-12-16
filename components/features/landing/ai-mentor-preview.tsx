@@ -4,7 +4,6 @@ import * as React from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { useIsMobile, usePrefersReducedMotion } from "@/hooks/use-media-query"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Avatar } from "@/components/ui/avatar"
 import { BadgeCheck } from "@/public/icons/BadgeCheck"
 import { Bolt } from "@/public/icons/Bolt"
 

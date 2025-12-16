@@ -82,7 +82,7 @@ export function PersonaUseCases() {
                         transition={{ duration: 0.6, delay: 0.1 }}
                         className="text-lg text-muted-foreground"
                     >
-                        Whether you're a student, founder, or mentor—Collabryx helps you find the right collaborators.
+                        Whether you&apos;re a student, founder, or mentor—Collabryx helps you find the right collaborators.
                     </motion.p>
                 </div>
 
@@ -107,7 +107,6 @@ export function PersonaUseCases() {
 
                     {/* Tab Content */}
                     {personas.map((persona) => {
-                        const activePersona = personas.find(p => p.id === activeTab)
                         if (persona.id !== activeTab) return null
 
                         return (
@@ -277,7 +276,7 @@ function PersonaMockup({ persona }: { persona: typeof personas[0] }) {
                         <span className="px-2 py-1 rounded-md bg-purple-500/10 text-purple-500 text-xs">Node.js</span>
                     </div>
                     <div className="text-xs text-muted-foreground">
-                        "Looking for business co-founder..."
+                        &quot;Looking for business co-founder...&quot;
                     </div>
                 </div>
             </div>

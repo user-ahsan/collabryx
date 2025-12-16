@@ -1,23 +1,24 @@
-import { useEffect, useState } from "react"
+import * as React from "react"
 
 /**
  * Custom hook to track media query matches
  * Useful for conditional animations and responsive behavior
  */
 export function useMediaQuery(query: string): boolean {
-    const [matches, setMatches] = useState(false)
+    const getSnapshot = () => {
+        if (typeof window === "undefined") return false
+        return window.matchMedia(query).matches
+    }
 
-    useEffect(() => {
+    const subscribe = (callback: () => void) => {
+        if (typeof window === "undefined") return () => { }
         const media = window.matchMedia(query)
-        if (media.matches !== matches) {
-            setMatches(media.matches)
-        }
-        const listener = (e: MediaQueryListEvent) => setMatches(e.matches)
+        const listener = () => callback()
         media.addEventListener("change", listener)
         return () => media.removeEventListener("change", listener)
-    }, [query])
+    }
 
-    return matches
+    return React.useSyncExternalStore(subscribe, getSnapshot, () => false)
 }
 
 /**

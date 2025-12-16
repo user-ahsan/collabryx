@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { Globe } from "@/components/ui/globe"
-import { motion } from "motion/react"
+
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 

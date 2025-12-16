@@ -60,7 +60,7 @@ export function SemanticEngineComparison() {
                         <div className="mb-6 p-4 rounded-lg border border-border bg-card/50 backdrop-blur-sm">
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <span className="text-foreground font-medium">Search:</span>
-                                <span>"React Developer"</span>
+                                <span>&quot;React Developer&quot;</span>
                             </div>
                         </div>
 
@@ -122,7 +122,7 @@ export function SemanticEngineComparison() {
                         <div className="mb-8 p-5 rounded-lg border border-primary/30 bg-primary/5 backdrop-blur-sm">
                             <div className="text-sm mb-2 text-muted-foreground">Your Profile:</div>
                             <p className="text-sm leading-relaxed text-foreground">
-                                "I'm a CS junior who loves <span className="font-semibold text-primary">fintech</span> and wants to build an <span className="font-semibold text-primary">app for stock tracking</span>."
+                                &quot;I&apos;m a CS junior who loves <span className="font-semibold text-primary">fintech</span> and wants to build an <span className="font-semibold text-primary">app for stock tracking</span>.&quot;
                             </p>
                         </div>
 
@@ -199,8 +199,8 @@ function SemanticMatchCard({ enableAnimation }: { enableAnimation: boolean }) {
                 </div>
 
                 <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-                    "Looking for a <span className="text-primary font-medium">tech partner</span> to build an MVP for a <span className="text-primary font-medium">fintech startup</span>.
-                    I handle business strategy and funding."
+                    &quot;Looking for a <span className="text-primary font-medium">tech partner</span> to build an MVP for a <span className="text-primary font-medium">fintech startup</span>.
+                    I handle business strategy and funding.&quot;
                 </p>
 
                 {/* Match Reasons */}

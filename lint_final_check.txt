@@ -3,29 +3,8 @@
 > eslint
 
 
-D:\Projects\collabryx\components\FluidGlass.tsx
-  236:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
-
-Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
-* Update external systems with the latest state from React.
-* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
-
-Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
-
-D:\Projects\collabryx\components\FluidGlass.tsx:236:5
-  234 |       window.location.href = navLink;
-  235 |     }
-> 236 |     setNavLink(null);
-      |     ^^^^^^^^^^ Avoid calling setState() directly within an effect
-  237 |   }, [navLink]);
-  238 |
-  239 |   return (  react-hooks/set-state-in-effect
-
 D:\Projects\collabryx\components\GridScan.tsx
-  617:6   warning  React Hook useEffect has a missing dependency: 'maxSpeed'. Either include it or remove the dependency array                                                                                                                                                      react-hooks/exhaustive-deps
-  668:28  error    Unexpected any. Specify a different type                                                                                                                                                                                                                         @typescript-eslint/no-explicit-any
-  669:28  error    Unexpected any. Specify a different type                                                                                                                                                                                                                         @typescript-eslint/no-explicit-any
-  826:32  warning  The ref value 'videoRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'videoRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+  617:6  warning  React Hook useEffect has a duplicate dependency: 'scanDirection'. Either omit it or remove the dependency array  react-hooks/exhaustive-deps
 
 D:\Projects\collabryx\components\LogoLoop.tsx
    74:6   warning  React Hook useEffect was passed a dependency list that is not an array literal. This means we can't statically verify whether you've passed the correct dependencies                                                                                                                     react-hooks/exhaustive-deps
@@ -39,15 +18,8 @@ D:\Projects\collabryx\components\ModelViewer.tsx
    60:9  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
   358:6  warning  React Hook useEffect has a missing dependency: 'camera.position'. Either include it or remove the dependency array                                                                                                                                                                       react-hooks/exhaustive-deps
 
-D:\Projects\collabryx\components\features\auth\auth-layout.tsx
-  5:10  warning  'motion' is defined but never used  @typescript-eslint/no-unused-vars
-
 D:\Projects\collabryx\components\features\auth\unified-auth.tsx
   84:34  warning  '_' is defined but never used  @typescript-eslint/no-unused-vars
-
-D:\Projects\collabryx\components\features\landing\persona-use-cases.tsx
-   85:36  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
-  110:31  warning  'activePersona' is assigned a value but never used               @typescript-eslint/no-unused-vars
 
 D:\Projects\collabryx\public\icons\Cake.tsx
   23:12  warning  'i' is defined but never used  @typescript-eslint/no-unused-vars
@@ -61,5 +33,5 @@ D:\Projects\collabryx\public\icons\Download.tsx
 D:\Projects\collabryx\public\icons\LayoutGrid.tsx
   7:12  warning  '_i' is defined but never used  @typescript-eslint/no-unused-vars
 
-Γ£û 21 problems (4 errors, 17 warnings)
+Γ£û 14 problems (0 errors, 14 warnings)
 

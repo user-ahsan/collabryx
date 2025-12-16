@@ -1,4 +1,4 @@
-import { FC, Suspense, useRef, useLayoutEffect, useEffect, useMemo } from 'react';
+import { FC, Suspense, useRef, useLayoutEffect, useEffect, useMemo, useState } from 'react';
 import { Canvas, useFrame, useLoader, useThree, invalidate } from '@react-three/fiber';
 import { OrbitControls, useGLTF, useFBX, useProgress, Html, Environment, ContactShadows } from '@react-three/drei';
 import { OBJLoader } from 'three-stdlib';
@@ -57,7 +57,7 @@ const Loader: FC<{ placeholderSrc?: string }> = ({ placeholderSrc }) => {
   return (
     <Html center>
       {placeholderSrc ? (
-        <img src={placeholderSrc} width={128} height={128} style={{ filter: 'blur(8px)', borderRadius: 8 }} />
+        <img src={placeholderSrc} width={128} height={128} alt="Loading model" style={{ filter: 'blur(8px)', borderRadius: 8 }} />
       ) : (
         `${Math.round(progress)} %`
       )}
@@ -71,7 +71,6 @@ const DesktopControls: FC<{
   max: number;
   zoomEnabled: boolean;
 }> = ({ pivot, min, max, zoomEnabled }) => {
-  // Replaced Ref type
   const ref = useRef<React.ElementRef<typeof OrbitControls>>(null);
   useFrame(() => ref.current?.target.copy(pivot));
   return (
@@ -86,6 +85,34 @@ const DesktopControls: FC<{
     />
   );
 };
+
+// --- Loader Wrappers to respect Hook Rules ---
+
+const GLTFModelLoader: FC<{ url: string; onLoaded: (obj: THREE.Object3D) => void }> = ({ url, onLoaded }) => {
+  const { scene } = useGLTF(url);
+  useLayoutEffect(() => {
+    onLoaded(scene.clone());
+  }, [scene, onLoaded]);
+  return null;
+};
+
+const FBXModelLoader: FC<{ url: string; onLoaded: (obj: THREE.Object3D) => void }> = ({ url, onLoaded }) => {
+  const fbx = useFBX(url);
+  useLayoutEffect(() => {
+    onLoaded(fbx.clone());
+  }, [fbx, onLoaded]);
+  return null;
+};
+
+const OBJModelLoader: FC<{ url: string; onLoaded: (obj: THREE.Object3D) => void }> = ({ url, onLoaded }) => {
+  const obj = useLoader(OBJLoader, url);
+  useLayoutEffect(() => {
+    onLoaded(obj.clone());
+  }, [obj, onLoaded]);
+  return null;
+};
+
+// ---------------------------------------------
 
 interface ModelInnerProps {
   url: string;
@@ -137,13 +164,12 @@ const ModelInner: FC<ModelInnerProps> = ({
   const cHov = useRef({ x: 0, y: 0 });
 
   const ext = useMemo(() => url.split('.').pop()!.toLowerCase(), [url]);
-  const content = useMemo<THREE.Object3D | null>(() => {
-    if (ext === 'glb' || ext === 'gltf') return useGLTF(url).scene.clone();
-    if (ext === 'fbx') return useFBX(url).clone();
-    if (ext === 'obj') return useLoader(OBJLoader, url).clone();
-    console.error('Unsupported format:', ext);
-    return null;
-  }, [url, ext]);
+  const [content, setContent] = useState<THREE.Object3D | null>(null);
+
+  // Reset content when url changes
+  useLayoutEffect(() => {
+    setContent(null);
+  }, [url]);
 
   const pivotW = useRef(new THREE.Vector3());
   useLayoutEffect(() => {
@@ -179,6 +205,7 @@ const ModelInner: FC<ModelInnerProps> = ({
       const fitR = sphere.radius * s;
       const d = (fitR * 1.2) / Math.sin((persp.fov * Math.PI) / 180 / 2);
       persp.position.set(pivotW.current.x, pivotW.current.y, pivotW.current.z + d);
+      // eslint-disable-next-line react-hooks/immutability
       persp.near = d / 10;
       persp.far = d * 10;
       persp.updateProjectionMatrix();
@@ -206,7 +233,7 @@ const ModelInner: FC<ModelInnerProps> = ({
       }, 16);
       return () => clearInterval(id);
     } else onLoaded?.();
-  }, [content]);
+  }, [content, autoFrame, camera, fadeIn, initPitch, initYaw, onLoaded, pivot]);
 
   useEffect(() => {
     if (!enableManualRotation || isTouch) return;
@@ -383,7 +410,14 @@ const ModelInner: FC<ModelInnerProps> = ({
     if (need) invalidate();
   });
 
-  if (!content) return null;
+  if (!content) {
+    // Render the appropriate loader while content is null
+    if (ext === 'glb' || ext === 'gltf') return <GLTFModelLoader url={url} onLoaded={setContent} />;
+    if (ext === 'fbx') return <FBXModelLoader url={url} onLoaded={setContent} />;
+    if (ext === 'obj') return <OBJModelLoader url={url} onLoaded={setContent} />;
+    return null;
+  }
+
   return (
     <group ref={outer}>
       <group ref={inner}>
@@ -422,7 +456,10 @@ const ModelViewer: FC<ViewerProps> = ({
   onModelLoaded
 }) => {
   useEffect(() => void useGLTF.preload(url), [url]);
-  const pivot = useRef(new THREE.Vector3()).current;
+
+  // Pivot as constant ref logic
+  const [pivot] = useState(() => new THREE.Vector3());
+
   const contactRef = useRef<THREE.Group>(null);
   const rendererRef = useRef<THREE.WebGLRenderer>(null);
   const sceneRef = useRef<THREE.Scene>(null);

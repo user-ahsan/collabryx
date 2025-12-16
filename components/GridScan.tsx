@@ -424,11 +424,12 @@ export const GridScan: React.FC<GridScanProps> = ({
       if (
         enableGyro &&
         typeof window !== 'undefined' &&
-        (window as any).DeviceOrientationEvent &&
-        (DeviceOrientationEvent as any).requestPermission
+        'DeviceOrientationEvent' in window &&
+        'requestPermission' in (DeviceOrientationEvent as unknown as { requestPermission: unknown })
       ) {
         try {
-          await (DeviceOrientationEvent as unknown as { requestPermission: () => Promise<PermissionState> }).requestPermission();
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (DeviceOrientationEvent as any).requestPermission();
         } catch { }
       }
     };
@@ -623,7 +624,23 @@ export const GridScan: React.FC<GridScanProps> = ({
     lineStyle,
     lineJitter,
     scanDirection,
-    enablePost
+    enablePost,
+    skewScale,
+    tiltScale,
+    yawScale,
+    yBoost,
+    smoothTime,
+    bloomIntensity,
+    bloomSmoothing,
+    bloomThreshold,
+    chromaticAberration,
+    noiseIntensity,
+    scanDelay,
+    scanDuration,
+    scanGlow,
+    scanPhaseTaper,
+    scanSoftness,
+    maxSpeed
   ]);
 
   useEffect(() => {
@@ -648,7 +665,9 @@ export const GridScan: React.FC<GridScanProps> = ({
     }
     if (bloomRef.current) {
       bloomRef.current.blendMode.opacity.value = Math.max(0, bloomIntensity);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (bloomRef.current as any).luminanceMaterial.threshold = bloomThreshold;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (bloomRef.current as any).luminanceMaterial.smoothing = bloomSmoothing;
     }
     if (chromaRef.current) {
@@ -792,7 +811,7 @@ export const GridScan: React.FC<GridScanProps> = ({
         }
 
         if ('requestVideoFrameCallback' in HTMLVideoElement.prototype) {
-          (video as unknown as HTMLVideoElement & { requestVideoFrameCallback: (cb: (now: number, metadata: VideoFrameMetadata) => void) => number }).requestVideoFrameCallback((_now, _metadata) => detect(performance.now()));
+          (video as unknown as HTMLVideoElement & { requestVideoFrameCallback: (cb: (now: number, metadata: VideoFrameMetadata) => void) => number }).requestVideoFrameCallback(() => detect(performance.now()));
         } else {
           requestAnimationFrame(detect);
         }
@@ -801,16 +820,17 @@ export const GridScan: React.FC<GridScanProps> = ({
       requestAnimationFrame(detect);
     };
 
+    const videoElement = videoRef.current;
+
     start();
 
     return () => {
       stop = true;
-      const video = videoRef.current;
-      if (video) {
-        const stream = video.srcObject as MediaStream | null;
+      if (videoElement) {
+        const stream = videoElement.srcObject as MediaStream | null;
         if (stream) stream.getTracks().forEach(t => t.stop());
-        video.pause();
-        video.srcObject = null;
+        videoElement.pause();
+        videoElement.srcObject = null;
       }
     };
   }, [enableWebcam, modelsReady, depthResponse]);
@@ -854,7 +874,7 @@ function smoothDampVec2(
   const x = omega * deltaTime;
   const exp = 1 / (1 + x + 0.48 * x * x + 0.235 * x * x * x);
 
-  let change = current.clone().sub(target);
+  const change = current.clone().sub(target);
   const originalTo = target.clone();
 
   const maxChange = maxSpeed * smoothTime;

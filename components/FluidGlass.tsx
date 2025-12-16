@@ -224,14 +224,17 @@ function NavItems({ items }: { items: NavItem[] }) {
     });
   });
 
-  const handleNavigate = (link: string) => {
-    if (!link) return;
-    if (link.startsWith('#')) {
-      window.location.hash = link;
+  const [navLink, setNavLink] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!navLink) return;
+    if (navLink.startsWith('#')) {
+      window.location.hash = navLink;
     } else {
-      window.location.href = link;
+      window.location.href = navLink;
     }
-  };
+    setTimeout(() => setNavLink(null), 0);
+  }, [navLink]);
 
   return (
     <group ref={group} renderOrder={10}>
@@ -249,7 +252,7 @@ function NavItems({ items }: { items: NavItem[] }) {
           renderOrder={10}
           onClick={e => {
             e.stopPropagation();
-            handleNavigate(link);
+            setNavLink(link);
           }}
           onPointerOver={() => (document.body.style.cursor = 'pointer')}
           onPointerOut={() => (document.body.style.cursor = 'auto')}
@@ -276,11 +279,13 @@ function Images() {
 
   return (
     <group ref={group}>
+      {/* eslint-disable jsx-a11y/alt-text */}
       <Image position={[-2, 0, 0]} scale={[3, height / 1.1]} url="/assets/demo/cs1.webp" />
       <Image position={[2, 0, 3]} scale={3} url="/assets/demo/cs2.webp" />
       <Image position={[-2.05, -height, 6]} scale={[1, 3]} url="/assets/demo/cs3.webp" />
       <Image position={[-0.6, -height, 9]} scale={[1, 2]} url="/assets/demo/cs1.webp" />
       <Image position={[0.75, -height, 10.5]} scale={1.5} url="/assets/demo/cs2.webp" />
+      {/* eslint-enable jsx-a11y/alt-text */}
     </group>
   );
 }

@@ -81,7 +81,7 @@ export function UnifiedAuth({ defaultView = "email" }: UnifiedAuthProps) {
         }
     }
 
-    const onLoginSubmit = async (_data: z.infer<typeof loginSchema>) => {
+    const onLoginSubmit = async () => {
         setIsLoading(true)
         await new Promise((resolve) => setTimeout(resolve, 1500))
         setIsLoading(false)

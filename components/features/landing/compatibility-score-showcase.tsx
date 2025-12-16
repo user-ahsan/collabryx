@@ -1,9 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { motion, useScroll, useTransform } from "framer-motion"
+import { motion, useScroll, useTransform, MotionValue } from "framer-motion"
 import { useIsMobile, usePrefersReducedMotion } from "@/hooks/use-media-query"
-import { Avatar } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { ShinyText } from "@/components/ui/shiny-text"
 import { HeartHandshake } from "@/public/icons/HeartHandshake"
@@ -87,7 +86,7 @@ export function CompatibilityScoreShowcase() {
  * Parallax version for desktop
  * Cards move from edges to center
  */
-function ParallaxMatchCards({ scrollYProgress }: { scrollYProgress: any }) {
+function ParallaxMatchCards({ scrollYProgress }: { scrollYProgress: MotionValue<number> }) {
     const leftX = useTransform(scrollYProgress, [0, 0.5], [-200, 0])
     const rightX = useTransform(scrollYProgress, [0, 0.5], [200, 0])
     const scale = useTransform(scrollYProgress, [0, 0.5], [0.8, 1])
@@ -106,7 +105,6 @@ function ParallaxMatchCards({ scrollYProgress }: { scrollYProgress: any }) {
                     description="Founder with business strategy expertise looking for technical co-founder"
                     skills={["Business Strategy", "Marketing", "Fundraising"]}
                     icon={ChartLine}
-                    color="primary"
                 />
             </motion.div>
 
@@ -133,7 +131,6 @@ function ParallaxMatchCards({ scrollYProgress }: { scrollYProgress: any }) {
                     description="CS Student passionate about building scalable web applications"
                     skills={["React", "Node.js", "Python"]}
                     icon={Code}
-                    color="blue"
                 />
             </motion.div>
 
@@ -177,7 +174,6 @@ function StaticMatchCards() {
                         description="Founder with business strategy expertise"
                         skills={["Business", "Marketing"]}
                         icon={ChartLine}
-                        color="primary"
                     />
                 </motion.div>
 
@@ -206,7 +202,6 @@ function StaticMatchCards() {
                         description="CS Student building web apps"
                         skills={["React", "Python"]}
                         icon={Code}
-                        color="blue"
                     />
                 </motion.div>
             </div>
@@ -223,16 +218,15 @@ function ProfileCard({
     avatar,
     description,
     skills,
-    icon: Icon,
-    color
+    icon: Icon
 }: {
     name: string
     role: string
     avatar: string
     description: string
     skills: string[]
-    icon: any
-    color: string
+    icon: React.ComponentType<{ className?: string }>
+    // color prop removed
 }) {
     return (
         <div className="relative p-6 rounded-2xl border border-border bg-card/60 backdrop-blur-sm shadow-lg hover:shadow-xl transition-shadow">
