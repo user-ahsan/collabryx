@@ -1,15 +1,15 @@
 import { FC, Suspense, useRef, useLayoutEffect, useEffect, useMemo } from 'react';
 import { Canvas, useFrame, useLoader, useThree, invalidate } from '@react-three/fiber';
 import { OrbitControls, useGLTF, useFBX, useProgress, Html, Environment, ContactShadows } from '@react-three/drei';
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
+import { OBJLoader } from 'three-stdlib';
 import * as THREE from 'three';
 
 const isMeshObject = (object: THREE.Object3D): object is THREE.Mesh => {
-  return 'isMesh' in object && object.isMesh === true;
+  return object instanceof THREE.Mesh;
 };
 
 const isLightObject = (object: THREE.Object3D): object is THREE.Light => {
-  return 'isLight' in object && object.isLight === true;
+  return object instanceof THREE.Light;
 };
 
 export interface ViewerProps {
@@ -71,7 +71,8 @@ const DesktopControls: FC<{
   max: number;
   zoomEnabled: boolean;
 }> = ({ pivot, min, max, zoomEnabled }) => {
-  const ref = useRef<any>(null);
+  // Replaced Ref type
+  const ref = useRef<React.ElementRef<typeof OrbitControls>>(null);
   useFrame(() => ref.current?.target.copy(pivot));
   return (
     <OrbitControls
@@ -422,7 +423,7 @@ const ModelViewer: FC<ViewerProps> = ({
 }) => {
   useEffect(() => void useGLTF.preload(url), [url]);
   const pivot = useRef(new THREE.Vector3()).current;
-  const contactRef = useRef<THREE.Mesh>(null);
+  const contactRef = useRef<THREE.Group>(null);
   const rendererRef = useRef<THREE.WebGLRenderer>(null);
   const sceneRef = useRef<THREE.Scene>(null);
   const cameraRef = useRef<THREE.Camera>(null);
@@ -498,14 +499,14 @@ const ModelViewer: FC<ViewerProps> = ({
         camera={{ fov: 50, position: [0, 0, camZ], near: 0.01, far: 100 }}
         style={{ touchAction: 'pan-y pinch-zoom' }}
       >
-        {environmentPreset !== 'none' && <Environment preset={environmentPreset as any} background={false} />}
+        {environmentPreset !== 'none' && <Environment preset={environmentPreset} background={false} />}
 
         <ambientLight intensity={ambientIntensity} />
         <directionalLight position={[5, 5, 5]} intensity={keyLightIntensity} castShadow />
         <directionalLight position={[-5, 2, 5]} intensity={fillLightIntensity} />
         <directionalLight position={[0, 4, -5]} intensity={rimLightIntensity} />
 
-        <ContactShadows ref={contactRef as any} position={[0, -0.5, 0]} opacity={0.35} scale={10} blur={2} />
+        <ContactShadows ref={contactRef} position={[0, -0.5, 0]} opacity={0.35} scale={10} blur={2} />
 
         <Suspense fallback={<Loader placeholderSrc={placeholderSrc} />}>
           <ModelInner
