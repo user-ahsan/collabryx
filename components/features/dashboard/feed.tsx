@@ -219,18 +219,18 @@ export function Feed() {
                         </div>
 
                         {/* Footer Actions */}
-                        <div className="px-2 pb-2">
-                            <div className="flex items-center justify-between p-2 rounded-xl bg-muted/20 md:mx-4 mb-2">
-                                <Button variant="ghost" className="flex-1 hover:bg-background hover:shadow-sm rounded-lg text-muted-foreground hover:text-red-500 transition-all gap-2 h-10">
-                                    <Heart className="h-5 w-5" />
+                        <div className="px-5 pb-4 pt-2">
+                            <div className="flex items-center justify-between border-t pt-3">
+                                <Button variant="ghost" className="flex-1 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-all gap-2 h-9">
+                                    <Heart className="h-4 w-4" />
                                     <span className="font-medium text-sm">Like</span>
                                 </Button>
-                                <Button variant="ghost" className="flex-1 hover:bg-background hover:shadow-sm rounded-lg text-muted-foreground hover:text-blue-500 transition-all gap-2 h-10">
-                                    <MessageCircle className="h-5 w-5" />
+                                <Button variant="ghost" className="flex-1 rounded-lg text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 transition-all gap-2 h-9">
+                                    <MessageCircle className="h-4 w-4" />
                                     <span className="font-medium text-sm">Comment</span>
                                 </Button>
-                                <Button variant="ghost" className="flex-1 hover:bg-background hover:shadow-sm rounded-lg text-muted-foreground hover:text-green-500 transition-all gap-2 h-10">
-                                    <Share2 className="h-5 w-5" />
+                                <Button variant="ghost" className="flex-1 rounded-lg text-muted-foreground hover:text-green-500 hover:bg-green-500/10 transition-all gap-2 h-9">
+                                    <Share2 className="h-4 w-4" />
                                     <span className="font-medium text-sm">Share</span>
                                 </Button>
                             </div>
