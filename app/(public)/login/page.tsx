@@ -1,8 +1,10 @@
+import { AuthLayout } from "@/components/features/auth/auth-layout"
+import { UnifiedAuth } from "@/components/features/auth/unified-auth"
+
 export default function LoginPage() {
     return (
-        <div className="container py-10">
-            <h1 className="text-3xl font-bold mb-6">Login</h1>
-            <p className="text-muted-foreground">Sign in to your account.</p>
-        </div>
+        <AuthLayout>
+            <UnifiedAuth defaultView="email" />
+        </AuthLayout>
     )
 }
