@@ -192,9 +192,9 @@ export default function LandingPage() {
             <LandingHeader navigation={navigation} />
 
             {/* Hero Section with Two Column Design */}
-            <section className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
+            <section className="relative min-h-[90vh] lg:min-h-screen flex items-center justify-center pt-24 lg:pt-20 overflow-hidden">
                 <div className="container relative z-10 mx-auto px-6 lg:px-8">
-                    <div className="grid lg:grid-cols-2 gap-12 items-center">
+                    <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
                         {/* Left Column: Content - Centered and Left Aligned */}
                         <motion.div
                             initial={{ opacity: 0, x: -20 }}
@@ -219,7 +219,7 @@ export default function LandingPage() {
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     transition={{ duration: 0.4, delay: 0.1 }}
-                                    className="mb-10 text-lg leading-8 text-muted-foreground sm:text-xl text-left"
+                                    className="mb-8 lg:mb-10 text-lg leading-8 text-muted-foreground sm:text-xl text-left"
                                 >
                                     Find co-founders, teammates, and opportunities using semantic matching powered by vector embeddings. Collabryx connects you based on skills, interests, and goals—not keywords.
                                 </motion.p>
@@ -229,8 +229,8 @@ export default function LandingPage() {
                                     transition={{ duration: 0.4, delay: 0.2 }}
                                     className="flex flex-col sm:flex-row gap-4"
                                 >
-                                    <div className="relative inline-block">
-                                        <Button size="lg" asChild className="text-lg px-8 shadow-lg hover:scale-105 transition-transform duration-300 relative z-10">
+                                    <div className="relative inline-block w-full sm:w-auto">
+                                        <Button size="lg" asChild className="w-full sm:w-auto text-lg px-8 shadow-lg hover:scale-105 transition-transform duration-300 relative z-10">
                                             <Link href="/register">Start Free</Link>
                                         </Button>
                                         <BorderBeam
@@ -240,7 +240,7 @@ export default function LandingPage() {
                                             colorTo="hsl(var(--primary) / 0.2)"
                                         />
                                     </div>
-                                    <Button size="lg" variant="outline" asChild className="text-lg px-8 bg-background/50 backdrop-blur-sm hover:bg-background/80 hover:scale-105 transition-transform duration-300">
+                                    <Button size="lg" variant="outline" asChild className="w-full sm:w-auto text-lg px-8 bg-background/50 backdrop-blur-sm hover:bg-background/80 hover:scale-105 transition-transform duration-300">
                                         <Link href="#features">See How It Works</Link>
                                     </Button>
                                 </motion.div>
@@ -252,23 +252,23 @@ export default function LandingPage() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ duration: 0.6, delay: 0.3 }}
-                            className="relative h-[500px] flex items-center justify-end"
+                            className="relative h-[300px] lg:h-[500px] hidden md:flex items-center justify-end"
                         >
-                            <GlobeBackground className="max-w-[600px]" />
+                            <GlobeBackground className="max-w-[400px] lg:max-w-[600px]" />
                         </motion.div>
                     </div>
                 </div>
             </section>
 
             {/* Testimonials Marquee Section - Full Width */}
-            <section className="py-16 sm:py-20 relative overflow-hidden w-full">
+            <section className="py-12 sm:py-20 relative overflow-hidden w-full">
                 <div className="w-full">
-                    <div className="mx-auto max-w-7xl px-6 lg:px-8 mb-12">
+                    <div className="mx-auto max-w-7xl px-6 lg:px-8 mb-8 lg:mb-12">
                         <div className="mx-auto max-w-2xl text-center">
-                            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">
+                            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight lg:text-4xl mb-4">
                                 Trusted by Students, Founders & University Communities
                             </h2>
-                            <p className="text-lg text-muted-foreground">
+                            <p className="text-base sm:text-lg text-muted-foreground">
                                 See how Collabryx helps users build projects faster and smarter.
                             </p>
                         </div>
@@ -278,7 +278,7 @@ export default function LandingPage() {
                         {testimonials.map((testimonial, idx) => (
                             <div
                                 key={idx}
-                                className="mx-4 w-[350px] rounded-2xl border border-border/50 bg-card/30 backdrop-blur-sm p-6 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:bg-card/50"
+                                className="mx-4 w-[300px] sm:w-[350px] rounded-2xl border border-border/50 bg-card/30 backdrop-blur-sm p-6 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:bg-card/50"
                             >
                                 <div className="mb-4 flex items-center gap-3">
                                     <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
@@ -312,15 +312,15 @@ export default function LandingPage() {
             <PersonaUseCases />
 
             {/* Features Section - Feature Details */}
-            <section id="features" className="relative py-24 sm:py-32 overflow-hidden">
-                <div className="mx-auto max-w-7xl px-6 lg:px-8 mb-16">
-                    <div className="mx-auto max-w-2xl text-center mb-16">
+            <section id="features" className="relative py-16 sm:py-24 lg:py-32 overflow-hidden">
+                <div className="mx-auto max-w-7xl px-6 lg:px-8 mb-12 lg:mb-16">
+                    <div className="mx-auto max-w-2xl text-center mb-12 lg:mb-16">
                         <motion.h2
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ duration: 0.6 }}
-                            className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-4"
+                            className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-4"
                         >
                             Powerful Features for Modern Teams
                         </motion.h2>
@@ -337,7 +337,7 @@ export default function LandingPage() {
                         return (
                             <div
                                 key={idx}
-                                className="group relative mx-4 w-[380px] h-[280px] rounded-2xl border border-border/50 bg-card/40 backdrop-blur-sm p-8 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:bg-card/60 hover:border-primary/50 overflow-hidden flex flex-col whitespace-normal"
+                                className="group relative mx-4 w-[320px] sm:w-[380px] h-[280px] rounded-2xl border border-border/50 bg-card/40 backdrop-blur-sm p-8 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:bg-card/60 hover:border-primary/50 overflow-hidden flex flex-col whitespace-normal"
                             >
                                 {/* BorderBeam on hover */}
                                 <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-500">
@@ -369,16 +369,16 @@ export default function LandingPage() {
 
 
             {/* Key Benefits Section */}
-            <section id="benefits" className="relative py-24 sm:py-32 overflow-hidden">
+            <section id="benefits" className="relative py-16 sm:py-24 lg:py-32 overflow-hidden">
                 <div className="mx-auto max-w-7xl px-6 lg:px-8">
-                    <div className="mx-auto max-w-2xl text-center mb-16">
+                    <div className="mx-auto max-w-2xl text-center mb-12 lg:mb-16">
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true, margin: "0px 0px -100px 0px" }}
                             transition={{ duration: 0.4 }}
                         >
-                            <h2 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
+                            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-4">
                                 Why Students & Founders Choose Collabryx
                             </h2>
                             <p className="text-lg text-muted-foreground">
@@ -387,7 +387,7 @@ export default function LandingPage() {
                         </motion.div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
                         {keyBenefits.map((benefit, idx) => {
                             const Icon = benefit.icon
                             return (
@@ -397,7 +397,7 @@ export default function LandingPage() {
                                     whileInView={{ opacity: 1, y: 0 }}
                                     viewport={{ once: true, margin: "0px 0px -50px 0px" }}
                                     transition={{ duration: 0.3, delay: idx * 0.05 }}
-                                    className="group relative rounded-2xl border border-border/50 bg-card/40 backdrop-blur-sm p-8 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:bg-card/60 overflow-hidden"
+                                    className="group relative rounded-2xl border border-border/50 bg-card/40 backdrop-blur-sm p-6 lg:p-8 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:bg-card/60 overflow-hidden"
                                 >
                                     {/* BorderBeam on hover */}
                                     <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-500">
@@ -433,10 +433,10 @@ export default function LandingPage() {
             </section>
 
             {/* Statistics Section - Social Proof with Numbers */}
-            <section className="py-24 sm:py-32">
+            <section className="py-16 sm:py-24 lg:py-32">
                 <div className="mx-auto max-w-7xl px-6 lg:px-8">
-                    <div className="mx-auto max-w-2xl text-center mb-16">
-                        <h2 className="text-3xl font-bold tracking-tight sm:text-5xl mb-4">
+                    <div className="mx-auto max-w-2xl text-center mb-12 lg:mb-16">
+                        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl mb-4">
                             Prototype Metrics (Demo Dataset)
                         </h2>
                         <p className="text-lg text-muted-foreground">
@@ -461,15 +461,15 @@ export default function LandingPage() {
             </section>
 
             {/* How It Works - Process Breakdown */}
-            <section id="how-it-works" className="relative py-24 sm:py-32 overflow-hidden">
+            <section id="how-it-works" className="relative py-16 sm:py-24 lg:py-32 overflow-hidden">
                 <div className="mx-auto max-w-7xl px-6 lg:px-8">
-                    <div className="mx-auto max-w-2xl text-center mb-20">
+                    <div className="mx-auto max-w-2xl text-center mb-12 lg:mb-20">
                         <motion.h2
                             initial={{ opacity: 0, y: 20 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ duration: 0.6 }}
-                            className="text-4xl sm:text-5xl font-bold tracking-tight mb-4"
+                            className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-4"
                         >
                             How It Works
                         </motion.h2>
@@ -492,7 +492,7 @@ export default function LandingPage() {
                                 stiffness: 100,
                                 damping: 15
                             }}
-                            className="relative p-12 min-h-[400px] flex flex-col items-center justify-center text-center"
+                            className="relative p-6 sm:p-12 min-h-[400px] flex flex-col items-center justify-center text-center"
                         >
 
                             <div className="relative z-10 max-w-2xl flex flex-col items-center">
@@ -509,7 +509,7 @@ export default function LandingPage() {
                                         transition={{ duration: 0.6, delay: 0.2, type: "spring" }}
                                     >
                                         {React.createElement(howItWorksSteps[activeStep].icon, {
-                                            className: "h-24 w-24"
+                                            className: "h-20 w-20 sm:h-24 sm:w-24"
                                         })}
                                     </motion.div>
                                 </div>
@@ -519,7 +519,7 @@ export default function LandingPage() {
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.5, delay: 0.3 }}
-                                    className="text-3xl font-bold text-foreground mb-6"
+                                    className="text-2xl sm:text-3xl font-bold text-foreground mb-4 sm:mb-6"
                                 >
                                     {howItWorksSteps[activeStep].title}
                                 </motion.h3>
@@ -527,7 +527,7 @@ export default function LandingPage() {
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.5, delay: 0.4 }}
-                                    className="text-lg text-muted-foreground leading-relaxed"
+                                    className="text-base sm:text-lg text-muted-foreground leading-relaxed"
                                 >
                                     {howItWorksSteps[activeStep].description}
                                 </motion.p>
@@ -576,7 +576,7 @@ export default function LandingPage() {
             </section>
 
             {/* CTA Section */}
-            <section id="contact" className="relative py-32 sm:py-40 overflow-hidden">
+            <section id="contact" className="relative py-20 sm:py-32 lg:py-40 overflow-hidden">
                 <div className="relative z-10 mx-auto max-w-4xl px-6 lg:px-8">
                     {/* CTA Section with Enhanced Animations */}
                     <motion.div
@@ -589,25 +589,25 @@ export default function LandingPage() {
                             stiffness: 80,
                             damping: 12
                         }}
-                        className="relative text-center rounded-3xl border border-border/50 bg-card/30 backdrop-blur-sm p-12 overflow-hidden"
+                        className="relative text-center rounded-3xl border border-border/50 bg-card/30 backdrop-blur-sm p-8 sm:p-12 overflow-hidden"
                     >
                         {/* BorderBeam Effect */}
                         <BorderBeam size={300} duration={10} colorFrom="hsl(var(--primary))" colorTo="hsl(var(--primary) / 0.1)" />
 
                         <ShinyText
                             text="Build Your Team with AI-Powered Matching"
-                            className="text-4xl font-bold tracking-tight sm:text-6xl mb-6 text-foreground"
+                            className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-6 text-foreground"
                             speed={6}
                         />
-                        <p className="mb-12 text-xl text-muted-foreground max-w-2xl mx-auto">
+                        <p className="mb-8 sm:mb-12 text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
                             Start forming your project or startup team in minutes — free for all students and founders.
                         </p>
 
                         <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-                            <Button size="lg" asChild className="text-lg px-10 py-6 h-auto shadow-lg hover:shadow-primary/25 transition-all duration-300">
+                            <Button size="lg" asChild className="w-full sm:w-auto text-lg px-10 py-6 h-auto shadow-lg hover:shadow-primary/25 transition-all duration-300">
                                 <Link href="/register">Get Started for Free</Link>
                             </Button>
-                            <Button size="lg" variant="outline" asChild className="text-lg px-10 py-6 h-auto hover:bg-background/50">
+                            <Button size="lg" variant="outline" asChild className="w-full sm:w-auto text-lg px-10 py-6 h-auto hover:bg-background/50">
                                 <Link href="/login">Sign In</Link>
                             </Button>
                         </div>

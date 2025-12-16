@@ -12,7 +12,7 @@ interface AuthLayoutProps {
 
 export function AuthLayout({ children }: AuthLayoutProps) {
     return (
-        <div className="min-h-screen w-full bg-background grid lg:grid-cols-2">
+        <div className="min-h-[100dvh] w-full bg-background grid lg:grid-cols-2">
             {/* Left Column - Form */}
             <div className="relative flex flex-col justify-center px-4 sm:px-6 lg:px-10 xl:px-20 py-10">
                 {/* Navigation (Back Button) */}
