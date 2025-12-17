@@ -189,7 +189,7 @@ export default function LandingPage() {
     return (
         <div className="min-h-screen overflow-x-hidden bg-background relative">
             <MeshGradientBackground />
-            <LandingHeader navigation={navigation} />
+            {/* Header handled by PublicLayout */}
 
             {/* Hero Section with Two Column Design */}
             <section className="relative min-h-[90vh] lg:min-h-screen flex items-center justify-center pt-24 lg:pt-20 overflow-hidden">
@@ -632,19 +632,7 @@ export default function LandingPage() {
             </section>
 
             {/* Footer with Scroll-Reveal */}
-            <motion.footer
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-                className="border-t border-border/40 py-12 bg-background/50 backdrop-blur-sm"
-            >
-                <div className="mx-auto max-w-7xl px-6 lg:px-8">
-                    <p className="text-center text-sm text-muted-foreground">
-                        &copy; {new Date().getFullYear()} Collabryx. All rights reserved.
-                    </p>
-                </div>
-            </motion.footer>
+            {/* Footer handled by PublicLayout */}
         </div>
     )
 }
