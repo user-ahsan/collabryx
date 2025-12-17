@@ -1,8 +1,11 @@
-export default function ProfilePage({ params }: { params: { id: string } }) {
+import { ProfileHeader } from "@/components/features/profile/profile-header"
+import { ProfileTabs } from "@/components/features/profile/profile-tabs"
+
+export default function ProfilePage() {
     return (
-        <div className="container py-10">
-            <h1 className="text-3xl font-bold mb-6">Profile {params.id}</h1>
-            <p className="text-muted-foreground">User profile details...</p>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-5xl">
+            <ProfileHeader />
+            <ProfileTabs />
         </div>
     )
 }

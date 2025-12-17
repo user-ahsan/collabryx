@@ -28,7 +28,7 @@ export function MobileNav() {
                     </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="p-0 border-r w-72">
-                    <SidebarNav className="h-full border-none" />
+                    <SidebarNav className="h-full border-none" isMobile={true} />
                 </SheetContent>
             </Sheet>
 
