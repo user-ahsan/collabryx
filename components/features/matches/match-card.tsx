@@ -33,12 +33,12 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
             transition={{ duration: 0.4, delay: index * 0.1, ease: "easeOut" }}
             className="h-full"
         >
-            <Card className="group relative h-full overflow-hidden border bg-card transition-all duration-300 hover:shadow-lg hover:border-primary/50">
+            <Card className="group relative h-full overflow-hidden border bg-card transition-all duration-300 hover:shadow-md hover:border-primary">
                 <div className="relative flex flex-col h-full p-6">
                     {/* Header */}
                     <div className="flex flex-col items-center">
                         <div className="relative mb-4">
-                            <div className="relative rounded-full p-1 ring-2 ring-border/50 transition-all duration-300 group-hover:ring-primary/50">
+                            <div className="relative rounded-full p-1 ring-2 ring-border transition-all duration-300 group-hover:ring-primary">
                                 <Avatar className="h-28 w-28">
                                     <AvatarImage src={match.avatar} alt={match.name} className="object-cover" />
                                     <AvatarFallback className="text-2xl font-bold bg-muted">
@@ -60,7 +60,7 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                     </div>
 
                     {/* Compatibility Meter */}
-                    <div className="mb-6 space-y-3 rounded-xl bg-muted/50 p-4">
+                    <div className="mb-6 space-y-3 rounded-xl bg-muted p-4">
                         <div className="flex items-center justify-between text-sm">
                             <div className="flex items-center gap-2 font-medium text-muted-foreground">
                                 <Sparkles className="h-3.5 w-3.5 text-primary" />
@@ -75,7 +75,7 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                             <div className="pt-2 space-y-1.5">
                                 {match.insights.map((insight, i) => (
                                     <div key={i} className="flex items-center gap-2 text-xs">
-                                        <div className="h-1.5 w-1.5 rounded-full bg-primary/60" />
+                                        <div className="h-1.5 w-1.5 rounded-full bg-primary" />
                                         <span className="font-medium text-muted-foreground">
                                             {insight.text}
                                         </span>
@@ -91,7 +91,7 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                             <Badge
                                 key={skill}
                                 variant="secondary"
-                                className="bg-muted text-xs font-normal text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary border-transparent border"
+                                className="bg-secondary text-xs font-medium text-secondary-foreground transition-colors hover:bg-primary/10 hover:text-primary border-transparent border"
                             >
                                 {skill}
                             </Badge>
@@ -112,7 +112,7 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                     <div className="grid grid-cols-2 gap-3 mt-auto">
                         <Button
                             variant="outline"
-                            className="h-10 hover:bg-primary/5 hover:text-primary transition-all"
+                            className="h-10 hover:bg-primary hover:text-primary-foreground transition-all"
                         >
                             <UserPlus className="mr-2 h-4 w-4" />
                             Connect

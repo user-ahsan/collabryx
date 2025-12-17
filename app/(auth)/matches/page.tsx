@@ -1,6 +1,10 @@
+"use client"
+
 import { MatchCard } from "@/components/features/matches/match-card"
 import { MatchContextHeader } from "@/components/features/matches/match-context-header"
 import { MatchFilters } from "@/components/features/matches/match-filters"
+import { useState } from "react"
+import { toast } from "sonner"
 
 // Dummy data for visual verification
 const MATCHES = [
@@ -82,13 +86,32 @@ const MATCHES = [
     },
 ]
 
+
 export default function MatchesPage() {
+    const [preferences, setPreferences] = useState({
+        role: "CTO",
+        industry: "Fintech",
+        type: "Startup"
+    })
+
+    const handleUpdatePreferences = (newPrefs: { role: string; industry: string; type: string }) => {
+        setPreferences(newPrefs)
+        // Simulate "finding people" logic
+        toast("Preferences Updated", {
+            description: `Looking for ${newPrefs.role} in ${newPrefs.industry}...`,
+        })
+    }
+
     return (
         <div className="w-full min-h-screen bg-background">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-[1400px]">
                 {/* Header Section */}
                 {/* Header Section */}
-                <MatchContextHeader />
+                {/* Header Section */}
+                <MatchContextHeader
+                    preferences={preferences}
+                    onUpdatePreferences={handleUpdatePreferences}
+                />
 
                 {/* Filter Bar */}
                 <MatchFilters />
