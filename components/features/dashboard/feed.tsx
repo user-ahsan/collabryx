@@ -3,26 +3,45 @@
 import { useState, useRef } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import {
     Image as ImageIcon,
-    Send,
+    Smile,
+    X,
+    MoreHorizontal,
     Heart,
     MessageCircle,
     Share2,
-    MoreHorizontal,
-    Video,
     Calendar,
     FileText,
-    Smile,
     Globe,
-    X
+    ThumbsUp
 } from "lucide-react"
+import { cn } from "@/lib/utils"
+
+// New Ecosystem Imports
+import { PostOptionsDropdown } from "./post-options-dropdown"
+import { RichTextDisplay } from "./rich-text-display"
+import { LinkPreview } from "./link-preview"
+import { PostSkeleton } from "./post-skeleton"
+import { NewPostsIndicator } from "./new-posts-indicator"
+import { InfiniteScrollTrigger } from "./infinite-scroll-trigger"
+import { CommentSection } from "./comment-section"
+import { ReactionPicker } from "./reaction-picker"
+import { ShareDialog } from "./share-dialog"
+import { MediaViewer } from "./media-viewer"
 
 const EMOJIS = ["😀", "😂", "🥰", "😍", "😭", "😊", "😎", "🔥", "✨", "🎉", "👍", "👎", "❤️", "🚀", "👀", "💯", "🤔", "👏", "🙌", "💀"]
+
+const REACTION_MAP: Record<string, { label: string, icon: any, color: string }> = {
+    "👍": { label: "Like", icon: ThumbsUp, color: "text-blue-600" },
+    "❤️": { label: "Love", icon: Heart, color: "text-red-500" },
+    "😂": { label: "Haha", icon: null, color: "text-yellow-500" },
+    "😮": { label: "Wow", icon: null, color: "text-yellow-500" },
+    "😢": { label: "Sad", icon: null, color: "text-yellow-500" },
+    "😡": { label: "Angry", icon: null, color: "text-orange-500" },
+}
 
 interface MediaFile {
     file: File
@@ -30,14 +49,95 @@ interface MediaFile {
     type: 'image' | 'video'
 }
 
+interface Post {
+    id: number
+    author: string
+    role: string
+    time: string
+    content: string
+    avatar: string
+    initials: string
+    hasMedia?: boolean
+    mediaType?: 'image' | 'video'
+    mediaUrl?: string
+    hasLink?: boolean
+    linkUrl?: string
+    myReaction?: string | null
+}
+
+const DUMMY_POSTS: Post[] = [
+    {
+        id: 1,
+        author: "Alex Johnson",
+        role: "Product Designer",
+        time: "2h ago",
+        content: "Just launched a new feature for our collaborative workspace! 🚀 Super excited to see how teams use the new real-time whiteboard. #productdesign #collaboration #startup",
+        avatar: "/avatars/02.png",
+        initials: "AJ",
+        hasMedia: true,
+        mediaType: 'image',
+        mediaUrl: "https://images.unsplash.com/photo-1531403009284-440f8804f1e9?auto=format&fit=crop&q=80&w=1000",
+        hasLink: false,
+        myReaction: null
+    },
+    {
+        id: 2,
+        author: "Sarah Miller",
+        role: "Growth Lead",
+        time: "4h ago",
+        content: "Check out this interesting article about the future of remote work. @davidchen what do you think?",
+        avatar: "/avatars/03.png",
+        initials: "SM",
+        hasMedia: false,
+        hasLink: true,
+        linkUrl: "https://example.com/remote-work-future",
+        myReaction: null
+    },
+    {
+        id: 3,
+        author: "David Chen",
+        role: "Full Stack Dev",
+        time: "6h ago",
+        content: "Refactoring the entire caching layer today. Coffee is my best friend right now. ☕️ #coding #devlife",
+        avatar: "/avatars/04.png",
+        initials: "DC",
+        hasMedia: false,
+        myReaction: null
+    }
+]
+
 export function Feed() {
+    const [posts, setPosts] = useState<Post[]>(DUMMY_POSTS)
     const [content, setContent] = useState("")
     const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([])
     const fileInputRef = useRef<HTMLInputElement>(null)
 
-    const handleMediaClick = () => {
-        fileInputRef.current?.click()
+    // Ecosystem States
+    const [expandedComments, setExpandedComments] = useState<Set<number>>(new Set())
+    const [reactionPickerOpen, setReactionPickerOpen] = useState<number | null>(null)
+    const [newPostsCount, setNewPostsCount] = useState(3) // Simulated new posts
+    const [isLoadingMore, setIsLoadingMore] = useState(false)
+    const [shareDialogState, setShareDialogState] = useState<{ isOpen: boolean, url: string }>({ isOpen: false, url: '' })
+    const [mediaViewerState, setMediaViewerState] = useState<{ isOpen: boolean, url: string, type: 'image' | 'video' }>({ isOpen: false, url: '', type: 'image' })
+
+    const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+    const handleMouseEnter = (postId: number) => {
+        if (hoverTimeoutRef.current) {
+            clearTimeout(hoverTimeoutRef.current)
+            hoverTimeoutRef.current = null
+        }
+        setReactionPickerOpen(postId)
     }
+
+    const handleMouseLeave = () => {
+        if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
+        hoverTimeoutRef.current = setTimeout(() => {
+            setReactionPickerOpen(null)
+        }, 1200) // 1.2s delay for smoother UX
+    }
+
+    const handleMediaClick = () => fileInputRef.current?.click()
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
@@ -48,10 +148,7 @@ export function Feed() {
             }))
             setMediaFiles(prev => [...prev, ...newFiles])
         }
-        // Reset input value to allow selecting same file again
-        if (fileInputRef.current) {
-            fileInputRef.current.value = ''
-        }
+        if (fileInputRef.current) fileInputRef.current.value = ''
     }
 
     const handleRemoveMedia = (index: number) => {
@@ -63,12 +160,51 @@ export function Feed() {
         })
     }
 
-    const handleEmojiSelect = (emoji: string) => {
-        setContent(prev => prev + emoji)
+    const toggleComments = (postId: number) => {
+        const newSet = new Set(expandedComments)
+        if (newSet.has(postId)) newSet.delete(postId)
+        else newSet.add(postId)
+        setExpandedComments(newSet)
+    }
+
+    const handleLoadMore = async () => {
+        setIsLoadingMore(true)
+        // Simulate fetch
+        await new Promise(resolve => setTimeout(resolve, 1500))
+        setIsLoadingMore(false)
+    }
+
+    const handleScrollTop = () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+        setNewPostsCount(0)
+    }
+
+    const handleReaction = (postId: number, emoji: string) => {
+        if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current)
+        setPosts(prev => prev.map(p =>
+            p.id === postId ? { ...p, myReaction: emoji } : p
+        ))
+        setReactionPickerOpen(null)
+    }
+
+    const handleMainLike = (postId: number) => {
+        setPosts(prev => prev.map(p => {
+            if (p.id === postId) {
+                // Toggle like (default to thumbs up if adding, null if removing)
+                return { ...p, myReaction: p.myReaction ? null : "👍" }
+            }
+            return p
+        }))
     }
 
     return (
         <div className="space-y-8 pb-10">
+            <NewPostsIndicator
+                count={newPostsCount}
+                visible={newPostsCount > 0}
+                onClick={handleScrollTop}
+            />
+
             {/* Premium Create Post Widget */}
             <div className="bg-card rounded-2xl shadow-sm border p-4 md:p-6 space-y-4">
                 <div className="flex gap-4 items-start">
@@ -84,7 +220,6 @@ export function Feed() {
                             onChange={(e) => setContent(e.target.value)}
                         />
 
-                        {/* Media Previews */}
                         {mediaFiles.length > 0 && (
                             <div className="flex gap-2 overflow-x-auto py-2">
                                 {mediaFiles.map((media, index) => (
@@ -150,7 +285,7 @@ export function Feed() {
                                         <button
                                             key={emoji}
                                             className="text-2xl hover:bg-muted p-1 rounded transition-colors"
-                                            onClick={() => handleEmojiSelect(emoji)}
+                                            onClick={() => setContent(prev => prev + emoji)}
                                         >
                                             {emoji}
                                         </button>
@@ -172,72 +307,171 @@ export function Feed() {
                 <div className="h-px bg-border flex-1" />
             </div>
 
-            {/* Premium Feed Posts */}
+            {/* Feed Posts */}
             <div className="space-y-6">
-                {[1, 2, 3].map((i) => (
-                    <div key={i} className="group bg-card rounded-2xl border shadow-sm hover:shadow-lg transition-all duration-300">
-                        <div className="p-5 md:p-7">
-                            {/* Header */}
-                            <div className="flex items-start justify-between mb-4">
-                                <div className="flex gap-4">
-                                    <Avatar className="h-12 w-12 cursor-pointer ring-2 ring-background shadow-sm">
-                                        <AvatarImage src={`/avatars/0${i + 1}.png`} />
-                                        <AvatarFallback>U{i}</AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                        <h4 className="font-bold text-base text-foreground hover:text-primary cursor-pointer transition-colors">Alex Johnson</h4>
-                                        <p className="text-xs text-muted-foreground font-medium flex items-center gap-1.5 mt-0.5">
-                                            Product Designer
-                                            <span className="w-1 h-1 rounded-full bg-muted-foreground/40" />
-                                            2h ago
-                                            <span className="w-1 h-1 rounded-full bg-muted-foreground/40" />
-                                            <Globe className="h-3 w-3" />
-                                        </p>
-                                    </div>
-                                </div>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2 text-muted-foreground hover:text-foreground rounded-full">
-                                    <MoreHorizontal className="h-5 w-5" />
-                                </Button>
-                            </div>
+                {posts.map((post) => {
+                    // Reaction State Calculation
+                    const reactionConfig = post.myReaction ? REACTION_MAP[post.myReaction] : null
+                    const ReactionIcon = reactionConfig?.icon || ThumbsUp
 
-                            {/* Content */}
-                            <div className="pl-[4rem] -ml-4 md:ml-0 md:pl-16">
-                                <p className="text-[15px] md:text-base leading-relaxed text-foreground/90 font-normal">
-                                    Just launched a new feature for our collaborative workspace! 🚀 Super excited to see how teams use the new real-time whiteboard. <span className="text-primary hover:underline cursor-pointer">#productdesign</span> <span className="text-primary hover:underline cursor-pointer">#collaboration</span> <span className="text-primary hover:underline cursor-pointer">#startup</span>
-                                </p>
-
-                                {i === 1 && (
-                                    <div className="mt-4 rounded-xl overflow-hidden shadow-sm border bg-muted/30 aspect-video flex items-center justify-center group/image cursor-pointer relative">
-                                        <div className="absolute inset-0 bg-black/5 group-hover/image:bg-transparent transition-colors" />
-                                        <div className="text-muted-foreground font-medium flex flex-col items-center gap-2">
-                                            <ImageIcon className="h-8 w-8 opacity-50" />
-                                            <span>Post Media Content</span>
+                    return (
+                        <div key={post.id} className="group bg-card rounded-2xl border shadow-sm hover:shadow-lg transition-all duration-300">
+                            <div className="p-5 md:p-7">
+                                {/* Header */}
+                                <div className="flex items-start justify-between mb-4">
+                                    <div className="flex gap-4">
+                                        <Avatar className="h-12 w-12 cursor-pointer ring-2 ring-background shadow-sm">
+                                            <AvatarImage src={post.avatar} />
+                                            <AvatarFallback>{post.initials}</AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <h4 className="font-bold text-base text-foreground hover:text-primary cursor-pointer transition-colors">{post.author}</h4>
+                                            <p className="text-xs text-muted-foreground font-medium flex items-center gap-1.5 mt-0.5">
+                                                {post.role}
+                                                <span className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+                                                {post.time}
+                                                <span className="w-1 h-1 rounded-full bg-muted-foreground/40" />
+                                                <Globe className="h-3 w-3" />
+                                            </p>
                                         </div>
                                     </div>
-                                )}
-                            </div>
-                        </div>
+                                    <PostOptionsDropdown isOwner={post.id === 3} />
+                                </div>
 
-                        {/* Footer Actions */}
-                        <div className="px-5 pb-4 pt-2">
-                            <div className="flex items-center justify-between border-t pt-3">
-                                <Button variant="ghost" className="flex-1 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-all gap-2 h-9">
-                                    <Heart className="h-4 w-4" />
-                                    <span className="font-medium text-sm">Like</span>
-                                </Button>
-                                <Button variant="ghost" className="flex-1 rounded-lg text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 transition-all gap-2 h-9">
-                                    <MessageCircle className="h-4 w-4" />
-                                    <span className="font-medium text-sm">Comment</span>
-                                </Button>
-                                <Button variant="ghost" className="flex-1 rounded-lg text-muted-foreground hover:text-green-500 hover:bg-green-500/10 transition-all gap-2 h-9">
-                                    <Share2 className="h-4 w-4" />
-                                    <span className="font-medium text-sm">Share</span>
-                                </Button>
+                                {/* Content */}
+                                <div className="pl-[4rem] -ml-4 md:ml-0 md:pl-16">
+                                    <RichTextDisplay content={post.content} className="text-[15px] md:text-base leading-relaxed text-foreground/90 font-normal" />
+
+                                    {post.hasLink && post.linkUrl && (
+                                        <LinkPreview
+                                            url={post.linkUrl}
+                                            title="The Future of Remote Work: What You Need to Know"
+                                            description="Explore the latest trends in distributed teams and asynchronous collaboration."
+                                            siteName="techdaily.com"
+                                        />
+                                    )}
+
+                                    {post.hasMedia && post.mediaUrl && (
+                                        <div
+                                            className="mt-4 rounded-xl overflow-hidden shadow-sm border bg-black/5 cursor-pointer relative group/image min-h-[200px]"
+                                            onClick={() => setMediaViewerState({ isOpen: true, url: post.mediaUrl!, type: post.mediaType || 'image' })}
+                                        >
+                                            {/* Simple Image with Error Fallback Logic handled by standard img events or a wrapper in production. 
+                                                For this demo, we use a standard img with a skeleton overlay while loading would require a separate component state. 
+                                                We'll add a 'min-h-[200px]' and background to avoid layout shift if it fails. 
+                                            */}
+                                            <img
+                                                src={post.mediaUrl}
+                                                alt="Post content"
+                                                className="w-full h-auto object-cover max-h-[500px]"
+                                                onError={(e) => {
+                                                    e.currentTarget.style.display = 'none';
+                                                    e.currentTarget.parentElement?.classList.add('flex', 'items-center', 'justify-center', 'bg-muted');
+                                                    // Create text node for error
+                                                    const errorText = document.createElement('div');
+                                                    errorText.className = "text-muted-foreground text-sm flex flex-col items-center gap-2";
+                                                    errorText.innerHTML = '<svg class="h-8 w-8 opacity-50" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg><span>Image failed to load</span>';
+                                                    e.currentTarget.parentElement?.appendChild(errorText);
+                                                }}
+                                            />
+                                            <div className="absolute inset-0 bg-black/0 group-hover/image:bg-black/10 transition-colors flex items-center justify-center pointer-events-none">
+                                                <div className="bg-black/50 text-white px-3 py-1 rounded-full text-sm opacity-0 group-hover/image:opacity-100 transition-opacity backdrop-blur-sm">
+                                                    Click to expand
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
+
+                            {/* Footer Actions */}
+                            <div className="px-5 pb-4 pt-2">
+                                <div className="flex items-center justify-between border-t pt-3 relative">
+                                    {/* Like / Reaction Group */}
+                                    <div className="flex-1 relative group/reaction">
+                                        <Button
+                                            variant="ghost"
+                                            className={cn(
+                                                "w-full rounded-lg hover:bg-muted/50 transition-all gap-2 h-9",
+                                                reactionConfig?.color || "text-muted-foreground hover:text-blue-500"
+                                            )}
+                                            onClick={() => handleMainLike(post.id)}
+                                            onMouseEnter={() => handleMouseEnter(post.id)}
+                                            onMouseLeave={handleMouseLeave}
+                                        >
+                                            {reactionConfig?.icon ? (
+                                                <ReactionIcon className={cn("h-4 w-4", reactionConfig.color, "fill-current")} />
+                                            ) : post.myReaction ? (
+                                                <span className="text-lg leading-none">{post.myReaction}</span>
+                                            ) : (
+                                                <ThumbsUp className="h-4 w-4" />
+                                            )}
+
+                                            <span className="font-medium text-sm">
+                                                {reactionConfig?.label || "Like"}
+                                            </span>
+                                        </Button>
+
+                                        {reactionPickerOpen === post.id && (
+                                            <div
+                                                className="absolute bottom-full left-0 mb-2 z-20"
+                                                onMouseEnter={() => handleMouseEnter(post.id)}
+                                                onMouseLeave={handleMouseLeave}
+                                            >
+                                                <ReactionPicker
+                                                    isOpen={true}
+                                                    onSelect={(emoji) => handleReaction(post.id, emoji)}
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <Button
+                                        variant="ghost"
+                                        className="flex-1 rounded-lg text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 transition-all gap-2 h-9"
+                                        onClick={() => toggleComments(post.id)}
+                                    >
+                                        <MessageCircle className="h-4 w-4" />
+                                        <span className="font-medium text-sm">Comment</span>
+                                    </Button>
+
+                                    <Button
+                                        variant="ghost"
+                                        className="flex-1 rounded-lg text-muted-foreground hover:text-green-500 hover:bg-green-500/10 transition-all gap-2 h-9"
+                                        onClick={() => setShareDialogState({ isOpen: true, url: `https://collabryx.app/post/${post.id}` })}
+                                    >
+                                        <Share2 className="h-4 w-4" />
+                                        <span className="font-medium text-sm">Share</span>
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {/* Collapsible Comments */}
+                            {expandedComments.has(post.id) && (
+                                <div className="animate-in slide-in-from-top-2 duration-200 px-5 sm:px-7">
+                                    <CommentSection />
+                                </div>
+                            )}
                         </div>
-                    </div>
-                ))}
+                    )
+                })}
+
+                {isLoadingMore && <PostSkeleton />}
+                <InfiniteScrollTrigger onLoadMore={handleLoadMore} hasMore={true} isLoading={isLoadingMore} />
             </div>
+
+            <ShareDialog
+                isOpen={shareDialogState.isOpen}
+                onClose={() => setShareDialogState(prev => ({ ...prev, isOpen: false }))}
+                postUrl={shareDialogState.url}
+            />
+
+            <MediaViewer
+                isOpen={mediaViewerState.isOpen}
+                onClose={() => setMediaViewerState(prev => ({ ...prev, isOpen: false }))}
+                url={mediaViewerState.url}
+                type={mediaViewerState.type}
+            />
         </div>
     )
 }

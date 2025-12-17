@@ -101,23 +101,22 @@ export function SuggestionsSidebar({
                     ))}
                 </div>
 
-                <div className="mt-4">
-                    <div className="relative overflow-hidden rounded-xl border border-primary/10 bg-primary/5 p-4">
-                        <div className="text-center space-y-3">
-                            <div className="space-y-1">
-                                <p className="text-xs font-bold text-foreground">Want more matches?</p>
-                                <p className="text-[10px] text-muted-foreground leading-relaxed px-2">
-                                    Complete your profile to unlock AI-powered recommendations.
-                                </p>
-                            </div>
-                            <Button
-                                size="sm"
-                                className="w-full h-8 rounded-lg text-xs shadow-none bg-primary text-primary-foreground hover:bg-primary/90"
-                            >
-                                Complete Profile
-                                <ArrowRight className="ml-1 h-3 w-3" />
-                            </Button>
-                        </div>
+                <div className="mt-6 mb-2">
+                    <div className="relative overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-br from-primary/10 via-background to-accent/20 p-5 shadow-sm">
+                        <div className="absolute top-0 right-0 -mt-2 -mr-2 h-16 w-16 bg-primary/20 blur-2xl rounded-full pointer-events-none" />
+                        <div className="absolute bottom-0 left-0 -mb-2 -ml-2 h-16 w-16 bg-blue-500/20 blur-2xl rounded-full pointer-events-none" />
+
+                        <h4 className="font-bold text-base mb-2 flex items-center gap-2">
+                            <span className="text-xl">🚀</span>
+                            Want more matches?
+                        </h4>
+                        <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
+                            Complete your profile to unlock <span className="font-medium text-foreground">AI-powered recommendations</span> tailored just for you.
+                        </p>
+                        <Button className="w-full shadow-lg shadow-primary/20 transition-all hover:shadow-primary/40 group font-semibold">
+                            Complete Profile
+                            <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                        </Button>
                     </div>
                 </div>
             </CardContent>
