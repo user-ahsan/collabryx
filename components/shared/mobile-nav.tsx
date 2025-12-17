@@ -19,7 +19,7 @@ export function MobileNav() {
     }, [pathname])
 
     return (
-        <div className="flex items-center gap-4 border-b bg-background/95 backdrop-blur p-4 md:hidden supports-[backdrop-filter]:bg-background/60">
+        <div className="sticky top-0 z-50 w-full flex items-center gap-4 border-b bg-background/95 backdrop-blur p-4 md:hidden supports-[backdrop-filter]:bg-background/60">
             <Sheet open={open} onOpenChange={setOpen}>
                 <SheetTrigger asChild>
                     <Button variant="ghost" size="icon" className="md:hidden">

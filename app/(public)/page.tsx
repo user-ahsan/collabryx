@@ -203,7 +203,7 @@ export default function LandingPage() {
                             className="flex flex-col justify-center"
                         >
                             <div className="max-w-xl">
-                                <div className="text-left mb-6">
+                                <div className="text-left mb-6 sm:mb-8">
                                     <MorphingText
                                         texts={[
                                             "Innovate.",
@@ -219,7 +219,7 @@ export default function LandingPage() {
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     transition={{ duration: 0.4, delay: 0.1 }}
-                                    className="mb-8 lg:mb-10 text-lg leading-8 text-muted-foreground sm:text-xl text-left"
+                                    className="mb-8 lg:mb-10 text-base sm:text-lg leading-7 sm:leading-8 text-muted-foreground sm:text-xl text-left"
                                 >
                                     Find co-founders, teammates, and opportunities using semantic matching powered by vector embeddings. Collabryx connects you based on skills, interests, and goals—not keywords.
                                 </motion.p>

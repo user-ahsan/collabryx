@@ -11,15 +11,15 @@ export function ProfileHeader() {
             {/* Banner */}
             <div className="h-32 bg-gradient-to-r from-primary/10 to-primary/30 w-full" />
 
-            <div className="px-6 pb-6">
-                <div className="flex flex-col md:flex-row gap-6 items-start -mt-12">
+            <div className="px-4 md:px-6 pb-6">
+                <div className="flex flex-col md:flex-row gap-4 md:gap-6 items-start md:items-end -mt-12 md:-mt-16">
                     {/* Avatar */}
-                    <Avatar className="h-32 w-32 border-4 border-background shadow-lg">
+                    <Avatar className="h-24 w-24 md:h-32 md:w-32 border-4 border-background shadow-lg shrink-0">
                         <AvatarImage src="/avatars/01.png" />
                         <AvatarFallback>SC</AvatarFallback>
                     </Avatar>
 
-                    <div className="flex-1 mt-12 md:mt-14 space-y-4">
+                    <div className="flex-1 mt-2 md:mt-0 space-y-4 w-full">
                         <div className="flex flex-col md:flex-row justify-between gap-4">
                             <div>
                                 <h1 className="text-2xl font-bold">Sarah Chen</h1>

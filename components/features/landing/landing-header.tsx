@@ -115,7 +115,7 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({ navigation }) => {
 
             {/* Mobile menu */}
             {mobileMenuOpen && (
-                <div className="lg:hidden">
+                <div className="lg:hidden absolute top-full left-0 right-0 bg-background/95 backdrop-blur-lg border-b border-border/40 shadow-xl animate-in slide-in-from-top-2 duration-200">
                     <div className="space-y-2 px-6 pb-6 pt-2">
                         {navigation.map((item) => (
                             <Link

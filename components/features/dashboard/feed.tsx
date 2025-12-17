@@ -207,15 +207,15 @@ export function Feed() {
 
             {/* Premium Create Post Widget */}
             <div className="bg-card rounded-2xl shadow-sm border p-4 md:p-6 space-y-4">
-                <div className="flex gap-4 items-start">
-                    <Avatar className="h-11 w-11 md:h-12 md:w-12 ring-2 ring-background shadow-sm cursor-pointer transition-transform hover:scale-105">
+                <div className="flex gap-3 md:gap-4 items-start">
+                    <Avatar className="h-10 w-10 md:h-12 md:w-12 ring-2 ring-background shadow-sm cursor-pointer transition-transform hover:scale-105">
                         <AvatarImage src="/avatars/01.png" />
                         <AvatarFallback>SC</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
                         <Textarea
                             placeholder="What's on your mind, Sophie?"
-                            className="w-full resize-none border-none bg-transparent focus-visible:ring-0 min-h-[60px] text-lg md:text-xl p-0 placeholder:text-muted-foreground/50 leading-relaxed"
+                            className="w-full resize-none border-none bg-transparent focus-visible:ring-0 min-h-[50px] md:min-h-[60px] text-base md:text-xl p-0 placeholder:text-muted-foreground/50 leading-relaxed"
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
                         />
@@ -318,9 +318,9 @@ export function Feed() {
                         <div key={post.id} className="group bg-card rounded-2xl border shadow-sm hover:shadow-lg transition-all duration-300">
                             <div className="p-5 md:p-7">
                                 {/* Header */}
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="flex gap-4">
-                                        <Avatar className="h-12 w-12 cursor-pointer ring-2 ring-background shadow-sm">
+                                <div className="flex items-start justify-between mb-3 md:mb-4">
+                                    <div className="flex gap-3 md:gap-4">
+                                        <Avatar className="h-10 w-10 md:h-12 md:w-12 cursor-pointer ring-2 ring-background shadow-sm">
                                             <AvatarImage src={post.avatar} />
                                             <AvatarFallback>{post.initials}</AvatarFallback>
                                         </Avatar>
@@ -339,7 +339,7 @@ export function Feed() {
                                 </div>
 
                                 {/* Content */}
-                                <div className="pl-[4rem] -ml-4 md:ml-0 md:pl-16">
+                                <div className="pl-0 md:pl-16">
                                     <RichTextDisplay content={post.content} className="text-[15px] md:text-base leading-relaxed text-foreground/90 font-normal" />
 
                                     {post.hasLink && post.linkUrl && (

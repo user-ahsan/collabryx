@@ -4,11 +4,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
-import { MoreVertical, Phone, Video } from "lucide-react"
+import { ArrowLeft, MoreVertical, Phone, Video } from "lucide-react"
 import { MessageInput } from "./message-input"
 
 interface ChatWindowProps {
     chatId?: string
+    onBack?: () => void
 }
 
 const MESSAGES = [
@@ -32,7 +33,7 @@ const MESSAGES = [
     },
 ]
 
-export function ChatWindow({ chatId }: ChatWindowProps) {
+export function ChatWindow({ chatId, onBack }: ChatWindowProps) {
     if (!chatId) {
         return (
             <div className="h-full flex items-center justify-center text-muted-foreground">
@@ -46,6 +47,11 @@ export function ChatWindow({ chatId }: ChatWindowProps) {
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b">
                 <div className="flex items-center gap-3">
+                    {/* Back Button (Mobile Only) */}
+                    <Button variant="ghost" size="icon" className="md:hidden -ml-2" onClick={onBack}>
+                        <ArrowLeft className="h-5 w-5" />
+                        <span className="sr-only">Back</span>
+                    </Button>
                     <Avatar>
                         <AvatarImage src="/avatars/01.png" />
                         <AvatarFallback>SC</AvatarFallback>

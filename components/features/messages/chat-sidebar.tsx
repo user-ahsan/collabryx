@@ -39,7 +39,13 @@ const CONVERSATIONS = [
     },
 ]
 
-export function ChatSidebar({ className, selectedId }: ChatSidebarProps) {
+interface ChatSidebarProps {
+    className?: string
+    selectedId?: string
+    onSelect?: (id: string) => void
+}
+
+export function ChatSidebar({ className, selectedId, onSelect }: ChatSidebarProps) {
     return (
         <div className={cn("flex flex-col h-full border-r", className)}>
             <div className="p-4 border-b space-y-4">
@@ -58,6 +64,7 @@ export function ChatSidebar({ className, selectedId }: ChatSidebarProps) {
                     {CONVERSATIONS.map((chat) => (
                         <button
                             key={chat.id}
+                            onClick={() => onSelect?.(chat.id)}
                             className={cn(
                                 "flex items-start gap-4 p-4 text-left hover:bg-muted/50 transition-colors",
                                 selectedId === chat.id && "bg-muted"
