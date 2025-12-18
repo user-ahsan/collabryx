@@ -17,7 +17,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 {/* Desktop Sidebar - Fixed & Overlay */}
                 <aside
                     className={cn(
-                        "hidden md:block fixed inset-y-0 z-50 transition-all duration-300 ease-in-out border-r bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 overflow-visible shadow-xl",
+                        "hidden md:block fixed inset-y-0 z-50 transition-all duration-300 ease-in-out border-r bg-background overflow-visible shadow-xl",
                         isCollapsed ? "w-20" : "w-64"
                     )}
                 >
@@ -27,7 +27,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
                 {/* Backdrop Overlay (Desktop Only) */}
                 {!isCollapsed && (
                     <div
-                        className="hidden md:block fixed inset-0 z-40 bg-background/80 transition-all duration-300 animate-in fade-in"
+                        className="hidden md:block fixed inset-0 z-40 bg-black/50 transition-all duration-300 animate-in fade-in"
                         onClick={toggleSidebar}
                         aria-hidden="true"
                     />

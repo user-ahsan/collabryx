@@ -45,7 +45,10 @@ export function MatchContextHeader({
                             <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl leading-tight">
                                 Suggestions for <span className="text-primary">{preferences.role}</span> for your <span className="text-primary">{preferences.industry}</span> {preferences.type}
                             </h1>
-                            <p className="text-lg text-muted-foreground leading-relaxed">
+                            <p className="text-sm text-muted-foreground leading-relaxed">
+                                Matches are ranked using <span className="font-medium text-foreground">skills compatibility</span>, <span className="font-medium text-foreground">shared interests</span>, <span className="font-medium text-foreground">availability</span>, and <span className="font-medium text-foreground">project stage</span>.
+                            </p>
+                            <p className="text-base text-muted-foreground leading-relaxed pt-1">
                                 We've analyzed your project requirements and found these candidates who match your technical needs and company culture.
                             </p>
                         </div>
@@ -58,7 +61,7 @@ export function MatchContextHeader({
                             >
                                 <Search className="mr-3 h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                                 <span className="text-muted-foreground group-hover:text-foreground transition-colors truncate">
-                                    Describe your ideal co-founder...
+                                    e.g. "Backend-focused CTO with fintech & startup experience"
                                 </span>
                                 <div className="absolute right-3 rounded-lg bg-secondary px-2 py-1 text-xs font-medium text-secondary-foreground">
                                     Semantic Search

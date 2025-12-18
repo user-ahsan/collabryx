@@ -58,37 +58,64 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
         }
     }, [isCollapsed])
 
-    const items = [
+    // Intent-driven navigation structure
+    const navigationSections = [
         {
-            title: "Dashboard",
-            href: "/dashboard",
-            icon: LayoutDashboard,
+            label: "MAIN",
+            items: [
+                {
+                    title: "Dashboard",
+                    href: "/dashboard",
+                    icon: LayoutDashboard,
+                },
+                {
+                    title: "Smart Matches",
+                    href: "/matches",
+                    icon: Sparkles,
+                    badge: 8, // AI-powered match count
+                },
+            ]
         },
         {
-            title: "Smart Matches",
-            href: "/matches",
-            icon: Sparkles,
+            label: "COLLABORATION",
+            items: [
+                {
+                    title: "Messages",
+                    href: "/messages",
+                    icon: MessageSquare,
+                },
+                {
+                    title: "Requests",
+                    href: "/requests",
+                    icon: TrendingUp,
+                    badge: 2,
+                },
+            ]
         },
         {
-            title: "Messages",
-            href: "/messages",
-            icon: MessageSquare,
+            label: "AI TOOLS",
+            items: [
+                {
+                    title: "AI Mentor",
+                    href: "/assistant",
+                    icon: Bot,
+                },
+            ]
         },
-
         {
-            title: "AI Mentor",
-            href: "/assistant",
-            icon: Bot,
-        },
-        {
-            title: "My Profile",
-            href: "/profile/1",
-            icon: UserCircle,
-        },
+            label: "ACCOUNT",
+            items: [
+                {
+                    title: "My Profile",
+                    href: "/profile/1",
+                    icon: UserCircle,
+                },
+            ]
+        }
     ]
 
     return (
-        <div className={cn("flex h-full flex-col relative bg-gradient-to-b from-background via-background to-muted/20 overflow-hidden", className)} {...props}>
+        <div className={cn("flex h-full flex-col relative bg-background overflow-hidden", className)} {...props}>
             {/* Toggle Button - Refined */}
             <Button
                 variant="ghost"
@@ -122,8 +149,8 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
 
             {/* Profile Section (Integrated) */}
             <div className={cn("px-4 transition-all duration-500 ease-in-out shrink-0", isCollapsed ? "py-4" : "py-6")}>
-                <div className={cn("flex flex-col bg-card/50 rounded-2xl transition-all duration-300",
-                    !isCollapsed ? "p-4 border shadow-sm" : "items-center gap-2 bg-transparent border-0 shadow-none p-0")}>
+                <div className={cn("flex flex-col rounded-2xl transition-all duration-300",
+                    !isCollapsed ? "p-4 border shadow-sm bg-card" : "items-center gap-2 bg-transparent border-0 shadow-none p-0")}>
                     {!isCollapsed ? (
                         <>
                             <div className="flex flex-col items-center">
@@ -185,40 +212,63 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
             {/* Navigation Items */}
             <div className="flex-1 min-h-0 overflow-hidden w-full">
                 <ScrollArea className="h-full w-full px-3 py-2 [&_[data-slot=scroll-area-scrollbar]]:hidden">
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-1">
                         <TooltipProvider delayDuration={0}>
-                            {items.map((item) => {
-                                const isActive = pathname === item.href
-                                return (
-                                    <Tooltip key={item.href}>
-                                        <TooltipTrigger asChild>
-                                            <Link
-                                                href={item.href}
-                                                className={cn(
-                                                    "relative flex items-center rounded-xl px-3.5 py-3 text-sm font-medium transition-all duration-200 group overflow-hidden",
-                                                    isActive
-                                                        ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                                                        : "text-muted-foreground hover:bg-muted/80 hover:text-foreground hover:translate-x-1",
-                                                    isCollapsed ? "justify-center px-2 hover:translate-x-0" : "justify-start"
-                                                )}
-                                            >
-                                                <item.icon className={cn("h-[1.15rem] w-[1.15rem] transition-colors",
-                                                    isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground",
-                                                    !isCollapsed && "mr-3"
-                                                )} />
-                                                {!isCollapsed && (
-                                                    <span className="tracking-wide">{item.title}</span>
-                                                )}
-                                            </Link>
-                                        </TooltipTrigger>
-                                        {isCollapsed && showTooltips && (
-                                            <TooltipContent side="right" className="font-medium" sideOffset={10}>
-                                                {item.title}
-                                            </TooltipContent>
-                                        )}
-                                    </Tooltip>
-                                )
-                            })}
+                            {navigationSections.map((section) => (
+                                <div key={section.label} className="mb-4">
+                                    {/* Section Label - Only show when expanded */}
+                                    {!isCollapsed && (
+                                        <div className="px-3 mb-2">
+                                            <span className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+                                                {section.label}
+                                            </span>
+                                        </div>
+                                    )}
+
+                                    {/* Section Items */}
+                                    <div className="flex flex-col gap-1">
+                                        {section.items.map((item: any) => {
+                                            const isActive = pathname === item.href
+                                            return (
+                                                <Tooltip key={item.href}>
+                                                    <TooltipTrigger asChild>
+                                                        <Link
+                                                            href={item.href}
+                                                            className={cn(
+                                                                "relative flex items-center rounded-xl px-3.5 py-3 text-sm font-medium transition-all duration-200 group overflow-hidden",
+                                                                isActive
+                                                                    ? "bg-primary text-primary-foreground shadow-md"
+                                                                    : "text-muted-foreground hover:bg-muted hover:text-foreground hover:translate-x-1",
+                                                                isCollapsed ? "justify-center px-2 hover:translate-x-0" : "justify-start"
+                                                            )}
+                                                        >
+                                                            <item.icon className={cn("h-[1.15rem] w-[1.15rem] transition-colors",
+                                                                isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground",
+                                                                !isCollapsed && "mr-3"
+                                                            )} />
+                                                            {!isCollapsed && (
+                                                                <>
+                                                                    <span className="tracking-wide">{item.title}</span>
+                                                                    {item.badge && item.badge > 0 && (
+                                                                        <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground animate-pulse">
+                                                                            {item.badge}
+                                                                        </span>
+                                                                    )}
+                                                                </>
+                                                            )}
+                                                        </Link>
+                                                    </TooltipTrigger>
+                                                    {isCollapsed && showTooltips && (
+                                                        <TooltipContent side="right" className="font-medium" sideOffset={10}>
+                                                            {item.title}
+                                                        </TooltipContent>
+                                                    )}
+                                                </Tooltip>
+                                            )
+                                        })}
+                                    </div>
+                                </div>
+                            ))}
                         </TooltipProvider>
                     </div>
                 </ScrollArea>
@@ -227,7 +277,7 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
             {/* Footer Actions - Redesigned */}
             <div className="p-4 mt-auto shrink-0">
                 {!isCollapsed ? (
-                    <div className="flex items-center justify-between gap-1 p-1.5 bg-card/30 rounded-xl border border-border/40 shadow-sm backdrop-blur-sm">
+                    <div className="flex items-center justify-between gap-1 p-1.5 bg-card rounded-xl border shadow-sm">
                         <TooltipProvider delayDuration={0}>
                             <Tooltip>
                                 <TooltipTrigger asChild>

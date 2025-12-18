@@ -40,6 +40,19 @@ export function MatchFilters() {
                         </SelectContent>
                     </Select>
 
+                    {/* Availability Filter */}
+                    <Select defaultValue="any">
+                        <SelectTrigger className="h-10 w-full min-w-[140px] md:w-auto">
+                            <SelectValue placeholder="Availability" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="any">Any Availability</SelectItem>
+                            <SelectItem value="fulltime">Full-time</SelectItem>
+                            <SelectItem value="parttime">Part-time</SelectItem>
+                            <SelectItem value="hackathon">Hackathon</SelectItem>
+                        </SelectContent>
+                    </Select>
+
                     {/* Advanced Filter Toggle */}
                     <Button
                         variant="outline"

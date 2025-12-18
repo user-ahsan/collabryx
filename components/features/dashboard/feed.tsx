@@ -3,6 +3,7 @@
 import { useState, useRef } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import {
@@ -16,7 +17,8 @@ import {
     Calendar,
     FileText,
     Globe,
-    ThumbsUp
+    ThumbsUp,
+    Bot
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -31,6 +33,10 @@ import { CommentSection } from "./comment-section"
 import { ReactionPicker } from "./reaction-picker"
 import { ShareDialog } from "./share-dialog"
 import { MediaViewer } from "./media-viewer"
+import { IntentPrompt } from "./intent-prompt"
+import { AIContextCard } from "./ai-context-card"
+import { MatchActivityCard } from "./match-activity-card"
+import { RequestReminderCard } from "./request-reminder-card"
 
 const EMOJIS = ["😀", "😂", "🥰", "😍", "😭", "😊", "😎", "🔥", "✨", "🎉", "👍", "👎", "❤️", "🚀", "👀", "💯", "🤔", "👏", "🙌", "💀"]
 
@@ -205,7 +211,7 @@ export function Feed() {
                 onClick={handleScrollTop}
             />
 
-            {/* Premium Create Post Widget */}
+            {/* Premium Create Post Widget - Collaboration Focused */}
             <div className="bg-card rounded-2xl shadow-sm border p-4 md:p-6 space-y-4">
                 <div className="flex gap-4 items-start">
                     <Avatar className="h-11 w-11 md:h-12 md:w-12 ring-2 ring-background shadow-sm cursor-pointer transition-transform hover:scale-105">
@@ -214,11 +220,14 @@ export function Feed() {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                         <Textarea
-                            placeholder="What's on your mind, Sophie?"
+                            placeholder="What are you trying to build?"
                             className="w-full resize-none border-none bg-transparent focus-visible:ring-0 min-h-[60px] text-lg md:text-xl p-0 placeholder:text-muted-foreground/50 leading-relaxed"
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
                         />
+
+                        {/* Intent Chips */}
+                        <IntentPrompt className="mt-3 mb-2" onSelectIntent={(id) => console.log('Selected intent:', id)} />
 
                         {mediaFiles.length > 0 && (
                             <div className="flex gap-2 overflow-x-auto py-2">
@@ -294,12 +303,47 @@ export function Feed() {
                             </PopoverContent>
                         </Popover>
 
-                        <Button className="rounded-full px-8 font-semibold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all">
+                        <Button className="rounded-full px-8 font-semibold shadow-lg transition-all">
                             Post
                         </Button>
                     </div>
                 </div>
             </div>
+
+            {/* AI Context Card */}
+            <AIContextCard />
+
+            {/* Match Activity Card - Shows recent collaboration signals */}
+            <MatchActivityCard />
+
+            {/* Request Reminder Card - Surfaces pending requests */}
+            <RequestReminderCard pendingCount={2} />
+
+            {/* AI Mentor Micro-Entry Point */}
+            <Card className="border bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 shadow-sm">
+                <CardContent className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
+                            <Bot className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-semibold text-foreground">
+                                Need help structuring your idea?
+                            </h3>
+                            <p className="text-xs text-muted-foreground">
+                                Get personalized guidance from the AI Mentor
+                            </p>
+                        </div>
+                    </div>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 px-3 text-xs font-medium border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900"
+                    >
+                        Ask AI Mentor →
+                    </Button>
+                </CardContent>
+            </Card>
 
             <div className="flex items-center justify-between px-2">
                 <div className="h-px bg-border flex-1" />
