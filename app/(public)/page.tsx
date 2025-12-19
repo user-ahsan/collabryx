@@ -41,10 +41,12 @@ import { ChevronLeft } from "@/public/icons/ChevronLeft"
 import { ChevronRight } from "@/public/icons/ChevronRight"
 
 const navigation = [
+    { name: "Problem", href: "#problem" },
+    { name: "Solution", href: "#solution" },
     { name: "Features", href: "#features" },
     { name: "Benefits", href: "#benefits" },
+    { name: "Use Cases", href: "#use-cases" },
     { name: "How It Works", href: "#how-it-works" },
-    { name: "Partners", href: "#partners" },
     { name: "Contact", href: "#contact" },
 ]
 
@@ -297,10 +299,14 @@ export default function LandingPage() {
             </section>
 
             {/* Problem Statement - Establish the Pain Point */}
-            <ProblemStatement />
+            <div id="problem">
+                <ProblemStatement />
+            </div>
 
             {/* Semantic Engine - Show the Solution */}
-            <SemanticEngineComparison />
+            <div id="solution">
+                <SemanticEngineComparison />
+            </div>
 
             {/* Compatibility Score - Demonstrate Value */}
             <CompatibilityScoreShowcase />
@@ -309,7 +315,9 @@ export default function LandingPage() {
             <AIMentorPreview />
 
             {/* Persona Use Cases - Targeted Messaging */}
-            <PersonaUseCases />
+            <div id="use-cases">
+                <PersonaUseCases />
+            </div>
 
             {/* Features Section - Feature Details */}
             <section id="features" className="relative py-16 sm:py-24 lg:py-32 overflow-hidden">
