@@ -1,9 +1,31 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { motion } from "framer-motion"
+import { Brain, Sprout, GraduationCap, Briefcase, Rocket, Lock, Plus } from "lucide-react"
 
-export function ProfileTabs() {
+const intentIcons = {
+    "Technical Co-founder": { icon: Brain, color: "text-purple-600 dark:text-purple-400 bg-purple-500/10 border-purple-500/30" },
+    "Open Source": { icon: Sprout, color: "text-green-600 dark:text-green-400 bg-green-500/10 border-green-500/30" },
+    "Mentorship": { icon: GraduationCap, color: "text-blue-600 dark:text-blue-400 bg-blue-500/10 border-blue-500/30" },
+    "Freelance": { icon: Briefcase, color: "text-orange-600 dark:text-orange-400 bg-orange-500/10 border-orange-500/30" },
+    "Startup": { icon: Rocket, color: "text-pink-600 dark:text-pink-400 bg-pink-500/10 border-pink-500/30" },
+}
+
+interface ProfileTabsProps {
+    isOwnProfile?: boolean
+}
+
+export function ProfileTabs({ isOwnProfile = false }: ProfileTabsProps) {
+    const [bioExpanded, setBioExpanded] = useState(false)
+
+    const bioText = "I'm a passionate Full Stack Developer with 5 years of experience building scalable web applications. My expertise lies in the React ecosystem (Next.js), Node.js, and cloud architecture. Currently, I'm exploring the intersection of Web3 and AI, looking for opportunities to collaborate on innovative projects. I love solving complex problems and mentoring junior developers."
+    const bioPreview = bioText.split(". ").slice(0, 3).join(". ") + "."
+
     return (
         <Tabs defaultValue="about" className="w-full">
             <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
@@ -11,64 +33,130 @@ export function ProfileTabs() {
                 <TabsTrigger value="experience">Experience</TabsTrigger>
                 <TabsTrigger value="projects">Projects</TabsTrigger>
             </TabsList>
-            <TabsContent value="about" className="mt-6 space-y-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Bio</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-muted-foreground leading-relaxed">
-                            I'm a passionate Full Stack Developer with 5 years of experience building scalable web applications.
-                            My expertise lies in the React ecosystem (Next.js), Node.js, and cloud architecture.
-                            <br /><br />
-                            Currently, I'm exploring the intersection of Web3 and AI, looking for opportunities to collaborate on innovative projects.
-                            I love solving complex problems and mentoring junior developers.
-                        </p>
-                    </CardContent>
-                </Card>
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Looking For</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <ul className="list-disc list-inside space-y-2 text-muted-foreground">
-                            <li>Technical Co-founder for a SaaS project</li>
-                            <li>Open source contributions</li>
-                            <li>Mentorship opportunities</li>
-                        </ul>
-                    </CardContent>
-                </Card>
+            <TabsContent value="about" className="mt-6 space-y-6">
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                >
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Bio</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-muted-foreground leading-relaxed">
+                                {bioExpanded ? bioText : bioPreview}
+                            </p>
+                            {!bioExpanded && (
+                                <Button
+                                    variant="link"
+                                    className="px-0 mt-2 h-auto text-primary"
+                                    onClick={() => setBioExpanded(true)}
+                                >
+                                    Read more
+                                </Button>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Looking For</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="flex flex-wrap gap-2">
+                                {Object.entries(intentIcons).slice(0, 3).map(([label, { icon: Icon, color }]) => (
+                                    <Badge
+                                        key={label}
+                                        variant="outline"
+                                        className={`${color} px-3 py-2 text-sm font-medium`}
+                                    >
+                                        <Icon className="h-4 w-4 mr-2" />
+                                        {label}
+                                    </Badge>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </motion.div>
             </TabsContent>
 
             <TabsContent value="experience" className="mt-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Work Experience</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div className="border-l-2 border-muted pl-6 pb-6 relative">
-                            <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-primary" />
-                            <h3 className="font-bold">Senior Developer</h3>
-                            <p className="text-sm text-muted-foreground">TechStart Inc. • 2022 - Present</p>
-                            <p className="mt-2 text-muted-foreground">Leading the frontend team, migrating legacy codebase to Next.js, and improving performance by 40%.</p>
-                        </div>
-                        <div className="border-l-2 border-muted pl-6 relative">
-                            <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-muted-foreground" />
-                            <h3 className="font-bold">Software Engineer</h3>
-                            <p className="text-sm text-muted-foreground">Creative Solutions • 2019 - 2022</p>
-                            <p className="mt-2 text-muted-foreground">Developed full-stack features for e-commerce clients using MERN stack.</p>
-                        </div>
-                    </CardContent>
-                </Card>
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                >
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Work Experience</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="border-l-2 border-muted pl-6 pb-6 relative">
+                                <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-primary" />
+                                <h3 className="font-bold">Senior Developer</h3>
+                                <p className="text-sm text-muted-foreground">TechStart Inc. • 2022 - Present</p>
+                                <p className="mt-2 text-muted-foreground">
+                                    Leading the frontend team, migrating legacy codebase to Next.js, and{" "}
+                                    <span className="font-semibold text-primary inline-flex items-center">
+                                        <Rocket className="h-3.5 w-3.5 mr-1 inline" />
+                                        improving performance by 40%
+                                    </span>
+                                    .
+                                </p>
+                            </div>
+                            <div className="border-l-2 border-muted pl-6 relative">
+                                <div className="absolute -left-[9px] top-0 h-4 w-4 rounded-full bg-muted-foreground" />
+                                <h3 className="font-bold">Software Engineer</h3>
+                                <p className="text-sm text-muted-foreground">Creative Solutions • 2019 - 2022</p>
+                                <p className="mt-2 text-muted-foreground">
+                                    Developed{" "}
+                                    <span className="font-semibold text-primary">full-stack features</span>
+                                    {" "}for e-commerce clients using MERN stack.
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </motion.div>
             </TabsContent>
 
             <TabsContent value="projects" className="mt-6">
-                <Card>
-                    <CardContent className="pt-6">
-                        <p className="text-center text-muted-foreground">No public projects yet.</p>
-                    </CardContent>
-                </Card>
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                >
+                    <Card>
+                        <CardContent className="pt-6 flex flex-col items-center justify-center py-12">
+                            {isOwnProfile ? (
+                                <>
+                                    <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                                        <Plus className="h-8 w-8 text-primary" />
+                                    </div>
+                                    <h3 className="font-semibold text-lg mb-2">Add your first project</h3>
+                                    <p className="text-center text-muted-foreground max-w-sm mb-4">
+                                        Showcase your work and attract collaborators by adding projects to your profile.
+                                    </p>
+                                    <Button>
+                                        <Plus className="mr-2 h-4 w-4" />
+                                        Add Project
+                                    </Button>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                                        <Lock className="h-8 w-8 text-muted-foreground" />
+                                    </div>
+                                    <h3 className="font-semibold text-lg mb-2">Projects are private</h3>
+                                    <p className="text-center text-muted-foreground max-w-sm">
+                                        This user prefers to share projects after connecting.
+                                    </p>
+                                </>
+                            )}
+                        </CardContent>
+                    </Card>
+                </motion.div>
             </TabsContent>
         </Tabs>
     )

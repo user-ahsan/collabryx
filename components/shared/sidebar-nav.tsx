@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/tooltip"
 import { UserNavDropdown } from "@/components/shared/user-nav-dropdown"
 import { useSidebar } from "@/components/shared/sidebar-context"
+import { NotificationsDialog } from "@/components/features/dashboard/notifications-dialog"
 import {
     LayoutDashboard,
     Sparkles,
@@ -46,6 +47,7 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
     const toggleSidebar = sidebarContext.toggleSidebar
 
     const [showTooltips, setShowTooltips] = React.useState(false)
+    const [notificationsOpen, setNotificationsOpen] = React.useState(false)
 
     React.useEffect(() => {
         if (isCollapsed) {
@@ -107,7 +109,7 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
             items: [
                 {
                     title: "My Profile",
-                    href: "/profile/1",
+                    href: "/my-profile",
                     icon: UserCircle,
                 },
             ]
@@ -281,12 +283,15 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
                         <TooltipProvider delayDuration={0}>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Link href="/notifications">
-                                        <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-muted/80 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-                                            <Bell className="h-4.5 w-4.5" />
-                                            <span className="sr-only">Notifications</span>
-                                        </Button>
-                                    </Link>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-9 w-9 hover:bg-muted/80 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+                                        onClick={() => setNotificationsOpen(true)}
+                                    >
+                                        <Bell className="h-4.5 w-4.5" />
+                                        <span className="sr-only">Notifications</span>
+                                    </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>Notifications</TooltipContent>
                             </Tooltip>
@@ -315,12 +320,15 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
                         <TooltipProvider delayDuration={0}>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Link href="/notifications">
-                                        <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-muted rounded-xl text-muted-foreground hover:text-foreground">
-                                            <Bell className="h-5 w-5" />
-                                            <span className="sr-only">Notifications</span>
-                                        </Button>
-                                    </Link>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-9 w-9 hover:bg-muted rounded-xl text-muted-foreground hover:text-foreground"
+                                        onClick={() => setNotificationsOpen(true)}
+                                    >
+                                        <Bell className="h-5 w-5" />
+                                        <span className="sr-only">Notifications</span>
+                                    </Button>
                                 </TooltipTrigger>
                                 {showTooltips && <TooltipContent side="right">Notifications</TooltipContent>}
                             </Tooltip>
@@ -342,6 +350,9 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
                     </div>
                 )}
             </div>
+
+            {/* Notifications Dialog */}
+            <NotificationsDialog open={notificationsOpen} onOpenChange={setNotificationsOpen} />
         </div>
     )
 }
