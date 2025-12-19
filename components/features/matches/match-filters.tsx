@@ -26,9 +26,9 @@ export function MatchFilters({
     onViewModeChange
 }: MatchFiltersProps) {
     return (
-        <div className="mb-8 w-full rounded-xl border bg-card p-4 shadow-sm">
+        <div className="mb-6 sm:mb-8 w-full rounded-lg sm:rounded-xl border bg-card p-3 sm:p-4 shadow-sm">
             {/* Header with Match Count and View Toggle */}
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
                 <div className="flex items-center gap-2">
                     <h2 className="text-sm font-semibold text-muted-foreground">
                         {matchCount} {matchCount === 1 ? 'match' : 'matches'} found
@@ -40,7 +40,7 @@ export function MatchFilters({
                     <Button
                         variant={viewMode === "grid" ? "secondary" : "ghost"}
                         size="sm"
-                        className="h-7 px-2"
+                        className="h-7 px-2 text-xs sm:text-sm"
                         onClick={() => onViewModeChange?.("grid")}
                     >
                         <LayoutGrid className="h-3.5 w-3.5" />
@@ -48,7 +48,7 @@ export function MatchFilters({
                     <Button
                         variant={viewMode === "list" ? "secondary" : "ghost"}
                         size="sm"
-                        className="h-7 px-2"
+                        className="h-7 px-2 text-xs sm:text-sm"
                         onClick={() => onViewModeChange?.("list")}
                     >
                         <List className="h-3.5 w-3.5" />
@@ -67,10 +67,10 @@ export function MatchFilters({
                     />
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                     {/* Role Filter */}
                     <Select defaultValue="all">
-                        <SelectTrigger className="h-10 w-full min-w-[140px] md:w-auto">
+                        <SelectTrigger className="h-10 w-full sm:min-w-[140px] sm:w-auto text-xs sm:text-sm">
                             <SelectValue placeholder="Role" />
                         </SelectTrigger>
                         <SelectContent>
@@ -84,7 +84,7 @@ export function MatchFilters({
 
                     {/* Availability Filter */}
                     <Select defaultValue="any">
-                        <SelectTrigger className="h-10 w-full min-w-[140px] md:w-auto">
+                        <SelectTrigger className="h-10 w-full sm:min-w-[140px] sm:w-auto text-xs sm:text-sm">
                             <SelectValue placeholder="Availability" />
                         </SelectTrigger>
                         <SelectContent>
@@ -99,7 +99,7 @@ export function MatchFilters({
                     <Button
                         variant="outline"
                         size="icon"
-                        className="h-10 w-10 shrink-0"
+                        className="h-10 w-10 shrink-0 hidden sm:flex"
                     >
                         <SlidersHorizontal className="h-4 w-4" />
                     </Button>

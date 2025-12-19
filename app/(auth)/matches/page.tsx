@@ -109,7 +109,7 @@ export default function MatchesPage() {
 
     return (
         <div className="w-full min-h-screen bg-background">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-[1400px]">
+            <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 max-w-[1400px]">
                 {/* Header Section */}
                 <MatchContextHeader
                     preferences={preferences}
@@ -125,7 +125,7 @@ export default function MatchesPage() {
 
                 {/* Grid or List Layout */}
                 {viewMode === "grid" ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 pb-20">
                         {MATCHES.map((match, index) => (
                             <MatchCard key={match.id} match={match} index={index} />
                         ))}

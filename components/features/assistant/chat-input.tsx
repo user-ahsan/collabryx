@@ -12,7 +12,7 @@ export function ChatInput() {
         <div className="relative border rounded-xl overflow-hidden bg-background shadow-sm focus-within:ring-1 focus-within:ring-primary">
             <Textarea
                 placeholder="Ask for advice, career tips, or connection strategies..."
-                className="min-h-[3.5rem] max-h-32 resize-none border-0 focus-visible:ring-0 p-4 pr-12"
+                className="min-h-[3.5rem] md:min-h-[3.5rem] max-h-32 resize-none border-0 focus-visible:ring-0 p-3 md:p-4 pr-11 md:pr-12 text-sm"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 rows={1}
@@ -20,7 +20,7 @@ export function ChatInput() {
             <div className="absolute right-2 bottom-2">
                 <Button
                     size="icon"
-                    className="h-8 w-8 rounded-lg"
+                    className="h-8 w-8 md:h-8 md:w-8 rounded-lg"
                     disabled={!input.trim()}
                 >
                     <SendHorizontal className="h-4 w-4" />

@@ -75,11 +75,11 @@ export default function AssistantPage() {
     }
 
     return (
-        <div className="flex flex-col h-[calc(100vh-2rem)] max-w-5xl mx-auto w-full">
-            <div className="flex items-center justify-between p-4 border-b">
+        <div className="flex flex-col h-[calc(100vh-2rem)] md:h-[calc(100vh-2rem)] max-w-5xl mx-auto w-full">
+            <div className="flex items-center justify-between px-3 py-3 md:p-4 border-b">
                 <div className="flex items-center gap-2">
-                    <Sparkles className="h-5 w-5 text-primary" />
-                    <h1 className="font-bold text-lg">AI Mentor</h1>
+                    <Sparkles className="h-5 w-5 text-primary shrink-0" />
+                    <h1 className="font-bold text-base md:text-lg">AI Mentor</h1>
                 </div>
 
                 {/* Demo button to show workspace */}
@@ -87,23 +87,25 @@ export default function AssistantPage() {
                     variant="outline"
                     size="sm"
                     onClick={() => handleOpenWorkspace(MOCK_AI_OUTPUT)}
+                    className="text-xs md:text-sm px-2 md:px-4"
                 >
-                    <FileText className="h-4 w-4 mr-2" />
-                    View Sample Output
+                    <FileText className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
+                    <span className="hidden sm:inline">View Sample Output</span>
+                    <span className="sm:hidden">Sample</span>
                 </Button>
             </div>
 
             <ChatList />
 
-            <div className="p-4 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-3xl mx-auto">
+            <div className="p-3 md:p-4 space-y-3 md:space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 max-w-3xl mx-auto">
                     {STARTERS.map((s) => (
-                        <Card key={s.title} className="p-3 cursor-pointer hover:bg-muted/50 transition-colors text-xs">
+                        <Card key={s.title} className="p-3 md:p-3 cursor-pointer hover:bg-muted/50 active:bg-muted/70 transition-colors text-xs">
                             <div className="flex items-center gap-2 mb-1.5 font-semibold text-primary">
-                                <s.icon className="h-3 w-3" />
-                                {s.title}
+                                <s.icon className="h-3 w-3 shrink-0" />
+                                <span className="text-xs md:text-xs">{s.title}</span>
                             </div>
-                            <p className="text-muted-foreground line-clamp-2">
+                            <p className="text-muted-foreground line-clamp-2 text-[11px] md:text-xs">
                                 {s.desc}
                             </p>
                         </Card>
@@ -112,7 +114,7 @@ export default function AssistantPage() {
 
                 <div className="max-w-3xl mx-auto w-full">
                     <ChatInput />
-                    <p className="text-[10px] text-center text-muted-foreground mt-2">
+                    <p className="text-[10px] text-center text-muted-foreground mt-2 px-2">
                         AI can make mistakes. Consider checking important information.
                     </p>
                 </div>

@@ -75,13 +75,13 @@ export function AIOutputWorkspace({
                         animate={{ x: 0 }}
                         exit={{ x: "100%" }}
                         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                        className="fixed right-0 top-0 h-full w-full md:w-[600px] bg-background border-l shadow-2xl z-50 flex flex-col"
+                        className="fixed right-0 top-0 h-full w-full md:w-[600px] lg:w-[650px] bg-background border-l shadow-2xl z-50 flex flex-col"
                     >
                         {/* Header */}
-                        <div className="flex items-center justify-between p-4 border-b bg-muted/30">
-                            <div>
-                                <h2 className="text-lg font-bold">AI Output Workspace</h2>
-                                <p className="text-xs text-muted-foreground">
+                        <div className="flex items-center justify-between p-3 md:p-4 border-b bg-muted/30">
+                            <div className="flex-1 min-w-0 mr-2">
+                                <h2 className="text-base md:text-lg font-bold truncate">AI Output Workspace</h2>
+                                <p className="text-[10px] md:text-xs text-muted-foreground truncate">
                                     Edit, export, or save to your profile
                                 </p>
                             </div>
@@ -89,23 +89,23 @@ export function AIOutputWorkspace({
                                 variant="ghost"
                                 size="icon"
                                 onClick={onClose}
-                                className="shrink-0"
+                                className="shrink-0 h-8 w-8 md:h-9 md:w-9"
                             >
                                 <X className="h-4 w-4" />
                             </Button>
                         </div>
 
                         {/* Content Area */}
-                        <div className="flex-1 overflow-y-auto p-4">
+                        <div className="flex-1 overflow-y-auto p-3 md:p-4">
                             {isEditing ? (
                                 <Textarea
                                     value={editedContent}
                                     onChange={(e) => setEditedContent(e.target.value)}
-                                    className="min-h-[500px] font-mono text-sm resize-none"
+                                    className="min-h-[400px] md:min-h-[500px] font-mono text-xs md:text-sm resize-none"
                                 />
                             ) : (
-                                <Card className="p-4">
-                                    <pre className="whitespace-pre-wrap font-sans text-sm text-foreground">
+                                <Card className="p-3 md:p-4">
+                                    <pre className="whitespace-pre-wrap font-sans text-xs md:text-sm text-foreground">
                                         {editedContent}
                                     </pre>
                                 </Card>
@@ -113,12 +113,12 @@ export function AIOutputWorkspace({
                         </div>
 
                         {/* Action Bar */}
-                        <div className="border-t p-4 bg-muted/30 space-y-3">
-                            <div className="flex items-center gap-2">
+                        <div className="border-t p-3 md:p-4 bg-muted/30 space-y-2 md:space-y-3">
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                                 {isEditing ? (
                                     <Button
                                         onClick={handleSave}
-                                        className="flex-1"
+                                        className="flex-1 text-sm"
                                     >
                                         <Save className="h-4 w-4 mr-2" />
                                         Save Changes
@@ -127,7 +127,7 @@ export function AIOutputWorkspace({
                                     <Button
                                         variant="outline"
                                         onClick={() => setIsEditing(true)}
-                                        className="flex-1"
+                                        className="flex-1 text-sm"
                                     >
                                         <Edit3 className="h-4 w-4 mr-2" />
                                         Edit
@@ -137,7 +137,7 @@ export function AIOutputWorkspace({
                                 <Button
                                     variant="outline"
                                     onClick={handleCopy}
-                                    className="flex-1"
+                                    className="flex-1 text-sm"
                                 >
                                     {copied ? (
                                         <Check className="h-4 w-4 mr-2" />
@@ -150,7 +150,7 @@ export function AIOutputWorkspace({
                                 <Button
                                     variant="outline"
                                     onClick={handleDownload}
-                                    className="flex-1"
+                                    className="flex-1 text-sm"
                                 >
                                     <Download className="h-4 w-4 mr-2" />
                                     Export
@@ -160,7 +160,7 @@ export function AIOutputWorkspace({
                             {onSaveToProfile && (
                                 <Button
                                     onClick={handleSaveToProfile}
-                                    className="w-full"
+                                    className="w-full text-sm"
                                     variant="default"
                                 >
                                     Save to Profile

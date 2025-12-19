@@ -259,7 +259,7 @@ export function Feed() {
     }
 
     return (
-        <div className="space-y-8 pb-10">
+        <div className="space-y-4 md:space-y-6 lg:space-y-8 pb-6 md:pb-10">
             <NewPostsIndicator
                 count={newPostsCount}
                 visible={newPostsCount > 0}
@@ -267,16 +267,16 @@ export function Feed() {
             />
 
             {/* Premium Create Post Widget - Collaboration Focused */}
-            <div className="bg-card rounded-2xl shadow-sm border p-4 md:p-6 space-y-4">
-                <div className="flex gap-4 items-start">
-                    <Avatar className="h-11 w-11 md:h-12 md:w-12 ring-2 ring-background shadow-sm cursor-pointer transition-transform hover:scale-105">
+            <div className="bg-card rounded-xl md:rounded-2xl shadow-sm border p-3 md:p-6 space-y-3 md:space-y-4">
+                <div className="flex gap-3 md:gap-4 items-start">
+                    <Avatar className="h-10 w-10 md:h-12 md:w-12 ring-2 ring-background shadow-sm cursor-pointer transition-transform hover:scale-105">
                         <AvatarImage src="/avatars/01.png" />
                         <AvatarFallback>SC</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
                         <Textarea
                             placeholder="What are you trying to build?"
-                            className="w-full resize-none border-none bg-transparent focus-visible:ring-0 min-h-[60px] text-lg md:text-xl p-0 placeholder:text-muted-foreground/50 leading-relaxed"
+                            className="w-full resize-none border-none bg-transparent focus-visible:ring-0 min-h-[50px] md:min-h-[60px] text-base md:text-lg lg:text-xl p-0 placeholder:text-muted-foreground/50 leading-relaxed"
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
                         />
@@ -308,8 +308,8 @@ export function Feed() {
 
                 <div className="h-px bg-border/50" />
 
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                    <div className="flex items-center -space-x-1 sm:space-x-2 overflow-x-auto no-scrollbar py-1 w-full md:w-auto">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar py-1 w-full sm:w-auto">
                         <input
                             type="file"
                             ref={fileInputRef}
@@ -320,27 +320,27 @@ export function Feed() {
                         />
                         <Button
                             variant="ghost"
-                            className="h-9 px-3 text-muted-foreground hover:text-blue-600 hover:bg-blue-500/10 rounded-full transition-colors group"
+                            className="h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm text-muted-foreground hover:text-blue-600 hover:bg-blue-500/10 rounded-full transition-colors group whitespace-nowrap"
                             onClick={handleMediaClick}
                         >
-                            <ImageIcon className="h-5 w-5 mr-2 text-blue-500 group-hover:text-blue-600" />
-                            <span className="text-sm font-medium group-hover:text-blue-600">Media</span>
+                            <ImageIcon className="h-4 w-4 sm:h-5 sm:w-5 sm:mr-2 text-blue-500 group-hover:text-blue-600" />
+                            <span className="hidden sm:inline font-medium group-hover:text-blue-600">Media</span>
                         </Button>
-                        <Button variant="ghost" className="h-9 px-3 text-muted-foreground hover:text-orange-600 hover:bg-orange-500/10 rounded-full transition-colors group">
-                            <Calendar className="h-5 w-5 mr-2 text-orange-500 group-hover:text-orange-600" />
-                            <span className="text-sm font-medium group-hover:text-orange-600">Event</span>
+                        <Button variant="ghost" className="h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm text-muted-foreground hover:text-orange-600 hover:bg-orange-500/10 rounded-full transition-colors group whitespace-nowrap">
+                            <Calendar className="h-4 w-4 sm:h-5 sm:w-5 sm:mr-2 text-orange-500 group-hover:text-orange-600" />
+                            <span className="hidden sm:inline font-medium group-hover:text-orange-600">Event</span>
                         </Button>
-                        <Button variant="ghost" className="h-9 px-3 text-muted-foreground hover:text-red-600 hover:bg-red-500/10 rounded-full transition-colors group">
-                            <FileText className="h-5 w-5 mr-2 text-red-500 group-hover:text-red-600" />
-                            <span className="text-sm font-medium group-hover:text-red-600">Article</span>
+                        <Button variant="ghost" className="h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm text-muted-foreground hover:text-red-600 hover:bg-red-500/10 rounded-full transition-colors group whitespace-nowrap">
+                            <FileText className="h-4 w-4 sm:h-5 sm:w-5 sm:mr-2 text-red-500 group-hover:text-red-600" />
+                            <span className="hidden sm:inline font-medium group-hover:text-red-600">Article</span>
                         </Button>
                     </div>
 
-                    <div className="flex items-center gap-3 self-end md:self-auto pl-2 md:pl-0 border-l md:border-none border-border/50 ml-auto md:ml-0">
+                    <div className="flex items-center gap-2 sm:gap-3 justify-end sm:justify-start sm:pl-2 md:pl-0 sm:border-l md:border-none border-border/50">
                         <Popover>
                             <PopoverTrigger asChild>
-                                <Button size="icon" variant="ghost" className="text-muted-foreground hover:text-primary rounded-full">
-                                    <Smile className="h-5 w-5" />
+                                <Button size="icon" variant="ghost" className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-primary rounded-full">
+                                    <Smile className="h-4 w-4 sm:h-5 sm:w-5" />
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-64 p-2" align="end">
@@ -358,7 +358,7 @@ export function Feed() {
                             </PopoverContent>
                         </Popover>
 
-                        <Button className="rounded-full px-8 font-semibold shadow-lg transition-all">
+                        <Button className="rounded-full px-6 sm:px-8 font-semibold shadow-lg transition-all text-sm">
                             Post
                         </Button>
                     </div>
@@ -376,16 +376,16 @@ export function Feed() {
 
             {/* AI Mentor Micro-Entry Point */}
             <Card className="border bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 shadow-sm">
-                <CardContent className="p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
+                <CardContent className="p-3 md:p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:justify-between">
+                    <div className="flex items-start sm:items-center gap-3">
+                        <div className="h-10 w-10 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center shrink-0">
                             <Bot className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                         </div>
                         <div>
-                            <h3 className="text-sm font-semibold text-foreground">
+                            <h3 className="text-xs sm:text-sm font-semibold text-foreground">
                                 Need help structuring your idea?
                             </h3>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-[11px] sm:text-xs text-muted-foreground">
                                 Get personalized guidance from the AI Mentor
                             </p>
                         </div>
@@ -393,21 +393,21 @@ export function Feed() {
                     <Button
                         variant="outline"
                         size="sm"
-                        className="h-8 px-3 text-xs font-medium border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900"
+                        className="h-7 sm:h-8 px-3 text-xs font-medium border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900 w-full sm:w-auto shrink-0"
                     >
                         Ask AI Mentor →
                     </Button>
                 </CardContent>
             </Card>
 
-            <div className="flex items-center justify-between px-2">
+            <div className="flex items-center justify-between px-1 md:px-2">
                 <div className="h-px bg-border flex-1" />
-                <span className="px-4 text-xs font-medium text-muted-foreground uppercase tracking-widest">Recent Activity</span>
+                <span className="px-3 md:px-4 text-[10px] md:text-xs font-medium text-muted-foreground uppercase tracking-widest">Recent Activity</span>
                 <div className="h-px bg-border flex-1" />
             </div>
 
             {/* Feed Posts */}
-            <div className="space-y-6">
+            <div className="space-y-4 md:space-y-6">
                 {sortedPosts.map((post) => {
                     // Reaction State Calculation
                     const reactionConfig = post.myReaction ? REACTION_MAP[post.myReaction] : null
@@ -415,28 +415,28 @@ export function Feed() {
                     const postTypeBadge = getPostTypeBadge(post.postType)
 
                     return (
-                        <div key={post.id} className="group bg-card rounded-2xl border shadow-sm hover:shadow-lg transition-all duration-300">
-                            <div className="p-5 md:p-7">
+                        <div key={post.id} className="group bg-card rounded-xl md:rounded-2xl border shadow-sm hover:shadow-lg transition-all duration-300">
+                            <div className="p-4 md:p-5 lg:p-7">
                                 {/* Header */}
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="flex gap-4">
-                                        <Avatar className="h-12 w-12 cursor-pointer ring-2 ring-background shadow-sm">
+                                <div className="flex items-start justify-between mb-3 md:mb-4">
+                                    <div className="flex gap-3 md:gap-4 min-w-0 flex-1">
+                                        <Avatar className="h-10 w-10 md:h-12 md:w-12 cursor-pointer ring-2 ring-background shadow-sm shrink-0">
                                             <AvatarImage src={post.avatar} />
                                             <AvatarFallback>{post.initials}</AvatarFallback>
                                         </Avatar>
-                                        <div>
-                                            <h4 className="font-bold text-base text-foreground hover:text-primary cursor-pointer transition-colors">{post.author}</h4>
-                                            <p className="text-xs text-muted-foreground font-medium flex items-center gap-1.5 mt-0.5">
-                                                {post.role}
-                                                <span className="w-1 h-1 rounded-full bg-muted-foreground/40" />
-                                                {post.time}
-                                                <span className="w-1 h-1 rounded-full bg-muted-foreground/40" />
-                                                <Globe className="h-3 w-3" />
+                                        <div className="min-w-0 flex-1">
+                                            <h4 className="font-bold text-sm md:text-base text-foreground hover:text-primary cursor-pointer transition-colors truncate">{post.author}</h4>
+                                            <p className="text-[11px] md:text-xs text-muted-foreground font-medium flex items-center gap-1 md:gap-1.5 mt-0.5 flex-wrap">
+                                                <span className="truncate">{post.role}</span>
+                                                <span className="w-1 h-1 rounded-full bg-muted-foreground/40 shrink-0" />
+                                                <span className="shrink-0">{post.time}</span>
+                                                <span className="w-1 h-1 rounded-full bg-muted-foreground/40 shrink-0" />
+                                                <Globe className="h-3 w-3 shrink-0" />
                                             </p>
                                             {postTypeBadge && (
-                                                <div className="mt-2">
+                                                <div className="mt-1.5 md:mt-2">
                                                     <span className={cn(
-                                                        "inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border",
+                                                        "inline-flex items-center px-1.5 md:px-2 py-0.5 rounded-md text-[9px] md:text-[10px] font-semibold border",
                                                         postTypeBadge.color
                                                     )}>
                                                         {postTypeBadge.label}
@@ -449,8 +449,8 @@ export function Feed() {
                                 </div>
 
                                 {/* Content */}
-                                <div className="pl-[4rem] -ml-4 md:ml-0 md:pl-16">
-                                    <RichTextDisplay content={post.content} className="text-[15px] md:text-base leading-relaxed text-foreground/90 font-normal" />
+                                <div className="md:pl-16">
+                                    <RichTextDisplay content={post.content} className="text-sm md:text-[15px] lg:text-base leading-relaxed text-foreground/90 font-normal" />
 
                                     {post.hasLink && post.linkUrl && (
                                         <LinkPreview
@@ -495,14 +495,14 @@ export function Feed() {
                             </div>
 
                             {/* Footer Actions */}
-                            <div className="px-5 pb-4 pt-2">
-                                <div className="flex items-center justify-between border-t pt-3 relative">
+                            <div className="px-3 md:px-5 pb-3 md:pb-4 pt-2">
+                                <div className="flex items-center justify-between border-t pt-2 md:pt-3 relative gap-1 md:gap-0">
                                     {/* Like / Reaction Group */}
                                     <div className="flex-1 relative group/reaction">
                                         <Button
                                             variant="ghost"
                                             className={cn(
-                                                "w-full rounded-lg hover:bg-muted/50 transition-all gap-2 h-9",
+                                                "w-full rounded-lg hover:bg-muted/50 transition-all gap-1 md:gap-2 h-8 md:h-9 px-2 md:px-3",
                                                 reactionConfig?.color || "text-muted-foreground hover:text-blue-500"
                                             )}
                                             onClick={() => handleMainLike(post.id)}
@@ -510,14 +510,14 @@ export function Feed() {
                                             onMouseLeave={handleMouseLeave}
                                         >
                                             {reactionConfig?.icon ? (
-                                                <ReactionIcon className={cn("h-4 w-4", reactionConfig.color, "fill-current")} />
+                                                <ReactionIcon className={cn("h-3.5 w-3.5 md:h-4 md:w-4", reactionConfig.color, "fill-current")} />
                                             ) : post.myReaction ? (
-                                                <span className="text-lg leading-none">{post.myReaction}</span>
+                                                <span className="text-base md:text-lg leading-none">{post.myReaction}</span>
                                             ) : (
-                                                <ThumbsUp className="h-4 w-4" />
+                                                <ThumbsUp className="h-3.5 w-3.5 md:h-4 md:w-4" />
                                             )}
 
-                                            <span className="font-medium text-sm">
+                                            <span className="font-medium text-xs md:text-sm">
                                                 {reactionConfig?.label || "Like"}
                                             </span>
                                         </Button>
@@ -538,20 +538,21 @@ export function Feed() {
 
                                     <Button
                                         variant="ghost"
-                                        className="flex-1 rounded-lg text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 transition-all gap-2 h-9"
+                                        className="flex-1 rounded-lg text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10 transition-all gap-1 md:gap-2 h-8 md:h-9 px-2 md:px-3"
                                         onClick={() => toggleComments(post.id)}
                                     >
-                                        <MessageCircle className="h-4 w-4" />
-                                        <span className="font-medium text-sm">Comment</span>
+                                        <MessageCircle className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                                        <span className="font-medium text-xs md:text-sm">Comment</span>
                                     </Button>
 
                                     <Button
                                         variant="ghost"
-                                        className="flex-1 rounded-lg text-muted-foreground hover:text-green-500 hover:bg-green-500/10 transition-all gap-2 h-9"
+                                        className="flex-1 rounded-lg text-muted-foreground hover:text-green-500 hover:bg-green-500/10 transition-all gap-1 md:gap-2 h-8 md:h-9 px-2 md:px-3"
                                         onClick={() => setShareDialogState({ isOpen: true, url: `https://collabryx.app/post/${post.id}` })}
                                     >
-                                        <Share2 className="h-4 w-4" />
-                                        <span className="font-medium text-sm">Share</span>
+                                        <Share2 className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                                        <span className="font-medium text-xs md:text-sm hidden sm:inline">Share</span>
+                                        <Share2 className="h-3.5 w-3.5 md:h-4 md:w-4 sm:hidden" />
                                     </Button>
                                 </div>
                             </div>

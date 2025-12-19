@@ -48,12 +48,12 @@ export function UpdatePreferencesDialog({
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline" className="h-11 px-6 border-primary/20 hover:bg-primary/5 hover:border-primary/40 transition-colors">
+                <Button variant="outline" className="h-10 sm:h-11 px-4 sm:px-6 text-xs sm:text-sm border-primary/20 hover:bg-primary/5 hover:border-primary/40 transition-colors w-full md:w-auto">
                     <Settings2 className="mr-2 h-4 w-4" />
                     Update Preferences
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="w-[95vw] sm:w-full sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle>Update Match Preferences</DialogTitle>
                     <DialogDescription>
@@ -61,12 +61,12 @@ export function UpdatePreferencesDialog({
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="role" className="text-right">
+                    <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                        <Label htmlFor="role" className="sm:text-right">
                             Role
                         </Label>
                         <Select value={role} onValueChange={setRole}>
-                            <SelectTrigger className="col-span-3">
+                            <SelectTrigger className="col-span-1 sm:col-span-3">
                                 <SelectValue placeholder="Select role" />
                             </SelectTrigger>
                             <SelectContent>
@@ -79,23 +79,23 @@ export function UpdatePreferencesDialog({
                             </SelectContent>
                         </Select>
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="industry" className="text-right">
+                    <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                        <Label htmlFor="industry" className="sm:text-right">
                             Industry
                         </Label>
                         <Input
                             id="industry"
                             value={industry}
                             onChange={(e) => setIndustry(e.target.value)}
-                            className="col-span-3"
+                            className="col-span-1 sm:col-span-3"
                         />
                     </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="type" className="text-right">
+                    <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                        <Label htmlFor="type" className="sm:text-right">
                             Type
                         </Label>
                         <Select value={type} onValueChange={setType}>
-                            <SelectTrigger className="col-span-3">
+                            <SelectTrigger className="col-span-1 sm:col-span-3">
                                 <SelectValue placeholder="Select type" />
                             </SelectTrigger>
                             <SelectContent>

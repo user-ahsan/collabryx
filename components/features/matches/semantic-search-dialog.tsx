@@ -46,13 +46,13 @@ export function SemanticSearchDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[600px] overflow-hidden border-primary/20 bg-background/95 backdrop-blur-xl">
+            <DialogContent className="w-[95vw] sm:w-full sm:max-w-[600px] overflow-hidden border-primary/20 bg-background/95 backdrop-blur-xl">
                 <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2 text-2xl">
+                    <DialogTitle className="flex items-center gap-2 text-xl sm:text-2xl">
                         <Sparkles className="h-5 w-5 text-primary" />
                         AI Semantic Search
                     </DialogTitle>
-                    <DialogDescription className="text-base">
+                    <DialogDescription className="text-sm sm:text-base">
                         Describe your project and role to find the perfect match based on meaning, goals, and context.
                     </DialogDescription>
                 </DialogHeader>
@@ -84,11 +84,11 @@ export function SemanticSearchDialog({
                     </div>
                 </div>
 
-                <DialogFooter>
-                    <Button variant="ghost" onClick={() => onOpenChange(false)}>
+                <DialogFooter className="flex-col sm:flex-row gap-2">
+                    <Button variant="ghost" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
                         Cancel
                     </Button>
-                    <Button onClick={handleSearch} disabled={loading} className="min-w-[140px]">
+                    <Button onClick={handleSearch} disabled={loading} className="min-w-[140px] w-full sm:w-auto">
                         {loading ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

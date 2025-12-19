@@ -44,27 +44,27 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
             >
                 <Card className={`group relative h-full overflow-hidden border bg-card transition-all duration-300 hover:shadow-md hover:border-primary ${isLowMatch ? "opacity-75" : ""
                     }`}>
-                    <div className="relative flex flex-col h-full p-6">
+                    <div className="relative flex flex-col h-full p-4 sm:p-5 lg:p-6">
                         {/* Header */}
                         <div className="flex flex-col items-center">
                             <div className="relative mb-4">
                                 <div className="relative rounded-full p-1 ring-2 ring-border transition-all duration-300 group-hover:ring-primary">
-                                    <Avatar className="h-28 w-28">
+                                    <Avatar className="h-20 w-20 sm:h-24 sm:w-24 lg:h-28 lg:w-28">
                                         <AvatarImage src={match.avatar} alt={match.name} className="object-cover" />
-                                        <AvatarFallback className="text-2xl font-bold bg-muted">
+                                        <AvatarFallback className="text-xl sm:text-2xl font-bold bg-muted">
                                             {match.name.split(" ").map(n => n[0]).join("")}
                                         </AvatarFallback>
                                     </Avatar>
                                 </div>
-                                <div className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-background shadow-md ring-1 ring-border">
-                                    <span className="text-lg">✨</span>
+                                <div className="absolute bottom-1 sm:bottom-2 right-1 sm:right-2 flex h-6 w-6 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-background shadow-md ring-1 ring-border">
+                                    <span className="text-base sm:text-lg">✨</span>
                                 </div>
                             </div>
 
-                            <h3 className="mb-1 text-xl font-bold tracking-tight text-foreground">
+                            <h3 className="mb-1 text-lg sm:text-xl font-bold tracking-tight text-foreground">
                                 {match.name}
                             </h3>
-                            <p className="mb-3 text-sm font-medium text-muted-foreground">
+                            <p className="mb-2 sm:mb-3 text-xs sm:text-sm font-medium text-muted-foreground">
                                 {match.role}
                             </p>
 
@@ -79,11 +79,11 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                         {/* Compatibility Meter - Clickable */}
                         <div
                             onClick={() => setWhyModalOpen(true)}
-                            className="mb-6 space-y-3 rounded-xl bg-muted p-4 cursor-pointer hover:bg-muted/80 transition-colors group/score"
+                            className="mb-4 sm:mb-6 space-y-2 sm:space-y-3 rounded-xl bg-muted p-3 sm:p-4 cursor-pointer hover:bg-muted/80 transition-colors group/score"
                         >
-                            <div className="flex items-center justify-between text-sm">
-                                <div className="flex items-center gap-2 font-medium text-muted-foreground">
-                                    <Sparkles className="h-3.5 w-3.5 text-primary" />
+                            <div className="flex items-center justify-between text-xs sm:text-sm">
+                                <div className="flex items-center gap-1.5 sm:gap-2 font-medium text-muted-foreground">
+                                    <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary" />
                                     <span>Match Score</span>
                                 </div>
                                 <div className="flex items-center gap-1.5">
@@ -109,7 +109,7 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                         </div>
 
                         {/* Skills */}
-                        <div className="mb-6 flex flex-wrap justify-center gap-1.5">
+                        <div className="mb-4 sm:mb-6 flex flex-wrap justify-center gap-1.5">
                             {match.skills.slice(0, 4).map((skill) => (
                                 <Badge
                                     key={skill}
@@ -127,33 +127,33 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                         </div>
 
                         {/* Bio */}
-                        <p className="flex-1 text-center text-sm leading-relaxed text-muted-foreground line-clamp-3 mb-6 px-2">
+                        <p className="flex-1 text-center text-xs sm:text-sm leading-relaxed text-muted-foreground line-clamp-3 mb-4 sm:mb-6 px-1 sm:px-2">
                             "{match.bio}"
                         </p>
 
                         {/* Actions */}
-                        <div className="grid grid-cols-2 gap-3 mt-auto">
+                        <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-auto">
                             {!requestSent ? (
                                 <>
                                     <Button
                                         variant="outline"
-                                        className="h-10 hover:bg-primary hover:text-primary-foreground transition-all"
+                                        className="h-9 sm:h-10 text-xs sm:text-sm hover:bg-primary hover:text-primary-foreground transition-all"
                                         onClick={() => setRequestSent(true)}
                                     >
-                                        <UserPlus className="mr-2 h-4 w-4" />
+                                        <UserPlus className="mr-1.5 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" />
                                         Connect
                                     </Button>
                                     <Button
-                                        className="h-10 shadow-sm transition-all hover:-translate-y-0.5"
+                                        className="h-9 sm:h-10 text-xs sm:text-sm shadow-sm transition-all hover:-translate-y-0.5"
                                     >
-                                        <MessageSquare className="mr-2 h-4 w-4" />
+                                        <MessageSquare className="mr-1.5 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" />
                                         Message
                                     </Button>
                                 </>
                             ) : (
                                 <Button
                                     disabled
-                                    className="col-span-2 h-10 cursor-not-allowed opacity-75"
+                                    className="col-span-2 h-9 sm:h-10 text-xs sm:text-sm cursor-not-allowed opacity-75"
                                 >
                                     ⏳ Request Sent
                                 </Button>

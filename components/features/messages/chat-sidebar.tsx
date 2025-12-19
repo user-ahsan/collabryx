@@ -10,6 +10,7 @@ import { Search } from "lucide-react"
 interface ChatSidebarProps {
     className?: string
     selectedId?: string
+    onSelectChat?: (chatId: string) => void
 }
 
 const CONVERSATIONS = [
@@ -39,10 +40,10 @@ const CONVERSATIONS = [
     },
 ]
 
-export function ChatSidebar({ className, selectedId }: ChatSidebarProps) {
+export function ChatSidebar({ className, selectedId, onSelectChat }: ChatSidebarProps) {
     return (
         <div className={cn("flex flex-col h-full border-r", className)}>
-            <div className="p-4 border-b space-y-4">
+            <div className="p-3 md:p-4 border-b space-y-3 md:space-y-4">
                 <h2 className="font-semibold text-lg">Messages</h2>
                 <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -58,8 +59,9 @@ export function ChatSidebar({ className, selectedId }: ChatSidebarProps) {
                     {CONVERSATIONS.map((chat) => (
                         <button
                             key={chat.id}
+                            onClick={() => onSelectChat?.(chat.id)}
                             className={cn(
-                                "flex items-start gap-4 p-4 text-left hover:bg-muted/50 transition-colors",
+                                "flex items-start gap-3 md:gap-4 p-3 md:p-4 text-left hover:bg-muted/50 transition-colors",
                                 selectedId === chat.id && "bg-muted"
                             )}
                         >

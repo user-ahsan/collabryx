@@ -45,11 +45,11 @@ export function MatchCardListView({ match, index }: MatchCardListViewProps) {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2, delay: index * 0.03 }}
-            className="group bg-card border rounded-lg p-4 hover:shadow-md hover:border-primary/30 transition-all"
+            className="group bg-card border rounded-lg p-3 sm:p-4 hover:shadow-md hover:border-primary/30 transition-all"
         >
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
                 {/* Avatar & Basic Info */}
-                <Avatar className="h-14 w-14 border-2 border-primary/10 shrink-0">
+                <Avatar className="h-12 w-12 sm:h-14 sm:w-14 border-2 border-primary/10 shrink-0">
                     <AvatarImage src={match.avatar} className="object-cover" />
                     <AvatarFallback className="text-sm font-bold bg-primary/10 text-primary">
                         {match.name.split(' ').map(n => n[0]).join('')}
@@ -57,16 +57,16 @@ export function MatchCardListView({ match, index }: MatchCardListViewProps) {
                 </Avatar>
 
                 {/* Name & Role */}
-                <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-bold text-base truncate">{match.name}</h3>
-                        <Badge variant="secondary" className="text-xs px-2 py-0.5 shrink-0">
+                <div className="flex-1 min-w-0 w-full">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
+                        <h3 className="font-bold text-sm sm:text-base truncate">{match.name}</h3>
+                        <Badge variant="secondary" className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 shrink-0">
                             {match.role}
                         </Badge>
                     </div>
 
                     {/* Skills */}
-                    <div className="flex flex-wrap gap-1.5 mb-2">
+                    <div className="flex flex-wrap gap-1 sm:gap-1.5 mb-1.5 sm:mb-2">
                         {match.skills.slice(0, 4).map((skill) => (
                             <Badge
                                 key={skill}
@@ -84,13 +84,13 @@ export function MatchCardListView({ match, index }: MatchCardListViewProps) {
                     </div>
 
                     {/* Insights */}
-                    <div className="flex flex-wrap gap-1.5">
+                    <div className="flex flex-wrap gap-1 sm:gap-1.5">
                         {match.insights.map((insight, i) => (
                             <Badge
                                 key={i}
                                 variant="outline"
                                 className={cn(
-                                    "text-[10px] px-2 py-0.5 font-medium border",
+                                    "text-[10px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 font-medium border",
                                     getInsightColor(insight.type)
                                 )}
                             >
@@ -100,9 +100,9 @@ export function MatchCardListView({ match, index }: MatchCardListViewProps) {
                     </div>
                 </div>
 
-                {/* Match Score */}
-                <div className="flex flex-col items-center justify-center shrink-0 px-4">
-                    <div className="text-3xl font-bold text-primary leading-none">
+                {/* Match Score - Repositioned for mobile */}
+                <div className="flex flex-row sm:flex-col items-center justify-between sm:justify-center shrink-0 w-full sm:w-auto sm:px-4 pt-2 sm:pt-0 border-t sm:border-t-0 sm:border-l border-border/50">
+                    <div className="text-2xl sm:text-3xl font-bold text-primary leading-none">
                         {match.compatibility}%
                     </div>
                     <span className="text-[10px] text-muted-foreground uppercase font-medium mt-1">
@@ -110,13 +110,13 @@ export function MatchCardListView({ match, index }: MatchCardListViewProps) {
                     </span>
                 </div>
 
-                {/* Actions */}
-                <div className="flex flex-col gap-2 shrink-0">
-                    <Button size="sm" className="h-8 px-3 text-xs">
+                {/* Actions - Mobile Horizontal, Desktop Vertical */}
+                <div className="flex sm:flex-col gap-2 flex-1 sm:flex-none">
+                    <Button size="sm" className="h-8 px-3 text-xs flex-1 sm:flex-none">
                         <UserPlus className="h-3 w-3 mr-1.5" />
                         Connect
                     </Button>
-                    <Button size="sm" variant="outline" className="h-8 px-3 text-xs">
+                    <Button size="sm" variant="outline" className="h-8 px-3 text-xs flex-1 sm:flex-none">
                         <Eye className="h-3 w-3 mr-1.5" />
                         View
                     </Button>

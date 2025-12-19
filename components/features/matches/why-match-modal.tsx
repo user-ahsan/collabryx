@@ -32,13 +32,13 @@ export function WhyMatchModal({ open, onOpenChange, match }: WhyMatchModalProps)
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[85vh] sm:max-h-[80vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle className="text-2xl font-bold flex items-center gap-2">
+                    <DialogTitle className="text-xl sm:text-2xl font-bold flex items-center gap-2">
                         <Sparkles className="h-6 w-6 text-primary" />
                         Why {match.name}?
                     </DialogTitle>
-                    <DialogDescription className="text-base">
+                    <DialogDescription className="text-sm sm:text-base">
                         Here's how our AI calculated this <span className="font-bold text-primary">{match.compatibility}% match</span>
                     </DialogDescription>
                 </DialogHeader>
@@ -48,7 +48,7 @@ export function WhyMatchModal({ open, onOpenChange, match }: WhyMatchModalProps)
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <div className="h-10 w-10 bg-blue-100 dark:bg-blue-950 rounded-lg flex items-center justify-center">
+                                <div className="h-8 w-8 sm:h-10 sm:w-10 bg-blue-100 dark:bg-blue-950 rounded-lg flex items-center justify-center">
                                     <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                                 </div>
                                 <div>
@@ -56,7 +56,7 @@ export function WhyMatchModal({ open, onOpenChange, match }: WhyMatchModalProps)
                                     <p className="text-xs text-muted-foreground">Shared technical expertise</p>
                                 </div>
                             </div>
-                            <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{skillsOverlap}%</span>
+                            <span className="text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400">{skillsOverlap}%</span>
                         </div>
                         <Progress value={skillsOverlap} className="h-2" />
                         <div className="flex flex-wrap gap-1.5">
@@ -72,7 +72,7 @@ export function WhyMatchModal({ open, onOpenChange, match }: WhyMatchModalProps)
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <div className="h-10 w-10 bg-green-100 dark:bg-green-950 rounded-lg flex items-center justify-center">
+                                <div className="h-8 w-8 sm:h-10 sm:w-10 bg-green-100 dark:bg-green-950 rounded-lg flex items-center justify-center">
                                     <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
                                 </div>
                                 <div>
@@ -80,7 +80,7 @@ export function WhyMatchModal({ open, onOpenChange, match }: WhyMatchModalProps)
                                     <p className="text-xs text-muted-foreground">How well you complement each other</p>
                                 </div>
                             </div>
-                            <span className="text-2xl font-bold text-green-600 dark:text-green-400">{complementaryScore}%</span>
+                            <span className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400">{complementaryScore}%</span>
                         </div>
                         <Progress value={complementaryScore} className="h-2" />
                         <p className="text-sm text-muted-foreground leading-relaxed">
@@ -92,7 +92,7 @@ export function WhyMatchModal({ open, onOpenChange, match }: WhyMatchModalProps)
                     <div className="space-y-3">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <div className="h-10 w-10 bg-purple-100 dark:bg-purple-950 rounded-lg flex items-center justify-center">
+                                <div className="h-8 w-8 sm:h-10 sm:w-10 bg-purple-100 dark:bg-purple-950 rounded-lg flex items-center justify-center">
                                     <Calendar className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                                 </div>
                                 <div>
@@ -100,7 +100,7 @@ export function WhyMatchModal({ open, onOpenChange, match }: WhyMatchModalProps)
                                     <p className="text-xs text-muted-foreground">Common goals and focus areas</p>
                                 </div>
                             </div>
-                            <span className="text-2xl font-bold text-purple-600 dark:text-purple-400">{sharedInterests}%</span>
+                            <span className="text-xl sm:text-2xl font-bold text-purple-600 dark:text-purple-400">{sharedInterests}%</span>
                         </div>
                         <Progress value={sharedInterests} className="h-2" />
                         <div className="flex flex-wrap gap-1.5">
