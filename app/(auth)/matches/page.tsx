@@ -1,10 +1,13 @@
 "use client"
 
 import { MatchCard } from "@/components/features/matches/match-card"
+import { MatchCardListView } from "@/components/features/matches/match-card-list-view"
 import { MatchContextHeader } from "@/components/features/matches/match-context-header"
 import { MatchFilters } from "@/components/features/matches/match-filters"
 import { useState } from "react"
 import { toast } from "sonner"
+
+type ViewMode = "grid" | "list"
 
 // Dummy data for visual verification
 const MATCHES = [
@@ -94,6 +97,8 @@ export default function MatchesPage() {
         type: "Startup"
     })
 
+    const [viewMode, setViewMode] = useState<ViewMode>("grid")
+
     const handleUpdatePreferences = (newPrefs: { role: string; industry: string; type: string }) => {
         setPreferences(newPrefs)
         // Simulate "finding people" logic
@@ -106,22 +111,32 @@ export default function MatchesPage() {
         <div className="w-full min-h-screen bg-background">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-[1400px]">
                 {/* Header Section */}
-                {/* Header Section */}
-                {/* Header Section */}
                 <MatchContextHeader
                     preferences={preferences}
                     onUpdatePreferences={handleUpdatePreferences}
                 />
 
                 {/* Filter Bar */}
-                <MatchFilters />
+                <MatchFilters
+                    matchCount={MATCHES.length}
+                    viewMode={viewMode}
+                    onViewModeChange={setViewMode}
+                />
 
-                {/* Grid Layout */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
-                    {MATCHES.map((match, index) => (
-                        <MatchCard key={match.id} match={match} index={index} />
-                    ))}
-                </div>
+                {/* Grid or List Layout */}
+                {viewMode === "grid" ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
+                        {MATCHES.map((match, index) => (
+                            <MatchCard key={match.id} match={match} index={index} />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="flex flex-col gap-4 pb-20">
+                        {MATCHES.map((match, index) => (
+                            <MatchCardListView key={match.id} match={match} index={index} />
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     )

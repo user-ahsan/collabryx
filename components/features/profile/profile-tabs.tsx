@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
-import { Brain, Sprout, GraduationCap, Briefcase, Rocket, Lock, Plus } from "lucide-react"
+import { Brain, Sprout, GraduationCap, Briefcase, Rocket, Lock, Plus, Sparkles } from "lucide-react"
 
 const intentIcons = {
     "Technical Co-founder": { icon: Brain, color: "text-purple-600 dark:text-purple-400 bg-purple-500/10 border-purple-500/30" },
@@ -45,17 +45,31 @@ export function ProfileTabs({ isOwnProfile = false }: ProfileTabsProps) {
                             <CardTitle>Bio</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-muted-foreground leading-relaxed">
-                                {bioExpanded ? bioText : bioPreview}
-                            </p>
-                            {!bioExpanded && (
-                                <Button
-                                    variant="link"
-                                    className="px-0 mt-2 h-auto text-primary"
-                                    onClick={() => setBioExpanded(true)}
-                                >
-                                    Read more
-                                </Button>
+                            {bioText ? (
+                                <>
+                                    <p className="text-muted-foreground leading-relaxed">
+                                        {bioExpanded ? bioText : bioPreview}
+                                    </p>
+                                    {!bioExpanded && (
+                                        <Button
+                                            variant="link"
+                                            className="px-0 mt-2 h-auto text-primary"
+                                            onClick={() => setBioExpanded(true)}
+                                        >
+                                            Read more
+                                        </Button>
+                                    )}
+                                </>
+                            ) : (
+                                <div className="text-center py-6">
+                                    <p className="text-muted-foreground mb-3">No bio added yet.</p>
+                                    <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20 text-left">
+                                        <Sparkles className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                                        <p className="text-xs text-muted-foreground">
+                                            <span className="font-semibold text-primary">AI Tip:</span> A detailed bio increases profile views by 3x and helps us match you with the right collaborators.
+                                        </p>
+                                    </div>
+                                </div>
                             )}
                         </CardContent>
                     </Card>
@@ -116,6 +130,13 @@ export function ProfileTabs({ isOwnProfile = false }: ProfileTabsProps) {
                                     {" "}for e-commerce clients using MERN stack.
                                 </p>
                             </div>
+
+                            <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
+                                <Sparkles className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                                <p className="text-xs text-muted-foreground">
+                                    <span className="font-semibold text-primary">AI Tip:</span> Adding work experience helps us match you with complementary team members based on your expertise.
+                                </p>
+                            </div>
                         </CardContent>
                     </Card>
                 </motion.div>
@@ -135,9 +156,15 @@ export function ProfileTabs({ isOwnProfile = false }: ProfileTabsProps) {
                                         <Plus className="h-8 w-8 text-primary" />
                                     </div>
                                     <h3 className="font-semibold text-lg mb-2">Add your first project</h3>
-                                    <p className="text-center text-muted-foreground max-w-sm mb-4">
+                                    <p className="text-center text-muted-foreground max-w-sm mb-3">
                                         Showcase your work and attract collaborators by adding projects to your profile.
                                     </p>
+                                    <div className="flex items-start gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20 mb-4 max-w-md">
+                                        <Sparkles className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                                        <p className="text-xs text-muted-foreground">
+                                            <span className="font-semibold text-primary">AI Tip:</span> Adding your thesis or side projects increases match accuracy by 20%. We'll use this to find teammates with complementary skills.
+                                        </p>
+                                    </div>
                                     <Button>
                                         <Plus className="mr-2 h-4 w-4" />
                                         Add Project

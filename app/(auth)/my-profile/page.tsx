@@ -7,6 +7,9 @@ export default function MyProfilePage() {
             <ProfileHeader
                 isOwnProfile={true}
                 collaborationReadiness="available"
+                isVerified={true}
+                verificationType="student"
+                university="Stanford University"
             />
             <ProfileTabs isOwnProfile={true} />
         </div>

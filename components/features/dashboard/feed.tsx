@@ -63,6 +63,7 @@ interface Post {
     content: string
     avatar: string
     initials: string
+    postType?: "project-launch" | "teammate-request" | "announcement" | "general"
     hasMedia?: boolean
     mediaType?: 'image' | 'video'
     mediaUrl?: string
@@ -73,6 +74,30 @@ interface Post {
 
 const DUMMY_POSTS: Post[] = [
     {
+        id: 4,
+        author: "Maria Rodriguez",
+        role: "Startup Founder",
+        time: "1h ago",
+        content: "🚀 Just launched our beta! We're building an AI-powered study planner for students. Looking for a frontend developer and a marketing lead to join our core team. DM me if interested! #startup #teambuilding #edtech",
+        avatar: "/avatars/05.png",
+        initials: "MR",
+        postType: "project-launch",
+        hasMedia: false,
+        myReaction: null
+    },
+    {
+        id: 5,
+        author: "James Patterson",
+        role: "Backend Developer",
+        time: "90min ago",
+        content: "👋 Seeking a UI/UX designer for a fintech project I'm working on. Must have experience with Figma and designing for mobile apps. Part-time commitment for the next 8 weeks. Let's build something amazing together!",
+        avatar: "/avatars/06.png",
+        initials: "JP",
+        postType: "teammate-request",
+        hasMedia: false,
+        myReaction: null
+    },
+    {
         id: 1,
         author: "Alex Johnson",
         role: "Product Designer",
@@ -80,6 +105,7 @@ const DUMMY_POSTS: Post[] = [
         content: "Just launched a new feature for our collaborative workspace! 🚀 Super excited to see how teams use the new real-time whiteboard. #productdesign #collaboration #startup",
         avatar: "/avatars/02.png",
         initials: "AJ",
+        postType: "general",
         hasMedia: true,
         mediaType: 'image',
         mediaUrl: "https://images.unsplash.com/photo-1531403009284-440f8804f1e9?auto=format&fit=crop&q=80&w=1000",
@@ -94,6 +120,7 @@ const DUMMY_POSTS: Post[] = [
         content: "Check out this interesting article about the future of remote work. @davidchen what do you think?",
         avatar: "/avatars/03.png",
         initials: "SM",
+        postType: "general",
         hasMedia: false,
         hasLink: true,
         linkUrl: "https://example.com/remote-work-future",
@@ -107,6 +134,7 @@ const DUMMY_POSTS: Post[] = [
         content: "Refactoring the entire caching layer today. Coffee is my best friend right now. ☕️ #coding #devlife",
         avatar: "/avatars/04.png",
         initials: "DC",
+        postType: "general",
         hasMedia: false,
         myReaction: null
     }
@@ -117,6 +145,33 @@ export function Feed() {
     const [content, setContent] = useState("")
     const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([])
     const fileInputRef = useRef<HTMLInputElement>(null)
+
+    // Sort posts by priority: project-launch > teammate-request > announcement > general
+    const sortedPosts = [...posts].sort((a, b) => {
+        const priorityOrder = {
+            "project-launch": 0,
+            "teammate-request": 1,
+            "announcement": 2,
+            "general": 3
+        }
+        const aPriority = priorityOrder[a.postType || "general"]
+        const bPriority = priorityOrder[b.postType || "general"]
+        return aPriority - bPriority
+    })
+
+    // Helper function to get badge for post type
+    const getPostTypeBadge = (postType?: string) => {
+        switch (postType) {
+            case "project-launch":
+                return { label: "🚀 Project Launch", color: "bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800" }
+            case "teammate-request":
+                return { label: "👥 Looking for Teammates", color: "bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800" }
+            case "announcement":
+                return { label: "📢 Announcement", color: "bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800" }
+            default:
+                return null
+        }
+    }
 
     // Ecosystem States
     const [expandedComments, setExpandedComments] = useState<Set<number>>(new Set())
@@ -353,10 +408,11 @@ export function Feed() {
 
             {/* Feed Posts */}
             <div className="space-y-6">
-                {posts.map((post) => {
+                {sortedPosts.map((post) => {
                     // Reaction State Calculation
                     const reactionConfig = post.myReaction ? REACTION_MAP[post.myReaction] : null
                     const ReactionIcon = reactionConfig?.icon || ThumbsUp
+                    const postTypeBadge = getPostTypeBadge(post.postType)
 
                     return (
                         <div key={post.id} className="group bg-card rounded-2xl border shadow-sm hover:shadow-lg transition-all duration-300">
@@ -377,6 +433,16 @@ export function Feed() {
                                                 <span className="w-1 h-1 rounded-full bg-muted-foreground/40" />
                                                 <Globe className="h-3 w-3" />
                                             </p>
+                                            {postTypeBadge && (
+                                                <div className="mt-2">
+                                                    <span className={cn(
+                                                        "inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold border",
+                                                        postTypeBadge.color
+                                                    )}>
+                                                        {postTypeBadge.label}
+                                                    </span>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                     <PostOptionsDropdown isOwner={post.id === 3} />

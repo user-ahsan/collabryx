@@ -9,19 +9,61 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { Search, SlidersHorizontal } from "lucide-react"
+import { Search, SlidersHorizontal, LayoutGrid, List } from "lucide-react"
+import { cn } from "@/lib/utils"
 
-export function MatchFilters() {
+type ViewMode = "grid" | "list"
+
+interface MatchFiltersProps {
+    matchCount?: number
+    viewMode?: ViewMode
+    onViewModeChange?: (mode: ViewMode) => void
+}
+
+export function MatchFilters({
+    matchCount = 0,
+    viewMode = "grid",
+    onViewModeChange
+}: MatchFiltersProps) {
     return (
         <div className="mb-8 w-full rounded-xl border bg-card p-4 shadow-sm">
+            {/* Header with Match Count and View Toggle */}
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                    <h2 className="text-sm font-semibold text-muted-foreground">
+                        {matchCount} {matchCount === 1 ? 'match' : 'matches'} found
+                    </h2>
+                </div>
+
+                {/* View Toggle */}
+                <div className="flex items-center gap-1 p-1 rounded-lg border bg-background">
+                    <Button
+                        variant={viewMode === "grid" ? "secondary" : "ghost"}
+                        size="sm"
+                        className="h-7 px-2"
+                        onClick={() => onViewModeChange?.("grid")}
+                    >
+                        <LayoutGrid className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button
+                        variant={viewMode === "list" ? "secondary" : "ghost"}
+                        size="sm"
+                        className="h-7 px-2"
+                        onClick={() => onViewModeChange?.("list")}
+                    >
+                        <List className="h-3.5 w-3.5" />
+                    </Button>
+                </div>
+            </div>
+
             <div className="flex flex-col gap-4 md:flex-row md:items-center">
                 {/* Search */}
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                         type="search"
-                        placeholder="Search by name, skill, or role..."
-                        className="h-10 pl-9 w-full md:max-w-md"
+                        placeholder="Describe who you are looking for... (e.g., a designer with Figma skills for a SaaS product)"
+                        className="h-10 pl-9 w-full text-sm"
                     />
                 </div>
 

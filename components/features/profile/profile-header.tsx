@@ -5,9 +5,11 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { MapPin, Link as LinkIcon, Calendar, UserPlus, MessageSquare, CheckCircle2, Clock, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { VerificationBadge } from "./verification-badge"
 
 type ConnectionStatus = "none" | "connected" | "pending"
 type CollaborationReadiness = "available" | "open" | "not-available"
+type VerificationType = "student" | "faculty" | "alumni"
 
 interface ProfileHeaderProps {
     connectionStatus?: ConnectionStatus
@@ -17,13 +19,19 @@ interface ProfileHeaderProps {
         skills: string[]
     }
     isOwnProfile?: boolean
+    isVerified?: boolean
+    verificationType?: VerificationType
+    university?: string
 }
 
 export function ProfileHeader({
     connectionStatus = "none",
     collaborationReadiness = "available",
     matchContext,
-    isOwnProfile = false
+    isOwnProfile = false,
+    isVerified = false,
+    verificationType = "student",
+    university = "Stanford University"
 }: ProfileHeaderProps) {
     return (
         <div className="bg-card border rounded-lg overflow-hidden mb-6">
@@ -41,7 +49,15 @@ export function ProfileHeader({
                     <div className="flex-1 mt-12 md:mt-14 space-y-4 w-full">
                         <div className="flex flex-col md:flex-row justify-between gap-4">
                             <div>
-                                <h1 className="text-2xl font-bold">Sarah Chen</h1>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <h1 className="text-2xl font-bold">Sarah Chen</h1>
+                                    {isVerified && (
+                                        <VerificationBadge
+                                            type={verificationType}
+                                            university={university}
+                                        />
+                                    )}
+                                </div>
                                 <p className="text-muted-foreground font-medium">Full Stack Developer @ TechStart</p>
                             </div>
                             {!isOwnProfile && (
