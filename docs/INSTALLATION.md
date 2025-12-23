@@ -23,11 +23,11 @@ Before you begin, ensure you have the following installed on your machine:
 
 ### Required Software
 
-1. **Node.js** (v18.x or higher)
+1. **Node.js** (v20.x or higher)
    - Download from: https://nodejs.org/
    - Verify installation:
      ```bash
-     node --version  # Should output v18.x.x or higher
+     node --version  # Should output v20.x.x or higher
      ```
 
 2. **npm** (v9.x or higher) or **yarn** (v1.22.x or higher)
@@ -232,7 +232,7 @@ npm run dev
 
 **Expected Output:**
 ```
-▲ Next.js 16.0.5
+▲ Next.js 16.x.x
 - Local:        http://localhost:3000
 - Ready in 2.3s
 ```

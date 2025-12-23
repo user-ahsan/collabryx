@@ -21,7 +21,7 @@ Comprehensive guide to Collabryx's project structure and architectural decisions
 
 ## Project Overview
 
-Collabryx is built using **Next.js 14+ App Router** with a feature-based architecture. The application follows modern React best practices, leveraging Server Components for performance and Client Components for interactivity.
+Collabryx is built using **Next.js 16+ App Router** with a feature-based architecture. The application follows modern React best practices, leveraging Server Components for performance and Client Components for interactivity.
 
 ### Core Principles
 

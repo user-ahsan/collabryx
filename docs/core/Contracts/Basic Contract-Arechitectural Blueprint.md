@@ -3,7 +3,7 @@
 
 Version: 1.0.0
 
-Project: Collabryx (Next.js 14 + Supabase + AI) Branch Strategy: - main
+Project: Collabryx (Next.js 16 + Supabase + AI) Branch Strategy: - main
 (Production)
 
 > ● develop (Staging)

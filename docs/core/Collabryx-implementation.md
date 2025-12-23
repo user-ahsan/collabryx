@@ -15,7 +15,7 @@ technologies have been selected as the **mandatory** stack. No
 alternatives (e.g., "Redux vs Zustand") are presented; these are the
 locked choices.
 
-> ● **Frontend** **Framework:** Next.js 14+ (App Router) ● **Language:**
+> ● **Frontend** **Framework:** Next.js 16 (App Router) ● **Language:**
 > TypeScript (Strict Mode enabled)
 >
 > ● **UI** **Library:** shadcn/ui (Radix Primitives + Tailwind CSS) ●

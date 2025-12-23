@@ -3,10 +3,10 @@
 
 **1.** **High-Level** **Architecture**
 
-Framework: Next.js 14+ (App Router)
+Framework: Next.js 16 (App Router)
 
 UI Library: shadcn/ui (Radix Primitives + Tailwind CSS) Styling:
-Tailwind CSS
+Tailwind CSS 4
 
 Icons: Lucide React
 
