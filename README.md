@@ -4,10 +4,10 @@
 
 **Next-Generation Collaborative Platform with AI-Powered Features**
 
-[![Next.js](https://img.shields.io/badge/Next.js-16.0-black?style=flat-square&logo=next.js)](https://nextjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-Enabled-green?style=flat-square&logo=supabase)](https://supabase.com/)
-[![React](https://img.shields.io/badge/React-19.2-61DAFB?style=flat-square&logo=react)](https://react.dev/)
+[![React](https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react)](https://react.dev/)
 
 </div>
 
@@ -32,19 +32,21 @@
 ## 🏗️ Tech Stack
 
 ### Core Framework
-- **[Next.js 16](https://nextjs.org/)** - React framework with App Router
-- **[TypeScript 5](https://www.typescriptlang.org/)** - Type-safe development
-- **[React 19.2](https://react.dev/)** - Latest React with Server Components
+- **[Next.js](https://nextjs.org/)** - React framework with App Router
+- **[TypeScript](https://www.typescriptlang.org/)** - Type-safe development
+- **[React](https://react.dev/)** - Library for web and native user interfaces
 
 ### Backend & Database
 - **[Supabase](https://supabase.com/)** - PostgreSQL database, Authentication, and Real-time subscriptions
 - **[React Query](https://tanstack.com/query/latest)** - Powerful server state management
 
 ### UI & Styling
-- **[Tailwind CSS 4](https://tailwindcss.com/)** - Utility-first CSS framework
+- **[Tailwind CSS](https://tailwindcss.com/)** - Utility-first CSS framework
 - **[Radix UI](https://www.radix-ui.com/)** - Accessible component primitives
 - **[Framer Motion](https://www.framer.com/motion/)** - Production-ready animations
 - **[shadcn/ui](https://ui.shadcn.com/)** - Beautiful, reusable components
+- **[Sonner](https://sonner.emilkowal.ski/)** - An opinionated toast component for React
+- **[Lucide React](https://lucide.dev/)** - Beautiful & consistent icon toolkit
 
 ### 3D & Visualization
 - **[Three.js](https://threejs.org/)** - 3D graphics library
@@ -52,6 +54,11 @@
 - **[@react-three/drei](https://github.com/pmndrs/drei)** - Useful helpers for R3F
 - **[GSAP](https://gsap.com/)** - Professional-grade animation
 - **[Lenis](https://lenis.darkroom.engineering/)** - Smooth scroll library
+- **[Cobe](https://github.com/shuding/cobe)** - Lightweight WebGL globe
+- **[Maath](https://github.com/pmndrs/maath)** - Mathematics helpers for 3D
+
+### AI & Analysis
+- **[face-api.js](https://github.com/justadudewhohacks/face-api.js/)** - JavaScript API for face detection and recognition
 
 ### State & Forms
 - **[Zustand](https://zustand-demo.pmnd.rs/)** - Lightweight state management
@@ -66,9 +73,9 @@
 
 Ensure you have the following installed on your machine:
 
-- **Node.js** >= 18.x (LTS recommended)
-- **npm** >= 9.x or **yarn** >= 1.22.x
-- **Git** >= 2.x
+- **Node.js** (LTS recommended)
+- **npm** or **yarn**
+- **Git**
 
 ### Installation
 
