@@ -23,8 +23,8 @@ import {
     MessageSquare,
     Bot,
     UserCircle,
-    ChevronLeft,
-    ChevronRight,
+    Menu,
+    X,
     TrendingUp,
     Briefcase,
     Bell,
@@ -118,20 +118,10 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
 
     return (
         <div className={cn("flex h-full flex-col relative bg-background overflow-hidden", className)} {...props}>
-            {/* Toggle Button - Refined */}
-            <Button
-                variant="ghost"
-                size="icon"
-                className="hidden md:flex absolute -right-3 top-6 z-50 h-7 w-7 rounded-full bg-background border shadow-sm hover:shadow-md transition-all items-center justify-center p-0 text-muted-foreground hover:text-foreground"
-                onClick={toggleSidebar}
-                aria-label="Toggle Sidebar"
-            >
-                {isCollapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
-            </Button>
-
-            {/* Logo Section */}
-            <div className={cn("flex items-center h-20 px-5 shrink-0 transition-all duration-300", isCollapsed ? "justify-center" : "justify-start")}>
-                <Link href="/" className={cn("flex items-center gap-2.5 font-bold text-xl group overflow-hidden transition-all", isCollapsed ? "w-9" : "w-full")}>
+            {/* Header Section */}
+            <div className={cn("flex shrink-0 transition-all duration-300",
+                isCollapsed ? "flex-col items-center gap-4 py-6" : "items-center justify-between h-20 px-5")}>
+                <Link href="/" className={cn("flex items-center gap-2.5 font-bold text-xl group overflow-hidden transition-all", isCollapsed ? "w-9" : "flex-1")}>
                     <div className="h-9 w-9 min-w-[2.25rem] rounded-xl bg-primary shadow-lg shadow-primary/25 grid place-items-center transition-transform group-hover:scale-105 duration-300">
                         <span className="text-lg text-primary-foreground font-extrabold">C</span>
                     </div>
@@ -147,6 +137,19 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
                         </motion.span>
                     )}
                 </Link>
+
+                {/* Toggle Button - Desktop Only */}
+                {!isMobile && (
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn("text-muted-foreground hover:text-foreground hidden md:flex", isCollapsed ? "h-9 w-9" : "h-7 w-7")}
+                        onClick={toggleSidebar}
+                        aria-label="Toggle Sidebar"
+                    >
+                        {isCollapsed ? <Menu className="h-4 w-4" /> : <X className="h-4 w-4" />}
+                    </Button>
+                )}
             </div>
 
             {/* Profile Section (Integrated) */}

@@ -74,7 +74,7 @@ export function Globe({
   useEffect(() => {
     const onResize = () => {
       if (canvasRef.current) {
-        widthRef.current = canvasRef.current.offsetWidth
+        widthRef.current = canvasRef.current.offsetWidth || 600
       }
     }
 
@@ -93,7 +93,12 @@ export function Globe({
       },
     })
 
-    setTimeout(() => (canvasRef.current!.style.opacity = "1"), 0)
+    // Increased delay for Opera/slower browsers to ensure context is ready
+    setTimeout(() => {
+      if (canvasRef.current) {
+        canvasRef.current.style.opacity = "1"
+      }
+    }, 500)
     return () => {
       globe.destroy()
       window.removeEventListener("resize", onResize)

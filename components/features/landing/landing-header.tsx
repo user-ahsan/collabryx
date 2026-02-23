@@ -31,7 +31,7 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({ navigation }) => {
         <header
             className={cn(
                 "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
-                scrolled
+                scrolled || mobileMenuOpen
                     ? "bg-background/80 backdrop-blur-lg border-b border-border/40 shadow-sm"
                     : "bg-transparent"
             )}
