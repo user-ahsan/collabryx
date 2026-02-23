@@ -24,6 +24,7 @@ export function MediaViewer({ isOpen, onClose, url, type }: MediaViewerProps) {
             <DialogContent showCloseButton={false} className="max-w-[95vw] h-[95vh] p-0 border-none bg-black/95 text-white overflow-hidden flex flex-col items-center justify-center outline-none">
                 <DialogTitle className="sr-only">Media Viewer</DialogTitle>
                 <Button
+                    aria-label="Close media viewer"
                     variant="ghost"
                     size="icon"
                     onClick={onClose}
@@ -36,7 +37,7 @@ export function MediaViewer({ isOpen, onClose, url, type }: MediaViewerProps) {
                     {type === 'image' ? (
                         <img
                             src={url}
-                            alt="Full screen"
+                            alt={`Media preview from ${url}`}
                             className={cn(
                                 "max-w-full max-h-full object-contain transition-transform duration-200 cursor-move"
                             )}
@@ -55,14 +56,14 @@ export function MediaViewer({ isOpen, onClose, url, type }: MediaViewerProps) {
 
                 {type === 'image' && (
                     <div className="absolute bottom-8 flex gap-4 z-50 bg-black/50 p-2 rounded-full backdrop-blur-sm border border-white/10">
-                        <Button variant="ghost" size="icon" onClick={handleZoomOut} disabled={zoom <= 1} className="text-white hover:bg-white/20 rounded-full">
+                        <Button aria-label="Zoom out" variant="ghost" size="icon" onClick={handleZoomOut} disabled={zoom <= 1} className="text-white hover:bg-white/20 rounded-full">
                             <ZoomOut className="h-5 w-5" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={handleZoomIn} disabled={zoom >= 3} className="text-white hover:bg-white/20 rounded-full">
+                        <Button aria-label="Zoom in" variant="ghost" size="icon" onClick={handleZoomIn} disabled={zoom >= 3} className="text-white hover:bg-white/20 rounded-full">
                             <ZoomIn className="h-5 w-5" />
                         </Button>
                         <div className="w-px bg-white/20 h-6 my-auto" />
-                        <Button variant="ghost" size="icon" asChild className="text-white hover:bg-white/20 rounded-full">
+                        <Button aria-label="Download" variant="ghost" size="icon" asChild className="text-white hover:bg-white/20 rounded-full">
                             <a href={url} download target="_blank">
                                 <Download className="h-5 w-5" />
                             </a>

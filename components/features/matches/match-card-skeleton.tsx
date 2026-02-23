@@ -55,3 +55,32 @@ export function MatchCardSkeleton({ count = 8 }: MatchCardSkeletonProps) {
         </>
     )
 }
+
+export function MatchCardListViewSkeleton({ count = 3 }: { count?: number }) {
+    return (
+        <div className="space-y-4">
+            {Array.from({ length: count }).map((_, i) => (
+                <div key={i} className="bg-card border rounded-lg p-3 sm:p-4 hover:shadow-md transition-all">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                        <Skeleton className="h-12 w-12 sm:h-14 sm:w-14 rounded-full shrink-0" />
+                        <div className="flex-1 min-w-0 w-full space-y-2.5">
+                            <div className="flex items-center gap-2">
+                                <Skeleton className="h-5 w-32" />
+                                <Skeleton className="h-4 w-20" />
+                            </div>
+                            <div className="flex gap-2">
+                                <Skeleton className="h-4 w-16" />
+                                <Skeleton className="h-4 w-16" />
+                                <Skeleton className="h-4 w-20" />
+                            </div>
+                        </div>
+                        <div className="flex sm:flex-col gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                            <Skeleton className="h-8 w-24 flex-1 sm:flex-none" />
+                            <Skeleton className="h-8 w-24 flex-1 sm:flex-none" />
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+    )
+}

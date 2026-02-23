@@ -165,7 +165,7 @@ export function ProfileTabs({ isOwnProfile = false }: ProfileTabsProps) {
                                             <span className="font-semibold text-primary">AI Tip:</span> Adding your thesis or side projects increases match accuracy by 20%. We'll use this to find teammates with complementary skills.
                                         </p>
                                     </div>
-                                    <Button className="text-sm h-9">
+                                    <Button size="sm">
                                         <Plus className="mr-2 h-4 w-4" />
                                         Add Project
                                     </Button>

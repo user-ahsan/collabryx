@@ -224,7 +224,7 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
                                     {/* Section Label - Only show when expanded */}
                                     {!isCollapsed && (
                                         <div className="px-3 mb-2">
-                                            <span className="text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+                                            <span className="text-xs md:text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
                                                 {section.label}
                                             </span>
                                         </div>
@@ -255,7 +255,7 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
                                                                 <>
                                                                     <span className="tracking-wide">{item.title}</span>
                                                                     {item.badge && item.badge > 0 && (
-                                                                        <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground animate-pulse">
+                                                                        <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs md:text-[10px] font-bold text-primary-foreground animate-pulse">
                                                                             {item.badge}
                                                                         </span>
                                                                     )}
@@ -289,7 +289,7 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-9 w-9 hover:bg-muted/80 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+                                        className="h-11 w-11 md:h-9 md:w-9 hover:bg-muted/80 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
                                         onClick={() => setNotificationsOpen(true)}
                                     >
                                         <Bell className="h-4.5 w-4.5" />
@@ -302,7 +302,7 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Link href="/settings">
-                                        <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-muted/80 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
+                                        <Button variant="ghost" size="icon" className="h-11 w-11 md:h-9 md:w-9 hover:bg-muted/80 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
                                             <Settings className="h-4.5 w-4.5" />
                                             <span className="sr-only">Settings</span>
                                         </Button>
@@ -315,7 +315,7 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
                         <div className="h-5 w-px bg-border/40 mx-1" />
 
                         <div className="flex justify-center">
-                            <AnimatedThemeToggler className="h-9 w-9 hover:bg-muted/80 rounded-lg" />
+                            <AnimatedThemeToggler className="h-11 w-11 md:h-9 md:w-9 hover:bg-muted/80 rounded-lg" />
                         </div>
                     </div>
                 ) : (
@@ -326,7 +326,7 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-9 w-9 hover:bg-muted rounded-xl text-muted-foreground hover:text-foreground"
+                                        className="h-11 w-11 md:h-9 md:w-9 hover:bg-muted rounded-xl text-muted-foreground hover:text-foreground"
                                         onClick={() => setNotificationsOpen(true)}
                                     >
                                         <Bell className="h-5 w-5" />
@@ -339,7 +339,7 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Link href="/settings">
-                                        <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-muted rounded-xl text-muted-foreground hover:text-foreground">
+                                        <Button variant="ghost" size="icon" className="h-11 w-11 md:h-9 md:w-9 hover:bg-muted rounded-xl text-muted-foreground hover:text-foreground">
                                             <Settings className="h-5 w-5" />
                                             <span className="sr-only">Settings</span>
                                         </Button>
@@ -349,7 +349,7 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
                             </Tooltip>
                         </TooltipProvider>
 
-                        <AnimatedThemeToggler className="h-9 w-9 hover:bg-muted rounded-xl" />
+                        <AnimatedThemeToggler className="h-11 w-11 md:h-9 md:w-9 hover:bg-muted rounded-xl" />
                     </div>
                 )}
             </div>

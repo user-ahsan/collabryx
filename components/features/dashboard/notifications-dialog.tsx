@@ -50,23 +50,23 @@ interface NotificationsDialogProps {
 export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl max-h-[80vh] p-0">
-                <DialogHeader className="px-6 pt-6 pb-4 border-b">
+            <DialogContent className="max-w-[95vw] sm:max-w-xl lg:max-w-2xl max-h-[85vh] sm:max-h-[80vh] p-0 flex flex-col gap-0">
+                <DialogHeader className="px-4 sm:px-6 py-3 sm:py-4 border-b shrink-0">
                     <div className="flex items-center justify-between">
-                        <DialogTitle className="text-2xl font-bold">Notifications</DialogTitle>
-                        <Button variant="ghost" size="sm" className="h-8">
-                            Mark all as read
+                        <DialogTitle className="text-xl sm:text-2xl font-bold">Notifications</DialogTitle>
+                        <Button variant="ghost" size="sm" className="text-xs sm:text-sm h-7 sm:h-8 px-2 sm:px-3">
+                            Mark all read
                         </Button>
                     </div>
                 </DialogHeader>
 
-                <ScrollArea className="max-h-[calc(80vh-80px)]">
-                    <div className="space-y-2 p-6">
+                <ScrollArea className="flex-1 overflow-y-auto">
+                    <div className="space-y-2 p-3 sm:p-6 p-b-6">
                         {NOTIFICATIONS.map((n) => (
                             <div
                                 key={n.id}
                                 className={cn(
-                                    "group flex items-start gap-4 p-5 rounded-xl border transition-all hover:bg-muted/30 hover:shadow-sm",
+                                    "group flex items-start gap-3 sm:gap-4 p-3 sm:p-5 rounded-xl border transition-all hover:bg-muted/30 hover:shadow-sm",
                                     !n.read ? "bg-card border-l-4 border-l-primary" : "bg-card/50 border-border/40"
                                 )}
                             >
@@ -93,8 +93,8 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
 
                                     {n.type === "connect" && (
                                         <div className="flex gap-2 mt-3">
-                                            <Button size="sm" className="h-8 px-4">Accept</Button>
-                                            <Button size="sm" variant="outline" className="h-8 px-4">Ignore</Button>
+                                            <Button size="sm" className="px-4">Accept</Button>
+                                            <Button size="sm" variant="outline" className="px-4">Ignore</Button>
                                         </div>
                                     )}
                                 </div>

@@ -8,6 +8,7 @@ import { Progress } from "@/components/ui/progress"
 import { Sparkles, ArrowRight, UserPlus, Eye } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { MatchProgressTracker } from "./match-progress-tracker"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface MatchReason {
     type: 'skill' | 'interest' | 'availability'
@@ -27,6 +28,7 @@ interface MatchSuggestion {
 interface MatchIntelligencePanelProps {
     className?: string
     matches?: MatchSuggestion[]
+    isLoading?: boolean
 }
 
 const DEFAULT_MATCHES: MatchSuggestion[] = [
@@ -81,8 +83,13 @@ const getReasonColor = (type: MatchReason['type']) => {
 
 export function SuggestionsSidebar({
     className,
-    matches = DEFAULT_MATCHES
+    matches = DEFAULT_MATCHES,
+    isLoading = false
 }: MatchIntelligencePanelProps) {
+    if (isLoading) {
+        return <SuggestionsSidebarSkeleton className={className} />
+    }
+
     return (
         <div className={cn("space-y-6", className)}>
             {/* Match Progress Tracker */}
@@ -94,7 +101,7 @@ export function SuggestionsSidebar({
                     <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
                         <Sparkles className="h-4 w-4 text-primary" />
                         Smart Matches
-                        <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-bold bg-primary text-primary-foreground ml-1">
+                        <Badge variant="secondary" className="h-5 px-1.5 text-xs md:text-[10px] font-bold bg-primary text-primary-foreground ml-1">
                             ✨ AI
                         </Badge>
                     </CardTitle>
@@ -138,7 +145,7 @@ export function SuggestionsSidebar({
                                         <span className="text-2xl font-bold text-primary leading-none">
                                             {match.matchPercentage}%
                                         </span>
-                                        <span className="text-[9px] text-muted-foreground uppercase font-medium">
+                                        <span className="text-xs md:text-[9px] text-muted-foreground uppercase font-medium">
                                             Match
                                         </span>
                                     </div>
@@ -151,7 +158,7 @@ export function SuggestionsSidebar({
                                             key={index}
                                             variant="outline"
                                             className={cn(
-                                                "text-[10px] px-2 py-0.5 font-medium border",
+                                                "text-xs md:text-[10px] px-2 py-0.5 font-medium border",
                                                 getReasonColor(reason.type)
                                             )}
                                         >
@@ -203,3 +210,35 @@ export function SuggestionsSidebar({
     )
 }
 
+export function SuggestionsSidebarSkeleton({ className }: { className?: string }) {
+    return (
+        <div className={cn("space-y-6", className)}>
+            <Card className="p-4 space-y-4">
+                <Skeleton className="h-4 w-1/2" />
+                <Skeleton className="h-2 w-full" />
+                <Skeleton className="h-10 w-full" />
+            </Card>
+            <Card className="p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                    <Skeleton className="h-5 w-1/3" />
+                    <Skeleton className="h-4 w-16" />
+                </div>
+                {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="flex flex-col gap-3 py-2 border-b last:border-0">
+                        <div className="flex items-center gap-3">
+                            <Skeleton className="h-10 w-10 rounded-full shrink-0" />
+                            <div className="space-y-2 flex-1">
+                                <Skeleton className="h-4 w-3/4" />
+                                <Skeleton className="h-3 w-1/2" />
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <Skeleton className="h-8 flex-1" />
+                            <Skeleton className="h-8 flex-1" />
+                        </div>
+                    </div>
+                ))}
+            </Card>
+        </div>
+    )
+}

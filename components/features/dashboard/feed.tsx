@@ -18,7 +18,22 @@ import {
     FileText,
     Globe,
     ThumbsUp,
-    Bot
+    Bot,
+    Laugh,
+    Flame,
+    Sparkles,
+    PartyPopper,
+    Rocket,
+    Frown,
+    Angry,
+    Lightbulb,
+    HeartHandshake,
+    Eye,
+    Zap,
+    UserPlus,
+    Megaphone,
+    Loader2,
+    CheckCircle2
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -38,15 +53,28 @@ import { AIContextCard } from "./ai-context-card"
 import { MatchActivityCard } from "./match-activity-card"
 import { RequestReminderCard } from "./request-reminder-card"
 
-const EMOJIS = ["😀", "😂", "🥰", "😍", "😭", "😊", "😎", "🔥", "✨", "🎉", "👍", "👎", "❤️", "🚀", "👀", "💯", "🤔", "👏", "🙌", "💀"]
+const EMOJIS = [
+    { char: "😀", icon: Smile, label: "Smile" },
+    { char: "😂", icon: Laugh, label: "Laugh" },
+    { char: "❤️", icon: Heart, label: "Love" },
+    { char: "👍", icon: ThumbsUp, label: "Thumbs Up" },
+    { char: "🔥", icon: Flame, label: "Fire" },
+    { char: "✨", icon: Sparkles, label: "Sparkles" },
+    { char: "🎉", icon: PartyPopper, label: "Party" },
+    { char: "🚀", icon: Rocket, label: "Rocket" },
+    { char: "🤔", icon: Lightbulb, label: "Thinking" },
+    { char: "👏", icon: HeartHandshake, label: "Clap" },
+    { char: "👀", icon: Eye, label: "Eyes" },
+    { char: "💯", icon: Zap, label: "100" }
+]
 
 const REACTION_MAP: Record<string, { label: string, icon: any, color: string }> = {
-    "👍": { label: "Like", icon: ThumbsUp, color: "text-blue-600" },
-    "❤️": { label: "Love", icon: Heart, color: "text-red-500" },
-    "😂": { label: "Haha", icon: null, color: "text-yellow-500" },
-    "😮": { label: "Wow", icon: null, color: "text-yellow-500" },
-    "😢": { label: "Sad", icon: null, color: "text-yellow-500" },
-    "😡": { label: "Angry", icon: null, color: "text-orange-500" },
+    "like": { label: "Like", icon: ThumbsUp, color: "text-blue-600" },
+    "love": { label: "Love", icon: Heart, color: "text-red-500" },
+    "haha": { label: "Haha", icon: Laugh, color: "text-yellow-500" },
+    "wow": { label: "Wow", icon: Flame, color: "text-orange-500" },
+    "sad": { label: "Sad", icon: Frown, color: "text-blue-400" },
+    "angry": { label: "Angry", icon: Angry, color: "text-red-600" },
 }
 
 interface MediaFile {
@@ -145,6 +173,22 @@ export function Feed() {
     const [content, setContent] = useState("")
     const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([])
     const fileInputRef = useRef<HTMLInputElement>(null)
+    const [isPosting, setIsPosting] = useState(false)
+    const [isPosted, setIsPosted] = useState(false)
+
+    const handlePost = () => {
+        if (!content.trim() && mediaFiles.length === 0) return
+
+        setIsPosting(true)
+        // Simulate network request
+        setTimeout(() => {
+            setIsPosting(false)
+            setIsPosted(true)
+            setContent("")
+            setMediaFiles([])
+            setTimeout(() => setIsPosted(false), 3000)
+        }, 1200)
+    }
 
     // Sort posts by priority: project-launch > teammate-request > announcement > general
     const sortedPosts = [...posts].sort((a, b) => {
@@ -163,11 +207,11 @@ export function Feed() {
     const getPostTypeBadge = (postType?: string) => {
         switch (postType) {
             case "project-launch":
-                return { label: "🚀 Project Launch", color: "bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800" }
+                return { label: "Project Launch", icon: Rocket, color: "bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800" }
             case "teammate-request":
-                return { label: "👥 Looking for Teammates", color: "bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800" }
+                return { label: "Looking for Teammates", icon: UserPlus, color: "bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800" }
             case "announcement":
-                return { label: "📢 Announcement", color: "bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800" }
+                return { label: "Announcement", icon: Megaphone, color: "bg-orange-100 dark:bg-orange-950 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-800" }
             default:
                 return null
         }
@@ -276,7 +320,7 @@ export function Feed() {
                     <div className="flex-1 min-w-0">
                         <Textarea
                             placeholder="What are you trying to build?"
-                            className="w-full resize-none border-none bg-transparent focus-visible:ring-0 min-h-[50px] md:min-h-[60px] text-base md:text-lg lg:text-xl p-0 placeholder:text-muted-foreground/50 leading-relaxed"
+                            className="w-full resize-none border-none bg-transparent focus-visible:ring-0 min-h-[50px] md:min-h-[60px] text-base md:text-lg lg:text-xl p-0 placeholder:text-muted-foreground leading-relaxed"
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
                         />
@@ -295,6 +339,7 @@ export function Feed() {
                                         )}
                                         <button
                                             onClick={() => handleRemoveMedia(index)}
+                                            aria-label="Remove media"
                                             className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
                                         >
                                             <X className="h-3 w-3" />
@@ -320,17 +365,18 @@ export function Feed() {
                         />
                         <Button
                             variant="ghost"
-                            className="h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm text-muted-foreground hover:text-blue-600 hover:bg-blue-500/10 rounded-full transition-colors group whitespace-nowrap"
+                            size="sm"
+                            className="text-xs sm:text-sm text-muted-foreground hover:text-blue-600 hover:bg-blue-500/10 rounded-full transition-colors group whitespace-nowrap"
                             onClick={handleMediaClick}
                         >
                             <ImageIcon className="h-4 w-4 sm:h-5 sm:w-5 sm:mr-2 text-blue-500 group-hover:text-blue-600" />
                             <span className="hidden sm:inline font-medium group-hover:text-blue-600">Media</span>
                         </Button>
-                        <Button variant="ghost" className="h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm text-muted-foreground hover:text-orange-600 hover:bg-orange-500/10 rounded-full transition-colors group whitespace-nowrap">
+                        <Button variant="ghost" size="sm" className="text-xs sm:text-sm text-muted-foreground hover:text-orange-600 hover:bg-orange-500/10 rounded-full transition-colors group whitespace-nowrap">
                             <Calendar className="h-4 w-4 sm:h-5 sm:w-5 sm:mr-2 text-orange-500 group-hover:text-orange-600" />
                             <span className="hidden sm:inline font-medium group-hover:text-orange-600">Event</span>
                         </Button>
-                        <Button variant="ghost" className="h-8 sm:h-9 px-2 sm:px-3 text-xs sm:text-sm text-muted-foreground hover:text-red-600 hover:bg-red-500/10 rounded-full transition-colors group whitespace-nowrap">
+                        <Button variant="ghost" size="sm" className="text-xs sm:text-sm text-muted-foreground hover:text-red-600 hover:bg-red-500/10 rounded-full transition-colors group whitespace-nowrap">
                             <FileText className="h-4 w-4 sm:h-5 sm:w-5 sm:mr-2 text-red-500 group-hover:text-red-600" />
                             <span className="hidden sm:inline font-medium group-hover:text-red-600">Article</span>
                         </Button>
@@ -339,7 +385,7 @@ export function Feed() {
                     <div className="flex items-center gap-2 sm:gap-3 justify-end sm:justify-start sm:pl-2 md:pl-0 sm:border-l md:border-none border-border/50">
                         <Popover>
                             <PopoverTrigger asChild>
-                                <Button size="icon" variant="ghost" className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-primary rounded-full">
+                                <Button aria-label="Open emoji picker" size="icon-sm" variant="ghost" className="text-muted-foreground hover:text-primary rounded-full">
                                     <Smile className="h-4 w-4 sm:h-5 sm:w-5" />
                                 </Button>
                             </PopoverTrigger>
@@ -347,19 +393,33 @@ export function Feed() {
                                 <div className="grid grid-cols-5 gap-2">
                                     {EMOJIS.map((emoji) => (
                                         <button
-                                            key={emoji}
-                                            className="text-2xl hover:bg-muted p-1 rounded transition-colors"
-                                            onClick={() => setContent(prev => prev + emoji)}
+                                            key={emoji.char}
+                                            aria-label={emoji.label}
+                                            className="text-2xl hover:bg-muted p-1 rounded transition-colors flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-ring"
+                                            onClick={() => setContent(prev => prev + emoji.char)}
                                         >
-                                            {emoji}
+                                            <emoji.icon className="h-5 w-5 text-muted-foreground" />
                                         </button>
                                     ))}
                                 </div>
                             </PopoverContent>
                         </Popover>
 
-                        <Button className="rounded-full px-6 sm:px-8 font-semibold shadow-lg transition-all text-sm">
-                            Post
+                        <Button
+                            className="rounded-full px-6 sm:px-8 font-semibold shadow-lg transition-all text-sm gap-2"
+                            disabled={isPosting || isPosted || (!content.trim() && mediaFiles.length === 0)}
+                            onClick={handlePost}
+                        >
+                            {isPosting ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : isPosted ? (
+                                <>
+                                    <CheckCircle2 className="h-4 w-4" />
+                                    Posted
+                                </>
+                            ) : (
+                                "Post"
+                            )}
                         </Button>
                     </div>
                 </div>
@@ -415,7 +475,7 @@ export function Feed() {
                     const postTypeBadge = getPostTypeBadge(post.postType)
 
                     return (
-                        <div key={post.id} className="group bg-card rounded-xl md:rounded-2xl border shadow-sm hover:shadow-lg transition-all duration-300">
+                        <div key={post.id} className="group bg-card rounded-xl md:rounded-2xl border shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer">
                             <div className="p-4 md:p-5 lg:p-7">
                                 {/* Header */}
                                 <div className="flex items-start justify-between mb-3 md:mb-4">
@@ -426,7 +486,7 @@ export function Feed() {
                                         </Avatar>
                                         <div className="min-w-0 flex-1">
                                             <h4 className="font-bold text-sm md:text-base text-foreground hover:text-primary cursor-pointer transition-colors truncate">{post.author}</h4>
-                                            <p className="text-[11px] md:text-xs text-muted-foreground font-medium flex items-center gap-1 md:gap-1.5 mt-0.5 flex-wrap">
+                                            <p className="text-xs text-muted-foreground font-medium flex items-center gap-1 md:gap-1.5 mt-0.5 flex-wrap">
                                                 <span className="truncate">{post.role}</span>
                                                 <span className="w-1 h-1 rounded-full bg-muted-foreground/40 shrink-0" />
                                                 <span className="shrink-0">{post.time}</span>
@@ -436,7 +496,7 @@ export function Feed() {
                                             {postTypeBadge && (
                                                 <div className="mt-1.5 md:mt-2">
                                                     <span className={cn(
-                                                        "inline-flex items-center px-1.5 md:px-2 py-0.5 rounded-md text-[9px] md:text-[10px] font-semibold border",
+                                                        "inline-flex items-center px-2 py-0.5 rounded-md text-xs md:text-[10px] font-semibold border",
                                                         postTypeBadge.color
                                                     )}>
                                                         {postTypeBadge.label}

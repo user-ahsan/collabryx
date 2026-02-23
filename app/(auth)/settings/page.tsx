@@ -1,15 +1,29 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useState } from "react"
+import { CheckCircle2, Loader2 } from "lucide-react"
 
 export default function SettingsPage() {
+    const [isSavingProfile, setIsSavingProfile] = useState(false)
+    const [isProfileSaved, setIsProfileSaved] = useState(false)
+
+    const handleSaveProfile = () => {
+        setIsSavingProfile(true)
+        setTimeout(() => {
+            setIsSavingProfile(false)
+            setIsProfileSaved(true)
+            setTimeout(() => setIsProfileSaved(false), 3000)
+        }, 1000)
+    }
+
     return (
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-4xl">
             <h1 className="text-3xl font-bold mb-6">Settings</h1>
@@ -33,16 +47,16 @@ export default function SettingsPage() {
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label>Display Name</Label>
-                                    <Input defaultValue="Sarah Chen" />
+                                    <Label htmlFor="display-name">Display Name</Label>
+                                    <Input id="display-name" defaultValue="Sarah Chen" />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Headline</Label>
-                                    <Input defaultValue="Full Stack Developer @ TechStart" />
+                                    <Label htmlFor="headline">Headline</Label>
+                                    <Input id="headline" defaultValue="Full Stack Developer @ TechStart" />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>Bio</Label>
-                                    <Textarea className="h-24" defaultValue="I'm a passionate Full Stack Developer..." />
+                                    <Label htmlFor="bio">Bio</Label>
+                                    <Textarea id="bio" className="h-24" defaultValue="I'm a passionate Full Stack Developer..." />
                                 </div>
                             </CardContent>
                         </Card>
@@ -56,12 +70,12 @@ export default function SettingsPage() {
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div className="space-y-2">
-                                    <Label>Email</Label>
-                                    <Input defaultValue="sarah@example.com" disabled />
+                                    <Label htmlFor="email">Email</Label>
+                                    <Input id="email" defaultValue="sarah@example.com" disabled />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label>New Password</Label>
-                                    <Input type="password" />
+                                    <Label htmlFor="new-password">New Password</Label>
+                                    <Input id="new-password" type="password" />
                                 </div>
                                 <Button>Change Password</Button>
                             </CardContent>

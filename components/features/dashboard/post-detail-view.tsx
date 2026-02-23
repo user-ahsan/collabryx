@@ -56,7 +56,7 @@ export function PostDetailView({ post }: PostDetailViewProps) {
         <div className="max-w-2xl mx-auto w-full pb-20 md:pb-10">
             {/* Mobile Back Header */}
             <div className="md:hidden sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b p-3 flex items-center gap-3 mb-4">
-                <Button variant="ghost" size="icon" onClick={() => router.back()} className="-ml-2">
+                <Button aria-label="Go back" variant="ghost" size="icon" onClick={() => router.back()} className="-ml-2">
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
                 <span className="font-semibold text-lg">Post</span>

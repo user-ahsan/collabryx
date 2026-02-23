@@ -1,7 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet"
 import { AlignJustify } from "lucide-react"
 import { SidebarNav } from "@/components/shared/sidebar-nav"
 import Link from "next/link"
@@ -28,6 +28,9 @@ export function MobileNav() {
                     </Button>
                 </SheetTrigger>
                 <SheetContent side="left" className="p-0 border-r w-72">
+                    <div className="sr-only">
+                        <SheetTitle>Navigation Menu</SheetTitle>
+                    </div>
                     <SidebarNav className="h-full border-none" isMobile={true} />
                 </SheetContent>
             </Sheet>

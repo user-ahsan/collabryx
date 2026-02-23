@@ -17,7 +17,7 @@ export function LinkPreview({ url, title, description, image, siteName }: LinkPr
     const displayDomain = siteName || new URL(url).hostname
 
     return (
-        <a href={url} target="_blank" rel="noopener noreferrer" className="block mt-3 group">
+        <a href={url} target="_blank" rel="noopener noreferrer" className="block mt-3 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl" aria-label={`Open ${displayTitle} in a new tab`}>
             <Card className="overflow-hidden bg-muted/30 border-muted-foreground/20 hover:border-primary/30 transition-all flex flex-col sm:flex-row h-full">
                 {image ? (
                     <div className="w-full sm:w-48 h-32 sm:h-auto bg-muted shrink-0">

@@ -187,22 +187,22 @@ export function UnifiedAuth({ defaultView = "email" }: UnifiedAuthProps) {
 
                             {/* Social Buttons */}
                             <div className="grid grid-cols-3 gap-3">
-                                <Button variant="outline" className="w-full h-12 rounded-xl bg-transparent border-muted-foreground/20 hover:bg-muted/30">
+                                <Button variant="outline" size="lg" className="w-full rounded-xl bg-transparent border-muted-foreground/20 hover:bg-muted/30">
                                     <GoogleIcon className="h-5 w-5" />
                                     <span className="sr-only">Sign in with Google</span>
                                 </Button>
-                                <Button variant="outline" className="w-full h-12 rounded-xl bg-transparent border-muted-foreground/20 hover:bg-muted/30">
+                                <Button variant="outline" size="lg" className="w-full rounded-xl bg-transparent border-muted-foreground/20 hover:bg-muted/30">
                                     <AppleIcon className="h-5 w-5" />
                                     <span className="sr-only">Sign in with Apple</span>
                                 </Button>
-                                <Button variant="outline" className="w-full h-12 rounded-xl bg-transparent border-muted-foreground/20 hover:bg-muted/30">
+                                <Button variant="outline" size="lg" className="w-full rounded-xl bg-transparent border-muted-foreground/20 hover:bg-muted/30">
                                     <GitHubIcon className="h-5 w-5" />
                                     <span className="sr-only">Sign in with GitHub</span>
                                 </Button>
                             </div>
 
                             <p className="text-center text-sm text-muted-foreground mt-6">
-                                Don&apos;t have an account? <span className="text-foreground font-semibold cursor-pointer hover:underline" onClick={() => { setDirection(1); setView("signup"); }}>Sign up</span>
+                                Don&apos;t have an account? <span role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { setDirection(1); setView("signup"); } }} className="text-foreground font-semibold cursor-pointer hover:underline" onClick={() => { setDirection(1); setView("signup"); }}>Sign up</span>
                             </p>
 
                         </motion.div>
@@ -326,7 +326,7 @@ export function UnifiedAuth({ defaultView = "email" }: UnifiedAuthProps) {
                             </p>
                             <div className="text-center mt-4">
                                 <span className="text-sm text-muted-foreground">Already have an account? </span>
-                                <span className="text-sm font-semibold cursor-pointer hover:underline text-primary" onClick={() => { setDirection(-1); setView("email"); }}>Sign in</span>
+                                <span className="text-sm font-semibold cursor-pointer hover:underline text-primary" role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { setDirection(-1); setView("email"); } }} onClick={() => { setDirection(-1); setView("email"); }}>Sign in</span>
                             </div>
                         </motion.div>
                     )}

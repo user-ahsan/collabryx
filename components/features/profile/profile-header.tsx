@@ -63,24 +63,24 @@ export function ProfileHeader({
                             </div>
                             {!isOwnProfile && (
                                 <div className="flex gap-2 flex-col sm:flex-row w-full sm:w-auto shrink-0">
-                                    <Button variant="outline" className="w-full sm:w-auto text-sm h-9">
+                                    <Button variant="outline" size="sm" className="w-full sm:w-auto">
                                         <MessageSquare className="mr-2 h-4 w-4" />
                                         Message
                                     </Button>
                                     {connectionStatus === "none" && (
-                                        <Button className="w-full sm:w-auto text-sm h-9">
+                                        <Button size="sm" className="w-full sm:w-auto">
                                             <UserPlus className="mr-2 h-4 w-4" />
                                             Connect
                                         </Button>
                                     )}
                                     {connectionStatus === "connected" && (
-                                        <Button variant="secondary" disabled className="w-full sm:w-auto text-sm h-9">
+                                        <Button variant="secondary" size="sm" disabled className="w-full sm:w-auto">
                                             <CheckCircle2 className="mr-2 h-4 w-4" />
                                             Connected
                                         </Button>
                                     )}
                                     {connectionStatus === "pending" && (
-                                        <Button variant="secondary" disabled className="w-full sm:w-auto text-sm h-9">
+                                        <Button variant="secondary" size="sm" disabled className="w-full sm:w-auto">
                                             <Clock className="mr-2 h-4 w-4" />
                                             Request Sent
                                         </Button>

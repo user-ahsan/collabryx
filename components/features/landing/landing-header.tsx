@@ -40,7 +40,7 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({ navigation }) => {
                 {/* Logo */}
                 <div className="flex lg:flex-1">
                     <Link href="/" className="-m-1.5 p-1.5 flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+                        <div className="h-10 w-10 md:h-8 md:w-8 rounded-lg bg-primary flex items-center justify-center">
                             <span className="text-primary-foreground font-bold text-lg">C</span>
                         </div>
                         <span className="text-xl font-bold text-foreground">
@@ -106,7 +106,7 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({ navigation }) => {
 
                 {/* Right side - Theme toggle and CTA */}
                 <div className="hidden lg:flex lg:flex-1 lg:justify-end lg:gap-x-4 items-center">
-                    <AnimatedThemeToggler className="h-9 w-9" />
+                    <AnimatedThemeToggler className="h-11 w-11 md:h-9 md:w-9" />
                     <Button asChild size="sm">
                         <Link href="/login">Get Started</Link>
                     </Button>
@@ -128,7 +128,7 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({ navigation }) => {
                             </Link>
                         ))}
                         <div className="flex items-center gap-3 px-3 py-2">
-                            <AnimatedThemeToggler className="h-9 w-9" />
+                            <AnimatedThemeToggler className="h-11 w-11 md:h-9 md:w-9" />
                             <Button asChild className="flex-1">
                                 <Link href="/login">Get Started</Link>
                             </Button>

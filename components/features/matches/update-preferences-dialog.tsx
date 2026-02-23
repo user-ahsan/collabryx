@@ -48,7 +48,7 @@ export function UpdatePreferencesDialog({
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline" className="h-10 sm:h-11 px-4 sm:px-6 text-xs sm:text-sm border-primary/20 hover:bg-primary/5 hover:border-primary/40 transition-colors w-full md:w-auto">
+                <Button variant="outline" size="lg" className="px-4 sm:px-6 text-xs sm:text-sm border-primary/20 hover:bg-primary/5 hover:border-primary/40 transition-colors w-full md:w-auto">
                     <Settings2 className="mr-2 h-4 w-4" />
                     Update Preferences
                 </Button>

@@ -4,10 +4,17 @@ import { useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Send, MoreHorizontal, Smile, ThumbsUp } from "lucide-react"
+import { Send, MoreHorizontal, Smile, ThumbsUp, Heart, Flame, Frown, Angry, Flag, MessageSquareOff, Trash2 } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
-const COMMENT_REACTIONS = ["👍", "❤️", "😂", "😮", "😢", "😡"]
+const COMMENT_REACTIONS = [
+    { id: "like", icon: ThumbsUp },
+    { id: "love", icon: Heart },
+    { id: "haha", icon: Smile },
+    { id: "wow", icon: Flame },
+    { id: "sad", icon: Frown },
+    { id: "angry", icon: Angry }
+]
 
 interface Comment {
     id: string
@@ -133,22 +140,23 @@ export function CommentSection({ comments: initialComments = DUMMY_COMMENTS, onA
                                         <div className="h-2 w-full bg-transparent" />
 
                                         <div className="bg-background border shadow-xl rounded-full p-1 gap-1 flex items-center -ml-2">
-                                            {COMMENT_REACTIONS.map(emoji => (
+                                            {COMMENT_REACTIONS.map((reaction) => (
                                                 <button
-                                                    key={emoji}
-                                                    className="h-8 w-8 flex items-center justify-center text-xl hover:bg-muted rounded-full hover:scale-125 transition-transform"
+                                                    key={reaction.id}
+                                                    aria-label={`React with ${reaction.id}`}
+                                                    className="h-8 w-8 flex items-center justify-center hover:bg-muted rounded-full hover:scale-125 transition-transform text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
                                                     onClick={(e) => {
                                                         e.stopPropagation()
                                                         // Handle specific reaction logic here
                                                     }}
                                                 >
-                                                    {emoji}
+                                                    <reaction.icon className="h-4 w-4" />
                                                 </button>
                                             ))}
                                         </div>
                                     </div>
                                 </div>
-                                <button className="text-xs font-bold text-muted-foreground hover:text-foreground hover:underline transition-colors">Reply</button>
+                                <button className="text-xs font-bold text-muted-foreground hover:text-foreground hover:underline transition-all duration-200 cursor-pointer">Reply</button>
                                 <span className="text-xs text-muted-foreground font-medium">{comment.timestamp}</span>
                             </div>
                         </div>
@@ -172,7 +180,7 @@ export function CommentSection({ comments: initialComments = DUMMY_COMMENTS, onA
                     <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center pr-1">
                         <Popover>
                             <PopoverTrigger asChild>
-                                <Button type="button" size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-full">
+                                <Button aria-label="Open emoji picker" type="button" size="icon-sm" variant="ghost" className="text-muted-foreground hover:text-foreground rounded-full transition-colors cursor-pointer">
                                     <Smile className="h-4 w-4" />
                                 </Button>
                             </PopoverTrigger>
@@ -193,9 +201,10 @@ export function CommentSection({ comments: initialComments = DUMMY_COMMENTS, onA
                         </Popover>
                         {text.trim() && (
                             <Button
+                                aria-label="Send comment"
                                 type="submit"
                                 size="icon"
-                                className="h-8 w-8 text-primary-foreground rounded-full ml-1"
+                                className="h-8 w-8 text-primary-foreground rounded-full ml-1 transition-all hover:scale-105 cursor-pointer"
                             >
                                 <Send className="h-3.5 w-3.5" />
                             </Button>

@@ -60,7 +60,7 @@ export function MatchCardListView({ match, index }: MatchCardListViewProps) {
                 <div className="flex-1 min-w-0 w-full">
                     <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-1">
                         <h3 className="font-bold text-sm sm:text-base truncate">{match.name}</h3>
-                        <Badge variant="secondary" className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 shrink-0">
+                        <Badge variant="secondary" className="text-xs px-2 py-0.5 shrink-0">
                             {match.role}
                         </Badge>
                     </div>
@@ -71,13 +71,13 @@ export function MatchCardListView({ match, index }: MatchCardListViewProps) {
                             <Badge
                                 key={skill}
                                 variant="outline"
-                                className="text-[10px] px-1.5 py-0 font-medium"
+                                className="text-xs px-1.5 py-0 font-medium"
                             >
                                 {skill}
                             </Badge>
                         ))}
                         {match.skills.length > 4 && (
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-medium">
+                            <Badge variant="outline" className="text-xs px-1.5 py-0 font-medium">
                                 +{match.skills.length - 4}
                             </Badge>
                         )}
@@ -90,7 +90,7 @@ export function MatchCardListView({ match, index }: MatchCardListViewProps) {
                                 key={i}
                                 variant="outline"
                                 className={cn(
-                                    "text-[10px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 font-medium border",
+                                    "text-xs sm:text-[10px] px-2 py-0.5 font-medium border",
                                     getInsightColor(insight.type)
                                 )}
                             >
@@ -105,18 +105,18 @@ export function MatchCardListView({ match, index }: MatchCardListViewProps) {
                     <div className="text-2xl sm:text-3xl font-bold text-primary leading-none">
                         {match.compatibility}%
                     </div>
-                    <span className="text-[10px] text-muted-foreground uppercase font-medium mt-1">
+                    <span className="text-xs sm:text-[10px] text-muted-foreground uppercase font-medium mt-1">
                         Match
                     </span>
                 </div>
 
                 {/* Actions - Mobile Horizontal, Desktop Vertical */}
                 <div className="flex sm:flex-col gap-2 flex-1 sm:flex-none">
-                    <Button size="sm" className="h-8 px-3 text-xs flex-1 sm:flex-none">
+                    <Button size="sm" className="flex-1 sm:flex-none">
                         <UserPlus className="h-3 w-3 mr-1.5" />
                         Connect
                     </Button>
-                    <Button size="sm" variant="outline" className="h-8 px-3 text-xs flex-1 sm:flex-none">
+                    <Button size="sm" variant="outline" className="flex-1 sm:flex-none">
                         <Eye className="h-3 w-3 mr-1.5" />
                         View
                     </Button>

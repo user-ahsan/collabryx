@@ -49,8 +49,9 @@ export function ChatWindow({ chatId, onBackToList }: ChatWindowProps) {
                 <div className="flex items-center gap-2 md:gap-3">
                     {/* Back button - only on mobile */}
                     <Button
+                        aria-label="Go back"
                         variant="ghost"
-                        size="icon"
+                        size="icon-lg"
                         className="md:hidden shrink-0"
                         onClick={onBackToList}
                     >
@@ -66,13 +67,13 @@ export function ChatWindow({ chatId, onBackToList }: ChatWindowProps) {
                     </div>
                 </div>
                 <div className="flex items-center gap-1 md:gap-2">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 md:h-10 md:w-10">
+                    <Button aria-label="Voice call" variant="ghost" size="icon-lg">
                         <Phone className="h-4 w-4 md:h-5 md:w-5" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 md:h-10 md:w-10">
+                    <Button aria-label="Video call" variant="ghost" size="icon-lg">
                         <Video className="h-4 w-4 md:h-5 md:w-5" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 md:h-10 md:w-10">
+                    <Button aria-label="More options" variant="ghost" size="icon-lg">
                         <MoreVertical className="h-4 w-4 md:h-5 md:w-5" />
                     </Button>
                 </div>

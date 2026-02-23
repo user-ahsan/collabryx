@@ -8,6 +8,7 @@ import { ShinyText } from "@/components/ui/shiny-text"
 import { HeartHandshake } from "@/public/icons/HeartHandshake"
 import { Code } from "@/public/icons/Code"
 import { ChartLine } from "@/public/icons/ChartLine"
+import { Handshake, Rocket, Calendar } from "lucide-react"
 
 export function CompatibilityScoreShowcase() {
     const isMobile = useIsMobile()
@@ -337,9 +338,9 @@ function CompatibilityRing({ percentage }: { percentage: number }) {
  */
 function MatchBreakdown() {
     const matchReasons = [
-        { label: "Complementary Skills", icon: "🤝", description: "Tech + Business expertise" },
-        { label: "Shared Interest in Startups", icon: "🚀", description: "Both want to build products" },
-        { label: "Matching Availability", icon: "📅", description: "Available to start ASAP" }
+        { label: "Complementary Skills", icon: Handshake, description: "Tech + Business expertise" },
+        { label: "Shared Interest in Startups", icon: Rocket, description: "Both want to build products" },
+        { label: "Matching Availability", icon: Calendar, description: "Available to start ASAP" }
     ]
 
     return (
@@ -361,7 +362,7 @@ function MatchBreakdown() {
                         transition={{ duration: 0.5, delay: 0.5 + idx * 0.1 }}
                         className="text-center p-4 rounded-xl border border-border bg-card/40 backdrop-blur-sm hover:bg-card/60 transition-colors"
                     >
-                        <div className="text-3xl mb-2">{reason.icon}</div>
+                        <reason.icon className="h-8 w-8 text-primary mb-2 opacity-80" />
                         <div className="font-semibold text-foreground mb-1">{reason.label}</div>
                         <div className="text-xs text-muted-foreground">{reason.description}</div>
                     </motion.div>

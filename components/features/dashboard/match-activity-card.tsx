@@ -68,7 +68,7 @@ export function MatchActivityCard({
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 px-2 text-xs text-primary hover:text-primary hover:bg-primary/10"
+                        className="h-7 px-2 text-xs text-primary hover:text-primary hover:bg-primary/10 transition-colors cursor-pointer"
                     >
                         View All
                         <ArrowRight className="h-3 w-3 ml-1" />
@@ -79,7 +79,7 @@ export function MatchActivityCard({
                     {activities.map((activity) => (
                         <div
                             key={activity.id}
-                            className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/50 transition-colors group"
+                            className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-muted/50 transition-all duration-200 group cursor-pointer"
                         >
                             <Avatar className="h-9 w-9 border shadow-sm shrink-0">
                                 <AvatarImage src={activity.userAvatar} />
