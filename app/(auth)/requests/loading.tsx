@@ -1,6 +1,5 @@
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent } from "@/components/ui/card"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function RequestsLoading() {
     return (
@@ -11,14 +10,11 @@ export default function RequestsLoading() {
             </div>
 
             <div className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6">
-                    <TabsTrigger value="placeholder" disabled>
-                        <Skeleton className="h-4 w-16" />
-                    </TabsTrigger>
-                    <TabsTrigger value="placeholder" disabled>
-                        <Skeleton className="h-4 w-16" />
-                    </TabsTrigger>
-                </TabsList>
+                {/* Skeleton tabs bar instead of real Tabs components */}
+                <div className="grid w-full grid-cols-2 mb-4 sm:mb-6 bg-muted rounded-lg p-[3px] h-9">
+                    <Skeleton className="h-full w-full rounded-md" />
+                    <Skeleton className="h-full w-full rounded-md" />
+                </div>
 
                 <div className="mt-0 space-y-3 sm:space-y-4">
                     {Array.from({ length: 3 }).map((_, i) => (
@@ -53,3 +49,4 @@ export default function RequestsLoading() {
         </div>
     )
 }
+

@@ -10,6 +10,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { GoogleIcon, GitHubIcon, AppleIcon } from "@/components/ui/social-icons"
+import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 // --- Schemas ---
 
@@ -39,6 +42,8 @@ export function UnifiedAuth({ defaultView = "email" }: UnifiedAuthProps) {
     const [email, setEmail] = React.useState("")
     const [isLoading, setIsLoading] = React.useState(false)
     const [direction, setDirection] = React.useState(0) // -1 for back, 1 for forward
+    const router = useRouter()
+    const supabase = createClient()
 
     // --- Forms ---
 
@@ -60,39 +65,61 @@ export function UnifiedAuth({ defaultView = "email" }: UnifiedAuthProps) {
     // --- Handlers ---
 
     const onEmailSubmit = async (data: z.infer<typeof emailSchema>) => {
-        setIsLoading(true)
-        // Simulate API check delay
-        await new Promise((resolve) => setTimeout(resolve, 800))
-        setIsLoading(false)
-
         setEmail(data.email)
-
-        // MOCKED LOGIC: 
-        // For demo purposes, we randomly assign "exists" or "new".
-        // OR we can hardcode a specific email for testing. 
-        // Let's say any email starting with "new" is new user, else existing.
-        const isNewUser = data.email.startsWith("new")
-
         setDirection(1)
-        if (isNewUser) {
-            setView("signup")
-        } else {
-            setView("login")
-        }
+        setView("login")
     }
 
-    const onLoginSubmit = async () => {
+    const onLoginSubmit = async (data: z.infer<typeof loginSchema>) => {
         setIsLoading(true)
-        await new Promise((resolve) => setTimeout(resolve, 1500))
+        const { error } = await supabase.auth.signInWithPassword({
+            email,
+            password: data.password,
+        })
         setIsLoading(false)
-        alert(`Logged in as ${email}`)
+
+        if (error) {
+            toast.error(error.message)
+            return
+        }
+
+        router.push("/dashboard")
+        router.refresh()
     }
 
     const onSignupSubmit = async (data: z.infer<typeof signupSchema>) => {
         setIsLoading(true)
-        await new Promise((resolve) => setTimeout(resolve, 1500))
+        const { error } = await supabase.auth.signUp({
+            email,
+            password: data.password,
+            options: {
+                data: {
+                    full_name: data.fullName,
+                },
+            },
+        })
         setIsLoading(false)
-        alert(`Account created for ${data.fullName} (${email})`)
+
+        if (error) {
+            toast.error(error.message)
+            return
+        }
+
+        toast.success("Account created! Redirecting...")
+        router.push("/dashboard")
+        router.refresh()
+    }
+
+    const handleSocialLogin = async (provider: "google" | "github" | "apple") => {
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider,
+            options: {
+                redirectTo: `${window.location.origin}/api/auth/callback`,
+            },
+        })
+        if (error) {
+            toast.error(error.message)
+        }
     }
 
     const handleBack = () => {
@@ -187,15 +214,15 @@ export function UnifiedAuth({ defaultView = "email" }: UnifiedAuthProps) {
 
                             {/* Social Buttons */}
                             <div className="grid grid-cols-3 gap-3">
-                                <Button variant="outline" size="lg" className="w-full rounded-xl bg-transparent border-muted-foreground/20 hover:bg-muted/30">
+                                <Button variant="outline" size="lg" className="w-full rounded-xl bg-transparent border-muted-foreground/20 hover:bg-muted/30" onClick={() => handleSocialLogin("google")}>
                                     <GoogleIcon className="h-5 w-5" />
                                     <span className="sr-only">Sign in with Google</span>
                                 </Button>
-                                <Button variant="outline" size="lg" className="w-full rounded-xl bg-transparent border-muted-foreground/20 hover:bg-muted/30">
+                                <Button variant="outline" size="lg" className="w-full rounded-xl bg-transparent border-muted-foreground/20 hover:bg-muted/30" onClick={() => handleSocialLogin("apple")}>
                                     <AppleIcon className="h-5 w-5" />
                                     <span className="sr-only">Sign in with Apple</span>
                                 </Button>
-                                <Button variant="outline" size="lg" className="w-full rounded-xl bg-transparent border-muted-foreground/20 hover:bg-muted/30">
+                                <Button variant="outline" size="lg" className="w-full rounded-xl bg-transparent border-muted-foreground/20 hover:bg-muted/30" onClick={() => handleSocialLogin("github")}>
                                     <GitHubIcon className="h-5 w-5" />
                                     <span className="sr-only">Sign in with GitHub</span>
                                 </Button>
