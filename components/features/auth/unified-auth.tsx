@@ -5,11 +5,19 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { motion, AnimatePresence } from "motion/react"
-import { Loader2, Mail, Lock, User } from "lucide-react"
+import { Loader2, Mail, Lock, User, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { GoogleIcon, GitHubIcon, AppleIcon } from "@/components/ui/social-icons"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -42,6 +50,8 @@ export function UnifiedAuth({ defaultView = "email" }: UnifiedAuthProps) {
     const [email, setEmail] = React.useState("")
     const [isLoading, setIsLoading] = React.useState(false)
     const [direction, setDirection] = React.useState(0) // -1 for back, 1 for forward
+    const [showProviderDialog, setShowProviderDialog] = React.useState(false)
+    const [providerToShow, setProviderToShow] = React.useState<"google" | "github" | "apple" | null>(null)
     const router = useRouter()
     const supabase = createClient()
 
@@ -66,8 +76,30 @@ export function UnifiedAuth({ defaultView = "email" }: UnifiedAuthProps) {
 
     const onEmailSubmit = async (data: z.infer<typeof emailSchema>) => {
         setEmail(data.email)
-        setDirection(1)
-        setView("login")
+        setIsLoading(true)
+        
+        // Check if user exists by attempting sign in with dummy password
+        const { error } = await supabase.auth.signInWithPassword({
+            email: data.email,
+            password: "dummy-password-check-" + Date.now(),
+        })
+        
+        setIsLoading(false)
+        
+        // If error contains "Invalid login credentials", user doesn't exist -> signup
+        // If no error or different error, treat as existing user -> login
+        if (error?.message?.includes("Invalid login credentials") || error?.message?.includes("Email not confirmed")) {
+            // User doesn't exist, go to signup
+            setDirection(1)
+            setView("signup")
+        } else if (error && !error.message.includes("Email not confirmed")) {
+            // Some other error occurred, show it
+            toast.error(error.message)
+        } else {
+            // User exists (or email not confirmed), go to login
+            setDirection(1)
+            setView("login")
+        }
     }
 
     const onLoginSubmit = async (data: z.infer<typeof loginSchema>) => {
@@ -111,15 +143,13 @@ export function UnifiedAuth({ defaultView = "email" }: UnifiedAuthProps) {
     }
 
     const handleSocialLogin = async (provider: "google" | "github" | "apple") => {
-        const { error } = await supabase.auth.signInWithOAuth({
-            provider,
-            options: {
-                redirectTo: `${window.location.origin}/api/auth/callback`,
-            },
-        })
-        if (error) {
-            toast.error(error.message)
-        }
+        setProviderToShow(provider)
+        setShowProviderDialog(true)
+    }
+
+    const handleProviderDialogClose = () => {
+        setShowProviderDialog(false)
+        setProviderToShow(null)
     }
 
     const handleBack = () => {
@@ -151,8 +181,38 @@ export function UnifiedAuth({ defaultView = "email" }: UnifiedAuthProps) {
     const inputClasses = "pl-10 h-12 bg-muted/30 border-muted-foreground/20 focus:border-primary focus:ring-primary/20 transition-all rounded-xl"
     const buttonClasses = "w-full h-12 text-lg font-medium shadow-none hover:shadow-lg hover:shadow-primary/20 transition-all rounded-xl"
 
+    const getProviderName = (provider: "google" | "github" | "apple") => {
+        switch (provider) {
+            case "google": return "Google"
+            case "github": return "GitHub"
+            case "apple": return "Apple"
+        }
+    }
+
     return (
         <div className="w-full relative min-h-[350px] sm:min-h-[400px] overflow-hidden">
+            {/* Provider Not Available Dialog */}
+            <Dialog open={showProviderDialog} onOpenChange={setShowProviderDialog}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/20">
+                                <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                            </div>
+                            <DialogTitle>Authentication Not Available</DialogTitle>
+                        </div>
+                        <DialogDescription className="pt-4">
+                            {providerToShow && getProviderName(providerToShow)} authentication is not available yet. 
+                            Please use email authentication to sign in or create an account.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="sm:justify-center">
+                        <Button onClick={handleProviderDialogClose} className="w-full sm:w-auto">
+                            OK, Got It
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
             {/* No card background, just the content */}
             <div className="relative z-10 py-4">
                 <AnimatePresence mode="popLayout" custom={direction}>
@@ -252,16 +312,26 @@ export function UnifiedAuth({ defaultView = "email" }: UnifiedAuthProps) {
                                     <button onClick={handleBack} className="text-sm text-muted-foreground hover:text-primary transition-colors">
                                         Not you?
                                     </button>
-
-                                </div>
-
-                                <div className="flex items-center gap-2 text-muted-foreground bg-muted/20 py-1 px-3 rounded-full w-fit">
-                                    <Mail className="h-3 w-3" />
-                                    <span className="text-sm">{email}</span>
                                 </div>
                             </div>
 
                             <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="login-email">Email</Label>
+                                    <div className="relative">
+                                        <Mail className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
+                                        <Input
+                                            id="login-email"
+                                            type="email"
+                                            placeholder="m@example.com"
+                                            className={inputClasses}
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            disabled={isLoading}
+                                        />
+                                    </div>
+                                </div>
+
                                 <div className="space-y-2">
                                     <div className="flex justify-between items-center">
                                         <Label htmlFor="password">Password</Label>
@@ -304,11 +374,33 @@ export function UnifiedAuth({ defaultView = "email" }: UnifiedAuthProps) {
                             className="space-y-6"
                         >
                             <div className="text-left space-y-2 mb-8">
-                                <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Create an account</h1>
+                                <div className="flex items-center justify-between">
+                                    <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Create an account</h1>
+                                    <button onClick={handleBack} className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                                        Go back
+                                    </button>
+                                </div>
+                                
                                 <p className="text-muted-foreground text-base sm:text-lg">Enter your details to get started</p>
                             </div>
 
                             <form onSubmit={signupForm.handleSubmit(onSignupSubmit)} className="space-y-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="signup-email">Email</Label>
+                                    <div className="relative">
+                                        <Mail className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
+                                        <Input
+                                            id="signup-email"
+                                            type="email"
+                                            placeholder="m@example.com"
+                                            className={inputClasses}
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            disabled={isLoading}
+                                        />
+                                    </div>
+                                </div>
+
                                 <div className="space-y-2">
                                     <Label htmlFor="fullName">Full Name</Label>
                                     <div className="relative">
