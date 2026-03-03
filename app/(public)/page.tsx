@@ -280,7 +280,7 @@ export default function LandingPage() {
                         {testimonials.map((testimonial, idx) => (
                             <div
                                 key={idx}
-                                className="mx-4 w-[300px] sm:w-[350px] rounded-2xl border border-border/50 bg-card/30 backdrop-blur-sm p-6 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:bg-card/50"
+                                className="mx-4 w-[300px] sm:w-[350px] liquid-glass liquid-glass-interactive p-6"
                             >
                                 <div className="mb-4 flex items-center gap-3">
                                     <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
@@ -345,7 +345,7 @@ export default function LandingPage() {
                         return (
                             <div
                                 key={idx}
-                                className="group relative mx-4 w-[320px] sm:w-[380px] h-[280px] rounded-2xl border border-border/50 bg-card/40 backdrop-blur-sm p-8 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:bg-card/60 hover:border-primary/50 overflow-hidden flex flex-col whitespace-normal"
+                                className="group relative mx-4 w-[320px] sm:w-[380px] h-[280px] liquid-glass liquid-glass-interactive p-8 overflow-hidden flex flex-col whitespace-normal"
                             >
                                 {/* BorderBeam on hover */}
                                 <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-500">
@@ -405,7 +405,7 @@ export default function LandingPage() {
                                     whileInView={{ opacity: 1, y: 0 }}
                                     viewport={{ once: true, margin: "0px 0px -50px 0px" }}
                                     transition={{ duration: 0.3, delay: idx * 0.05 }}
-                                    className="group relative rounded-2xl border border-border/50 bg-card/40 backdrop-blur-sm p-6 lg:p-8 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:bg-card/60 overflow-hidden"
+                                    className="liquid-glass liquid-glass-interactive min-w-[85vw] md:min-w-0 snap-center relative p-6 lg:p-8 group"
                                 >
                                     {/* BorderBeam on hover */}
                                     <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-500">
@@ -597,7 +597,7 @@ export default function LandingPage() {
                             stiffness: 80,
                             damping: 12
                         }}
-                        className="relative text-center rounded-3xl border border-border/50 bg-card/30 backdrop-blur-sm p-8 sm:p-12 overflow-hidden"
+                        className="relative text-center liquid-glass p-8 sm:p-12 overflow-hidden"
                     >
                         {/* BorderBeam Effect */}
                         <BorderBeam size={300} duration={10} colorFrom="hsl(var(--primary))" colorTo="hsl(var(--primary) / 0.1)" />

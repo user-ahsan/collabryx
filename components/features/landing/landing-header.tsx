@@ -97,7 +97,23 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({ navigation }) => {
                         <Link
                             key={item.name}
                             href={item.href}
-                            className="text-sm font-semibold leading-6 text-foreground/80 hover:text-foreground transition-colors"
+                            scroll={false}
+                            onClick={(e) => {
+                                if (item.href.startsWith('#')) {
+                                    e.preventDefault();
+                                    const element = document.querySelector(item.href);
+                                    if (element) {
+                                        if ((window as any).lenis) {
+                                            (window as any).lenis.scrollTo(element);
+                                        } else {
+                                            element.scrollIntoView({ behavior: 'smooth' });
+                                        }
+                                        // Also update the URL hash
+                                        window.history.pushState(null, '', item.href);
+                                    }
+                                }
+                            }}
+                            className="text-sm font-semibold leading-6 text-foreground/80 hover:text-foreground transition-colors cursor-pointer"
                         >
                             {item.name}
                         </Link>
@@ -121,8 +137,23 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({ navigation }) => {
                             <Link
                                 key={item.name}
                                 href={item.href}
-                                className="block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-foreground hover:bg-accent"
-                                onClick={() => setMobileMenuOpen(false)}
+                                scroll={false}
+                                className="block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-foreground hover:bg-accent cursor-pointer"
+                                onClick={(e) => {
+                                    if (item.href.startsWith('#')) {
+                                        e.preventDefault();
+                                        const element = document.querySelector(item.href);
+                                        if (element) {
+                                            if ((window as any).lenis) {
+                                                (window as any).lenis.scrollTo(element);
+                                            } else {
+                                                element.scrollIntoView({ behavior: 'smooth' });
+                                            }
+                                            window.history.pushState(null, '', item.href);
+                                        }
+                                    }
+                                    setMobileMenuOpen(false);
+                                }}
                             >
                                 {item.name}
                             </Link>

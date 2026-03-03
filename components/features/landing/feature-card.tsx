@@ -60,7 +60,7 @@ export const FeatureCard: React.FC<FeatureCardProps> = ({
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
             className={cn(
-                "group relative overflow-hidden rounded-2xl border border-border/50 bg-card/30 backdrop-blur-sm p-6 transition-all duration-300 hover:scale-[1.02] hover:shadow-xl",
+                "group relative overflow-hidden liquid-glass liquid-glass-interactive p-6 transition-all duration-300",
                 className
             )}
         >
