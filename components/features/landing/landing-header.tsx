@@ -11,19 +11,26 @@ interface NavigationItem {
     href: string
 }
 
-interface LandingHeaderProps {
-    navigation: NavigationItem[]
-}
-
-export const LandingHeader: React.FC<LandingHeaderProps> = ({ navigation }) => {
+export const LandingHeader: React.FC = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
     const [scrolled, setScrolled] = React.useState(false)
+    const [dynamicNav, setDynamicNav] = React.useState<NavigationItem[]>([])
 
     React.useEffect(() => {
         const handleScroll = () => {
             setScrolled(window.scrollY > 20)
         }
         window.addEventListener("scroll", handleScroll)
+
+        // Dynamic navigation extraction
+        const sections = document.querySelectorAll('[data-section-name]')
+        const items = Array.from(sections).map(section => ({
+            name: section.getAttribute('data-section-name') || '',
+            href: `#${section.id}`
+        })).filter(item => item.name && item.href !== '#')
+
+        setDynamicNav(items)
+
         return () => window.removeEventListener("scroll", handleScroll)
     }, [])
 
@@ -93,7 +100,7 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({ navigation }) => {
 
                 {/* Desktop navigation */}
                 <div className="hidden lg:flex lg:gap-x-8">
-                    {navigation.map((item) => (
+                    {dynamicNav.map((item) => (
                         <Link
                             key={item.name}
                             href={item.href}
@@ -133,7 +140,7 @@ export const LandingHeader: React.FC<LandingHeaderProps> = ({ navigation }) => {
             {mobileMenuOpen && (
                 <div className="lg:hidden">
                     <div className="space-y-2 px-6 pb-6 pt-2">
-                        {navigation.map((item) => (
+                        {dynamicNav.map((item) => (
                             <Link
                                 key={item.name}
                                 href={item.href}

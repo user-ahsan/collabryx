@@ -42,7 +42,7 @@ export function ProblemStatement() {
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}
                             transition={{ duration: 0.5, delay: 0.2 + idx * 0.1 }}
-                            className="liquid-glass liquid-glass-interactive relative p-8 flex flex-col items-start"
+                            className="relative flex flex-col items-start"
                         >
                             <div className="mb-6 text-white">
                                 {point.icon}
