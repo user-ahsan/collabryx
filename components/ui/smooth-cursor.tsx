@@ -1,7 +1,7 @@
 "use client"
 
 import { FC, useEffect, useRef, useState } from "react"
-import { motion, useSpring } from "motion/react"
+import { motion, useSpring, useMotionValue } from "motion/react"
 
 interface Position {
     x: number
@@ -95,6 +95,7 @@ export function SmoothCursor({
     const lastUpdateTime = useRef(Date.now())
     const previousAngle = useRef(0)
     const accumulatedRotation = useRef(0)
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
     const cursorX = useSpring(0, springConfig)
     const cursorY = useSpring(0, springConfig)
@@ -108,6 +109,7 @@ export function SmoothCursor({
         stiffness: 500,
         damping: 35,
     })
+    const cursorOpacity = useMotionValue(1)
 
     useEffect(() => {
         // Only apply logic on non-touch devices
@@ -132,6 +134,14 @@ export function SmoothCursor({
             const currentPos = { x: e.clientX, y: e.clientY }
             updateVelocity(currentPos)
 
+            const target = e.target as HTMLElement
+            // Hide custom cursor immediately when over header
+            if (target && target.closest('header')) {
+                cursorOpacity.set(0)
+            } else {
+                cursorOpacity.set(1)
+            }
+
             const speed = Math.sqrt(
                 Math.pow(velocity.current.x, 2) + Math.pow(velocity.current.y, 2)
             )
@@ -154,12 +164,11 @@ export function SmoothCursor({
                 scale.set(0.95)
                 setIsMoving(true)
 
-                const timeout = setTimeout(() => {
+                if (timeoutRef.current) clearTimeout(timeoutRef.current)
+                timeoutRef.current = setTimeout(() => {
                     scale.set(1)
                     setIsMoving(false)
                 }, 150)
-
-                return () => clearTimeout(timeout)
             }
         }
 
@@ -188,6 +197,7 @@ export function SmoothCursor({
 
     return (
         <motion.div
+            id="custom-smooth-cursor"
             style={{
                 position: "fixed",
                 left: cursorX,
@@ -196,6 +206,7 @@ export function SmoothCursor({
                 translateY: "-50%",
                 rotate: rotation,
                 scale: scale,
+                opacity: cursorOpacity,
                 zIndex: 9999,
                 pointerEvents: "none",
                 willChange: "transform",

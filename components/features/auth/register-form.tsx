@@ -1,0 +1,219 @@
+"use client"
+
+import * as React from "react"
+import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import * as z from "zod"
+import { motion } from "motion/react"
+import { Loader2, Mail, Lock, User, AlertCircle } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { GoogleIcon, GitHubIcon, AppleIcon } from "@/components/ui/social-icons"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
+import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import Link from "next/link"
+
+const signupSchema = z.object({
+    fullName: z.string().min(2, "Name must be at least 2 characters."),
+    email: z.string().email("Please enter a valid email address."),
+    password: z.string().min(8, "Password must be at least 8 characters."),
+})
+
+export function RegisterForm() {
+    const [isLoading, setIsLoading] = React.useState(false)
+    const [showProviderDialog, setShowProviderDialog] = React.useState(false)
+    const [providerToShow, setProviderToShow] = React.useState<"google" | "github" | "apple" | null>(null)
+    const router = useRouter()
+    const supabase = createClient()
+
+    const form = useForm<z.infer<typeof signupSchema>>({
+        resolver: zodResolver(signupSchema),
+        defaultValues: { fullName: "", email: "", password: "" },
+    })
+
+    const onSignupSubmit = async (data: z.infer<typeof signupSchema>) => {
+        setIsLoading(true)
+        const { error } = await supabase.auth.signUp({
+            email: data.email,
+            password: data.password,
+            options: {
+                data: {
+                    full_name: data.fullName,
+                },
+            },
+        })
+        setIsLoading(false)
+
+        if (error) {
+            toast.error(error.message)
+            return
+        }
+
+        toast.success("Account created! Redirecting...")
+        router.push("/dashboard")
+        router.refresh()
+    }
+
+    const handleSocialLogin = async (provider: "google" | "github" | "apple") => {
+        setProviderToShow(provider)
+        setShowProviderDialog(true)
+    }
+
+    const handleProviderDialogClose = () => {
+        setShowProviderDialog(false)
+        setProviderToShow(null)
+    }
+
+    const inputClasses = "pl-10 h-12 bg-muted/30 border-muted-foreground/20 focus:border-primary focus:ring-primary/20 transition-all rounded-xl"
+    const buttonClasses = "w-full h-12 text-lg font-medium shadow-none hover:shadow-lg hover:shadow-primary/20 transition-all rounded-xl"
+
+    const getProviderName = (provider: "google" | "github" | "apple") => {
+        switch (provider) {
+            case "google": return "Google"
+            case "github": return "GitHub"
+            case "apple": return "Apple"
+        }
+    }
+
+    return (
+        <div className="w-full relative min-h-[350px] sm:min-h-[400px]">
+            <Dialog open={showProviderDialog} onOpenChange={setShowProviderDialog}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <div className="flex items-center gap-3">
+                            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/20">
+                                <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                            </div>
+                            <DialogTitle>Authentication Not Available</DialogTitle>
+                        </div>
+                        <DialogDescription className="pt-4">
+                            {providerToShow && getProviderName(providerToShow)} authentication is not available yet.
+                            Please use email authentication to create an account.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="sm:justify-center">
+                        <Button onClick={handleProviderDialogClose} className="w-full sm:w-auto">
+                            OK, Got It
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            <div className="relative z-10 py-4">
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="space-y-6"
+                >
+                    <div className="text-left space-y-2 mb-8">
+                        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Create an account</h1>
+                        <p className="text-muted-foreground text-base sm:text-lg">Enter your details to get started</p>
+                    </div>
+
+                    <form onSubmit={form.handleSubmit(onSignupSubmit)} className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="fullName">Full Name</Label>
+                            <div className="relative">
+                                <User className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
+                                <Input
+                                    id="fullName"
+                                    placeholder="John Doe"
+                                    className={inputClasses}
+                                    {...form.register("fullName")}
+                                    disabled={isLoading}
+                                />
+                            </div>
+                            {form.formState.errors.fullName && (
+                                <p className="text-sm text-destructive px-1">{form.formState.errors.fullName.message}</p>
+                            )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="signup-email">Email</Label>
+                            <div className="relative">
+                                <Mail className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
+                                <Input
+                                    id="signup-email"
+                                    type="email"
+                                    placeholder="m@example.com"
+                                    className={inputClasses}
+                                    {...form.register("email")}
+                                    disabled={isLoading}
+                                />
+                            </div>
+                            {form.formState.errors.email && (
+                                <p className="text-sm text-destructive px-1">{form.formState.errors.email.message}</p>
+                            )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="new-password">Password</Label>
+                            <div className="relative">
+                                <Lock className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
+                                <Input
+                                    id="new-password"
+                                    type="password"
+                                    placeholder="Create a password"
+                                    className={inputClasses}
+                                    {...form.register("password")}
+                                    disabled={isLoading}
+                                />
+                            </div>
+                            {form.formState.errors.password && (
+                                <p className="text-sm text-destructive px-1">{form.formState.errors.password.message}</p>
+                            )}
+                        </div>
+
+                        <Button type="submit" className={buttonClasses} disabled={isLoading}>
+                            {isLoading ? <Loader2 className="animate-spin" /> : "Sign Up"}
+                        </Button>
+                    </form>
+
+                    <div className="relative my-6">
+                        <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t border-muted/50" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-background px-2 text-muted-foreground">
+                                Or continue with
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3">
+                        <Button type="button" variant="outline" size="lg" className="w-full rounded-xl bg-transparent border-muted-foreground/20 hover:bg-muted/30" onClick={() => handleSocialLogin("google")}>
+                            <GoogleIcon className="h-5 w-5" />
+                            <span className="sr-only">Sign in with Google</span>
+                        </Button>
+                        <Button type="button" variant="outline" size="lg" className="w-full rounded-xl bg-transparent border-muted-foreground/20 hover:bg-muted/30" onClick={() => handleSocialLogin("apple")}>
+                            <AppleIcon className="h-5 w-5" />
+                            <span className="sr-only">Sign in with Apple</span>
+                        </Button>
+                        <Button type="button" variant="outline" size="lg" className="w-full rounded-xl bg-transparent border-muted-foreground/20 hover:bg-muted/30" onClick={() => handleSocialLogin("github")}>
+                            <GitHubIcon className="h-5 w-5" />
+                            <span className="sr-only">Sign in with GitHub</span>
+                        </Button>
+                    </div>
+
+                    <p className="text-center text-xs text-muted-foreground mt-4">
+                        By clicking continue, you agree to our <a href="#" className="underline hover:text-primary">Terms</a> and <a href="#" className="underline hover:text-primary">Privacy Policy</a>.
+                    </p>
+                    <div className="text-center mt-4">
+                        <span className="text-sm text-muted-foreground">Already have an account? </span>
+                        <Link href="/login" className="text-sm font-semibold hover:underline text-primary">Sign in</Link>
+                    </div>
+                </motion.div>
+            </div>
+        </div>
+    )
+}

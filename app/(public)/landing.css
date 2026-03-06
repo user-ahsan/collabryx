@@ -119,9 +119,10 @@ body::-webkit-scrollbar {
 
 /* 
  * Hide default cursor on the public side using our wrapper 
- * to ensure we don't bleed into the dashboard area
+ * to ensure we don't bleed into the dashboard area.
+ * Exclude header to retain default cursor behavior.
  */
-.public-cursor-wrapper * {
+.public-cursor-wrapper *:not(header):not(header *) {
     cursor: none !important;
 }
 
