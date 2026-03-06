@@ -1,14 +1,13 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Rocket, Users, Wrench, GraduationCap } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface IntentOption {
     id: string
     label: string
-    icon: any
+    icon: React.ComponentType<{ className?: string }>
     color: string
 }
 
