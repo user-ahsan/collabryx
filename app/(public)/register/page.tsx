@@ -1,16 +1,12 @@
 import { AuthLayout } from "@/components/features/auth/auth-layout"
-import { UnifiedAuth } from "@/components/features/auth/unified-auth"
+import { RegisterForm } from "@/components/features/auth/register-form"
 
 export const dynamic = "force-dynamic"
 
 export default function RegisterPage() {
     return (
         <AuthLayout>
-            {/* Even for register, we can start with email check to unify flow, 
-                 or likely users expect to just start entering details. 
-                 But to keep "unified" promise, we start with email. 
-                 If you want direct signup form, set defaultView="signup" */}
-            <UnifiedAuth defaultView="email" />
+            <RegisterForm />
         </AuthLayout>
     )
 }

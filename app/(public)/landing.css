@@ -116,3 +116,19 @@ body::-webkit-scrollbar {
     will-change: transform;
     animation: float-slow 25s ease-in-out infinite;
 }
+
+/* 
+ * Hide default cursor on the public side using our wrapper 
+ * to ensure we don't bleed into the dashboard area.
+ * Exclude header to retain default cursor behavior.
+ */
+.public-cursor-wrapper *:not(header):not(header *) {
+    cursor: none !important;
+}
+
+/* Keep text cursor for inputs and text selection where it matters */
+.public-cursor-wrapper input,
+.public-cursor-wrapper textarea,
+.public-cursor-wrapper select {
+    cursor: text !important;
+}

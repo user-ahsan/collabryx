@@ -7,7 +7,7 @@ import dynamic from "next/dynamic"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { LandingHeader } from "@/components/features/landing/landing-header"
-import { StatCard } from "@/components/features/landing/stat-card"
+
 import { MorphingText } from "@/components/ui/morphing-text"
 import { Globe as GlobeBackground } from "@/components/ui/globe"
 import { MeshGradientBackground } from "@/components/features/landing/mesh-gradient-background"
@@ -22,6 +22,7 @@ const ProblemStatement = dynamic(() => import("@/components/features/landing/pro
 const SemanticEngineComparison = dynamic(() => import("@/components/features/landing/semantic-engine-comparison").then(m => ({ default: m.SemanticEngineComparison })), { ssr: true })
 const CompatibilityScoreShowcase = dynamic(() => import("@/components/features/landing/compatibility-score-showcase").then(m => ({ default: m.CompatibilityScoreShowcase })), { ssr: true })
 const AIMentorPreview = dynamic(() => import("@/components/features/landing/ai-mentor-preview").then(m => ({ default: m.AIMentorPreview })), { ssr: true })
+const KeyBenefits = dynamic(() => import("@/components/features/landing/key-benefits").then(m => ({ default: m.KeyBenefits })), { ssr: true })
 // Disable SSR for PersonaUseCases due to Radix Tabs hydration mismatch with auto-generated IDs
 const PersonaUseCases = dynamic(() => import("@/components/features/landing/persona-use-cases").then(m => ({ default: m.PersonaUseCases })), { ssr: false })
 
@@ -40,15 +41,7 @@ import { CircleFadingArrowUp } from "@/public/icons/CircleFadingArrowUp"
 import { ChevronLeft } from "@/public/icons/ChevronLeft"
 import { ChevronRight } from "@/public/icons/ChevronRight"
 
-const navigation = [
-    { name: "Problem", href: "#problem" },
-    { name: "Solution", href: "#solution" },
-    { name: "Features", href: "#features" },
-    { name: "Benefits", href: "#benefits" },
-    { name: "Use Cases", href: "#use-cases" },
-    { name: "How It Works", href: "#how-it-works" },
-    { name: "Contact", href: "#contact" },
-]
+
 
 const features = [
     {
@@ -83,29 +76,6 @@ const features = [
     },
 ]
 
-const stats = [
-    {
-        icon: Users,
-        value: 200,
-        suffix: "+",
-        label: "Profile Records",
-        description: "Prototype dataset",
-    },
-    {
-        icon: Network,
-        value: 80,
-        suffix: "+",
-        label: "Prototype Matches",
-        description: "AI-powered connections",
-    },
-    {
-        icon: HeartHandshake,
-        value: 20,
-        suffix: "+",
-        label: "Test Collaborations",
-        description: "Early success stories",
-    },
-]
 
 
 
@@ -157,41 +127,13 @@ const howItWorksSteps = [
     }
 ]
 
-const keyBenefits = [
-    {
-        icon: Network,
-        title: "Accurate Semantic Matching",
-        description: "Powered by modern embeddings that understand meaning, goals, and context—not just keywords.",
-        highlight: "AI-Powered Intelligence"
-    },
-    {
-        icon: Users,
-        title: "Student & Founder Focused",
-        description: "Designed specifically for students and early-stage founders building projects and startups.",
-        highlight: "Built for Your Journey"
-    },
-    {
-        icon: Code,
-        title: "Built-in AI Assistant",
-        description: "Get startup planning help, MVP checklists, and personalized guidance whenever you need it.",
-        highlight: "24/7 Mentorship"
-    },
-    {
-        icon: HeartHandshake,
-        title: "Real-Time Messaging",
-        description: "Simple, clean, student-friendly chat for faster team formation and collaboration.",
-        highlight: "Instant Communication"
-    }
-]
-
-
 
 export default function LandingPage() {
     const [activeStep, setActiveStep] = React.useState(0)
     return (
         <div className="min-h-screen overflow-x-hidden bg-background relative">
             <MeshGradientBackground />
-            <LandingHeader navigation={navigation} />
+            <LandingHeader />
 
             {/* Hero Section with Two Column Design */}
             <section className="relative min-h-[90vh] lg:min-h-screen flex items-center justify-center pt-24 lg:pt-20 overflow-hidden">
@@ -280,7 +222,7 @@ export default function LandingPage() {
                         {testimonials.map((testimonial, idx) => (
                             <div
                                 key={idx}
-                                className="mx-4 w-[300px] sm:w-[350px] rounded-2xl border border-border/50 bg-card/30 backdrop-blur-sm p-6 transition-all duration-300 hover:scale-105 hover:shadow-xl hover:bg-card/50"
+                                className="mx-4 w-[300px] sm:w-[350px] liquid-glass liquid-glass-interactive p-6"
                             >
                                 <div className="mb-4 flex items-center gap-3">
                                     <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
@@ -299,12 +241,12 @@ export default function LandingPage() {
             </section>
 
             {/* Problem Statement - Establish the Pain Point */}
-            <div id="problem">
+            <div id="problem" data-section-name="Problem">
                 <ProblemStatement />
             </div>
 
             {/* Semantic Engine - Show the Solution */}
-            <div id="solution">
+            <div id="solution" data-section-name="Solution">
                 <SemanticEngineComparison />
             </div>
 
@@ -315,12 +257,12 @@ export default function LandingPage() {
             <AIMentorPreview />
 
             {/* Persona Use Cases - Targeted Messaging */}
-            <div id="use-cases">
+            <div id="use-cases" data-section-name="Use Cases">
                 <PersonaUseCases />
             </div>
 
             {/* Features Section - Feature Details */}
-            <section id="features" className="relative py-16 sm:py-24 lg:py-32 overflow-hidden">
+            <section id="features" data-section-name="Features" className="relative py-16 sm:py-24 lg:py-32 overflow-hidden">
                 <div className="mx-auto max-w-7xl px-6 lg:px-8 mb-12 lg:mb-16">
                     <div className="mx-auto max-w-2xl text-center mb-12 lg:mb-16">
                         <motion.h2
@@ -345,7 +287,7 @@ export default function LandingPage() {
                         return (
                             <div
                                 key={idx}
-                                className="group relative mx-4 w-[320px] sm:w-[380px] h-[280px] rounded-2xl border border-border/50 bg-card/40 backdrop-blur-sm p-8 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:bg-card/60 hover:border-primary/50 overflow-hidden flex flex-col whitespace-normal"
+                                className="group relative mx-4 w-[320px] sm:w-[380px] h-[280px] liquid-glass liquid-glass-interactive p-8 overflow-hidden flex flex-col whitespace-normal"
                             >
                                 {/* BorderBeam on hover */}
                                 <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-500">
@@ -375,101 +317,12 @@ export default function LandingPage() {
                 </ScrollVelocityRow>
             </section>
 
-
             {/* Key Benefits Section */}
-            <section id="benefits" className="relative py-16 sm:py-24 lg:py-32 overflow-hidden">
-                <div className="mx-auto max-w-7xl px-6 lg:px-8">
-                    <div className="mx-auto max-w-2xl text-center mb-12 lg:mb-16">
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true, margin: "0px 0px -100px 0px" }}
-                            transition={{ duration: 0.4 }}
-                        >
-                            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-4">
-                                Why Students & Founders Choose Collabryx
-                            </h2>
-                            <p className="text-lg text-muted-foreground">
-                                Unique advantages designed for your journey.
-                            </p>
-                        </motion.div>
-                    </div>
+            <KeyBenefits />
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-                        {keyBenefits.map((benefit, idx) => {
-                            const Icon = benefit.icon
-                            return (
-                                <motion.div
-                                    key={idx}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    whileInView={{ opacity: 1, y: 0 }}
-                                    viewport={{ once: true, margin: "0px 0px -50px 0px" }}
-                                    transition={{ duration: 0.3, delay: idx * 0.05 }}
-                                    className="group relative rounded-2xl border border-border/50 bg-card/40 backdrop-blur-sm p-6 lg:p-8 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:bg-card/60 overflow-hidden"
-                                >
-                                    {/* BorderBeam on hover */}
-                                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                                        <BorderBeam
-                                            size={200}
-                                            duration={10}
-                                            delay={idx * 0.3}
-                                            colorFrom="hsl(var(--primary))"
-                                            colorTo="hsl(var(--primary) / 0.2)"
-                                        />
-                                    </div>
-
-                                    <div className="relative z-10">
-                                        {/* Transparent icon container with animated icon */}
-                                        <div className="mb-4 inline-flex h-16 w-16 items-center justify-center text-primary group-hover:scale-125 transition-all duration-500">
-                                            <Icon className="h-16 w-16 transition-transform" />
-                                        </div>
-                                        <h3 className="mb-3 text-xl font-semibold text-foreground group-hover:text-primary transition-colors">
-                                            {benefit.title}
-                                        </h3>
-                                        <p className="text-sm leading-relaxed text-muted-foreground mb-4">
-                                            {benefit.description}
-                                        </p>
-                                        <div className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold">
-                                            {benefit.highlight}
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            )
-                        })}
-                    </div>
-                </div>
-            </section>
-
-            {/* Statistics Section - Social Proof with Numbers */}
-            <section className="py-16 sm:py-24 lg:py-32">
-                <div className="mx-auto max-w-7xl px-6 lg:px-8">
-                    <div className="mx-auto max-w-2xl text-center mb-12 lg:mb-16">
-                        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl mb-4">
-                            Prototype Metrics (Demo Dataset)
-                        </h2>
-                        <p className="text-lg text-muted-foreground">
-                            Early metrics from our prototype and testing phase.
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3 max-w-4xl mx-auto">
-                        {stats.map((stat, idx) => (
-                            <StatCard
-                                key={idx}
-                                icon={stat.icon}
-                                value={stat.value}
-                                suffix={stat.suffix}
-                                label={stat.label}
-                                description={stat.description}
-                                className="bg-card/30"
-                            />
-                        ))}
-                    </div>
-                </div>
-            </section>
 
             {/* How It Works - Process Breakdown */}
-            <section id="how-it-works" className="relative py-16 sm:py-24 lg:py-32 overflow-hidden">
+            <section id="how-it-works" data-section-name="How It Works" className="relative py-16 sm:py-24 lg:py-32 overflow-hidden">
                 <div className="mx-auto max-w-7xl px-6 lg:px-8">
                     <div className="mx-auto max-w-2xl text-center mb-12 lg:mb-20">
                         <motion.h2
@@ -584,60 +437,46 @@ export default function LandingPage() {
             </section>
 
             {/* CTA Section */}
-            <section id="contact" className="relative py-20 sm:py-32 lg:py-40 overflow-hidden">
-                <div className="relative z-10 mx-auto max-w-4xl px-6 lg:px-8">
-                    {/* CTA Section with Enhanced Animations */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 40 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{
-                            duration: 0.8,
-                            type: "spring",
-                            stiffness: 80,
-                            damping: 12
-                        }}
-                        className="relative text-center rounded-3xl border border-border/50 bg-card/30 backdrop-blur-sm p-8 sm:p-12 overflow-hidden"
-                    >
-                        {/* BorderBeam Effect */}
-                        <BorderBeam size={300} duration={10} colorFrom="hsl(var(--primary))" colorTo="hsl(var(--primary) / 0.1)" />
+            <motion.section
+                id="contact"
+                data-section-name="Contact"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.6 }}
+                className="py-24 sm:py-32 flex flex-col items-center text-center px-6 lg:px-8 relative z-10"
+            >
+                <h2 className="text-5xl sm:text-6xl lg:text-7xl font-semibold tracking-tighter max-w-3xl text-foreground">
+                    Build Your Team with AI-Powered Matching
+                </h2>
+                <p className="mt-6 text-xl leading-relaxed text-zinc-400 max-w-md mx-auto">
+                    Start forming your project or startup team in minutes — free for all students and founders.
+                </p>
 
-                        <ShinyText
-                            text="Build Your Team with AI-Powered Matching"
-                            className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight mb-6 text-foreground"
-                            speed={6}
-                        />
-                        <p className="mb-8 sm:mb-12 text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto">
-                            Start forming your project or startup team in minutes — free for all students and founders.
-                        </p>
-
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
-                            <Button size="lg" asChild className="w-full sm:w-auto text-lg px-10 py-6 h-auto shadow-lg hover:shadow-primary/25 transition-all duration-300">
-                                <Link href="/register">Get Started for Free</Link>
-                            </Button>
-                            <Button size="lg" variant="outline" asChild className="w-full sm:w-auto text-lg px-10 py-6 h-auto hover:bg-background/50">
-                                <Link href="/login">Sign In</Link>
-                            </Button>
-                        </div>
-
-                        {/* Social Links */}
-                        <div className="flex justify-center gap-8 pt-8 border-t border-border/50">
-                            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-110">
-                                <Linkedin className="h-7 w-7" />
-                                <span className="sr-only">LinkedIn</span>
-                            </a>
-                            <a href="mailto:hello@collabryx.com" className="text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-110">
-                                <AtSign className="h-7 w-7" />
-                                <span className="sr-only">Email</span>
-                            </a>
-                            <a href="https://collabryx.com" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-all duration-300 hover:scale-110">
-                                <Globe className="h-7 w-7" />
-                                <span className="sr-only">Website</span>
-                            </a>
-                        </div>
-                    </motion.div>
+                <div className="mt-10 flex flex-col sm:flex-row gap-4 w-full sm:w-auto px-4 sm:px-0">
+                    <Button size="lg" asChild className="bg-white hover:bg-zinc-200 text-black font-medium text-base px-8 h-12 w-full sm:w-auto transition-colors">
+                        <Link href="/register">Get Started for Free</Link>
+                    </Button>
+                    <Button size="lg" variant="outline" asChild className="border-white text-white hover:bg-white/10 font-medium text-base px-8 h-12 w-full sm:w-auto transition-colors">
+                        <Link href="/login">Sign In</Link>
+                    </Button>
                 </div>
-            </section>
+
+                <div className="mt-16 sm:mt-20 flex gap-12 text-zinc-500">
+                    <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors duration-300 transform hover:scale-110">
+                        <Linkedin className="w-7 h-7" />
+                        <span className="sr-only">LinkedIn</span>
+                    </a>
+                    <a href="mailto:hello@collabryx.com" className="hover:text-white transition-colors duration-300 transform hover:scale-110">
+                        <AtSign className="w-7 h-7" />
+                        <span className="sr-only">Email</span>
+                    </a>
+                    <a href="https://collabryx.com" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors duration-300 transform hover:scale-110">
+                        <Globe className="w-7 h-7" />
+                        <span className="sr-only">Website</span>
+                    </a>
+                </div>
+            </motion.section>
 
             {/* Footer with Scroll-Reveal */}
             <motion.footer

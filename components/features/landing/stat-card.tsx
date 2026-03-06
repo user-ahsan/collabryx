@@ -31,7 +31,7 @@ export const StatCard: React.FC<StatCardProps> = ({
         <div
             ref={ref}
             className={cn(
-                "group relative overflow-hidden rounded-2xl border border-border/50 bg-card/30 backdrop-blur-sm p-8 text-center transition-all duration-500 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/10",
+                "group relative overflow-hidden liquid-glass liquid-glass-interactive p-8 text-center transition-all duration-500",
                 isInView && "animate-in fade-in slide-in-from-bottom-8",
                 className
             )}
