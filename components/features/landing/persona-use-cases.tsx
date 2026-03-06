@@ -169,7 +169,7 @@ function PersonaContent({ persona }: { persona: typeof personas[0] }) {
     const Icon = persona.icon
 
     return (
-        <div className="rounded-2xl border border-border bg-card/60 backdrop-blur-sm p-8 sm:p-12">
+        <div className="liquid-glass p-8 sm:p-12">
             <div className="grid md:grid-cols-2 gap-8 items-center">
                 {/* Left: Content */}
                 <div>

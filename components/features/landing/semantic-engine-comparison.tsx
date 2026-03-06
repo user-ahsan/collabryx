@@ -3,45 +3,20 @@
 import * as React from "react"
 import { motion } from "framer-motion"
 import { useIsMobile, usePrefersReducedMotion } from "@/hooks/use-media-query"
-import { Network } from "@/public/icons/Network"
-import { Bolt } from "@/public/icons/Bolt"
 import { BadgeCheck } from "@/public/icons/BadgeCheck"
+import { Bolt } from "@/public/icons/Bolt"
 
 export function SemanticEngineComparison() {
     const isMobile = useIsMobile()
     const prefersReducedMotion = usePrefersReducedMotion()
-
-    // Disable complex animations on mobile or if user prefers reduced motion
     const enableComplexAnimation = !isMobile && !prefersReducedMotion
 
     return (
-        <section className="relative py-24 sm:py-32 overflow-hidden">
+        <section className="relative py-28 md:py-36 overflow-hidden">
             <div className="mx-auto max-w-7xl px-6 lg:px-8">
-                {/* Section Header */}
-                <div className="mx-auto max-w-2xl text-center mb-20">
-                    <motion.h2
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.6 }}
-                        className="text-4xl sm:text-5xl font-bold tracking-tight mb-4"
-                    >
-                        Traditional Search vs Collabryx Semantic Search
-                    </motion.h2>
-                    <motion.p
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 0.6, delay: 0.1 }}
-                        className="text-lg text-muted-foreground"
-                    >
-                        See how semantic matching goes beyond keywords to understand your true intent and goals.
-                    </motion.p>
-                </div>
+                <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
 
-                {/* Comparison Grid */}
-                <div className="grid md:grid-cols-2 gap-12 lg:gap-16 items-center">
-                    {/* Left: Traditional Search (The Problem) */}
+                    {/* Left: Text + Bullet Explanation */}
                     <motion.div
                         initial={{ opacity: 0, x: -20 }}
                         whileInView={{ opacity: 1, x: 0 }}
@@ -50,60 +25,57 @@ export function SemanticEngineComparison() {
                         className="relative"
                     >
                         <div className="mb-6 flex items-center gap-3">
-                            <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-                                <Network className="h-6 w-6 text-muted-foreground" />
+                            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                                <Bolt className="h-6 w-6 text-primary animate-pulse" />
                             </div>
-                            <h3 className="text-2xl font-bold text-muted-foreground">Traditional Search</h3>
+                            <h2 className="text-3xl sm:text-4xl font-bold font-heading tracking-tight text-foreground">
+                                Traditional vs Semantic Search
+                            </h2>
                         </div>
 
-                        {/* Search Input Mockup */}
-                        <div className="mb-6 p-4 rounded-lg border border-border bg-card/50 backdrop-blur-sm">
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <span className="text-foreground font-medium">Search:</span>
-                                <span>&quot;React Developer&quot;</span>
-                            </div>
-                        </div>
+                        <p className="text-lg text-muted-foreground mb-8">
+                            Traditional networks match you based on raw keywords, leading to thousands of generic, misaligned results.
+                            Collabryx changes this. Our AI reads between the lines to find exactly who you need.
+                        </p>
 
-                        {/* Generic Results */}
-                        <div className="space-y-3">
-                            <div className="text-sm text-muted-foreground mb-4">1,000+ results found</div>
-                            {[1, 2, 3, 4].map((i) => (
-                                <motion.div
-                                    key={i}
-                                    initial={enableComplexAnimation ? { opacity: 0, y: 10 } : { opacity: 1 }}
-                                    whileInView={enableComplexAnimation ? { opacity: 1, y: 0 } : { opacity: 1 }}
-                                    viewport={{ once: true }}
-                                    transition={{ duration: 0.3, delay: i * 0.1 }}
-                                    className="p-4 rounded-lg border border-border/50 bg-muted/30"
-                                >
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <div className="h-10 w-10 rounded-full bg-muted" />
-                                        <div className="flex-1">
-                                            <div className="h-3 w-32 bg-muted rounded mb-2" />
-                                            <div className="h-2 w-24 bg-muted/60 rounded" />
-                                        </div>
-                                    </div>
-                                    <div className="text-xs text-muted-foreground opacity-60">
-                                        Skills: React, JavaScript...
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </div>
-
-                        {/* Problem Badge */}
-                        <div className="mt-6 space-y-2">
-                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted/50 text-muted-foreground text-sm">
-                                <span>✖</span>
-                                <span>Matches based on keywords only</span>
+                        <div className="space-y-6">
+                            <div className="flex items-start gap-4">
+                                <div className="mt-1 h-8 w-8 shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <BadgeCheck className="h-4 w-4 text-primary" />
+                                </div>
+                                <div>
+                                    <h4 className="text-foreground font-semibold text-lg">Meaning over Keywords</h4>
+                                    <p className="text-muted-foreground text-sm mt-1">
+                                        Matches based on meaning, goals, and context, parsing full bios instead of standard title tags.
+                                    </p>
+                                </div>
                             </div>
-                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted/50 text-muted-foreground text-sm ml-3">
-                                <span>✖</span>
-                                <span>Thousands of generic results</span>
+                            <div className="flex items-start gap-4">
+                                <div className="mt-1 h-8 w-8 shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <BadgeCheck className="h-4 w-4 text-primary" />
+                                </div>
+                                <div>
+                                    <h4 className="text-foreground font-semibold text-lg">Complementary Synergy</h4>
+                                    <p className="text-muted-foreground text-sm mt-1">
+                                        Understands how your skills complement others. If you're technical, it finds you a matching business counterpart.
+                                    </p>
+                                </div>
+                            </div>
+                            <div className="flex items-start gap-4">
+                                <div className="mt-1 h-8 w-8 shrink-0 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <BadgeCheck className="h-4 w-4 text-primary" />
+                                </div>
+                                <div>
+                                    <h4 className="text-foreground font-semibold text-lg">High-Fidelity Suggestions</h4>
+                                    <p className="text-muted-foreground text-sm mt-1">
+                                        Suggests collaborators who truly align with your project vision and current startup stage.
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </motion.div>
 
-                    {/* Right: Collabryx Semantic Search (The Solution) */}
+                    {/* Right: Floating Glass Demo UI */}
                     <motion.div
                         initial={{ opacity: 0, x: 20 }}
                         whileInView={{ opacity: 1, x: 0 }}
@@ -111,63 +83,34 @@ export function SemanticEngineComparison() {
                         transition={{ duration: 0.7, delay: 0.2 }}
                         className="relative"
                     >
-                        <div className="mb-6 flex items-center gap-3">
-                            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                                <Bolt className="h-6 w-6 text-primary animate-pulse" />
-                            </div>
-                            <h3 className="text-2xl font-bold text-primary">Collabryx Semantic Search</h3>
-                        </div>
+                        {/* Background subtle glow */}
+                        <div
+                            className="absolute -inset-20 pointer-events-none"
+                            style={{
+                                background: 'radial-gradient(circle at center, hsl(var(--primary) / 0.15) 0%, transparent 60%)'
+                            }}
+                        />
 
-                        {/* User Bio Input */}
-                        <div className="mb-8 p-5 rounded-lg border border-primary/30 bg-primary/5 backdrop-blur-sm">
-                            <div className="text-sm mb-2 text-muted-foreground">Your Profile:</div>
-                            <p className="text-sm leading-relaxed text-foreground">
-                                &quot;I&apos;m a CS junior who loves <span className="font-semibold text-primary">fintech</span> and wants to build an <span className="font-semibold text-primary">app for stock tracking</span>.&quot;
-                            </p>
-                        </div>
+                        <div className="rotate-1 hover:rotate-0 transition-transform duration-500 will-change-transform">
+                            <div className="liquid-glass p-6 md:p-8 animate-float">
+                                {/* Search query mock */}
+                                <div className="mb-6 p-4 rounded-xl bg-black/40 border border-white/5">
+                                    <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Intent Analysis</div>
+                                    <p className="text-sm text-foreground">
+                                        "I'm a CS junior who loves <span className="text-primary font-medium bg-primary/10 px-1 rounded">fintech</span> and needs a <span className="text-primary font-medium bg-primary/10 px-1 rounded">business partner</span>."
+                                    </p>
+                                </div>
 
-                        {/* Semantic Match Result with Animation */}
-                        <SemanticMatchCard enableAnimation={enableComplexAnimation} />
-
-                        {/* Success Badge */}
-                        <div className="mt-6 space-y-2">
-                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                                <BadgeCheck className="h-4 w-4" />
-                                <span>Matches based on meaning, goals, and context</span>
-                            </div>
-                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium ml-3">
-                                <BadgeCheck className="h-4 w-4" />
-                                <span>Understands how your skills complement others</span>
-                            </div>
-                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
-                                <BadgeCheck className="h-4 w-4" />
-                                <span>Suggests collaborators who truly align with your project vision</span>
+                                <SemanticMatchCard enableAnimation={enableComplexAnimation} />
                             </div>
                         </div>
                     </motion.div>
                 </div>
-
-                {/* Bottom Caption */}
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ duration: 0.6, delay: 0.4 }}
-                    className="mt-16 text-center"
-                >
-                    <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-                        Our AI uses <span className="text-primary font-semibold">vector embeddings</span> to understand the semantic meaning of your profile,
-                        matching you with collaborators who complement your goals—not just keyword matches.
-                    </p>
-                </motion.div>
             </div>
         </section>
     )
 }
 
-/**
- * Semantic Match Card with optional vector constellation animation
- */
 function SemanticMatchCard({ enableAnimation }: { enableAnimation: boolean }) {
     const [isInView, setIsInView] = React.useState(false)
 
@@ -178,53 +121,45 @@ function SemanticMatchCard({ enableAnimation }: { enableAnimation: boolean }) {
             onViewportEnter={() => setIsInView(true)}
             viewport={{ once: true }}
             transition={{ duration: 0.2 }}
-            className="relative p-6 rounded-xl border-2 border-primary/50 bg-card/60 backdrop-blur-sm shadow-lg hover:shadow-2xl transition-shadow duration-200"
+            className="relative p-5 rounded-xl border border-primary/30 bg-primary/5 backdrop-blur-md overflow-hidden group"
         >
-            {/* Vector Connection Lines (Desktop Only) */}
             {enableAnimation && isInView && <VectorLines />}
 
-            {/* Match Profile */}
             <div className="relative z-10">
                 <div className="flex items-center gap-3 mb-4">
-                    <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">
+                    <div className="h-12 w-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground font-bold shadow-lg">
                         AF
                     </div>
                     <div className="flex-1">
-                        <div className="font-semibold text-foreground">Alex Foster</div>
-                        <div className="text-xs text-muted-foreground">Finance Major • Founder</div>
+                        <div className="font-semibold text-foreground text-lg">Alex Foster</div>
+                        <div className="text-xs font-mono text-muted-foreground uppercase tracking-wide mt-0.5">Finance Major • MBA</div>
                     </div>
-                    <div className="px-3 py-1 rounded-full bg-primary text-primary-foreground text-xs font-bold">
-                        94% Match
+                    <div className="px-3 py-1.5 rounded-full bg-green-500/20 text-green-400 text-xs font-bold font-mono border border-green-500/30">
+                        94% MATCH
                     </div>
                 </div>
 
-                <p className="text-sm text-muted-foreground leading-relaxed mb-4">
-                    &quot;Looking for a <span className="text-primary font-medium">tech partner</span> to build an MVP for a <span className="text-primary font-medium">fintech startup</span>.
-                    I handle business strategy and funding.&quot;
+                <p className="text-sm text-muted-foreground leading-relaxed mb-5 border-l-2 border-primary/40 pl-3 italic">
+                    "Looking for a tech partner to build an MVP for a fintech concept.
+                    I handle business strategy and early-stage funding."
                 </p>
 
-                {/* Match Reasons */}
-                <div className="flex flex-wrap gap-2">
-                    <span className="px-2 py-1 rounded-md bg-primary/10 text-primary text-xs">Complementary Skills</span>
-                    <span className="px-2 py-1 rounded-md bg-primary/10 text-primary text-xs">Shared Interest: Fintech</span>
-                    <span className="px-2 py-1 rounded-md bg-primary/10 text-primary text-xs">Similar Goals</span>
+                <div className="flex flex-wrap gap-2 text-xs font-medium">
+                    <span className="px-2.5 py-1 rounded bg-white/5 border border-white/10 text-foreground/80">Complementary</span>
+                    <span className="px-2.5 py-1 rounded bg-white/5 border border-white/10 text-foreground/80">Fintech</span>
+                    <span className="px-2.5 py-1 rounded bg-white/5 border border-white/10 text-foreground/80">Pre-seed</span>
                 </div>
             </div>
         </motion.div>
     )
 }
 
-/**
- * Vector constellation animation (Desktop only)
- * Lightweight SVG overlay showing connecting nodes
- */
 function VectorLines() {
     return (
         <svg
-            className="absolute inset-0 w-full h-full pointer-events-none"
+            className="absolute inset-0 w-full h-full pointer-events-none opacity-50 mix-blend-screen"
             xmlns="http://www.w3.org/2000/svg"
         >
-            {/* Animated connecting lines */}
             {[1, 2, 3].map((i) => (
                 <motion.line
                     key={i}
@@ -232,28 +167,33 @@ function VectorLines() {
                     y1={`${20 + i * 20}%`}
                     x2="90%"
                     y2={`${30 + i * 15}%`}
-                    stroke="hsl(var(--primary))"
-                    strokeWidth="1"
-                    strokeOpacity="0.3"
+                    stroke="url(#lineGrad)"
+                    strokeWidth="1.5"
+                    strokeOpacity="0.4"
                     initial={{ pathLength: 0 }}
                     animate={{ pathLength: 1 }}
                     transition={{ duration: 1.5, delay: i * 0.2, ease: "easeInOut" }}
                 />
             ))}
-
-            {/* Animated nodes */}
             {[1, 2, 3, 4].map((i) => (
                 <motion.circle
                     key={`node-${i}`}
                     cx={`${20 + i * 20}%`}
                     cy={`${25 + (i % 2) * 30}%`}
-                    r="3"
+                    r="4"
                     fill="hsl(var(--primary))"
                     initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 0.6 }}
+                    animate={{ scale: 1, opacity: 0.8 }}
                     transition={{ duration: 0.5, delay: 0.5 + i * 0.15 }}
                 />
             ))}
+            <defs>
+                <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.1" />
+                    <stop offset="50%" stopColor="hsl(var(--primary))" stopOpacity="1" />
+                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.1" />
+                </linearGradient>
+            </defs>
         </svg>
     )
 }
