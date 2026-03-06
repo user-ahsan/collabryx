@@ -4,7 +4,7 @@ import { useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { ThumbsUp, Heart, Laugh, Flame, Frown, Angry, MessageCircle, Share2 } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { ReactionPicker } from "./reaction-picker"
+import { ReactionPicker } from "../comments/reaction-picker"
 
 interface PostActionsProps {
     postId: number
