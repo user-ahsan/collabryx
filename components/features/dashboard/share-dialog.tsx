@@ -42,11 +42,11 @@ export function ShareDialog({ isOpen, onClose, postUrl }: ShareDialogProps) {
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md bg-background border-border">
                 <DialogHeader>
                     <DialogTitle>Share Post</DialogTitle>
                     <DialogDescription>
-                        Share this post with your network or copy the link.
+                        Copy the link below or share directly to your favorite platforms.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-6 py-4">

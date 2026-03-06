@@ -31,7 +31,10 @@ export function PostOptionsDropdown({
                     <span className="sr-only">Post options</span>
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent
+                align="end"
+                className="w-48 bg-blue-950/[0.05] backdrop-blur-2xl border border-blue-400/10 shadow-[0_4px_32px_0_rgba(59,130,246,0.08),0_1px_0_0_rgba(255,255,255,0.06)_inset] rounded-xl p-1"
+            >
                 <DropdownMenuItem onClick={() => navigator.clipboard.writeText(window.location.href)}>
                     <Copy className="mr-2 h-4 w-4" />
                     Copy Link

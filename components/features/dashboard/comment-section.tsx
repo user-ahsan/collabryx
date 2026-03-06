@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Send, MoreHorizontal, Smile, ThumbsUp, Heart, Flame, Frown, Angry, Flag, MessageSquareOff, Trash2 } from "lucide-react"
+import { Send, Smile, ThumbsUp, Heart, Flame, Frown, Angry } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
 const COMMENT_REACTIONS = [
@@ -63,6 +63,7 @@ const DUMMY_COMMENTS: Comment[] = [
 export function CommentSection({ comments: initialComments = DUMMY_COMMENTS, onAddComment }: CommentSectionProps) {
     const [comments, setComments] = useState(initialComments)
     const [text, setText] = useState("")
+    const [isExpanded, setIsExpanded] = useState(false)
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
@@ -96,7 +97,7 @@ export function CommentSection({ comments: initialComments = DUMMY_COMMENTS, onA
         <div className="pt-2">
             {/* Comment List */}
             <div className="space-y-6 pb-6">
-                {comments.map((comment) => (
+                {comments.slice(0, isExpanded ? comments.length : 2).map((comment) => (
                     <div key={comment.id} className="flex gap-3 items-start group">
                         <Avatar className="h-9 w-9 cursor-pointer ring-2 ring-background transition-transform hover:scale-105">
                             <AvatarImage src={comment.author.avatar} />
@@ -114,7 +115,7 @@ export function CommentSection({ comments: initialComments = DUMMY_COMMENTS, onA
 
                                     {/* Like Count Badge */}
                                     {comment.likes > 0 && (
-                                        <div className="absolute -bottom-2.5 right-1 bg-background border shadow-sm rounded-full px-1.5 py-0.5 flex items-center gap-1">
+                                        <div className="absolute -bottom-2.5 right-1 bg-background border border-white/10 shadow-sm rounded-full px-1.5 py-0.5 flex items-center gap-1">
                                             <div className="bg-primary/10 rounded-full p-0.5">
                                                 <ThumbsUp className="h-2 w-2 text-primary fill-primary" />
                                             </div>
@@ -129,7 +130,7 @@ export function CommentSection({ comments: initialComments = DUMMY_COMMENTS, onA
                                 <div className="group/likes relative">
                                     <button
                                         onClick={() => toggleLike(comment.id)}
-                                        className={`text-xs font-bold transition-colors hover:underline ${comment.liked ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
+                                        className={`text-xs font-bold transition-colors hover:underline ${comment.liked ? 'text-primary' : 'text-slate-400 hover:text-foreground'}`}
                                     >
                                         Like
                                     </button>
@@ -139,12 +140,12 @@ export function CommentSection({ comments: initialComments = DUMMY_COMMENTS, onA
                                         {/* Invisible Bridge to prevent closing */}
                                         <div className="h-2 w-full bg-transparent" />
 
-                                        <div className="bg-background border shadow-xl rounded-full p-1 gap-1 flex items-center -ml-2">
+                                        <div className="bg-background border border-white/10 shadow-xl rounded-full p-1 gap-1 flex items-center -ml-2">
                                             {COMMENT_REACTIONS.map((reaction) => (
                                                 <button
                                                     key={reaction.id}
                                                     aria-label={`React with ${reaction.id}`}
-                                                    className="h-8 w-8 flex items-center justify-center hover:bg-muted rounded-full hover:scale-125 transition-transform text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                                                    className="h-8 w-8 flex items-center justify-center hover:bg-muted rounded-full hover:scale-125 transition-transform text-slate-400 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
                                                     onClick={(e) => {
                                                         e.stopPropagation()
                                                         // Handle specific reaction logic here
@@ -156,12 +157,24 @@ export function CommentSection({ comments: initialComments = DUMMY_COMMENTS, onA
                                         </div>
                                     </div>
                                 </div>
-                                <button className="text-xs font-bold text-muted-foreground hover:text-foreground hover:underline transition-all duration-200 cursor-pointer">Reply</button>
-                                <span className="text-xs text-muted-foreground font-medium">{comment.timestamp}</span>
+                                <button className="text-xs font-bold text-slate-400 hover:text-foreground hover:underline transition-all duration-200 cursor-pointer">Reply</button>
+                                <span className="text-xs text-slate-400 font-medium">{comment.timestamp}</span>
                             </div>
                         </div>
                     </div>
                 ))}
+
+                {!isExpanded && comments.length > 2 && (
+                    <div className="pl-12 pt-2">
+                        <Button
+                            variant="link"
+                            className="text-xs text-slate-400 hover:text-primary h-auto p-0 font-medium"
+                            onClick={() => setIsExpanded(true)}
+                        >
+                            View {comments.length - 2} more comment{comments.length - 2 !== 1 ? 's' : ''}
+                        </Button>
+                    </div>
+                )}
             </div>
 
             {/* Input Area */}

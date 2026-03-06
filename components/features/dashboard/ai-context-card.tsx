@@ -39,7 +39,7 @@ export function AIContextCard({
                                 </Badge>
                             </h3>
                             <p className="text-xs text-muted-foreground mt-0.5">
-                                We're matching you based on:
+                                We&apos;re matching you based on:
                             </p>
                         </div>
                     </div>

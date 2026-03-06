@@ -11,7 +11,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
@@ -77,7 +77,7 @@ export function SettingsDialog() {
                         ai_smart_match_alerts: profileData.ai_smart_match_alerts ?? false,
                     })
                 }
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error("Error fetching settings:", err)
                 setError("Failed to load settings. Showing local defaults.")
             } finally {
@@ -104,7 +104,7 @@ export function SettingsDialog() {
                 })
 
             if (updateError) throw updateError
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Error saving settings:", err)
             setError("Failed to save settings.")
         } finally {
@@ -112,13 +112,17 @@ export function SettingsDialog() {
         }
     }
 
-    const updateProfileField = (field: string, value: any) => {
+    const updateProfileField = (field: string, value: string | boolean) => {
         setProfile(prev => ({ ...prev, [field]: value }))
     }
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogContent className="sm:max-w-[700px] h-[85vh] md:h-[600px] flex flex-col p-0 overflow-hidden gap-0">
+            <DialogContent className="max-w-4xl p-0 h-[85vh] flex flex-col overflow-hidden border-none shadow-2xl">
+                <DialogTitle className="sr-only">Account Settings</DialogTitle>
+                <DialogDescription className="sr-only">
+                    Manage your profile, account preferences, notifications, and billing details.
+                </DialogDescription>
                 <DialogHeader className="px-6 py-4 border-b shrink-0">
                     <DialogTitle className="text-2xl font-bold">Settings</DialogTitle>
                     <DialogDescription>
@@ -135,7 +139,7 @@ export function SettingsDialog() {
                 <div className="flex flex-1 overflow-hidden">
                     <Tabs
                         value={activeTab}
-                        onValueChange={(val: any) => setActiveTab(val)}
+                        onValueChange={(val) => setActiveTab(val as "profile" | "account" | "notifications" | "billing")}
                         className="flex flex-col md:flex-row w-full"
                     >
                         {/* Sidebar inside Dialog */}
