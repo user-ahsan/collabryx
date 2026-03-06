@@ -111,20 +111,24 @@ export function CreatePostModal() {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <div className="bg-card rounded-xl md:rounded-2xl shadow-sm border border-white/10 p-3 md:p-6 space-y-3 md:space-y-4 cursor-text transition-all hover:bg-muted/30">
-                    <div className="flex gap-3 md:gap-4 items-center">
+                <div className="relative rounded-xl md:rounded-2xl overflow-hidden bg-background/80 backdrop-blur-2xl border border-blue-500/20 shadow-[0_4px_32px_0_rgba(0,0,0,0.3),0_0_80px_-20px_rgba(59,130,246,0.15)] hover:shadow-[0_8px_40px_0_rgba(0,0,0,0.4),0_0_100px_-20px_rgba(59,130,246,0.25)] hover:border-blue-500/30 transition-all duration-500 cursor-text p-4 md:p-5">
+                    {/* Top highlight streak */}
+                    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/40 to-transparent pointer-events-none" />
+                    <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-blue-400/20 via-transparent to-transparent pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.06] via-transparent to-indigo-500/[0.04] pointer-events-none" />
+                    <div className="relative z-10 flex gap-3 md:gap-4 items-center">
                         <Avatar className="h-10 w-10 md:h-12 md:w-12 ring-2 ring-background shadow-sm shrink-0">
                             <AvatarImage src="/avatars/05.png" />
                             <AvatarFallback>MR</AvatarFallback>
                         </Avatar>
-                        <div className="flex-1 bg-muted/40 hover:bg-muted/60 transition-colors rounded-full px-4 py-2.5 md:py-3 cursor-text">
+                        <div className="flex-1 bg-white/[0.03] hover:bg-white/[0.05] border border-white/[0.05] hover:border-blue-500/20 transition-all rounded-full px-4 py-2.5 md:py-3 cursor-text">
                             <span className="text-muted-foreground text-sm md:text-base font-medium">What are you trying to build?</span>
                         </div>
                     </div>
                 </div>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] p-0 gap-0 overflow-hidden bg-background/95 backdrop-blur-xl border-white/10">
-                <DialogHeader className="px-5 py-4 border-b border-white/5 bg-muted/20">
+            <DialogContent className="sm:max-w-[600px] p-0 gap-0 overflow-hidden bg-background/95 backdrop-blur-2xl border border-blue-500/20 shadow-[0_8px_40px_0_rgba(0,0,0,0.5),0_0_60px_-20px_rgba(59,130,246,0.1)]">
+                <DialogHeader className="px-5 py-4 border-b border-blue-500/10 bg-blue-500/[0.02]">
                     <DialogTitle className="text-lg font-bold">Create Post</DialogTitle>
                     <DialogDescription className="sr-only">
                         Share your updates, projects, or look for teammates with the community.
@@ -149,7 +153,7 @@ export function CreatePostModal() {
 
                         <Textarea
                             placeholder="What are you trying to build?"
-                            className="w-full resize-none border-none bg-transparent focus-visible:ring-0 min-h-[120px] text-lg lg:text-xl p-0 placeholder:text-muted-foreground leading-relaxed"
+                            className="w-full resize-none border-none bg-transparent focus-visible:ring-0 min-h-[120px] text-lg lg:text-xl p-0 pl-4 placeholder:text-muted-foreground leading-relaxed"
                             {...register("content")}
                         />
                         {errors.content && (
@@ -178,7 +182,7 @@ export function CreatePostModal() {
                         )}
                     </div>
 
-                    <div className="p-4 border-t border-white/5 bg-muted/10">
+                    <div className="p-4 border-t border-blue-500/10 bg-blue-500/[0.02]">
                         <div className="flex items-center justify-between mb-4">
                             <span className="text-sm font-semibold text-muted-foreground pl-1">Add to your post</span>
                             <div className="flex items-center gap-1">
@@ -231,7 +235,7 @@ export function CreatePostModal() {
 
                         <Button
                             type="submit"
-                            className="w-full rounded-xl font-bold py-6 shadow-md hover:shadow-lg transition-all"
+                            className="w-full rounded-xl font-bold py-6 bg-primary hover:bg-primary/90 shadow-[0_4px_20px_0_rgba(59,130,246,0.3)] hover:shadow-[0_6px_28px_0_rgba(59,130,246,0.4)] transition-all"
                             disabled={isPending || (!contentValue?.trim() && mediaFiles.length === 0)}
                         >
                             {isPending ? (
