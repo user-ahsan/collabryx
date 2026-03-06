@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/tooltip"
 import { UserNavDropdown } from "@/components/shared/user-nav-dropdown"
 import { useSidebar } from "@/components/shared/sidebar-context"
+import { useSettings } from "@/hooks/use-settings"
 import { NotificationsDialog } from "@/components/features/dashboard/notifications-dialog"
 import {
     LayoutDashboard,
@@ -42,9 +43,12 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
     // If usage is mobile, we don't need the context toggler, we just want it expanded.
     // However, hooks cannot be conditional. We must call useSidebar always or handle it gracefully.
     // We'll call it, but ignore isCollapsed if isMobile is true.
+    // We'll call it, but ignore isCollapsed if isMobile is true.
     const sidebarContext = useSidebar()
     const isCollapsed = isMobile ? false : sidebarContext.isCollapsed
     const toggleSidebar = sidebarContext.toggleSidebar
+
+    const { openSettings } = useSettings()
 
     const [showTooltips, setShowTooltips] = React.useState(false)
     const [notificationsOpen, setNotificationsOpen] = React.useState(false)
@@ -301,12 +305,10 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
 
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Link href="/settings">
-                                        <Button variant="ghost" size="icon" className="h-11 w-11 md:h-9 md:w-9 hover:bg-muted/80 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-                                            <Settings className="h-4.5 w-4.5" />
-                                            <span className="sr-only">Settings</span>
-                                        </Button>
-                                    </Link>
+                                    <Button onClick={() => openSettings('profile')} variant="ghost" size="icon" className="h-11 w-11 md:h-9 md:w-9 hover:bg-muted/80 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
+                                        <Settings className="h-4.5 w-4.5" />
+                                        <span className="sr-only">Settings</span>
+                                    </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>Settings</TooltipContent>
                             </Tooltip>
@@ -338,12 +340,10 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
 
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Link href="/settings">
-                                        <Button variant="ghost" size="icon" className="h-11 w-11 md:h-9 md:w-9 hover:bg-muted rounded-xl text-muted-foreground hover:text-foreground">
-                                            <Settings className="h-5 w-5" />
-                                            <span className="sr-only">Settings</span>
-                                        </Button>
-                                    </Link>
+                                    <Button onClick={() => openSettings('profile')} variant="ghost" size="icon" className="h-11 w-11 md:h-9 md:w-9 hover:bg-muted rounded-xl text-muted-foreground hover:text-foreground">
+                                        <Settings className="h-5 w-5" />
+                                        <span className="sr-only">Settings</span>
+                                    </Button>
                                 </TooltipTrigger>
                                 {showTooltips && <TooltipContent side="right">Settings</TooltipContent>}
                             </Tooltip>

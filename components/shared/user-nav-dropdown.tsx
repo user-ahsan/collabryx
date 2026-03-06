@@ -16,6 +16,7 @@ import {
     AvatarImage,
 } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { useSettings } from "@/hooks/use-settings"
 import {
     User,
     Settings,
@@ -25,6 +26,8 @@ import {
 } from "lucide-react"
 
 export function UserNavDropdown() {
+    const { openSettings } = useSettings()
+
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -50,17 +53,17 @@ export function UserNavDropdown() {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuGroup>
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => openSettings('profile')}>
                         <User className="mr-2 h-4 w-4" />
                         <span>Profile</span>
                         <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => openSettings('billing')}>
                         <Sparkles className="mr-2 h-4 w-4" />
                         <span>Billing</span>
                         <DropdownMenuShortcut>⌘B</DropdownMenuShortcut>
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => openSettings('account')}>
                         <Settings className="mr-2 h-4 w-4" />
                         <span>Settings</span>
                         <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
