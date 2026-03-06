@@ -19,9 +19,9 @@ import { useRouter } from "next/navigation"
 import { PostOptionsDropdown } from "./post-options-dropdown"
 import { RichTextDisplay } from "./rich-text-display"
 import { LinkPreview } from "./link-preview"
-import { CommentSection } from "./comment-section"
-import { ReactionPicker } from "./reaction-picker"
-import { ShareDialog } from "./share-dialog"
+import { CommentSection } from "../comments/comment-section"
+import { ReactionPicker } from "../comments/reaction-picker"
+import { ShareDialog } from "../comments/share-dialog"
 import { MediaViewer } from "./media-viewer"
 
 interface PostDetailViewProps {

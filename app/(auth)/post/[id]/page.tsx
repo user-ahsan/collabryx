@@ -1,4 +1,4 @@
-import { PostDetailView } from "@/components/features/dashboard/post-detail-view"
+import { PostDetailView } from "@/components/features/dashboard/posts/post-detail-view"
 
 // Mock Data for the demo
 const MOCK_POST = {

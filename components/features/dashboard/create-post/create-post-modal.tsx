@@ -18,7 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Image as ImageIcon, Smile, X, Calendar, FileText, Loader2 } from "lucide-react"
 import { useMutation } from "@tanstack/react-query"
-import { IntentPrompt } from "./intent-prompt"
+import { IntentPrompt } from "../intent-prompt"
 
 const EMOJIS = [
     { char: "😀", label: "Smile" }, { char: "😂", label: "Laugh" }, { char: "❤️", label: "Love" },
