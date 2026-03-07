@@ -7,7 +7,7 @@ interface PostCardProps {
 
 export function PostCard({ children, className }: PostCardProps) {
     return (
-        <GlassCard hoverable className={className} innerClassName="p-5 sm:p-6 lg:p-7">
+        <GlassCard hoverable className={className} innerClassName="p-3.5 sm:p-5 lg:p-7">
             {children}
         </GlassCard>
     )

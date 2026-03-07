@@ -22,7 +22,7 @@ export function AIContextCard({
     className
 }: AIContextCardProps) {
     return (
-        <div className={cn("flex items-center gap-2 flex-wrap px-1", className)}>
+        <div className={cn("flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 flex-wrap px-1", className)}>
             <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Sparkles className="h-3.5 w-3.5 text-primary" />
                 <span className="text-xs font-medium">Matching on:</span>
