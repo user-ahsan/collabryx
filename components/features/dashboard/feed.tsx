@@ -135,7 +135,7 @@ export function Feed() {
     }
 
     return (
-        <div className="space-y-4 md:space-y-6 lg:space-y-8 pb-6 md:pb-10">
+        <div className="space-y-3 md:space-y-6 lg:space-y-8 pb-6 md:pb-10">
             <NewPostsIndicator
                 count={newPostsCount}
                 visible={newPostsCount > 0}
@@ -183,7 +183,7 @@ export function Feed() {
             </div>
 
             {/* Feed Posts */}
-            <div className="space-y-4 md:space-y-6" role="feed" aria-label="Posts feed">
+            <div className="space-y-3 md:space-y-6" role="feed" aria-label="Posts feed">
                 {isFetching && sortedPosts.length === 0 ? (
                     <>
                         <PostSkeleton />

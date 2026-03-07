@@ -5,7 +5,7 @@ import { SuggestionsSidebar } from "@/components/features/dashboard/suggestions-
 
 export default function DashboardPage() {
     return (
-        <div className="container max-w-7xl mx-auto py-4 md:py-6 px-3 md:px-6 lg:px-8">
+        <div className="container max-w-7xl mx-auto py-2 md:py-6 px-2 md:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
 
                 {/* Center Column - Feed */}

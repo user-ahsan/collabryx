@@ -248,8 +248,8 @@ export function RequestReminderModal({ className }: RequestReminderModalProps) {
                     <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-300/30 to-transparent pointer-events-none" />
                     <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-blue-300/20 via-transparent to-transparent pointer-events-none" />
                     <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.04] via-transparent to-indigo-500/[0.03] pointer-events-none" />
-                    <CardContent className="p-4 md:p-5 relative z-10">
-                        <div className="flex items-center justify-between">
+                    <CardContent className="p-3 md:p-5 relative z-10">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                             <div className="flex items-center gap-3">
                                 <div className="h-10 w-10 bg-blue-500/10 rounded-lg flex items-center justify-center border border-blue-500/20">
                                     <Handshake className="h-5 w-5 text-blue-500" />
@@ -270,7 +270,7 @@ export function RequestReminderModal({ className }: RequestReminderModalProps) {
                             </div>
                             <Button
                                 size="sm"
-                                className="h-8 px-4 rounded-lg font-medium shadow-sm bg-blue-500 hover:bg-blue-600"
+                                className="h-8 px-4 rounded-lg font-medium shadow-sm bg-blue-500 hover:bg-blue-600 w-full sm:w-auto"
                             >
                                 Review Requests
                                 <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
