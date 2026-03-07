@@ -50,51 +50,48 @@ export function PostActions({ postId, myReaction, onLike, onReaction, onCommentC
 
     return (
         <div className="pt-2">
-            <div className="flex items-center justify-between relative gap-1 md:gap-0">
-                {/* Like / Reaction Group */}
-                <div className="flex-1 relative group/reaction">
-                    <Button
-                        variant="ghost"
-                        aria-label={reactionConfig ? `Remove ${reactionConfig.label} reaction` : "Like this post"}
-                        className={cn(
-                            "w-full rounded-lg transition-all gap-1 md:gap-2 h-8 md:h-9 px-2 md:px-3",
-                            reactionConfig?.color || "text-muted-foreground hover:text-blue-400 hover:!bg-blue-500/10"
-                        )}
-                        onClick={() => onLike(postId)}
+            <div className="flex items-center gap-2 relative">
+                <Button
+                    variant="ghost"
+                    aria-label={reactionConfig ? `Remove ${reactionConfig.label} reaction` : "Like this post"}
+                    className={cn(
+                        "rounded-lg transition-all gap-1.5 md:gap-2 h-8 md:h-9 px-3 md:px-4",
+                        reactionConfig?.color || "text-muted-foreground hover:text-blue-400 hover:!bg-blue-500/10"
+                    )}
+                    onClick={() => onLike(postId)}
+                    onMouseEnter={handleMouseEnter}
+                    onMouseLeave={handleMouseLeave}
+                >
+                    {reactionConfig?.icon ? (
+                        <ReactionIcon className={cn("h-4 w-4", reactionConfig.color, "fill-current")} />
+                    ) : myReaction ? (
+                        <span className="text-base md:text-lg leading-none">{myReaction}</span>
+                    ) : (
+                        <ThumbsUp className="h-4 w-4 stroke-[1.5px]" />
+                    )}
+
+                    <span className="font-medium text-xs md:text-sm">
+                        {reactionConfig?.label || "Like"}
+                    </span>
+                </Button>
+
+                {reactionPickerOpen && (
+                    <div
+                        className="absolute bottom-full left-0 mb-2 z-20"
                         onMouseEnter={handleMouseEnter}
                         onMouseLeave={handleMouseLeave}
                     >
-                        {reactionConfig?.icon ? (
-                            <ReactionIcon className={cn("h-4 w-4", reactionConfig.color, "fill-current")} />
-                        ) : myReaction ? (
-                            <span className="text-base md:text-lg leading-none">{myReaction}</span>
-                        ) : (
-                            <ThumbsUp className="h-4 w-4 stroke-[1.5px]" />
-                        )}
-
-                        <span className="font-medium text-xs md:text-sm">
-                            {reactionConfig?.label || "Like"}
-                        </span>
-                    </Button>
-
-                    {reactionPickerOpen && (
-                        <div
-                            className="absolute bottom-full left-0 mb-2 z-20"
-                            onMouseEnter={handleMouseEnter}
-                            onMouseLeave={handleMouseLeave}
-                        >
-                            <ReactionPicker
-                                isOpen={true}
-                                onSelect={handleReactionSelect}
-                            />
-                        </div>
-                    )}
-                </div>
+                        <ReactionPicker
+                            isOpen={true}
+                            onSelect={handleReactionSelect}
+                        />
+                    </div>
+                )}
 
                 <Button
                     variant="ghost"
                     aria-label="Comment on this post"
-                    className="flex-1 rounded-lg text-muted-foreground hover:text-blue-400 hover:!bg-blue-500/10 transition-all gap-1 md:gap-2 h-8 md:h-9 px-2 md:px-3"
+                    className="rounded-lg text-muted-foreground hover:text-blue-400 hover:!bg-blue-500/10 transition-all gap-1.5 md:gap-2 h-8 md:h-9 px-3 md:px-4"
                     onClick={() => onCommentClick(postId)}
                 >
                     <MessageCircle className="h-4 w-4 stroke-[1.5px]" />
@@ -104,7 +101,7 @@ export function PostActions({ postId, myReaction, onLike, onReaction, onCommentC
                 <Button
                     variant="ghost"
                     aria-label="Share this post"
-                    className="flex-1 rounded-lg text-muted-foreground hover:text-blue-400 hover:!bg-blue-500/10 transition-all gap-1 md:gap-2 h-8 md:h-9 px-2 md:px-3"
+                    className="rounded-lg text-muted-foreground hover:text-blue-400 hover:!bg-blue-500/10 transition-all gap-1.5 md:gap-2 h-8 md:h-9 px-3 md:px-4"
                     onClick={() => onShareClick(postId)}
                 >
                     <Share2 className="h-4 w-4 stroke-[1.5px]" />

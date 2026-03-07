@@ -96,20 +96,20 @@ export function CommentSection({ comments: initialComments = DUMMY_COMMENTS, onA
     return (
         <div className="pt-2">
             {/* Comment List */}
-            <div className="space-y-6 pb-6">
+            <div className="space-y-4 pb-4">
                 {comments.slice(0, isExpanded ? comments.length : 2).map((comment) => (
                     <div key={comment.id} className="flex gap-3 items-start group">
-                        <Avatar className="h-9 w-9 cursor-pointer ring-2 ring-background transition-transform hover:scale-105">
+                        <Avatar className="h-8 w-8 mt-0.5 cursor-pointer ring-1 ring-white/5 transition-transform hover:scale-105">
                             <AvatarImage src={comment.author.avatar} />
                             <AvatarFallback>{comment.author.initials}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
                             <div className="flex items-start gap-2">
-                                <div className="bg-muted/40 rounded-2xl rounded-tl-none px-4 py-3 inline-block relative group/bubble hover:bg-muted/60 transition-colors">
-                                    <p className="text-sm font-bold text-foreground cursor-pointer hover:underline mb-0.5">
+                                <div className="bg-muted/40 rounded-2xl rounded-tl-none px-3 py-2 inline-block relative group/bubble hover:bg-muted/60 transition-colors">
+                                    <p className="text-sm font-semibold text-foreground cursor-pointer hover:underline mb-0.5">
                                         {comment.author.name}
                                     </p>
-                                    <p className="text-[15px] text-foreground/90 leading-snug">
+                                    <p className="text-sm text-foreground/90 leading-snug">
                                         {comment.content}
                                     </p>
 
@@ -178,8 +178,8 @@ export function CommentSection({ comments: initialComments = DUMMY_COMMENTS, onA
             </div>
 
             {/* Input Area */}
-            <div className="flex gap-3 items-center sticky bottom-0 pb-2 pt-2">
-                <Avatar className="h-8 w-8">
+            <div className="flex gap-2 md:gap-3 items-center sticky bottom-0 pt-2 pb-1 md:pb-2 bg-background/80 backdrop-blur-md z-10">
+                <Avatar className="h-8 w-8 hidden sm:block">
                     <AvatarImage src="/avatars/01.png" />
                     <AvatarFallback>ME</AvatarFallback>
                 </Avatar>
@@ -188,7 +188,7 @@ export function CommentSection({ comments: initialComments = DUMMY_COMMENTS, onA
                         value={text}
                         onChange={(e) => setText(e.target.value)}
                         placeholder="Write a comment..."
-                        className="h-10 rounded-full bg-muted/40 border-transparent focus:bg-background focus:border-border pr-20 transition-all font-medium placeholder:text-muted-foreground/50"
+                        className="h-9 text-sm rounded-full bg-muted/40 border-transparent focus:bg-background focus:border-border pr-20 transition-all font-medium placeholder:text-muted-foreground/50"
                     />
                     <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center pr-1">
                         <Popover>
