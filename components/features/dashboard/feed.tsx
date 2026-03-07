@@ -1,23 +1,9 @@
 "use client"
 
-import { useState, useRef } from "react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Textarea } from "@/components/ui/textarea"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import {
-    MoreHorizontal,
-    Heart,
-    MessageCircle,
-    Share2,
-    Globe,
-    ThumbsUp,
     Bot,
-    Laugh,
-    Flame,
-    Frown,
-    Angry,
     Rocket,
     UserPlus,
     Megaphone
@@ -29,31 +15,16 @@ import { PostHeader } from "./posts/post-header"
 import { PostContent } from "./posts/post-content"
 import { PostActions } from "./posts/post-actions"
 import { CreatePostModal } from "./create-post/create-post-modal"
-import { PostOptionsDropdown } from "./posts/post-options-dropdown"
-import { RichTextDisplay } from "./posts/rich-text-display"
-import { LinkPreview } from "./posts/link-preview"
 import { PostSkeleton } from "./posts/post-skeleton"
 import { NewPostsIndicator } from "./posts/new-posts-indicator"
 import { InfiniteScrollTrigger } from "./posts/infinite-scroll-trigger"
 import { CommentSection } from "./comments/comment-section"
-import { ReactionPicker } from "./comments/reaction-picker"
 import { ShareDialog } from "./comments/share-dialog"
 import { MediaViewer } from "./posts/media-viewer"
-import { IntentPrompt } from "./intent-prompt"
 import { AIContextCard } from "./ai-context-card"
-import { MatchActivityCard } from "./match-activity-card"
 import { RequestReminderModal } from "./request-reminder/RequestReminderModal"
 
 
-
-const REACTION_MAP: Record<string, { label: string, icon: React.ElementType, color: string }> = {
-    "like": { label: "Like", icon: ThumbsUp, color: "text-blue-600" },
-    "love": { label: "Love", icon: Heart, color: "text-red-500" },
-    "haha": { label: "Haha", icon: Laugh, color: "text-yellow-500" },
-    "wow": { label: "Wow", icon: Flame, color: "text-orange-500" },
-    "sad": { label: "Sad", icon: Frown, color: "text-blue-400" },
-    "angry": { label: "Angry", icon: Angry, color: "text-red-600" },
-}
 
 
 
@@ -233,11 +204,14 @@ export function Feed() {
             <RequestReminderModal />
 
             {/* AI Mentor Micro-Entry Point */}
-            <Card className="border bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 shadow-sm">
-                <CardContent className="p-3 md:p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:justify-between">
+            <div className="relative rounded-xl md:rounded-2xl overflow-hidden bg-blue-950/[0.05] backdrop-blur-2xl border border-blue-400/10 shadow-[0_4px_32px_0_rgba(59,130,246,0.06),0_1px_0_0_rgba(255,255,255,0.06)_inset] transition-all duration-500">
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-300/30 to-transparent pointer-events-none" />
+                <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-blue-300/20 via-transparent to-transparent pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/[0.04] via-transparent to-blue-500/[0.03] pointer-events-none" />
+                <div className="p-3 md:p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:justify-between relative z-10">
                     <div className="flex items-start sm:items-center gap-3">
-                        <div className="h-10 w-10 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center shrink-0">
-                            <Bot className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                        <div className="h-10 w-10 bg-purple-500/10 rounded-lg flex items-center justify-center shrink-0 border border-purple-500/20">
+                            <Bot className="h-5 w-5 text-purple-400" />
                         </div>
                         <div>
                             <h3 className="text-xs sm:text-sm font-semibold text-foreground">
@@ -251,12 +225,12 @@ export function Feed() {
                     <Button
                         variant="outline"
                         size="sm"
-                        className="h-7 sm:h-8 px-3 text-xs font-medium border-purple-200 dark:border-purple-800 hover:bg-purple-100 dark:hover:bg-purple-900 w-full sm:w-auto shrink-0"
+                        className="h-7 sm:h-8 px-3 text-xs font-medium border-white/[0.08] hover:bg-white/[0.04] w-full sm:w-auto shrink-0"
                     >
                         Ask AI Mentor →
                     </Button>
-                </CardContent>
-            </Card>
+                </div>
+            </div>
 
             <div className="flex items-center justify-between px-1 md:px-2">
                 <div className="h-px bg-border flex-1" />

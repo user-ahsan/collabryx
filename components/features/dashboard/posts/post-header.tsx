@@ -27,11 +27,11 @@ export function PostHeader({ author, role, time, avatar, initials, postTypeBadge
                     <h4 className="font-semibold text-sm md:text-base text-foreground hover:text-primary cursor-pointer transition-colors truncate">
                         {author}
                     </h4>
-                    <p className="text-xs text-slate-400 font-medium flex items-center gap-1 md:gap-1.5 mt-0.5 flex-wrap">
+                    <p className="text-xs text-muted-foreground font-medium flex items-center gap-1 md:gap-1.5 mt-0.5 flex-wrap">
                         <span className="truncate">{role}</span>
-                        <span className="w-1 h-1 rounded-full bg-slate-400/40 shrink-0" />
+                        <span className="w-1 h-1 rounded-full bg-muted-foreground/40 shrink-0" />
                         <span className="shrink-0">{time}</span>
-                        <span className="w-1 h-1 rounded-full bg-slate-400/40 shrink-0" />
+                        <span className="w-1 h-1 rounded-full bg-muted-foreground/40 shrink-0" />
                         <Globe className="h-3 w-3 shrink-0" />
                     </p>
                     {postTypeBadge && (

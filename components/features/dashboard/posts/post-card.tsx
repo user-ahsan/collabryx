@@ -25,7 +25,7 @@ export function PostCard({ children, className }: PostCardProps) {
             {/* Blue ambient tint overlay */}
             <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.04] via-transparent to-indigo-500/[0.03] pointer-events-none" />
 
-            <div className="p-4 md:p-5 relative z-10">
+            <div className="p-5 sm:p-6 lg:p-7 relative z-10">
                 {children}
             </div>
         </div>
