@@ -6,6 +6,8 @@ interface GlassCardProps {
     innerClassName?: string
     /** Whether to show the hover shadow effect */
     hoverable?: boolean
+    /** Optional click handler for the whole card */
+    onClick?: () => void
 }
 
 /**
@@ -18,9 +20,11 @@ export function GlassCard({
     className,
     innerClassName,
     hoverable = false,
+    onClick,
 }: GlassCardProps) {
     return (
         <div
+            onClick={onClick}
             className={cn(
                 "group relative rounded-xl md:rounded-2xl overflow-hidden",
                 "bg-blue-950/[0.05] backdrop-blur-2xl",

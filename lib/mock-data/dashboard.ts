@@ -15,7 +15,7 @@ export interface Post {
     postType?: "project-launch" | "teammate-request" | "announcement" | "general"
     hasMedia?: boolean
     mediaType?: "image" | "video"
-    mediaUrl?: string
+    mediaUrls?: string[]
     hasLink?: boolean
     linkUrl?: string
     myReaction?: string | null
@@ -97,7 +97,11 @@ export const MOCK_POSTS: Post[] = [
         postType: "general",
         hasMedia: true,
         mediaType: "image",
-        mediaUrl: "https://images.unsplash.com/photo-1531403009284-440f8804f1e9?auto=format&fit=crop&q=80&w=1000",
+        mediaUrls: [
+            "https://images.unsplash.com/photo-1531403009284-440f8804f1e9?auto=format&fit=crop&q=80&w=1000",
+            "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000",
+            "https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&q=80&w=1000"
+        ],
         hasLink: false,
         myReaction: null,
     },
