@@ -75,7 +75,7 @@ export function MatchActivityCard({
 
     return (
         <GlassCard className={cn(className)}>
-            <div className="p-4">
+            <div className="p-4 md:p-5">
                 {/* Header */}
                 <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2.5">
@@ -83,10 +83,10 @@ export function MatchActivityCard({
                             <Bell className="h-4 w-4 text-blue-500" />
                         </div>
                         <div>
-                            <h3 className="text-sm font-bold text-foreground">
+                            <h3 className="text-base font-semibold text-foreground">
                                 New Match Activity
                             </h3>
-                            <p className="text-[11px] text-muted-foreground">
+                            <p className="text-sm text-muted-foreground">
                                 Recent collaboration opportunities
                             </p>
                         </div>
@@ -94,7 +94,7 @@ export function MatchActivityCard({
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground hover:bg-white/[0.04] transition-colors cursor-pointer"
+                        className="h-8 px-3 text-sm text-muted-foreground hover:text-foreground hover:bg-white/[0.04] transition-colors cursor-pointer"
                     >
                         View All
                         <ArrowRight className="h-3 w-3 ml-1" />
@@ -116,10 +116,10 @@ export function MatchActivityCard({
                             </Avatar>
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm text-foreground leading-snug">
-                                    <span className="font-semibold">{activity.userName}</span>{" "}
+                                    <span className="font-medium">{activity.userName}</span>{" "}
                                     <span className="text-muted-foreground">{activity.activity}</span>
                                 </p>
-                                <p className="text-xs text-teal-400 font-medium mt-0.5">
+                                <p className="text-xs font-semibold text-primary mt-1">
                                     {activity.matchPercentage}% match
                                 </p>
                             </div>

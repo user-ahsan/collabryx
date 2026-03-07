@@ -22,16 +22,16 @@ export function AIContextCard({
     className
 }: AIContextCardProps) {
     return (
-        <div className={cn("flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 flex-wrap px-1", className)}>
+        <div className={cn("flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 flex-wrap px-1 py-1 sm:py-2", className)}>
             <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Sparkles className="h-3.5 w-3.5 text-primary" />
-                <span className="text-xs font-medium">Matching on:</span>
+                <span className="text-sm font-medium">Matching on:</span>
             </div>
             <div className="flex items-center gap-1.5 flex-wrap">
                 {contexts.map((context, index) => (
                     <span
                         key={index}
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-primary/10 text-primary border border-primary/15"
+                        className="inline-flex items-center px-2.5 py-1.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/15"
                     >
                         {context}
                     </span>
@@ -40,7 +40,7 @@ export function AIContextCard({
             <Button
                 variant="ghost"
                 size="sm"
-                className="h-6 px-2 text-[11px] text-muted-foreground hover:text-foreground rounded-full ml-auto"
+                className="h-8 px-3 text-sm text-muted-foreground hover:text-foreground rounded-full ml-auto"
                 onClick={onEditContext}
             >
                 <Settings2 className="h-3 w-3 mr-1" />
