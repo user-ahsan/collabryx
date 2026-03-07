@@ -24,7 +24,7 @@ import { NewPostsIndicator } from "./posts/new-posts-indicator"
 import { InfiniteScrollTrigger } from "./posts/infinite-scroll-trigger"
 import { CommentSection } from "./comments/comment-section"
 import { ShareDialog } from "./comments/share-dialog"
-import { MediaViewer } from "./posts/media-viewer"
+import { PostDetailDialog } from "./posts/post-detail-dialog"
 import { AIContextCard } from "./ai-context-card"
 import { RequestReminderModal } from "./request-reminder/RequestReminderModal"
 import { GlassCard } from "@/components/shared/glass-card"
@@ -59,9 +59,9 @@ export function Feed() {
                     avatar: String(r.author_avatar ?? ""),
                     initials: String(r.author_name ?? "U").slice(0, 2).toUpperCase(),
                     postType: (r.post_type as Post["postType"]) || "general",
-                    hasMedia: Boolean(r.media_url),
+                    hasMedia: Boolean(r.media_url || r.media_urls),
                     mediaType: (r.media_type as Post["mediaType"]) || undefined,
-                    mediaUrl: r.media_url ? String(r.media_url) : undefined,
+                    mediaUrls: r.media_urls ? (r.media_urls as string[]) : (r.media_url ? [String(r.media_url)] : undefined),
                     hasLink: Boolean(r.link_url),
                     linkUrl: r.link_url ? String(r.link_url) : undefined,
                     myReaction: null,
@@ -97,7 +97,7 @@ export function Feed() {
     const [newPostsCount, setNewPostsCount] = useState(3)
     const [isLoadingMore, setIsLoadingMore] = useState(false)
     const [shareDialogState, setShareDialogState] = useState<{ isOpen: boolean; url: string }>({ isOpen: false, url: "" })
-    const [mediaViewerState, setMediaViewerState] = useState<{ isOpen: boolean; url: string; type: "image" | "video" }>({ isOpen: false, url: "", type: "image" })
+    const [selectedPostId, setSelectedPostId] = useState<string | null>(null)
 
     const toggleComments = (postId: string) => {
         const newSet = new Set(expandedComments)
@@ -208,65 +208,74 @@ export function Feed() {
                         const postTypeBadge = getPostTypeBadge(post.postType)
 
                         return (
-                            <PostCard key={post.id}>
-                                <PostHeader
-                                    author={post.author}
-                                    role={post.role}
-                                    time={post.time}
-                                    avatar={post.avatar}
-                                    initials={post.initials}
-                                    postTypeBadge={
-                                        postTypeBadge ? (
-                                            <span
-                                                className={cn(
-                                                    "inline-flex items-center px-2 py-0.5 rounded-md text-[10px] md:text-xs font-semibold border",
-                                                    postTypeBadge.color
-                                                )}
-                                            >
-                                                {postTypeBadge.label}
-                                            </span>
-                                        ) : null
-                                    }
-                                    isOwner={post.id === "post-3"}
+                            <div key={post.id} className="relative">
+                                {/* Clickable overlay for the whole card */}
+                                <div
+                                    className="absolute inset-0 z-0 cursor-pointer"
+                                    onClick={() => setSelectedPostId(post.id)}
                                 />
-
-                                <PostContent
-                                    content={post.content}
-                                    hasLink={post.hasLink}
-                                    linkUrl={post.linkUrl}
-                                    hasMedia={post.hasMedia}
-                                    mediaUrl={post.mediaUrl}
-                                    mediaType={post.mediaType}
-                                    onMediaExpanded={() =>
-                                        setMediaViewerState({
-                                            isOpen: true,
-                                            url: post.mediaUrl!,
-                                            type: post.mediaType || "image",
-                                        })
-                                    }
-                                />
-
-                                <PostActions
-                                    postId={post.id}
-                                    myReaction={post.myReaction}
-                                    onLike={handleMainLike}
-                                    onReaction={handleReaction}
-                                    onCommentClick={toggleComments}
-                                    onShareClick={() =>
-                                        setShareDialogState({
-                                            isOpen: true,
-                                            url: `https://collabryx.app/post/${post.id}`,
-                                        })
-                                    }
-                                />
-
-                                {/* Collapsible Comments */}
-                                {expandedComments.has(post.id) && (
-                                    <div className="animate-in slide-in-from-top-2 duration-200 px-2 sm:px-4">
-                                        <CommentSection />
+                                <PostCard className="relative z-10 pointer-events-none">
+                                    <div className="pointer-events-auto">
+                                        <PostHeader
+                                            author={post.author}
+                                            role={post.role}
+                                            time={post.time}
+                                            avatar={post.avatar}
+                                            initials={post.initials}
+                                            postTypeBadge={
+                                                postTypeBadge ? (
+                                                    <span
+                                                        className={cn(
+                                                            "inline-flex items-center px-2 py-0.5 rounded-md text-[10px] md:text-xs font-semibold border",
+                                                            postTypeBadge.color
+                                                        )}
+                                                    >
+                                                        {postTypeBadge.label}
+                                                    </span>
+                                                ) : null
+                                            }
+                                            isOwner={post.id === "post-3"}
+                                        />
                                     </div>
-                                )}
-                            </PostCard>
+                                    <div className="pointer-events-auto">
+                                        <PostContent
+                                            content={post.content}
+                                            hasLink={post.hasLink}
+                                            linkUrl={post.linkUrl}
+                                            hasMedia={post.hasMedia}
+                                            mediaUrls={post.mediaUrls}
+                                            mediaType={post.mediaType}
+                                            onMediaExpanded={() => setSelectedPostId(post.id)}
+                                            onPostClick={() => setSelectedPostId(post.id)}
+                                            truncateText={true}
+                                        />
+
+                                    </div>
+
+                                    <div className="pointer-events-auto">
+                                        <PostActions
+                                            postId={post.id}
+                                            myReaction={post.myReaction}
+                                            onLike={handleMainLike}
+                                            onReaction={handleReaction}
+                                            onCommentClick={toggleComments}
+                                            onShareClick={() =>
+                                                setShareDialogState({
+                                                    isOpen: true,
+                                                    url: `https://collabryx.app/post/${post.id}`,
+                                                })
+                                            }
+                                        />
+
+                                        {/* Collapsible Comments */}
+                                        {expandedComments.has(post.id) && (
+                                            <div className="animate-in slide-in-from-top-2 duration-200 px-2 sm:px-4">
+                                                <CommentSection />
+                                            </div>
+                                        )}
+                                    </div>
+                                </PostCard>
+                            </div>
                         )
                     })
                 )}
@@ -287,13 +296,18 @@ export function Feed() {
                 postUrl={shareDialogState.url}
             />
 
-            <MediaViewer
-                isOpen={mediaViewerState.isOpen}
-                onClose={() =>
-                    setMediaViewerState((prev) => ({ ...prev, isOpen: false }))
-                }
-                url={mediaViewerState.url}
-                type={mediaViewerState.type}
+            <PostDetailDialog
+                isOpen={!!selectedPostId}
+                onClose={() => setSelectedPostId(null)}
+                post={sortedPosts.find(p => p.id === selectedPostId) || null}
+                onLike={handleMainLike}
+                onReaction={handleReaction}
+                onShare={() => {
+                    setShareDialogState({
+                        isOpen: true,
+                        url: `https://collabryx.app/post/${selectedPostId}`,
+                    })
+                }}
             />
         </div>
     )

@@ -13,9 +13,10 @@ interface PostHeaderProps {
     initials: string
     postTypeBadge?: ReactNode
     isOwner?: boolean
+    hideOptions?: boolean
 }
 
-export function PostHeader({ author, role, time, avatar, initials, postTypeBadge, isOwner = false }: PostHeaderProps) {
+export function PostHeader({ author, role, time, avatar, initials, postTypeBadge, isOwner = false, hideOptions = false }: PostHeaderProps) {
     return (
         <div className="flex items-start justify-between mb-2">
             <div className="flex gap-3 md:gap-4 min-w-0 flex-1">
@@ -41,7 +42,7 @@ export function PostHeader({ author, role, time, avatar, initials, postTypeBadge
                     )}
                 </div>
             </div>
-            <PostOptionsDropdown isOwner={isOwner} />
+            {!hideOptions && <PostOptionsDropdown isOwner={isOwner} />}
         </div>
     )
 }
