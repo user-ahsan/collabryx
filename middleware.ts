@@ -38,27 +38,68 @@ export async function middleware(request: NextRequest) {
     // getUser() sends a request to the Supabase Auth server every time
     // to revalidate the Auth token — getSession() reads from cookies
     // which could be tampered with.
-    const {
+    let {
         data: { user },
     } = await supabase.auth.getUser()
 
+    // Auto-login for development mode
+    if (!user && process.env.DEVELOPMENT_MODE === "true") {
+        const { data: authData, error } = await supabase.auth.signInWithPassword({
+            email: "test@collabryx.com",
+            password: "test123",
+        })
+
+        if (!error && authData.user) {
+            user = authData.user
+        }
+    }
+
     // Protected routes: redirect to login if not authenticated
-    const isAuthRoute = request.nextUrl.pathname.startsWith("/dashboard") ||
-        request.nextUrl.pathname.startsWith("/assistant") ||
-        request.nextUrl.pathname.startsWith("/matches") ||
-        request.nextUrl.pathname.startsWith("/messages") ||
-        request.nextUrl.pathname.startsWith("/my-profile") ||
-        request.nextUrl.pathname.startsWith("/notifications") ||
-        request.nextUrl.pathname.startsWith("/onboarding") ||
-        request.nextUrl.pathname.startsWith("/post") ||
-        request.nextUrl.pathname.startsWith("/profile") ||
-        request.nextUrl.pathname.startsWith("/requests") ||
-        request.nextUrl.pathname.startsWith("/settings")
+    const protectedRoutes = [
+        "/dashboard", "/assistant", "/matches", "/messages",
+        "/my-profile", "/notifications", "/post", "/profile",
+        "/requests", "/settings"
+    ]
+
+    let isAuthRoute = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route))
+
+    // Onboarding requires auth unless DEVELOPMENT_MODE is true
+    if (request.nextUrl.pathname.startsWith("/onboarding")) {
+        if (process.env.DEVELOPMENT_MODE !== "true") {
+            isAuthRoute = true
+        }
+    }
 
     if (!user && isAuthRoute) {
         const url = request.nextUrl.clone()
         url.pathname = "/login"
-        return NextResponse.redirect(url)
+        const redirectResponse = NextResponse.redirect(url)
+        supabaseResponse.cookies.getAll().forEach(cookie => {
+            redirectResponse.cookies.set(cookie.name, cookie.value)
+        })
+        return redirectResponse
+    }
+
+    // Check onboarding status for authenticated users trying to access protected routes
+    if (user && isAuthRoute && !request.nextUrl.pathname.startsWith("/onboarding")) {
+        // Skip check if in DEVELOPMENT_MODE
+        if (process.env.DEVELOPMENT_MODE !== "true") {
+            const { data: profile } = await supabase
+                .from("profiles")
+                .select("onboarding_completed")
+                .eq("id", user.id)
+                .single()
+
+            if (profile && profile.onboarding_completed === false) {
+                const url = request.nextUrl.clone()
+                url.pathname = "/onboarding"
+                const redirectResponse = NextResponse.redirect(url)
+                supabaseResponse.cookies.getAll().forEach(cookie => {
+                    redirectResponse.cookies.set(cookie.name, cookie.value)
+                })
+                return redirectResponse
+            }
+        }
     }
 
     // Redirect authenticated users away from login/register
@@ -69,7 +110,11 @@ export async function middleware(request: NextRequest) {
     if (user && isPublicAuthRoute) {
         const url = request.nextUrl.clone()
         url.pathname = "/dashboard"
-        return NextResponse.redirect(url)
+        const redirectResponse = NextResponse.redirect(url)
+        supabaseResponse.cookies.getAll().forEach(cookie => {
+            redirectResponse.cookies.set(cookie.name, cookie.value)
+        })
+        return redirectResponse
     }
 
     return supabaseResponse
