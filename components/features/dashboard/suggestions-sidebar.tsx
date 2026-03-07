@@ -105,8 +105,8 @@ export function SuggestionsSidebar({ className }: MatchIntelligencePanelProps) {
 
             {/* Smart Matches Card */}
             <GlassCard>
-                <div className="p-4 flex flex-row items-center justify-between space-y-0 border-b border-white/[0.06]">
-                    <h3 className="text-sm font-bold flex items-center gap-2 text-foreground">
+                <div className="p-4 md:p-5 flex flex-row items-center justify-between space-y-0 border-b border-white/[0.06]">
+                    <h3 className="text-base font-semibold flex items-center gap-2 text-foreground">
                         <Sparkles className="h-4 w-4 text-primary" />
                         Smart Matches
                         <Badge
@@ -119,13 +119,13 @@ export function SuggestionsSidebar({ className }: MatchIntelligencePanelProps) {
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 px-2 text-xs text-muted-foreground hover:text-primary font-medium transition-colors"
+                        className="h-8 px-3 text-sm text-muted-foreground hover:text-primary font-medium transition-colors"
                     >
                         See All
                         <ArrowRight className="h-3 w-3 ml-1" />
                     </Button>
                 </div>
-                <div className="p-4 pt-3">
+                <div className="p-4 md:p-5 pt-3 md:pt-4">
                     {matches.length === 0 ? (
                         /* Empty State */
                         <div className="py-8 text-center">
@@ -144,7 +144,7 @@ export function SuggestionsSidebar({ className }: MatchIntelligencePanelProps) {
                             {matches.map((match) => (
                                 <div
                                     key={match.id}
-                                    className="group flex flex-col gap-3 p-3 rounded-xl hover:bg-white/[0.04] transition-all duration-200 border border-transparent hover:border-white/[0.06]"
+                                    className="group flex flex-col gap-3 p-3 md:p-4 rounded-xl hover:bg-white/[0.04] transition-all duration-200 border border-transparent hover:border-white/[0.06]"
                                 >
                                     {/* Header with Avatar & Match % */}
                                     <div className="flex items-start justify-between gap-3">
@@ -159,10 +159,10 @@ export function SuggestionsSidebar({ className }: MatchIntelligencePanelProps) {
                                                 </AvatarFallback>
                                             </Avatar>
                                             <div className="min-w-0 flex-1">
-                                                <p className="text-sm font-semibold text-foreground truncate leading-none mb-1">
+                                                <p className="text-base font-semibold text-foreground truncate leading-none mb-1">
                                                     {match.name}
                                                 </p>
-                                                <p className="text-xs text-muted-foreground truncate leading-tight">
+                                                <p className="text-sm text-muted-foreground truncate leading-tight">
                                                     {match.role}
                                                 </p>
                                             </div>
@@ -173,7 +173,7 @@ export function SuggestionsSidebar({ className }: MatchIntelligencePanelProps) {
                                             <span className="text-2xl font-bold text-primary leading-none">
                                                 {match.matchPercentage}%
                                             </span>
-                                            <span className="text-[9px] md:text-[10px] text-muted-foreground uppercase font-medium">
+                                            <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wide mt-0.5">
                                                 Match
                                             </span>
                                         </div>
@@ -186,7 +186,7 @@ export function SuggestionsSidebar({ className }: MatchIntelligencePanelProps) {
                                                 key={index}
                                                 variant="outline"
                                                 className={cn(
-                                                    "text-[10px] md:text-xs px-2 py-0.5 font-medium border",
+                                                    "text-xs px-2.5 py-0.5 font-medium border",
                                                     getReasonColor(reason.type)
                                                 )}
                                             >
@@ -200,14 +200,14 @@ export function SuggestionsSidebar({ className }: MatchIntelligencePanelProps) {
                                         <Button
                                             size="sm"
                                             variant="outline"
-                                            className="h-7 flex-1 px-2 rounded-md text-xs font-medium hover:bg-muted border-border"
+                                            className="h-8 flex-1 px-3 rounded-md text-sm font-medium hover:bg-muted border-border"
                                         >
                                             <Eye className="h-3 w-3 mr-1" />
                                             View Match
                                         </Button>
                                         <Button
                                             size="sm"
-                                            className="h-7 flex-1 px-2 rounded-md text-xs font-medium"
+                                            className="h-8 flex-1 px-3 rounded-md text-sm font-medium"
                                         >
                                             <UserPlus className="h-3 w-3 mr-1" />
                                             Connect
@@ -220,7 +220,7 @@ export function SuggestionsSidebar({ className }: MatchIntelligencePanelProps) {
 
                     {/* Complete Profile CTA — now uses glass styling */}
                     <div className="mt-6 mb-2">
-                        <GlassCard innerClassName="p-5">
+                        <GlassCard innerClassName="p-5 md:p-6">
                             <h4 className="font-bold text-base mb-2 flex items-center gap-2">
                                 <span className="text-xl">🚀</span>
                                 Want more matches?

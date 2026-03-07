@@ -157,10 +157,10 @@ export function Feed() {
                         <Bot className="h-5 w-5 text-purple-400" />
                     </div>
                     <div>
-                        <h3 className="text-xs sm:text-sm font-semibold text-foreground">
+                        <h3 className="text-base font-semibold text-foreground">
                             Need help structuring your idea?
                         </h3>
-                        <p className="text-[11px] sm:text-xs text-muted-foreground">
+                        <p className="text-sm text-muted-foreground">
                             Get personalized guidance from the AI Mentor
                         </p>
                     </div>
@@ -168,7 +168,7 @@ export function Feed() {
                 <Button
                     variant="outline"
                     size="sm"
-                    className="h-7 sm:h-8 px-3 text-xs font-medium border-white/[0.08] hover:bg-white/[0.04] w-full sm:w-auto shrink-0"
+                    className="h-8 px-4 text-sm font-medium border-white/[0.08] hover:bg-white/[0.04] w-full sm:w-auto shrink-0"
                 >
                     Ask AI Mentor →
                 </Button>
@@ -176,7 +176,7 @@ export function Feed() {
 
             <div className="flex items-center justify-between px-1 md:px-2">
                 <div className="h-px bg-border flex-1" />
-                <span className="px-3 md:px-4 text-[10px] md:text-xs font-medium text-muted-foreground uppercase tracking-widest">
+                <span className="px-3 md:px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Recent Activity
                 </span>
                 <div className="h-px bg-border flex-1" />
