@@ -4,10 +4,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
 import { Sparkles, ArrowRight, UserPlus, Eye } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { MatchProgressTracker } from "./match-progress-tracker"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface MatchReason {
@@ -92,9 +90,6 @@ export function SuggestionsSidebar({
 
     return (
         <div className={cn("space-y-6", className)}>
-            {/* Match Progress Tracker */}
-            <MatchProgressTracker />
-
             {/* Smart Matches Card */}
             <Card className="shadow-sm border bg-card sticky top-6 overflow-hidden">
                 <CardHeader className="p-4 flex flex-row items-center justify-between space-y-0 border-b">
@@ -213,11 +208,6 @@ export function SuggestionsSidebar({
 export function SuggestionsSidebarSkeleton({ className }: { className?: string }) {
     return (
         <div className={cn("space-y-6", className)}>
-            <Card className="p-4 space-y-4">
-                <Skeleton className="h-4 w-1/2" />
-                <Skeleton className="h-2 w-full" />
-                <Skeleton className="h-10 w-full" />
-            </Card>
             <Card className="p-4 space-y-4">
                 <div className="flex items-center justify-between">
                     <Skeleton className="h-5 w-1/3" />

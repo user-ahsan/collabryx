@@ -42,7 +42,7 @@ import { MediaViewer } from "./posts/media-viewer"
 import { IntentPrompt } from "./intent-prompt"
 import { AIContextCard } from "./ai-context-card"
 import { MatchActivityCard } from "./match-activity-card"
-import { RequestReminderCard } from "./request-reminder-card"
+import { RequestReminderModal } from "./request-reminder/RequestReminderModal"
 
 
 
@@ -231,7 +231,7 @@ export function Feed() {
             <MatchActivityCard />
 
             {/* Request Reminder Card - Surfaces pending requests */}
-            <RequestReminderCard pendingCount={2} />
+            <RequestReminderModal />
 
             {/* AI Mentor Micro-Entry Point */}
             <Card className="border bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 shadow-sm">
