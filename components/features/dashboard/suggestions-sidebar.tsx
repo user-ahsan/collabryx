@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Sparkles, ArrowRight, UserPlus, Eye } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
+import { MatchActivityCard } from "./match-activity-card"
 
 interface MatchReason {
     type: 'skill' | 'interest' | 'availability'
@@ -68,6 +69,7 @@ const DEFAULT_MATCHES: MatchSuggestion[] = [
     }
 ]
 
+
 const getReasonColor = (type: MatchReason['type']) => {
     switch (type) {
         case 'skill':
@@ -89,7 +91,10 @@ export function SuggestionsSidebar({
     }
 
     return (
-        <div className={cn("space-y-6", className)}>
+        <div className={cn("space-y-4", className)}>
+            {/* Match Activity Card */}
+            <MatchActivityCard />
+
             {/* Smart Matches Card */}
             <Card className="shadow-sm border bg-card sticky top-6 overflow-hidden">
                 <CardHeader className="p-4 flex flex-row items-center justify-between space-y-0 border-b">

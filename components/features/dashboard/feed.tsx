@@ -227,8 +227,7 @@ export function Feed() {
             {/* AI Context Card */}
             <AIContextCard />
 
-            {/* Match Activity Card - Shows recent collaboration signals */}
-            <MatchActivityCard />
+
 
             {/* Request Reminder Card - Surfaces pending requests */}
             <RequestReminderModal />
