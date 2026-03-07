@@ -13,7 +13,18 @@ const SidebarContext = React.createContext<SidebarContextType | undefined>(undef
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
     const [isCollapsed, setIsCollapsed] = React.useState(true)
 
-    const toggleSidebar = () => setIsCollapsed((prev) => !prev)
+    const toggleSidebar = React.useCallback(() => setIsCollapsed((prev) => !prev), [])
+
+    React.useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "b" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault()
+                toggleSidebar()
+            }
+        }
+        window.addEventListener("keydown", handleKeyDown)
+        return () => window.removeEventListener("keydown", handleKeyDown)
+    }, [toggleSidebar])
 
     return (
         <SidebarContext.Provider value={{ isCollapsed, toggleSidebar }}>

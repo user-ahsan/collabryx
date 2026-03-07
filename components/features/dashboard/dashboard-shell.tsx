@@ -6,40 +6,31 @@ import { MobileNav } from "@/components/shared/mobile-nav"
 import { cn } from "@/lib/utils"
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
-    const { isCollapsed, toggleSidebar } = useSidebar()
+    const { isCollapsed } = useSidebar()
 
     return (
-        <div className="min-h-screen bg-background relative">
+        <div className="min-h-screen bg-background relative flex flex-col md:grid dashboard-grid"
+            style={{
+                gridTemplateColumns: isCollapsed ? "80px 1fr" : "256px 1fr",
+                transitionProperty: "grid-template-columns",
+                transitionDuration: "250ms",
+                transitionTimingFunction: "cubic-bezier(0.4, 0, 0.2, 1)"
+            }}>
+
             {/* Mobile Topbar */}
-            <MobileNav />
-
-            <div className="flex">
-                {/* Desktop Sidebar - Fixed & Overlay */}
-                <aside
-                    className={cn(
-                        "hidden md:block fixed inset-y-0 z-50 transition-all duration-300 ease-in-out border-r bg-background overflow-visible shadow-xl",
-                        isCollapsed ? "w-20" : "w-64"
-                    )}
-                >
-                    <SidebarNav />
-                </aside>
-
-                {/* Backdrop Overlay (Desktop Only) */}
-                {!isCollapsed && (
-                    <div
-                        className="hidden md:block fixed inset-0 z-40 bg-black/50 transition-all duration-300 animate-in fade-in"
-                        onClick={toggleSidebar}
-                        aria-hidden="true"
-                    />
-                )}
-
-                {/* Main Content Area */}
-                <main
-                    className="flex-1 min-h-[calc(100vh-65px)] md:min-h-screen transition-all duration-300 ease-in-out md:pl-20"
-                >
-                    {children}
-                </main>
+            <div className="md:hidden">
+                <MobileNav />
             </div>
+
+            {/* Desktop Sidebar - Push */}
+            <aside className="hidden md:block border-r bg-background overflow-hidden z-10 sticky top-0 h-screen">
+                <SidebarNav />
+            </aside>
+
+            {/* Main Content Area */}
+            <main className="flex-1 min-w-0 min-h-[calc(100vh-65px)] md:min-h-screen">
+                {children}
+            </main>
         </div>
     )
 }

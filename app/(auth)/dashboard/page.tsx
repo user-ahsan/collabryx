@@ -10,10 +10,7 @@ export default function DashboardPage() {
 
                 {/* Center Column - Feed */}
                 <div className="lg:col-span-8 max-w-2xl mx-auto lg:mx-0 lg:max-w-none w-full">
-                    {/* Mobile Sidebar (Shows above feed on narrow screens) */}
-                    <div className="block lg:hidden mb-6">
-                        <SuggestionsSidebar />
-                    </div>
+
 
                     <Feed />
                 </div>
