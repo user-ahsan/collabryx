@@ -1,92 +1,100 @@
 "use client"
 
+import { useState, useEffect, useCallback } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Sparkles, ArrowRight, UserPlus, Eye } from "lucide-react"
+import { Sparkles, ArrowRight, UserPlus, Eye, Inbox } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
+import { toast } from "sonner"
+import { createClient } from "@/lib/supabase/client"
+import { getCache, setCache, CACHE_KEYS } from "@/lib/dashboard-cache"
+import { MOCK_MATCHES } from "@/lib/mock-data/dashboard"
+import type { MatchSuggestion, MatchReason } from "@/lib/mock-data/dashboard"
 import { MatchActivityCard } from "./match-activity-card"
-
-interface MatchReason {
-    type: 'skill' | 'interest' | 'availability'
-    label: string
-}
-
-interface MatchSuggestion {
-    id: string
-    name: string
-    role: string
-    avatar: string
-    initials: string
-    matchPercentage: number
-    reasons: MatchReason[]
-}
+import { GlassCard } from "@/components/shared/glass-card"
 
 interface MatchIntelligencePanelProps {
     className?: string
-    matches?: MatchSuggestion[]
-    isLoading?: boolean
 }
 
-const DEFAULT_MATCHES: MatchSuggestion[] = [
-    {
-        id: "1",
-        name: "Sarah Miller",
-        role: "Marketing Lead",
-        matchPercentage: 91,
-        avatar: "/avatars/02.png",
-        initials: "SM",
-        reasons: [
-            { type: 'skill', label: 'Complementary Skills' },
-            { type: 'interest', label: 'Shared Interest: Startups' }
-        ]
-    },
-    {
-        id: "2",
-        name: "David Chen",
-        role: "Full Stack Developer",
-        matchPercentage: 87,
-        avatar: "/avatars/03.png",
-        initials: "DC",
-        reasons: [
-            { type: 'interest', label: 'Shared Interest: Fintech' },
-            { type: 'availability', label: 'Similar Availability' }
-        ]
-    },
-    {
-        id: "3",
-        name: "Emily Zhang",
-        role: "UX Researcher",
-        matchPercentage: 84,
-        avatar: "/avatars/04.png",
-        initials: "EZ",
-        reasons: [
-            { type: 'skill', label: 'Needs Tech Co-Founder' },
-            { type: 'interest', label: 'Building MVP' }
-        ]
-    }
-]
-
-
-const getReasonColor = (type: MatchReason['type']) => {
+const getReasonColor = (type: MatchReason["type"]) => {
     switch (type) {
-        case 'skill':
-            return 'bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900'
-        case 'interest':
-            return 'bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300 border-green-200 dark:border-green-900'
-        case 'availability':
-            return 'bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900'
+        case "skill":
+            return "bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900"
+        case "interest":
+            return "bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300 border-green-200 dark:border-green-900"
+        case "availability":
+            return "bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900"
     }
 }
 
-export function SuggestionsSidebar({
-    className,
-    matches = DEFAULT_MATCHES,
-    isLoading = false
-}: MatchIntelligencePanelProps) {
-    if (isLoading) {
+export function SuggestionsSidebar({ className }: MatchIntelligencePanelProps) {
+    const [matches, setMatches] = useState<MatchSuggestion[]>(MOCK_MATCHES)
+    const [isLoading, setIsLoading] = useState(false)
+
+    // ── API → Cache → Hardcoded Fallback ──
+    const fetchMatches = useCallback(async () => {
+        setIsLoading(true)
+        try {
+            const supabase = createClient()
+            const {
+                data: { user },
+            } = await supabase.auth.getUser()
+            if (!user) throw new Error("Not authenticated")
+
+            const { data, error } = await supabase
+                .from("match_suggestions")
+                .select("*")
+                .eq("user_id", user.id)
+                .order("match_percentage", { ascending: false })
+                .limit(5)
+
+            if (error) throw error
+
+            if (data && data.length > 0) {
+                const mapped: MatchSuggestion[] = data.map(
+                    (r: Record<string, unknown>) => ({
+                        id: String(r.id),
+                        name: String(r.name ?? "Unknown"),
+                        role: String(r.role ?? ""),
+                        avatar: String(r.avatar ?? ""),
+                        initials: String(r.name ?? "U")
+                            .slice(0, 2)
+                            .toUpperCase(),
+                        matchPercentage:
+                            typeof r.match_percentage === "number"
+                                ? r.match_percentage
+                                : 0,
+                        reasons: Array.isArray(r.reasons)
+                            ? (r.reasons as MatchReason[])
+                            : [],
+                    })
+                )
+                setMatches(mapped)
+                setCache(CACHE_KEYS.MATCHES, mapped)
+            }
+        } catch {
+            const cached = getCache<MatchSuggestion[]>(CACHE_KEYS.MATCHES)
+            if (cached) {
+                setMatches(cached)
+                toast.info("Showing cached match suggestions", {
+                    id: "matches-cache",
+                })
+            } else {
+                setMatches(MOCK_MATCHES)
+            }
+        } finally {
+            setIsLoading(false)
+        }
+    }, [])
+
+    useEffect(() => {
+        fetchMatches()
+    }, [fetchMatches])
+
+    if (isLoading && matches.length === 0) {
         return <SuggestionsSidebarSkeleton className={className} />
     }
 
@@ -96,16 +104,15 @@ export function SuggestionsSidebar({
             <MatchActivityCard />
 
             {/* Smart Matches Card */}
-            <div className="relative rounded-xl md:rounded-2xl overflow-hidden bg-blue-950/[0.05] backdrop-blur-2xl border border-blue-400/10 shadow-[0_4px_32px_0_rgba(59,130,246,0.06),0_1px_0_0_rgba(255,255,255,0.06)_inset] transition-all duration-500 sticky top-6">
-                {/* Top highlight streak */}
-                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-300/30 to-transparent pointer-events-none" />
-                <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-blue-300/20 via-transparent to-transparent pointer-events-none" />
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.04] via-transparent to-indigo-500/[0.03] pointer-events-none" />
-                <div className="p-4 flex flex-row items-center justify-between space-y-0 border-b border-white/[0.06] relative z-10">
+            <GlassCard>
+                <div className="p-4 flex flex-row items-center justify-between space-y-0 border-b border-white/[0.06]">
                     <h3 className="text-sm font-bold flex items-center gap-2 text-foreground">
                         <Sparkles className="h-4 w-4 text-primary" />
                         Smart Matches
-                        <Badge variant="secondary" className="h-5 px-1.5 text-xs md:text-[10px] font-bold bg-primary text-primary-foreground ml-1">
+                        <Badge
+                            variant="secondary"
+                            className="h-5 px-1.5 text-xs md:text-[10px] font-bold bg-primary text-primary-foreground ml-1"
+                        >
                             ✨ AI
                         </Badge>
                     </h3>
@@ -118,112 +125,142 @@ export function SuggestionsSidebar({
                         <ArrowRight className="h-3 w-3 ml-1" />
                     </Button>
                 </div>
-                <div className="p-4 pt-3 relative z-10">
-                    <div className="space-y-3">
-                        {matches.map((match) => (
-                            <div
-                                key={match.id}
-                                className="group flex flex-col gap-3 p-3 rounded-xl hover:bg-white/[0.04] transition-all duration-200 border border-transparent hover:border-white/[0.06]"
-                            >
-                                {/* Header with Avatar & Match % */}
-                                <div className="flex items-start justify-between gap-3">
-                                    <div className="flex items-center gap-3 flex-1 min-w-0">
-                                        <Avatar className="h-10 w-10 border shadow-sm shrink-0">
-                                            <AvatarImage src={match.avatar} className="object-cover" />
-                                            <AvatarFallback className="text-xs bg-primary/10 text-primary font-bold">
-                                                {match.initials}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <div className="min-w-0 flex-1">
-                                            <p className="text-sm font-semibold text-foreground truncate leading-none mb-1">
-                                                {match.name}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground truncate leading-tight">
-                                                {match.role}
-                                            </p>
+                <div className="p-4 pt-3">
+                    {matches.length === 0 ? (
+                        /* Empty State */
+                        <div className="py-8 text-center">
+                            <div className="h-12 w-12 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <Inbox className="h-6 w-6 text-blue-400" />
+                            </div>
+                            <p className="text-sm font-medium text-foreground mb-1">
+                                No matches yet
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                                Complete your profile to unlock AI-powered recommendations.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {matches.map((match) => (
+                                <div
+                                    key={match.id}
+                                    className="group flex flex-col gap-3 p-3 rounded-xl hover:bg-white/[0.04] transition-all duration-200 border border-transparent hover:border-white/[0.06]"
+                                >
+                                    {/* Header with Avatar & Match % */}
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                                            <Avatar className="h-10 w-10 border shadow-sm shrink-0">
+                                                <AvatarImage
+                                                    src={match.avatar}
+                                                    className="object-cover"
+                                                />
+                                                <AvatarFallback className="text-xs bg-primary/10 text-primary font-bold">
+                                                    {match.initials}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="text-sm font-semibold text-foreground truncate leading-none mb-1">
+                                                    {match.name}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground truncate leading-tight">
+                                                    {match.role}
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                        {/* Match Percentage Badge */}
+                                        <div className="flex flex-col items-end shrink-0">
+                                            <span className="text-2xl font-bold text-primary leading-none">
+                                                {match.matchPercentage}%
+                                            </span>
+                                            <span className="text-[9px] md:text-[10px] text-muted-foreground uppercase font-medium">
+                                                Match
+                                            </span>
                                         </div>
                                     </div>
 
-                                    {/* Match Percentage Badge */}
-                                    <div className="flex flex-col items-end shrink-0">
-                                        <span className="text-2xl font-bold text-primary leading-none">
-                                            {match.matchPercentage}%
-                                        </span>
-                                        <span className="text-xs md:text-[9px] text-muted-foreground uppercase font-medium">
-                                            Match
-                                        </span>
+                                    {/* Reason Badges */}
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {match.reasons.map((reason, index) => (
+                                            <Badge
+                                                key={index}
+                                                variant="outline"
+                                                className={cn(
+                                                    "text-[10px] md:text-xs px-2 py-0.5 font-medium border",
+                                                    getReasonColor(reason.type)
+                                                )}
+                                            >
+                                                {reason.label}
+                                            </Badge>
+                                        ))}
+                                    </div>
+
+                                    {/* Action Buttons */}
+                                    <div className="flex gap-2">
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="h-7 flex-1 px-2 rounded-md text-xs font-medium hover:bg-muted border-border"
+                                        >
+                                            <Eye className="h-3 w-3 mr-1" />
+                                            View Match
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            className="h-7 flex-1 px-2 rounded-md text-xs font-medium"
+                                        >
+                                            <UserPlus className="h-3 w-3 mr-1" />
+                                            Connect
+                                        </Button>
                                     </div>
                                 </div>
+                            ))}
+                        </div>
+                    )}
 
-                                {/* Reason Badges */}
-                                <div className="flex flex-wrap gap-1.5">
-                                    {match.reasons.map((reason, index) => (
-                                        <Badge
-                                            key={index}
-                                            variant="outline"
-                                            className={cn(
-                                                "text-xs md:text-[10px] px-2 py-0.5 font-medium border",
-                                                getReasonColor(reason.type)
-                                            )}
-                                        >
-                                            {reason.label}
-                                        </Badge>
-                                    ))}
-                                </div>
-
-                                {/* Action Buttons */}
-                                <div className="flex gap-2">
-                                    <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="h-7 flex-1 px-2 rounded-md text-xs font-medium hover:bg-muted border-border"
-                                    >
-                                        <Eye className="h-3 w-3 mr-1" />
-                                        View Match
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        className="h-7 flex-1 px-2 rounded-md text-xs font-medium"
-                                    >
-                                        <UserPlus className="h-3 w-3 mr-1" />
-                                        Connect
-                                    </Button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
+                    {/* Complete Profile CTA — now uses glass styling */}
                     <div className="mt-6 mb-2">
-                        <div className="relative overflow-hidden rounded-xl border bg-card p-5 shadow-sm">
+                        <GlassCard innerClassName="p-5">
                             <h4 className="font-bold text-base mb-2 flex items-center gap-2">
                                 <span className="text-xl">🚀</span>
                                 Want more matches?
                             </h4>
                             <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-                                Complete your profile to unlock <span className="font-medium text-foreground">AI-powered recommendations</span> tailored just for you.
+                                Complete your profile to unlock{" "}
+                                <span className="font-medium text-foreground">
+                                    AI-powered recommendations
+                                </span>{" "}
+                                tailored just for you.
                             </p>
                             <Button className="w-full shadow-md transition-all group font-semibold">
                                 Complete Profile
                                 <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                             </Button>
-                        </div>
+                        </GlassCard>
                     </div>
                 </div>
-            </div>
+            </GlassCard>
         </div>
     )
 }
 
-export function SuggestionsSidebarSkeleton({ className }: { className?: string }) {
+export function SuggestionsSidebarSkeleton({
+    className,
+}: {
+    className?: string
+}) {
     return (
         <div className={cn("space-y-6", className)}>
-            <Card className="p-4 space-y-4">
+            <GlassCard innerClassName="p-4 space-y-4">
                 <div className="flex items-center justify-between">
                     <Skeleton className="h-5 w-1/3" />
                     <Skeleton className="h-4 w-16" />
                 </div>
                 {Array.from({ length: 3 }).map((_, i) => (
-                    <div key={i} className="flex flex-col gap-3 py-2 border-b last:border-0">
+                    <div
+                        key={i}
+                        className="flex flex-col gap-3 py-2 border-b last:border-0"
+                    >
                         <div className="flex items-center gap-3">
                             <Skeleton className="h-10 w-10 rounded-full shrink-0" />
                             <div className="space-y-2 flex-1">
@@ -237,7 +274,7 @@ export function SuggestionsSidebarSkeleton({ className }: { className?: string }
                         </div>
                     </div>
                 ))}
-            </Card>
+            </GlassCard>
         </div>
     )
 }

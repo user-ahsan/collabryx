@@ -7,12 +7,12 @@ import { cn } from "@/lib/utils"
 import { ReactionPicker } from "../comments/reaction-picker"
 
 interface PostActionsProps {
-    postId: number
+    postId: string
     myReaction?: string | null
-    onLike: (postId: number) => void
-    onReaction: (postId: number, reaction: string) => void
-    onCommentClick: (postId: number) => void
-    onShareClick: (postId: number) => void
+    onLike: (postId: string) => void
+    onReaction: (postId: string, reaction: string) => void
+    onCommentClick: (postId: string) => void
+    onShareClick: (postId: string) => void
 }
 
 const REACTION_MAP: Record<string, { label: string, icon: typeof ThumbsUp, color: string }> = {
@@ -55,6 +55,7 @@ export function PostActions({ postId, myReaction, onLike, onReaction, onCommentC
                 <div className="flex-1 relative group/reaction">
                     <Button
                         variant="ghost"
+                        aria-label={reactionConfig ? `Remove ${reactionConfig.label} reaction` : "Like this post"}
                         className={cn(
                             "w-full rounded-lg transition-all gap-1 md:gap-2 h-8 md:h-9 px-2 md:px-3",
                             reactionConfig?.color || "text-muted-foreground hover:text-blue-400 hover:!bg-blue-500/10"
@@ -92,6 +93,7 @@ export function PostActions({ postId, myReaction, onLike, onReaction, onCommentC
 
                 <Button
                     variant="ghost"
+                    aria-label="Comment on this post"
                     className="flex-1 rounded-lg text-muted-foreground hover:text-blue-400 hover:!bg-blue-500/10 transition-all gap-1 md:gap-2 h-8 md:h-9 px-2 md:px-3"
                     onClick={() => onCommentClick(postId)}
                 >
@@ -101,6 +103,7 @@ export function PostActions({ postId, myReaction, onLike, onReaction, onCommentC
 
                 <Button
                     variant="ghost"
+                    aria-label="Share this post"
                     className="flex-1 rounded-lg text-muted-foreground hover:text-blue-400 hover:!bg-blue-500/10 transition-all gap-1 md:gap-2 h-8 md:h-9 px-2 md:px-3"
                     onClick={() => onShareClick(postId)}
                 >

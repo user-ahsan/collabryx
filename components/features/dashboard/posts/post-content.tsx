@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { ImageOff } from "lucide-react"
+import Image from "next/image"
 import { RichTextDisplay } from "./rich-text-display"
 import { LinkPreview } from "./link-preview"
 
@@ -45,12 +46,16 @@ export function PostContent({ content, hasLink, linkUrl, hasMedia, mediaUrl, onM
                         </div>
                     ) : (
                         <>
-                            <img
-                                src={mediaUrl}
-                                alt="Post media"
-                                className="w-full h-auto object-cover max-h-[500px]"
-                                onError={() => setMediaError(true)}
-                            />
+                            <div className="relative w-full aspect-video max-h-[500px]">
+                                <Image
+                                    src={mediaUrl}
+                                    alt="Post media"
+                                    fill
+                                    className="object-cover"
+                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                    onError={() => setMediaError(true)}
+                                />
+                            </div>
                             <div className="absolute inset-0 bg-black/0 group-hover/image:bg-black/10 transition-colors flex items-center justify-center pointer-events-none">
                                 <div className="bg-black/50 text-white px-3 py-1 rounded-full text-sm opacity-0 group-hover/image:opacity-100 transition-opacity backdrop-blur-sm">
                                     Click to expand
@@ -63,3 +68,4 @@ export function PostContent({ content, hasLink, linkUrl, hasMedia, mediaUrl, onM
         </div>
     )
 }
+
