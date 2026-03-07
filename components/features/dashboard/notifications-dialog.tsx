@@ -61,7 +61,7 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
                 </DialogHeader>
 
                 <ScrollArea className="flex-1 overflow-y-auto">
-                    <div className="space-y-2 p-3 sm:p-6 p-b-6">
+                    <div className="space-y-2 p-3 sm:p-6 pb-6">
                         {NOTIFICATIONS.map((n) => (
                             <div
                                 key={n.id}
@@ -77,10 +77,10 @@ export function NotificationsDialog({ open, onOpenChange }: NotificationsDialogP
                                     n.type === "like" && "bg-red-500/10 text-red-600",
                                     n.type === "system" && "bg-yellow-500/10 text-yellow-600"
                                 )}>
-                                    {n.type === "connect" && <UserPlus className="h-4.5 w-4.5" />}
-                                    {n.type === "message" && <MessageSquare className="h-4.5 w-4.5" />}
-                                    {n.type === "like" && <Heart className="h-4.5 w-4.5" />}
-                                    {n.type === "system" && <Bell className="h-4.5 w-4.5" />}
+                                    {n.type === "connect" && <UserPlus className="h-[18px] w-[18px]" />}
+                                    {n.type === "message" && <MessageSquare className="h-[18px] w-[18px]" />}
+                                    {n.type === "like" && <Heart className="h-[18px] w-[18px]" />}
+                                    {n.type === "system" && <Bell className="h-[18px] w-[18px]" />}
                                 </div>
 
                                 <div className="flex-1 space-y-1.5 min-w-0">

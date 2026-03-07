@@ -6,19 +6,19 @@ import { SuggestionsSidebar } from "@/components/features/dashboard/suggestions-
 export default function DashboardPage() {
     return (
         <div className="container max-w-7xl mx-auto py-4 md:py-6 px-3 md:px-6 lg:px-8">
-            {/* Sidebar stacked on top for mobile & tablet */}
-            <div className="lg:hidden mb-6">
-                <SuggestionsSidebar />
-            </div>
-
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
 
                 {/* Center Column - Feed */}
                 <div className="lg:col-span-8 max-w-2xl mx-auto lg:mx-0 lg:max-w-none w-full">
+                    {/* Mobile Sidebar (Shows above feed on narrow screens) */}
+                    <div className="block lg:hidden mb-6">
+                        <SuggestionsSidebar />
+                    </div>
+
                     <Feed />
                 </div>
 
-                {/* Right Column - Suggestions (desktop only) */}
+                {/* Right Column - Suggestions (Desktop only) */}
                 <div className="hidden lg:block lg:col-span-4 sticky top-6">
                     <SuggestionsSidebar />
                 </div>
@@ -27,3 +27,4 @@ export default function DashboardPage() {
         </div>
     )
 }
+

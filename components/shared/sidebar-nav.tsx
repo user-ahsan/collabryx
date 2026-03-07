@@ -126,8 +126,12 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
             <div className={cn("flex shrink-0 transition-all duration-300",
                 isCollapsed ? "flex-col items-center gap-4 py-6" : "items-center justify-between h-20 px-5")}>
                 <Link href="/" className={cn("flex items-center gap-2.5 font-bold text-xl group overflow-hidden transition-all", isCollapsed ? "w-9" : "flex-1")}>
-                    <div className="h-9 w-9 min-w-[2.25rem] rounded-xl bg-primary shadow-lg shadow-primary/25 grid place-items-center transition-transform group-hover:scale-105 duration-300">
-                        <span className="text-lg text-primary-foreground font-extrabold">C</span>
+                    <div className="h-9 w-9 min-w-[2.25rem] flex items-center justify-center transition-transform group-hover:scale-105 duration-300">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+                            <path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" />
+                            <path d="M14.5 16.5c-2.5 2-6.5 1-8-2-1.5-3 1-7 4-8" />
+                            <path d="M17 10c0 1.5-.5 3-1.5 4" />
+                        </svg>
                     </div>
                     {!isCollapsed && (
                         <motion.span
@@ -181,31 +185,19 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
                                 </div>
                             </div>
 
-                            <Separator className="my-4 bg-border/50" />
-
-                            {/* Compact Stats for Sidebar */}
-                            <div className="grid grid-cols-2 divide-x divide-border/50">
-                                <div className="text-center px-1 hover:bg-muted/50 rounded-lg transition-colors cursor-pointer py-2">
-                                    <span className="block text-lg font-bold text-foreground">1.2k</span>
-                                    <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Views</span>
-                                </div>
-                                <div className="text-center px-1 hover:bg-muted/50 rounded-lg transition-colors cursor-pointer py-2">
-                                    <div className="flex items-center justify-center gap-1">
-                                        <span className="block text-lg font-bold text-foreground">567</span>
-                                        <TrendingUp className="h-3.5 w-3.5 text-green-500" />
-                                    </div>
-                                    <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Conns</span>
-                                </div>
-                            </div>
+                            <div className="h-2" />
                         </>
                     ) : (
                         <TooltipProvider delayDuration={0}>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Avatar className="h-10 w-10 ring-2 ring-primary/10 shadow-sm cursor-pointer hover:ring-primary/30 transition-all">
-                                        <AvatarImage src="/avatars/01.png" alt="@sophie" />
-                                        <AvatarFallback>SC</AvatarFallback>
-                                    </Avatar>
+                                    <div className="relative cursor-pointer group">
+                                        <Avatar className="h-10 w-10 ring-2 ring-primary/10 shadow-sm group-hover:ring-primary/30 transition-all">
+                                            <AvatarImage src="/avatars/01.png" alt="@sophie" />
+                                            <AvatarFallback>SC</AvatarFallback>
+                                        </Avatar>
+                                        <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 rounded-full border-2 border-background shadow-none" />
+                                    </div>
                                 </TooltipTrigger>
                                 {isCollapsed && showTooltips && (
                                     <TooltipContent side="right" className="font-medium">
@@ -228,7 +220,7 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
                                     {/* Section Label - Only show when expanded */}
                                     {!isCollapsed && (
                                         <div className="px-3 mb-2">
-                                            <span className="text-xs md:text-[10px] font-bold tracking-widest text-muted-foreground uppercase">
+                                            <span className="text-xs md:text-[10px] font-extrabold tracking-widest text-foreground/80 uppercase">
                                                 {section.label}
                                             </span>
                                         </div>
@@ -244,26 +236,30 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
                                                         <Link
                                                             href={item.href}
                                                             className={cn(
-                                                                "relative flex items-center rounded-xl px-3.5 py-3 text-sm font-medium transition-all duration-200 group overflow-hidden",
+                                                                "relative flex items-center rounded-xl px-3.5 py-3 text-sm transition-all duration-200 group overflow-hidden",
                                                                 isActive
-                                                                    ? "bg-primary text-primary-foreground shadow-md"
-                                                                    : "text-muted-foreground hover:bg-muted hover:text-foreground hover:translate-x-1",
+                                                                    ? "bg-primary/15 text-primary font-semibold"
+                                                                    : "font-medium text-muted-foreground hover:bg-muted hover:text-foreground hover:translate-x-1",
                                                                 isCollapsed ? "justify-center px-2 hover:translate-x-0" : "justify-start"
                                                             )}
                                                         >
-                                                            <item.icon className={cn("h-[1.15rem] w-[1.15rem] transition-colors",
-                                                                isActive ? "text-primary-foreground" : "text-muted-foreground group-hover:text-foreground",
+                                                            {/* Add left border accent when active */}
+                                                            {isActive && !isCollapsed && (
+                                                                <div className="absolute left-0 top-1/2 -translate-y-1/2 h-1/2 w-1 bg-primary rounded-r-full" />
+                                                            )}
+                                                            <item.icon className={cn("h-[1.15rem] w-[1.15rem] transition-colors relative z-10",
+                                                                isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground",
                                                                 !isCollapsed && "mr-3"
                                                             )} />
                                                             {!isCollapsed && (
-                                                                <>
-                                                                    <span className="tracking-wide">{item.title}</span>
+                                                                <div className="flex items-center w-full">
+                                                                    <span className="tracking-wide relative z-10">{item.title}</span>
                                                                     {item.badge && item.badge > 0 && (
-                                                                        <span className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs md:text-[10px] font-bold text-primary-foreground animate-pulse">
+                                                                        <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-destructive text-xs md:text-[10px] font-bold text-destructive-foreground animate-none">
                                                                             {item.badge}
                                                                         </span>
                                                                     )}
-                                                                </>
+                                                                </div>
                                                             )}
                                                         </Link>
                                                     </TooltipTrigger>
@@ -316,8 +312,8 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
 
                         <div className="h-5 w-px bg-border/40 mx-1" />
 
-                        <div className="flex justify-center">
-                            <AnimatedThemeToggler className="h-11 w-11 md:h-9 md:w-9 hover:bg-muted/80 rounded-lg" />
+                        <div className="flex justify-center flex-1 ml-2">
+                            <AnimatedThemeToggler variant="slider" />
                         </div>
                     </div>
                 ) : (

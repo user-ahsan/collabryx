@@ -7,13 +7,15 @@ import { flushSync } from "react-dom"
 import { cn } from "@/lib/utils"
 
 interface AnimatedThemeTogglerProps
-  extends React.ComponentPropsWithoutRef<"button"> {
+  extends Omit<React.ComponentPropsWithoutRef<"button">, "onClick"> {
   duration?: number
+  variant?: "icon" | "slider"
 }
 
 export const AnimatedThemeToggler = ({
   className,
   duration = 400,
+  variant = "icon",
   ...props
 }: AnimatedThemeTogglerProps) => {
   const [isDark, setIsDark] = useState(false)
@@ -71,11 +73,35 @@ export const AnimatedThemeToggler = ({
     )
   }, [isDark, duration])
 
+  if (variant === "slider") {
+    return (
+      <button
+        ref={buttonRef}
+        onClick={toggleTheme}
+        className={cn(
+          "relative flex items-center h-8 w-14 rounded-full bg-muted p-1 transition-colors hover:bg-muted/80 shadow-inner shrink-0",
+          className
+        )}
+        aria-label="Toggle theme"
+        {...props}
+      >
+        <div
+          className={cn(
+            "absolute flex h-6 w-6 items-center justify-center rounded-full bg-background shadow-md transition-all duration-300 ease-in-out",
+            isDark ? "left-[calc(100%-1.5rem-0.25rem)]" : "left-1"
+          )}
+        >
+          {isDark ? <Sun className="h-3.5 w-3.5 text-foreground" /> : <Moon className="h-3.5 w-3.5 text-foreground" />}
+        </div>
+      </button>
+    )
+  }
+
   return (
     <button
       ref={buttonRef}
       onClick={toggleTheme}
-      className={cn(className)}
+      className={cn("flex items-center justify-center", className)}
       {...props}
     >
       {isDark ? <Sun /> : <Moon />}

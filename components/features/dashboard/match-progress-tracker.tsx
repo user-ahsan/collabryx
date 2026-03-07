@@ -1,12 +1,11 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle2, Circle, Users, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { motion } from "framer-motion"
+import { GlassCard } from "@/components/shared/glass-card"
 
 interface TeamRole {
     role: string
@@ -38,20 +37,20 @@ export function MatchProgressTracker({
     const progressPercentage = Math.round((filledCount / totalCount) * 100)
 
     return (
-        <Card className={cn("shadow-sm border bg-card overflow-hidden", className)}>
-            <CardHeader className="p-4 pb-3 border-b">
-                <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
+        <GlassCard className={className}>
+            <div className="p-4 pb-3 border-b border-white/[0.06]">
+                <div className="text-sm font-bold flex items-center gap-2 text-foreground">
                     <Users className="h-4 w-4 text-primary" />
                     Team Progress
                     <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-bold bg-primary/10 text-primary ml-auto">
                         {filledCount}/{totalCount}
                     </Badge>
-                </CardTitle>
+                </div>
                 <p className="text-xs text-muted-foreground mt-1">
                     {projectName}
                 </p>
-            </CardHeader>
-            <CardContent className="p-4 space-y-4">
+            </div>
+            <div className="p-4 space-y-4">
                 {/* Progress Bar */}
                 <div className="space-y-2">
                     <div className="flex items-center justify-between text-xs">
@@ -65,18 +64,16 @@ export function MatchProgressTracker({
                     <Progress value={progressPercentage} className="h-2" />
                 </div>
 
-                {/* Roles List */}
+                {/* Roles List — CSS stagger instead of framer-motion */}
                 <div className="space-y-2">
                     {requiredRoles.map((role, index) => (
-                        <motion.div
+                        <div
                             key={role.role}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.05 }}
                             className={cn(
-                                "flex items-start gap-2.5 p-2 rounded-lg transition-colors",
+                                "flex items-start gap-2.5 p-2 rounded-lg transition-colors animate-in fade-in slide-in-from-left-2",
                                 role.filled ? "bg-primary/5" : "bg-muted/30"
                             )}
+                            style={{ animationDelay: `${index * 50}ms`, animationFillMode: "both" }}
                         >
                             {role.filled ? (
                                 <CheckCircle2 className="h-4 w-4 text-primary shrink-0 mt-0.5" />
@@ -96,7 +93,7 @@ export function MatchProgressTracker({
                                     </p>
                                 )}
                             </div>
-                        </motion.div>
+                        </div>
                     ))}
                 </div>
 
@@ -120,7 +117,8 @@ export function MatchProgressTracker({
                         </span>
                     </div>
                 )}
-            </CardContent>
-        </Card>
+            </div>
+        </GlassCard>
     )
 }
+
