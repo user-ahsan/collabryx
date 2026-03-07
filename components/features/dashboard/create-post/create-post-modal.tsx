@@ -100,7 +100,7 @@ export function CreatePostModal() {
             ...data,
             mediaFiles,
             id: Date.now(),
-            author: "Maria Rodriguez", // Assuming current user context
+            author: "Maria Rodriguez",
             role: "Startup Founder",
             time: "Just now",
             avatar: "/avatars/05.png",
@@ -111,11 +111,11 @@ export function CreatePostModal() {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <div className="relative rounded-xl md:rounded-2xl overflow-hidden bg-background/80 backdrop-blur-2xl border border-blue-500/20 shadow-[0_4px_32px_0_rgba(0,0,0,0.3),0_0_80px_-20px_rgba(59,130,246,0.15)] hover:shadow-[0_8px_40px_0_rgba(0,0,0,0.4),0_0_100px_-20px_rgba(59,130,246,0.25)] hover:border-blue-500/30 transition-all duration-500 cursor-text p-4 md:p-5">
+                <div className="relative rounded-xl md:rounded-2xl overflow-hidden bg-blue-950/[0.05] backdrop-blur-2xl border border-blue-400/10 shadow-[0_4px_32px_0_rgba(59,130,246,0.06),0_1px_0_0_rgba(255,255,255,0.06)_inset] hover:shadow-[0_8px_40px_0_rgba(59,130,246,0.12),0_1px_0_0_rgba(255,255,255,0.08)_inset] transition-all duration-500 cursor-text p-4 md:p-5">
                     {/* Top highlight streak */}
-                    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-400/40 to-transparent pointer-events-none" />
-                    <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-blue-400/20 via-transparent to-transparent pointer-events-none" />
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.06] via-transparent to-indigo-500/[0.04] pointer-events-none" />
+                    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-300/30 to-transparent pointer-events-none" />
+                    <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-blue-300/20 via-transparent to-transparent pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.04] via-transparent to-indigo-500/[0.03] pointer-events-none" />
                     <div className="relative z-10 flex gap-3 md:gap-4 items-center">
                         <Avatar className="h-10 w-10 md:h-12 md:w-12 ring-2 ring-background shadow-sm shrink-0">
                             <AvatarImage src="/avatars/05.png" />

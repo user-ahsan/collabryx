@@ -2,7 +2,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Sparkles, ArrowRight, UserPlus, Eye } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -96,15 +96,19 @@ export function SuggestionsSidebar({
             <MatchActivityCard />
 
             {/* Smart Matches Card */}
-            <Card className="shadow-sm border bg-card sticky top-6 overflow-hidden">
-                <CardHeader className="p-4 flex flex-row items-center justify-between space-y-0 border-b">
-                    <CardTitle className="text-sm font-bold flex items-center gap-2 text-foreground">
+            <div className="relative rounded-xl md:rounded-2xl overflow-hidden bg-blue-950/[0.05] backdrop-blur-2xl border border-blue-400/10 shadow-[0_4px_32px_0_rgba(59,130,246,0.06),0_1px_0_0_rgba(255,255,255,0.06)_inset] transition-all duration-500 sticky top-6">
+                {/* Top highlight streak */}
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-300/30 to-transparent pointer-events-none" />
+                <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-blue-300/20 via-transparent to-transparent pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.04] via-transparent to-indigo-500/[0.03] pointer-events-none" />
+                <div className="p-4 flex flex-row items-center justify-between space-y-0 border-b border-white/[0.06] relative z-10">
+                    <h3 className="text-sm font-bold flex items-center gap-2 text-foreground">
                         <Sparkles className="h-4 w-4 text-primary" />
                         Smart Matches
                         <Badge variant="secondary" className="h-5 px-1.5 text-xs md:text-[10px] font-bold bg-primary text-primary-foreground ml-1">
                             ✨ AI
                         </Badge>
-                    </CardTitle>
+                    </h3>
                     <Button
                         variant="ghost"
                         size="sm"
@@ -113,13 +117,13 @@ export function SuggestionsSidebar({
                         See All
                         <ArrowRight className="h-3 w-3 ml-1" />
                     </Button>
-                </CardHeader>
-                <CardContent className="p-4 pt-3">
+                </div>
+                <div className="p-4 pt-3 relative z-10">
                     <div className="space-y-3">
                         {matches.map((match) => (
                             <div
                                 key={match.id}
-                                className="group flex flex-col gap-3 p-3 rounded-xl hover:bg-muted transition-all duration-200 border border-transparent hover:border-border"
+                                className="group flex flex-col gap-3 p-3 rounded-xl hover:bg-white/[0.04] transition-all duration-200 border border-transparent hover:border-white/[0.06]"
                             >
                                 {/* Header with Avatar & Match % */}
                                 <div className="flex items-start justify-between gap-3">
@@ -204,8 +208,8 @@ export function SuggestionsSidebar({
                             </Button>
                         </div>
                     </div>
-                </CardContent>
-            </Card>
+                </div>
+            </div>
         </div>
     )
 }

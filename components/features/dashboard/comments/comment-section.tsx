@@ -130,7 +130,7 @@ export function CommentSection({ comments: initialComments = DUMMY_COMMENTS, onA
                                 <div className="group/likes relative">
                                     <button
                                         onClick={() => toggleLike(comment.id)}
-                                        className={`text-xs font-bold transition-colors hover:underline ${comment.liked ? 'text-primary' : 'text-slate-400 hover:text-foreground'}`}
+                                        className={`text-xs font-bold transition-colors hover:underline ${comment.liked ? 'text-primary' : 'text-muted-foreground hover:text-foreground'}`}
                                     >
                                         Like
                                     </button>
@@ -145,7 +145,7 @@ export function CommentSection({ comments: initialComments = DUMMY_COMMENTS, onA
                                                 <button
                                                     key={reaction.id}
                                                     aria-label={`React with ${reaction.id}`}
-                                                    className="h-8 w-8 flex items-center justify-center hover:bg-muted rounded-full hover:scale-125 transition-transform text-slate-400 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                                                    className="h-8 w-8 flex items-center justify-center hover:bg-muted rounded-full hover:scale-125 transition-transform text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
                                                     onClick={(e) => {
                                                         e.stopPropagation()
                                                         // Handle specific reaction logic here
@@ -157,8 +157,8 @@ export function CommentSection({ comments: initialComments = DUMMY_COMMENTS, onA
                                         </div>
                                     </div>
                                 </div>
-                                <button className="text-xs font-bold text-slate-400 hover:text-foreground hover:underline transition-all duration-200 cursor-pointer">Reply</button>
-                                <span className="text-xs text-slate-400 font-medium">{comment.timestamp}</span>
+                                <button className="text-xs font-bold text-muted-foreground hover:text-foreground hover:underline transition-all duration-200 cursor-pointer">Reply</button>
+                                <span className="text-xs text-muted-foreground font-medium">{comment.timestamp}</span>
                             </div>
                         </div>
                     </div>
@@ -168,7 +168,7 @@ export function CommentSection({ comments: initialComments = DUMMY_COMMENTS, onA
                     <div className="pl-12 pt-2">
                         <Button
                             variant="link"
-                            className="text-xs text-slate-400 hover:text-primary h-auto p-0 font-medium"
+                            className="text-xs text-muted-foreground hover:text-primary h-auto p-0 font-medium"
                             onClick={() => setIsExpanded(true)}
                         >
                             View {comments.length - 2} more comment{comments.length - 2 !== 1 ? 's' : ''}

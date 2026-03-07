@@ -15,7 +15,7 @@ interface PostActionsProps {
     onShareClick: (postId: number) => void
 }
 
-const REACTION_MAP: Record<string, { label: string, icon: any, color: string }> = {
+const REACTION_MAP: Record<string, { label: string, icon: typeof ThumbsUp, color: string }> = {
     "like": { label: "Like", icon: ThumbsUp, color: "text-blue-500" },
     "love": { label: "Love", icon: Heart, color: "text-red-500" },
     "haha": { label: "Haha", icon: Laugh, color: "text-yellow-500" },
@@ -49,8 +49,8 @@ export function PostActions({ postId, myReaction, onLike, onReaction, onCommentC
     const ReactionIcon = reactionConfig?.icon || ThumbsUp
 
     return (
-        <div className="px-3 md:px-5 pb-3 md:pb-4 pt-2">
-            <div className="flex items-center justify-between pt-1 relative gap-1 md:gap-0">
+        <div className="pt-2">
+            <div className="flex items-center justify-between relative gap-1 md:gap-0">
                 {/* Like / Reaction Group */}
                 <div className="flex-1 relative group/reaction">
                     <Button
