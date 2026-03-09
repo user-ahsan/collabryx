@@ -3,12 +3,15 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
 import { motion } from "framer-motion"
-import { MessageSquare, Sparkles, UserPlus, Info } from "lucide-react"
+import { MessageSquare, UserPlus, MapPin, Clock } from "lucide-react"
 import { useState } from "react"
 import { WhyMatchModal } from "./why-match-modal"
+import { GlassCard } from "@/components/shared/glass-card"
+import { MatchScoreCompact } from "@/components/shared/match-score"
+import { MatchReasonBadge } from "@/components/ui/match-reason-badge"
+import { MatchCardDropdown } from "@/components/shared/glass-dropdown-menu"
+import { cn } from "@/lib/utils"
 
 interface MatchCardProps {
     match: {
@@ -19,6 +22,9 @@ interface MatchCardProps {
         compatibility: number
         skills: string[]
         bio: string
+        location?: string
+        timezone?: string
+        availability?: "full-time" | "part-time" | "side-project"
         insights?: {
             type: "complementary" | "shared" | "similar"
             text: string
@@ -27,9 +33,16 @@ interface MatchCardProps {
     index?: number
 }
 
+const availabilityLabels: Record<string, string> = {
+    "full-time": "Full-time",
+    "part-time": "Part-time",
+    "side-project": "Side-project"
+}
+
 export function MatchCard({ match, index = 0 }: MatchCardProps) {
     const [whyModalOpen, setWhyModalOpen] = useState(false)
     const [requestSent, setRequestSent] = useState(false)
+    const [isSaved, setIsSaved] = useState(false)
 
     const isStrongMatch = match.compatibility >= 90
     const isLowMatch = match.compatibility < 80
@@ -42,125 +55,150 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                 transition={{ duration: 0.4, delay: index * 0.1, ease: "easeOut" }}
                 className="h-full"
             >
-                <Card className={`group relative h-full overflow-hidden border bg-card transition-all duration-300 hover:shadow-md hover:border-primary ${isLowMatch ? "opacity-75" : ""
-                    }`}>
-                    <div className="relative flex flex-col h-full p-4 sm:p-5 lg:p-6">
-                        {/* Header */}
-                        <div className="flex flex-col items-center">
-                            <div className="relative mb-4">
-                                <div className="relative rounded-full p-1 ring-2 ring-border transition-all duration-300 group-hover:ring-primary">
-                                    <Avatar className="h-20 w-20 sm:h-24 sm:w-24 lg:h-28 lg:w-28">
+                <GlassCard 
+                    hoverable 
+                    className={cn(
+                        "group relative h-[280px] overflow-hidden transition-all duration-300",
+                        isLowMatch ? "opacity-60" : ""
+                    )}
+                    innerClassName="h-full"
+                >
+                    <div className="flex flex-col h-full p-4">
+                        {/* Top Row: Avatar | Name & Role | Match Score */}
+                        <div className="flex items-start justify-between gap-3 mb-2">
+                            {/* Avatar - Top Left */}
+                            <div className="relative shrink-0">
+                                <div className="relative rounded-full ring-1 ring-border transition-all duration-300 group-hover:ring-primary/50">
+                                    <Avatar className="h-12 w-12">
                                         <AvatarImage src={match.avatar} alt={match.name} className="object-cover" />
-                                        <AvatarFallback className="text-xl sm:text-2xl font-bold bg-muted">
+                                        <AvatarFallback className="text-sm font-bold bg-muted text-foreground">
                                             {match.name.split(" ").map(n => n[0]).join("")}
                                         </AvatarFallback>
                                     </Avatar>
                                 </div>
-                                <div className="absolute bottom-1 sm:bottom-2 right-1 sm:right-2 flex h-6 w-6 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-background shadow-md ring-1 ring-border">
-                                    <span className="text-base sm:text-lg">✨</span>
-                                </div>
+                                {isStrongMatch && (
+                                    <div className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500/20 backdrop-blur-sm">
+                                        <span className="text-[8px]">🔥</span>
+                                    </div>
+                                )}
                             </div>
 
-                            <h3 className="mb-1 text-lg sm:text-xl font-bold tracking-tight text-foreground">
-                                {match.name}
-                            </h3>
-                            <p className="mb-2 sm:mb-3 text-xs sm:text-sm font-medium text-muted-foreground">
-                                {match.role}
-                            </p>
-
-                            {/* Role Fit Badge */}
-                            {isStrongMatch && (
-                                <Badge className="bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300 border-green-200 dark:border-green-900 text-xs font-medium mb-2">
-                                    ✅ Strong CTO Fit
-                                </Badge>
-                            )}
-                        </div>
-
-                        {/* Compatibility Meter - Clickable */}
-                        <div
-                            onClick={() => setWhyModalOpen(true)}
-                            className="mb-4 sm:mb-6 space-y-2 sm:space-y-3 rounded-xl bg-muted p-3 sm:p-4 cursor-pointer hover:bg-muted/80 transition-colors group/score"
-                        >
-                            <div className="flex items-center justify-between text-xs sm:text-sm">
-                                <div className="flex items-center gap-1.5 sm:gap-2 font-medium text-muted-foreground">
-                                    <Sparkles className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-primary" />
-                                    <span>Match Score</span>
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                    <span className="font-bold text-primary">{match.compatibility}%</span>
-                                    <Info className="h-3.5 w-3.5 text-muted-foreground group-hover/score:text-primary transition-colors" />
-                                </div>
+                            {/* Name & Role - Middle */}
+                            <div className="flex-1 min-w-0">
+                                <h3 className="text-sm font-bold tracking-tight text-foreground truncate">
+                                    {match.name}
+                                </h3>
+                                <p className="text-xs text-muted-foreground truncate">
+                                    {match.role}
+                                </p>
                             </div>
-                            <Progress value={match.compatibility} className="h-2 bg-background" />
 
-                            {/* AI Insights */}
-                            {match.insights && match.insights.length > 0 && (
-                                <div className="pt-2 space-y-1.5">
-                                    {match.insights.map((insight, i) => (
-                                        <div key={i} className="flex items-center gap-2 text-xs">
-                                            <div className="h-1.5 w-1.5 rounded-full bg-primary" />
-                                            <span className="font-medium text-muted-foreground">
-                                                {insight.text}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                            {/* Match Score - Top Right */}
+                            <div 
+                                className="shrink-0 cursor-pointer"
+                                onClick={() => setWhyModalOpen(true)}
+                            >
+                                <MatchScoreCompact overall={match.compatibility} />
+                                <p className="text-[9px] text-muted-foreground/60 text-center mt-0.5 hover:text-primary/70 transition-colors">
+                                    View details
+                                </p>
+                            </div>
                         </div>
 
-                        {/* Skills */}
-                        <div className="mb-4 sm:mb-6 flex flex-wrap justify-center gap-1.5">
+                        {/* Second Row: Location & Availability */}
+                        {(match.location || match.availability) && (
+                            <div className="flex items-center gap-3 mb-2 text-xs text-muted-foreground">
+                                {match.location && (
+                                    <div className="flex items-center gap-1">
+                                        <MapPin className="h-3 w-3" />
+                                        <span>{match.location}</span>
+                                        {match.timezone && <span className="text-muted-foreground/50">• {match.timezone}</span>}
+                                    </div>
+                                )}
+                                {match.availability && (
+                                    <div className="flex items-center gap-1">
+                                        <Clock className="h-3 w-3" />
+                                        <span>{availabilityLabels[match.availability]}</span>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Third Row: Skills Tags */}
+                        <div className="flex flex-wrap gap-1.5 mb-2">
                             {match.skills.slice(0, 4).map((skill) => (
                                 <Badge
                                     key={skill}
                                     variant="secondary"
-                                    className="bg-secondary text-xs font-medium text-secondary-foreground transition-colors hover:bg-primary/10 hover:text-primary border-transparent border"
+                                    className="bg-muted/50 text-muted-foreground text-[10px] px-2 py-0 font-medium"
                                 >
                                     {skill}
                                 </Badge>
                             ))}
                             {match.skills.length > 4 && (
-                                <Badge variant="outline" className="text-xs border-dashed text-muted-foreground/70">
+                                <Badge variant="outline" className="text-[10px] px-2 py-0 font-medium border-dashed text-muted-foreground/70">
                                     +{match.skills.length - 4}
                                 </Badge>
                             )}
                         </div>
 
-                        {/* Bio */}
-                        <p className="flex-1 text-center text-xs sm:text-sm leading-relaxed text-muted-foreground line-clamp-3 mb-4 sm:mb-6 px-1 sm:px-2">
-                            "{match.bio}"
-                        </p>
+                        {/* Match Reason Badges - muted */}
+                        {match.insights && match.insights.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mb-2">
+                                {match.insights.slice(0, 2).map((insight, i) => (
+                                    <MatchReasonBadge
+                                        key={i}
+                                        type={insight.type === "complementary" ? "complementary" : insight.type === "shared" ? "interest" : "skill"}
+                                        label={insight.text}
+                                    />
+                                ))}
+                            </div>
+                        )}
 
-                        {/* Actions */}
-                        <div className="grid grid-cols-2 gap-2 sm:gap-3 mt-auto">
+                        {/* Fourth Row: Bio - 2 lines max */}
+                        <div className="mb-auto overflow-hidden">
+                            <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                                &ldquo;{match.bio}&rdquo;
+                            </p>
+                        </div>
+
+                        {/* Bottom Row: Action Buttons */}
+                        <div className="flex gap-2 mt-3 pt-2 border-t border-border/50">
                             {!requestSent ? (
                                 <>
                                     <Button
-                                        variant="outline"
-                                        className="h-9 sm:h-10 text-xs sm:text-sm hover:bg-primary hover:text-primary-foreground transition-all"
+                                        className="flex-1 h-8 text-xs"
                                         onClick={() => setRequestSent(true)}
                                     >
-                                        <UserPlus className="mr-1.5 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" />
+                                        <UserPlus className="mr-1.5 h-3.5 w-3.5" />
                                         Connect
                                     </Button>
                                     <Button
-                                        className="h-9 sm:h-10 text-xs sm:text-sm shadow-sm transition-all hover:-translate-y-0.5"
+                                        variant="outline"
+                                        className="flex-1 h-8 text-xs"
                                     >
-                                        <MessageSquare className="mr-1.5 sm:mr-2 h-3.5 sm:h-4 w-3.5 sm:w-4" />
+                                        <MessageSquare className="mr-1.5 h-3.5 w-3.5" />
                                         Message
                                     </Button>
+                                    <MatchCardDropdown
+                                        isSaved={isSaved}
+                                        onSave={() => setIsSaved(!isSaved)}
+                                        onViewProfile={() => {}}
+                                        onReport={() => {}}
+                                        onCopyLink={() => {}}
+                                    />
                                 </>
                             ) : (
                                 <Button
                                     disabled
-                                    className="col-span-2 h-9 sm:h-10 text-xs sm:text-sm cursor-not-allowed opacity-75"
+                                    className="flex-1 h-8 text-xs cursor-not-allowed opacity-75 bg-green-600/20 text-green-400 border border-green-500/30"
                                 >
                                     ⏳ Request Sent
                                 </Button>
                             )}
                         </div>
                     </div>
-                </Card>
+                </GlassCard>
             </motion.div>
 
             {/* Why Match Modal */}

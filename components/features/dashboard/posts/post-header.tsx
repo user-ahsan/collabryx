@@ -3,7 +3,7 @@
 import { ReactNode } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Globe } from "lucide-react"
-import { PostOptionsDropdown } from "./post-options-dropdown"
+import { PostCardDropdown } from "@/components/shared/glass-dropdown-menu"
 
 interface PostHeaderProps {
     author: string
@@ -42,7 +42,7 @@ export function PostHeader({ author, role, time, avatar, initials, postTypeBadge
                     )}
                 </div>
             </div>
-            {!hideOptions && <PostOptionsDropdown isOwner={isOwner} />}
+            {!hideOptions && <PostCardDropdown isOwner={isOwner} />}
         </div>
     )
 }
