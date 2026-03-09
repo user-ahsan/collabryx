@@ -113,7 +113,7 @@ function CommentItem({
 
             <div className="flex-1 min-w-0 max-w-full">
                 <div className="flex items-start gap-2 max-w-full">
-                    <div className="bg-muted/40 rounded-2xl rounded-tl-none px-3 py-2 inline-block relative group/bubble hover:bg-muted/60 transition-colors max-w-full break-words">
+                    <div className="bg-background/40 backdrop-blur-md border border-border/40 rounded-2xl rounded-tl-none px-3 py-2 inline-block relative group/bubble hover:bg-background/60 transition-colors max-w-full break-words shadow-sm">
                         <p className="text-sm font-semibold text-foreground cursor-pointer hover:underline mb-0.5">
                             {comment.author.name}
                         </p>
@@ -185,7 +185,7 @@ function CommentItem({
                             value={replyText}
                             onChange={(e) => setReplyText(e.target.value)}
                             placeholder={`Reply to ${comment.author.name.split(' ')[0]}...`}
-                            className="h-8 text-[13px] rounded-full bg-muted/40 border-transparent focus:bg-background focus:border-border pr-10 transition-all font-medium"
+                            className="h-8 text-[13px] rounded-full bg-background border border-border/40 focus:bg-background focus:border-border pr-10 transition-all font-medium"
                         />
                         {replyText.trim() && (
                             <Button
@@ -362,7 +362,7 @@ export function CommentSection({ comments: initialComments = DUMMY_COMMENTS, onA
                         value={text}
                         onChange={(e) => setText(e.target.value)}
                         placeholder="Write a comment..."
-                        className="h-9 w-full text-sm rounded-full bg-muted/40 border-transparent focus:bg-background focus:border-border pr-20 transition-all font-medium placeholder:text-muted-foreground/50"
+                        className="h-9 w-full text-sm rounded-full bg-background border border-border/40 focus:bg-background focus:border-border pr-20 transition-all font-medium placeholder:text-muted-foreground/50"
                     />
                     <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center pr-1">
                         <Popover>
