@@ -32,7 +32,7 @@ export function MatchContextHeader({
             transition={{ duration: 0.5 }}
             className="mb-4 w-full"
         >
-            <GlassCard className="p-3 sm:p-4">
+            <GlassCard innerClassName="p-3 sm:p-4">
                 <div className="flex items-center justify-between gap-4">
                     {/* Title and Match Count */}
                     <div className="flex items-center gap-3 sm:gap-4 min-w-0">

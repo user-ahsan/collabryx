@@ -10,6 +10,7 @@ import { PostContent } from "./post-content"
 import { PostActions } from "./post-actions"
 import { CommentSection } from "../comments/comment-section"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { GlassCard } from "@/components/shared/glass-card"
 import { cn } from "@/lib/utils"
 
 interface PostDetailDialogProps {
@@ -80,8 +81,8 @@ export function PostDetailDialog({
 
                 {hasMedia ? (
                     // ─── Dual-Column Layout (Media Posts) ───
-                    <>
-                        <div className="w-full min-h-[40vh] md:h-full md:w-[65%] lg:w-[70%] xl:w-[72%] bg-black flex flex-col justify-center relative border-b border-white/10 md:border-b-0 md:border-r group/media overflow-hidden">
+                    <GlassCard className="w-full h-full" innerClassName="flex flex-col md:flex-row w-full h-full">
+                        <div className="w-full min-h-[40vh] md:h-full md:w-[65%] lg:w-[70%] xl:w-[72%] bg-black/40 backdrop-blur-md flex flex-col justify-center relative border-b border-blue-400/10 md:border-b-0 md:border-r group/media overflow-hidden">
                             {/* CSS Snap Carousel for media in the dialog */}
                             <div
                                 ref={scrollContainerRef}
@@ -150,7 +151,7 @@ export function PostDetailDialog({
                         </div>
 
                         {/* Details Section */}
-                        <div className="flex flex-col flex-1 bg-background/95 backdrop-blur-xl relative w-full md:w-[35%] lg:w-[30%] xl:w-[28%] min-h-0">
+                        <div className="flex flex-col flex-1 relative w-full md:w-[35%] lg:w-[30%] xl:w-[28%] min-h-0">
                             <div className="p-4 sm:p-6 pb-2 space-y-4 shrink-0">
                                 <PostHeader
                                     author={post.author}
@@ -201,10 +202,10 @@ export function PostDetailDialog({
                                 </div>
                             </ScrollArea>
                         </div>
-                    </>
+                    </GlassCard>
                 ) : (
                     // ─── Single-Column Layout (Text/Link Posts) ───
-                    <div className="flex flex-col w-full h-full bg-background/95 backdrop-blur-xl relative min-h-0">
+                    <GlassCard className="w-full h-full" innerClassName="flex flex-col w-full h-full relative min-h-0">
                         <div className="p-4 sm:p-6 md:p-8 pb-0 space-y-6 shrink-0">
                             {/* Header */}
                             <PostHeader
@@ -264,7 +265,7 @@ export function PostDetailDialog({
                                 <CommentSection />
                             </div>
                         </ScrollArea>
-                    </div>
+                    </GlassCard>
                 )}
             </DialogContent>
         </Dialog>

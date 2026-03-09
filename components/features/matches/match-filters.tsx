@@ -32,7 +32,7 @@ export function MatchFilters({
     return (
         <>
             <div className="mb-4 w-full">
-                <GlassCard className="p-2 sm:p-3">
+                <GlassCard innerClassName="p-2 sm:p-3">
                     <div className="flex flex-col gap-2 md:flex-row md:items-center">
                         {/* Natural Language Search */}
                         <div className="relative flex-1 min-w-0">
