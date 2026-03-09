@@ -197,6 +197,7 @@ export function SuggestionsSidebar({ className }: MatchIntelligencePanelProps) {
 
                                     {/* Action Buttons */}
                                     <div className="flex gap-2">
+                                        {/* View Match - Outlined (secondary) */}
                                         <Button
                                             size="sm"
                                             variant="outline"
@@ -205,9 +206,10 @@ export function SuggestionsSidebar({ className }: MatchIntelligencePanelProps) {
                                             <Eye className="h-3 w-3 mr-1" />
                                             View Match
                                         </Button>
+                                        {/* Connect - Filled (primary) */}
                                         <Button
                                             size="sm"
-                                            className="h-8 flex-1 px-3 rounded-md text-sm font-medium"
+                                            className="h-8 flex-1 px-3 rounded-md text-sm font-medium shadow-sm hover:shadow-md"
                                         >
                                             <UserPlus className="h-3 w-3 mr-1" />
                                             Connect
@@ -218,21 +220,31 @@ export function SuggestionsSidebar({ className }: MatchIntelligencePanelProps) {
                         </div>
                     )}
 
-                    {/* Complete Profile CTA — now uses glass styling */}
+                    {/* Profile Strength Indicator */}
                     <div className="mt-6 mb-2">
                         <GlassCard innerClassName="p-5 md:p-6">
-                            <h4 className="font-bold text-base mb-2 flex items-center gap-2">
-                                <span className="text-xl">🚀</span>
-                                Want more matches?
-                            </h4>
-                            <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
-                                Complete your profile to unlock{" "}
+                            <div className="flex items-center justify-between mb-3">
+                                <h4 className="font-semibold text-sm text-foreground">
+                                    Profile Strength
+                                </h4>
+                                <span className="text-sm font-bold text-primary">72%</span>
+                            </div>
+                            <div className="h-2 w-full bg-muted rounded-full overflow-hidden mb-3">
+                                <div 
+                                    className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full transition-all"
+                                    style={{ width: "72%" }}
+                                />
+                            </div>
+                            <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+                                Complete your profile to get better{" "}
                                 <span className="font-medium text-foreground">
-                                    AI-powered recommendations
-                                </span>{" "}
-                                tailored just for you.
+                                    AI-powered matches
+                                </span>
                             </p>
-                            <Button className="w-full shadow-md transition-all group font-semibold">
+                            <Button 
+                                variant="outline" 
+                                className="w-full transition-all group font-medium border-primary/20 hover:border-primary hover:bg-primary/5"
+                            >
                                 Complete Profile
                                 <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                             </Button>

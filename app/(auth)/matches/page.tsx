@@ -19,9 +19,12 @@ const MATCHES = [
         compatibility: 96,
         skills: ["React", "Node.js", "TypeScript", "AWS", "PostgreSQL"],
         bio: "Passionate about building scalable web applications and exploring AI integration. Looking for a designer to partner with on a SaaS idea.",
+        location: "San Francisco, CA",
+        timezone: "PST",
+        availability: "full-time" as const,
         insights: [
-            { type: "complementary" as const, text: "Complementary Skills: Backend & Cloud" },
-            { type: "shared" as const, text: "Shared Interest: AI Integration" }
+            { type: "complementary" as const, text: "Backend & Cloud" },
+            { type: "shared" as const, text: "AI Integration" }
         ]
     },
     {
@@ -32,9 +35,12 @@ const MATCHES = [
         compatibility: 94,
         skills: ["Figma", "Tailwind CSS", "User Research", "Prototyping"],
         bio: "I create intuitive and beautiful user experiences. Love working with developers who care about the details.",
+        location: "Austin, TX",
+        timezone: "CST",
+        availability: "full-time" as const,
         insights: [
-            { type: "complementary" as const, text: "Strong Design-Dev Synergy" },
-            { type: "similar" as const, text: "Similar Goals: SaaS Product" }
+            { type: "complementary" as const, text: "Design-Dev Synergy" },
+            { type: "similar" as const, text: "SaaS Product" }
         ]
     },
     {
@@ -45,9 +51,12 @@ const MATCHES = [
         compatibility: 89,
         skills: ["Agile", "Strategy", "User Stories", "Analytics", "Jira"],
         bio: "Experienced PM looking to join a high-growth startup or find technical co-founders. Let's build something users love.",
+        location: "New York, NY",
+        timezone: "EST",
+        availability: "part-time" as const,
         insights: [
-            { type: "complementary" as const, text: "Business Strategy Expert" },
-            { type: "shared" as const, text: "Shared Interest: Fintech" }
+            { type: "complementary" as const, text: "Business Strategy" },
+            { type: "shared" as const, text: "Fintech" }
         ]
     },
     {
@@ -58,9 +67,12 @@ const MATCHES = [
         compatibility: 91,
         skills: ["Python", "PyTorch", "NLP", "Computer Vision"],
         bio: "PhD student specializing in large language models. Interested in applying generative AI to creative tools.",
+        location: "Seattle, WA",
+        timezone: "PST",
+        availability: "side-project" as const,
         insights: [
             { type: "shared" as const, text: "Deep AI Knowledge" },
-            { type: "similar" as const, text: "Research-Driven Approach" }
+            { type: "similar" as const, text: "Research-Driven" }
         ]
     },
     {
@@ -71,8 +83,11 @@ const MATCHES = [
         compatibility: 78,
         skills: ["React", "Vue", "JavaScript", "Animation", "Three.js"],
         bio: "Frontend wizard who loves bringing designs to life with smooth animations and interactive 3D elements.",
+        location: "London, UK",
+        timezone: "GMT",
+        availability: "full-time" as const,
         insights: [
-            { type: "complementary" as const, text: "Frontend Specialization" }
+            { type: "complementary" as const, text: "Frontend Expert" }
         ]
     },
     {
@@ -83,8 +98,11 @@ const MATCHES = [
         compatibility: 75,
         skills: ["SEO", "Content Marketing", "Social Media", "Analysis"],
         bio: "Helping startups find their voice and reach their audience. Expert in growth hacking and community building.",
+        location: "Toronto, Canada",
+        timezone: "EST",
+        availability: "part-time" as const,
         insights: [
-            { type: "complementary" as const, text: "Growth & Marketing Lead" }
+            { type: "complementary" as const, text: "Growth & Marketing" }
         ]
     },
 ]
@@ -114,6 +132,7 @@ export default function MatchesPage() {
                 <MatchContextHeader
                     preferences={preferences}
                     onUpdatePreferences={handleUpdatePreferences}
+                    matchCount={MATCHES.length}
                 />
 
                 {/* Filter Bar */}

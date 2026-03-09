@@ -16,7 +16,7 @@ import {
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
-import { PostOptionsDropdown } from "./post-options-dropdown"
+import { PostCardDropdown } from "@/components/shared/glass-dropdown-menu"
 import { RichTextDisplay } from "./rich-text-display"
 import { LinkPreview } from "./link-preview"
 import { CommentSection } from "../comments/comment-section"
@@ -92,7 +92,7 @@ export function PostDetailView({ post }: PostDetailViewProps) {
                                 </div>
                             </div>
                         </div>
-                        <PostOptionsDropdown />
+                        <PostCardDropdown />
                     </div>
 
                     {/* Content */}

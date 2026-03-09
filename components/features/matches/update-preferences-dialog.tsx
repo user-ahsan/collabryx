@@ -29,11 +29,13 @@ interface UpdatePreferencesDialogProps {
         type?: string
     }
     onUpdate: (prefs: { role: string; industry: string; type: string }) => void
+    variant?: "button" | "icon"
 }
 
 export function UpdatePreferencesDialog({
     currentPreferences,
     onUpdate,
+    variant = "button",
 }: UpdatePreferencesDialogProps) {
     const [open, setOpen] = useState(false)
     const [role, setRole] = useState(currentPreferences.role || "CTO")
@@ -48,10 +50,16 @@ export function UpdatePreferencesDialog({
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline" size="lg" className="px-4 sm:px-6 text-xs sm:text-sm border-primary/20 hover:bg-primary/5 hover:border-primary/40 transition-colors w-full md:w-auto">
-                    <Settings2 className="mr-2 h-4 w-4" />
-                    Update Preferences
-                </Button>
+                {variant === "icon" ? (
+                    <Button variant="outline" size="icon" className="shrink-0 h-9 w-9 sm:h-10 sm:w-10">
+                        <Settings2 className="h-4 w-4" />
+                    </Button>
+                ) : (
+                    <Button variant="outline" size="lg" className="px-4 sm:px-6 text-xs sm:text-sm border-primary/20 hover:bg-primary/5 hover:border-primary/40 transition-colors w-full md:w-auto">
+                        <Settings2 className="mr-2 h-4 w-4" />
+                        Update Preferences
+                    </Button>
+                )}
             </DialogTrigger>
             <DialogContent className="w-[95vw] sm:w-full sm:max-w-[425px]">
                 <DialogHeader>
