@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useState } from "react"
 import { Settings2 } from "lucide-react"
+import { GlassCard } from "@/components/shared/glass-card"
 
 interface UpdatePreferencesDialogProps {
     currentPreferences: {
@@ -61,64 +62,66 @@ export function UpdatePreferencesDialog({
                     </Button>
                 )}
             </DialogTrigger>
-            <DialogContent className="w-[95vw] sm:w-full sm:max-w-[425px]">
-                <DialogHeader>
-                    <DialogTitle>Update Match Preferences</DialogTitle>
-                    <DialogDescription>
-                        Refine your search criteria to find the perfect matches for your project.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
-                        <Label htmlFor="role" className="sm:text-right">
-                            Role
-                        </Label>
-                        <Select value={role} onValueChange={setRole}>
-                            <SelectTrigger className="col-span-1 sm:col-span-3">
-                                <SelectValue placeholder="Select role" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="CTO">CTO</SelectItem>
-                                <SelectItem value="Co-Founder">Co-Founder</SelectItem>
-                                <SelectItem value="Developer">Developer</SelectItem>
-                                <SelectItem value="Designer">Designer</SelectItem>
-                                <SelectItem value="Product Manager">Product Manager</SelectItem>
-                                <SelectItem value="AI Researcher">AI Researcher</SelectItem>
-                            </SelectContent>
-                        </Select>
+            <DialogContent className="w-[95vw] sm:w-full sm:max-w-[425px] p-0 border-none bg-transparent shadow-none [&>button]:hidden sm:[&>button]:flex">
+                <GlassCard innerClassName="p-6 pt-10 sm:pt-6 relative">
+                    <DialogHeader>
+                        <DialogTitle>Update Match Preferences</DialogTitle>
+                        <DialogDescription>
+                            Refine your search criteria to find the perfect matches for your project.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                            <Label htmlFor="role" className="sm:text-right">
+                                Role
+                            </Label>
+                            <Select value={role} onValueChange={setRole}>
+                                <SelectTrigger className="col-span-1 sm:col-span-3">
+                                    <SelectValue placeholder="Select role" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="CTO">CTO</SelectItem>
+                                    <SelectItem value="Co-Founder">Co-Founder</SelectItem>
+                                    <SelectItem value="Developer">Developer</SelectItem>
+                                    <SelectItem value="Designer">Designer</SelectItem>
+                                    <SelectItem value="Product Manager">Product Manager</SelectItem>
+                                    <SelectItem value="AI Researcher">AI Researcher</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                            <Label htmlFor="industry" className="sm:text-right">
+                                Industry
+                            </Label>
+                            <Input
+                                id="industry"
+                                value={industry}
+                                onChange={(e) => setIndustry(e.target.value)}
+                                className="col-span-1 sm:col-span-3"
+                            />
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                            <Label htmlFor="type" className="sm:text-right">
+                                Type
+                            </Label>
+                            <Select value={type} onValueChange={setType}>
+                                <SelectTrigger className="col-span-1 sm:col-span-3">
+                                    <SelectValue placeholder="Select type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Startup">Startup</SelectItem>
+                                    <SelectItem value="Scale-up">Scale-up</SelectItem>
+                                    <SelectItem value="Enterprise">Enterprise</SelectItem>
+                                    <SelectItem value="Consultancy">Consultancy</SelectItem>
+                                    <SelectItem value="Project">Project</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
-                        <Label htmlFor="industry" className="sm:text-right">
-                            Industry
-                        </Label>
-                        <Input
-                            id="industry"
-                            value={industry}
-                            onChange={(e) => setIndustry(e.target.value)}
-                            className="col-span-1 sm:col-span-3"
-                        />
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
-                        <Label htmlFor="type" className="sm:text-right">
-                            Type
-                        </Label>
-                        <Select value={type} onValueChange={setType}>
-                            <SelectTrigger className="col-span-1 sm:col-span-3">
-                                <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="Startup">Startup</SelectItem>
-                                <SelectItem value="Scale-up">Scale-up</SelectItem>
-                                <SelectItem value="Enterprise">Enterprise</SelectItem>
-                                <SelectItem value="Consultancy">Consultancy</SelectItem>
-                                <SelectItem value="Project">Project</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-                <DialogFooter>
-                    <Button type="submit" onClick={handleSave}>Save changes</Button>
-                </DialogFooter>
+                    <DialogFooter>
+                        <Button type="submit" onClick={handleSave}>Save changes</Button>
+                    </DialogFooter>
+                </GlassCard>
             </DialogContent>
         </Dialog>
     )
