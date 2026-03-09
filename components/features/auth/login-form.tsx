@@ -53,8 +53,7 @@ export function LoginForm() {
             return
         }
 
-        router.push("/dashboard")
-        router.refresh()
+        window.location.href = "/auth-sync"
     }
 
     const handleSocialLogin = async (provider: "google" | "github" | "apple") => {
