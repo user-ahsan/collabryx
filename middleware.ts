@@ -42,23 +42,13 @@ export async function middleware(request: NextRequest) {
         data: { user },
     } = await supabase.auth.getUser()
 
-    // Auto-login for development mode
-    if (!user && process.env.DEVELOPMENT_MODE === "true") {
-        const { data: authData, error } = await supabase.auth.signInWithPassword({
-            email: "test@collabryx.com",
-            password: "test123",
-        })
-
-        if (!error && authData.user) {
-            user = authData.user
-        }
-    }
+    // Auto-login for development mode has been removed to restore original auth flow.
 
     // Protected routes: redirect to login if not authenticated
     const protectedRoutes = [
         "/dashboard", "/assistant", "/matches", "/messages",
         "/my-profile", "/notifications", "/post", "/profile",
-        "/requests", "/settings"
+        "/requests", "/settings", "/auth-sync"
     ]
 
     let isAuthRoute = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route))
@@ -81,16 +71,18 @@ export async function middleware(request: NextRequest) {
     }
 
     // Check onboarding status for authenticated users trying to access protected routes
-    if (user && isAuthRoute && !request.nextUrl.pathname.startsWith("/onboarding")) {
-        // Skip check if in DEVELOPMENT_MODE
-        if (process.env.DEVELOPMENT_MODE !== "true") {
+    if (user && isAuthRoute && !request.nextUrl.pathname.startsWith("/onboarding") && !request.nextUrl.pathname.startsWith("/auth-sync")) {
+        // Skip Supabase check if local development profile is complete
+        const isDevOnboardingComplete = process.env.NODE_ENV === "development" && request.cookies.get("collabryx_dev_profile_completed")?.value === "true"
+
+        if (!isDevOnboardingComplete) {
             const { data: profile } = await supabase
                 .from("profiles")
                 .select("onboarding_completed")
                 .eq("id", user.id)
                 .single()
 
-            if (profile && profile.onboarding_completed === false) {
+            if (!profile || profile.onboarding_completed === false) {
                 const url = request.nextUrl.clone()
                 url.pathname = "/onboarding"
                 const redirectResponse = NextResponse.redirect(url)

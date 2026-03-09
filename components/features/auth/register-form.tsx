@@ -60,8 +60,7 @@ export function RegisterForm() {
         }
 
         toast.success("Account created! Redirecting...")
-        router.push("/dashboard")
-        router.refresh()
+        window.location.href = "/auth-sync"
     }
 
     const handleSocialLogin = async (provider: "google" | "github" | "apple") => {
