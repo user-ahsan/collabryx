@@ -17,7 +17,7 @@ import {
 import { UserNavDropdown } from "@/components/shared/user-nav-dropdown"
 import { useSidebar } from "@/components/shared/sidebar-context"
 import { useSettings } from "@/hooks/use-settings"
-import { NotificationsDialog } from "@/components/features/dashboard/notifications-dialog"
+import { NotificationsWidget } from "@/components/features/dashboard/notifications-widget"
 import {
     LayoutDashboard,
     Sparkles,
@@ -51,7 +51,6 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
     const { openSettings } = useSettings()
 
     const [showTooltips, setShowTooltips] = React.useState(false)
-    const [notificationsOpen, setNotificationsOpen] = React.useState(false)
 
     React.useEffect(() => {
         if (isCollapsed) {
@@ -275,20 +274,16 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
                 {!isCollapsed ? (
                     <div className="flex items-center justify-between gap-1 p-1.5 bg-card rounded-xl border shadow-sm">
                         <TooltipProvider delayDuration={0}>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-11 w-11 md:h-9 md:w-9 hover:bg-muted/80 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
-                                        onClick={() => setNotificationsOpen(true)}
-                                    >
-                                        <Bell className="h-4.5 w-4.5" />
-                                        <span className="sr-only">Notifications</span>
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Notifications</TooltipContent>
-                            </Tooltip>
+                            <NotificationsWidget>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-11 w-11 md:h-9 md:w-9 hover:bg-muted/80 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                    <Bell className="h-4.5 w-4.5" />
+                                    <span className="sr-only">Notifications</span>
+                                </Button>
+                            </NotificationsWidget>
 
                             <Tooltip>
                                 <TooltipTrigger asChild>
@@ -310,20 +305,16 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
                 ) : (
                     <div className="flex flex-col gap-3 items-center">
                         <TooltipProvider delayDuration={0}>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-11 w-11 md:h-9 md:w-9 hover:bg-muted rounded-xl text-muted-foreground hover:text-foreground"
-                                        onClick={() => setNotificationsOpen(true)}
-                                    >
-                                        <Bell className="h-5 w-5" />
-                                        <span className="sr-only">Notifications</span>
-                                    </Button>
-                                </TooltipTrigger>
-                                {showTooltips && <TooltipContent side="right">Notifications</TooltipContent>}
-                            </Tooltip>
+                            <NotificationsWidget>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-11 w-11 md:h-9 md:w-9 hover:bg-muted rounded-xl text-muted-foreground hover:text-foreground"
+                                >
+                                    <Bell className="h-5 w-5" />
+                                    <span className="sr-only">Notifications</span>
+                                </Button>
+                            </NotificationsWidget>
 
                             <Tooltip>
                                 <TooltipTrigger asChild>
@@ -341,8 +332,7 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
                 )}
             </div>
 
-            {/* Notifications Dialog */}
-            <NotificationsDialog open={notificationsOpen} onOpenChange={setNotificationsOpen} />
+            {/* Notifications Widget replaced Dialog */}
         </div>
     )
 }

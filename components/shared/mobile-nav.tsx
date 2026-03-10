@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { AlignJustify, Bell, User, Settings, LogOut } from "lucide-react"
 import { SidebarNav } from "@/components/shared/sidebar-nav"
-import { NotificationsDialog } from "@/components/features/dashboard/notifications-dialog"
+import { NotificationsWidget } from "@/components/features/dashboard/notifications-widget"
 import { useSettings } from "@/hooks/use-settings"
 import Link from "next/link"
 import { useState } from "react"
@@ -23,7 +23,7 @@ import { useEffect } from "react"
 
 export function MobileNav() {
     const [open, setOpen] = useState(false)
-    const [notificationsOpen, setNotificationsOpen] = useState(false)
+
     const pathname = usePathname()
     const { openSettings } = useSettings()
 
@@ -58,18 +58,18 @@ export function MobileNav() {
                         <span>Collabryx</span>
                     </Link>
                 </div>
-
                 <div className="flex items-center gap-1">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-9 w-9 text-muted-foreground hover:text-foreground relative"
-                        onClick={() => setNotificationsOpen(true)}
-                    >
-                        <Bell className="h-[18px] w-[18px]" />
-                        <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-blue-500 border border-background" />
-                        <span className="sr-only">Notifications</span>
-                    </Button>
+                    <NotificationsWidget>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-9 w-9 text-muted-foreground hover:text-foreground relative"
+                        >
+                            <Bell className="h-[18px] w-[18px]" />
+                            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-blue-500 border border-background" />
+                            <span className="sr-only">Notifications</span>
+                        </Button>
+                    </NotificationsWidget>
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -108,7 +108,6 @@ export function MobileNav() {
                 </div>
             </div>
 
-            <NotificationsDialog open={notificationsOpen} onOpenChange={setNotificationsOpen} />
         </>
     )
 }
