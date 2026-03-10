@@ -57,7 +57,7 @@ export function SemanticEngineComparison() {
                                 <div>
                                     <h4 className="text-foreground font-semibold text-lg">Complementary Synergy</h4>
                                     <p className="text-muted-foreground text-sm mt-1">
-                                        Understands how your skills complement others. If you're technical, it finds you a matching business counterpart.
+                                        Understands how your skills complement others. If you&apos;re technical, it finds you a matching business counterpart.
                                     </p>
                                 </div>
                             </div>
@@ -97,7 +97,7 @@ export function SemanticEngineComparison() {
                                 <div className="mb-6 p-4 rounded-xl bg-black/40 border border-white/5">
                                     <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Intent Analysis</div>
                                     <p className="text-sm text-foreground">
-                                        "I'm a CS junior who loves <span className="text-primary font-medium bg-primary/10 px-1 rounded">fintech</span> and needs a <span className="text-primary font-medium bg-primary/10 px-1 rounded">business partner</span>."
+                                        &quot;I&apos;m a CS junior who loves <span className="text-primary font-medium bg-primary/10 px-1 rounded">fintech</span> and needs a <span className="text-primary font-medium bg-primary/10 px-1 rounded">business partner</span>.&quot;
                                     </p>
                                 </div>
 
@@ -140,8 +140,8 @@ function SemanticMatchCard({ enableAnimation }: { enableAnimation: boolean }) {
                 </div>
 
                 <p className="text-sm text-muted-foreground leading-relaxed mb-5 border-l-2 border-primary/40 pl-3 italic">
-                    "Looking for a tech partner to build an MVP for a fintech concept.
-                    I handle business strategy and early-stage funding."
+                    &quot;Looking for a tech partner to build an MVP for a fintech concept.
+                    I handle business strategy and early-stage funding.&quot;
                 </p>
 
                 <div className="flex flex-wrap gap-2 text-xs font-medium">

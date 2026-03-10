@@ -204,7 +204,7 @@ export default function RequestsPage() {
                             </div>
                             <h3 className="font-semibold text-base sm:text-lg mb-2">No pending requests</h3>
                             <p className="text-center text-sm sm:text-base text-muted-foreground max-w-sm px-4">
-                                You don't have any connection requests at the moment.
+                                You don&apos;t have any connection requests at the moment.
                             </p>
                         </GlassCard>
                     )}
@@ -222,7 +222,7 @@ export default function RequestsPage() {
                             </div>
                             <h3 className="font-semibold text-base sm:text-lg mb-2">No sent requests</h3>
                             <p className="text-center text-sm sm:text-base text-muted-foreground max-w-sm px-4">
-                                You haven't sent any connection requests yet.
+                                You haven&apos;t sent any connection requests yet.
                             </p>
                         </GlassCard>
                     )}

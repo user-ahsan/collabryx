@@ -38,7 +38,7 @@ export async function middleware(request: NextRequest) {
     // getUser() sends a request to the Supabase Auth server every time
     // to revalidate the Auth token — getSession() reads from cookies
     // which could be tampered with.
-    let {
+    const {
         data: { user },
     } = await supabase.auth.getUser()
 

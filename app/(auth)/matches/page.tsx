@@ -156,7 +156,7 @@ export default function MatchesPage() {
                             No perfect matches found yet
                         </h2>
                         <p className="text-sm sm:text-base text-muted-foreground max-w-md mx-auto mb-6">
-                            We couldn't find anyone matching these exact criteria right now. Try broadening your preferences or check back later!
+                            We couldn&apos;t find anyone matching these exact criteria right now. Try broadening your preferences or check back later!
                         </p>
                         <Button
                             variant="default"
