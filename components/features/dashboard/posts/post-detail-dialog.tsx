@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import Image from "next/image"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
@@ -30,21 +31,22 @@ export function PostDetailDialog({
     onReaction,
     onShare,
 }: PostDetailDialogProps) {
-    if (!post) return null
-
-    const postTypeBadge = getPostTypeBadge(post.postType)
-    const hasMedia = post.hasMedia && post.mediaUrls && post.mediaUrls.length > 0
-
     const scrollContainerRef = useRef<HTMLDivElement>(null)
     const [currentIndex, setCurrentIndex] = useState(0)
 
     // Reset index when post changes
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setCurrentIndex(0)
         if (scrollContainerRef.current) {
             scrollContainerRef.current.scrollTo({ left: 0 })
         }
-    }, [post.id])
+    }, [post?.id])
+
+    if (!post) return null
+
+    const postTypeBadge = getPostTypeBadge(post.postType)
+    const hasMedia = post.hasMedia && post.mediaUrls && post.mediaUrls.length > 0
 
     const handleScroll = () => {
         if (!scrollContainerRef.current) return
@@ -101,7 +103,7 @@ export function PostDetailDialog({
                                                 muted
                                             />
                                         ) : (
-                                            <img
+                                            <Image unoptimized width={800} height={600} 
                                                 src={url}
                                                 alt={`Post media ${i + 1}`}
                                                 className="max-w-full max-h-[95%] object-contain drop-shadow-2xl"

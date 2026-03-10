@@ -7,14 +7,12 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Separator } from "@/components/ui/separator"
 import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { UserNavDropdown } from "@/components/shared/user-nav-dropdown"
 import { useSidebar } from "@/components/shared/sidebar-context"
 import { useSettings } from "@/hooks/use-settings"
 import { NotificationsWidget } from "@/components/features/dashboard/notifications-widget"
@@ -29,9 +27,9 @@ import {
     TrendingUp,
     Briefcase,
     Bell,
-    Settings
+    Settings,
+    LucideIcon
 } from "lucide-react"
-import { motion } from "framer-motion"
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
 
 interface SidebarNavProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -220,7 +218,7 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
 
                                     {/* Section Items */}
                                     <div className="flex flex-col gap-1">
-                                        {section.items.map((item: any) => {
+                                        {section.items.map((item: { title: string; href: string; icon: LucideIcon; badge?: number }) => {
                                             const isActive = pathname === item.href
                                             return (
                                                 <Tooltip key={item.href}>

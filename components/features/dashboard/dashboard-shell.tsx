@@ -3,7 +3,6 @@
 import { SidebarProvider, useSidebar } from "@/components/shared/sidebar-context"
 import { SidebarNav } from "@/components/shared/sidebar-nav"
 import { MobileNav } from "@/components/shared/mobile-nav"
-import { cn } from "@/lib/utils"
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
     const { isCollapsed } = useSidebar()

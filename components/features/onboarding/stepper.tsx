@@ -9,7 +9,7 @@ interface StepperProps {
     steps: {
         id: string
         title: string
-        icon?: any
+        icon?: React.ComponentType<{ className?: string }>
     }[]
     currentStep: number
 }

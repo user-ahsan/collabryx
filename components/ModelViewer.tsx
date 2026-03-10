@@ -1,4 +1,5 @@
 import { FC, Suspense, useRef, useLayoutEffect, useEffect, useMemo, useState } from 'react';
+import Image from 'next/image';
 import { Canvas, useFrame, useLoader, useThree, invalidate } from '@react-three/fiber';
 import { OrbitControls, useGLTF, useFBX, useProgress, Html, Environment, ContactShadows } from '@react-three/drei';
 import { OBJLoader } from 'three-stdlib';
@@ -57,7 +58,7 @@ const Loader: FC<{ placeholderSrc?: string }> = ({ placeholderSrc }) => {
   return (
     <Html center>
       {placeholderSrc ? (
-        <img src={placeholderSrc} width={128} height={128} alt="Loading model" style={{ filter: 'blur(8px)', borderRadius: 8 }} />
+        <Image unoptimized width={800} height={600} src={placeholderSrc} alt="Loading model" style={{ filter: 'blur(8px)', borderRadius: 8 }} />
       ) : (
         `${Math.round(progress)} %`
       )}
@@ -355,7 +356,8 @@ const ModelInner: FC<ModelInnerProps> = ({
       window.removeEventListener('pointerup', up);
       window.removeEventListener('pointercancel', up);
     };
-  }, [gl, enableManualRotation, enableManualZoom, minZoom, maxZoom]);
+     
+  }, [gl, enableManualRotation, enableManualZoom, minZoom, maxZoom, camera]);
 
   useEffect(() => {
     if (isTouch) return;

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Image from 'next/image';
 import './LogoLoop.css';
 
 export type LogoItem =
@@ -71,6 +72,7 @@ const useResizeObserver = (
     return () => {
       observers.forEach(observer => observer?.disconnect());
     };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
   }, dependencies);
 };
 
@@ -111,6 +113,7 @@ const useImageLoader = (
         img.removeEventListener('error', handleImageLoad);
       });
     };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
   }, dependencies);
 };
 
@@ -178,7 +181,8 @@ const useAnimationLoop = (
       }
       lastTimestampRef.current = null;
     };
-  }, [targetVelocity, seqWidth, seqHeight, isHovered, hoverSpeed, isVertical]);
+     
+  }, [targetVelocity, seqWidth, seqHeight, isHovered, hoverSpeed, isVertical, trackRef]);
 };
 
 export const LogoLoop = React.memo<LogoLoopProps>(
@@ -213,6 +217,7 @@ export const LogoLoop = React.memo<LogoLoopProps>(
       if (pauseOnHover === true) return 0;
       if (pauseOnHover === false) return undefined;
       return 0;
+     
     }, [hoverSpeed, pauseOnHover]);
 
     const isVertical = direction === 'up' || direction === 'down';
@@ -227,6 +232,7 @@ export const LogoLoop = React.memo<LogoLoopProps>(
       }
       const speedMultiplier = speed < 0 ? -1 : 1;
       return magnitude * directionMultiplier * speedMultiplier;
+     
     }, [speed, direction, isVertical]);
 
     const updateDimensions = useCallback(() => {
@@ -259,10 +265,12 @@ export const LogoLoop = React.memo<LogoLoopProps>(
         const newCopyCount = Math.max(ANIMATION_CONFIG.MIN_COPIES, copiesNeeded);
         if (newCopyCount !== copyCount) setCopyCount(newCopyCount);
       }
+     
     }, [isVertical, seqHeight, seqWidth, copyCount]);
 
     useResizeObserver(() => {
       requestAnimationFrame(updateDimensions);
+     
     }, [containerRef, seqRef], [logos, gap, logoHeight, isVertical]);
 
     useImageLoader(seqRef, updateDimensions, [logos, gap, logoHeight, isVertical]);
@@ -295,9 +303,11 @@ export const LogoLoop = React.memo<LogoLoopProps>(
 
     const handleMouseEnter = useCallback(() => {
       if (effectiveHoverSpeed !== undefined) setIsHovered(true);
+     
     }, [effectiveHoverSpeed]);
     const handleMouseLeave = useCallback(() => {
       if (effectiveHoverSpeed !== undefined) setIsHovered(false);
+     
     }, [effectiveHoverSpeed]);
 
     const renderLogoItem = useCallback(
@@ -342,6 +352,7 @@ export const LogoLoop = React.memo<LogoLoopProps>(
           );
         } else {
           // It's an image item
+           
           const content = (
             <img
               src={item.src}

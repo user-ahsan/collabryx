@@ -118,9 +118,10 @@ export function SkillsInterestsSettingsTab({ userId }: { userId: string }) {
 
             setSuccessMsg("Skills & Interests saved successfully.")
             setTimeout(() => setSuccessMsg(null), 3000)
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err)
-            setError(err.message || "Failed to save data.")
+            const errorMessage = err instanceof Error ? err.message : "Failed to save data."
+            setError(errorMessage)
         } finally {
             setIsSaving(false)
         }

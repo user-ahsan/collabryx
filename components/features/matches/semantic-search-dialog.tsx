@@ -13,7 +13,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Sparkles, Loader2 } from "lucide-react"
 import { useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
 
 interface SemanticSearchDialogProps {
     open: boolean

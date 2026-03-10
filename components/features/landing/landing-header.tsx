@@ -110,7 +110,8 @@ export const LandingHeader: React.FC = () => {
                                     e.preventDefault();
                                     const element = document.querySelector(item.href);
                                     if (element) {
-                                        if ((window as any).lenis) {
+if (window && 'lenis' in window) {
+                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                             (window as any).lenis.scrollTo(element);
                                         } else {
                                             element.scrollIntoView({ behavior: 'smooth' });
@@ -151,8 +152,9 @@ export const LandingHeader: React.FC = () => {
                                         e.preventDefault();
                                         const element = document.querySelector(item.href);
                                         if (element) {
-                                            if ((window as any).lenis) {
-                                                (window as any).lenis.scrollTo(element);
+if (window && 'lenis' in window) {
+                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                            (window as any).lenis.scrollTo(element);
                                             } else {
                                                 element.scrollIntoView({ behavior: 'smooth' });
                                             }

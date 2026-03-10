@@ -19,7 +19,7 @@ const intentIcons = {
 interface Experience {
     id: string
     title: string
-    company: string
+    compunknown: string
     description: string
     startDate: string
     endDate?: string | null
@@ -33,7 +33,7 @@ interface ProfileTabsProps {
     lookingFor?: string[]
     skills?: { skillName: string, proficiency: string, isPrimary: boolean }[] // from 02-user-skills
     experiences?: Experience[] // from 04-user-experiences
-    projects?: any[] // from 05-user-projects
+    projects?: unknown[] // from 05-user-projects
 }
 
 export function ProfileTabs({
@@ -52,7 +52,7 @@ export function ProfileTabs({
         {
             id: "1",
             title: "Senior Developer",
-            company: "TechStart Inc.",
+            compunknown: "TechStart Inc.",
             startDate: "2022",
             isCurrent: true,
             description: "Leading the frontend team, migrating legacy codebase to Next.js, and improving performance by 40%.",
@@ -60,14 +60,13 @@ export function ProfileTabs({
         {
             id: "2",
             title: "Software Engineer",
-            company: "Creative Solutions",
+            compunknown: "Creative Solutions",
             startDate: "2019",
             endDate: "2022",
             isCurrent: false,
             description: "Developed full-stack features for e-commerce clients using MERN stack.",
         }
-    ],
-    projects = []
+    ]
 }: ProfileTabsProps) {
     const [bioExpanded, setBioExpanded] = useState(false)
 
@@ -222,7 +221,7 @@ export function ProfileTabs({
 
                                         <h4 className="font-bold text-base sm:text-lg text-foreground tracking-tight">{exp.title}</h4>
                                         <p className="text-sm text-emerald-500/90 dark:text-emerald-400 font-medium mt-0.5">
-                                            {exp.company} <span className="text-muted-foreground px-1">•</span> <span className="text-muted-foreground">{exp.startDate} - {exp.isCurrent ? "Present" : exp.endDate}</span>
+                                            {exp.compunknown} <span className="text-muted-foreground px-1">•</span> <span className="text-muted-foreground">{exp.startDate} - {exp.isCurrent ? "Present" : exp.endDate}</span>
                                         </p>
                                         {exp.description && (
                                             <p className="mt-3 text-sm text-muted-foreground leading-relaxed">

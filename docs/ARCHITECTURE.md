@@ -101,7 +101,7 @@ collabryx/
 │   ├── supabase/          # Supabase configuration
 │   │   ├── client.ts      # Browser client
 │   │   ├── server.ts      # Server client
-│   │   └── middleware.ts  # Auth middleware
+│   │   └── proxy.ts       # Auth middleware
 │   │
 │   └── utils/             # Utility functions
 │       ├── cn.ts          # Class name merger (clsx + tailwind-merge)
@@ -560,7 +560,7 @@ const { register, handleSubmit, formState: { errors } } = useForm({
 ### Authentication Implementation
 
 ```typescript
-// lib/supabase/middleware.ts
+// proxy.ts
 export async function updateSession(request: NextRequest) {
   const supabase = createServerClient();
   const { data: { session } } = await supabase.auth.getSession();

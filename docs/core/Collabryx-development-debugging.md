@@ -95,13 +95,13 @@ async function Dashboard() {
 
 // ... }
 
-**3.3** **Middleware** **Debugging** **(middleware.ts)**
+**3.3** **Proxy** **Debugging** **(proxy.ts)**
 
-Middleware runs before *every* request. If your app is stuck in a
+Proxy runs before *every* request. If your app is stuck in a
 redirect loop, look here.
 
-export async function middleware(request: NextRequest) {
-console.log(\`\[Middleware\] \${request.method}
+export async function proxy(request: NextRequest) {
+console.log(\`\[Proxy\] \${request.method}
 \${request.nextUrl.pathname}\`);
 
 > const response = NextResponse.next({ request: { headers:
