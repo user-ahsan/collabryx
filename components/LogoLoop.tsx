@@ -354,16 +354,14 @@ export const LogoLoop = React.memo<LogoLoopProps>(
           // It's an image item
            
           const content = (
-            <img
+            <Image
               src={item.src}
-              srcSet={item.srcSet}
               sizes={item.sizes}
               width={item.width}
               height={item.height}
               alt={item.alt ?? ''}
               title={item.title}
               loading="lazy"
-              decoding="async"
               draggable={false}
             />
           );

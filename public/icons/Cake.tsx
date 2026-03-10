@@ -20,7 +20,8 @@ const staticVariants: Variants = {
 };
 
 const flameVariants: Variants = {
-  normal: (i: number) => ({
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  normal: (_i: number) => ({
     scale: 1,
     y: 0,
     transition: {

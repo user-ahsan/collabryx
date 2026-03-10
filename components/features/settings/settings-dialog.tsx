@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
@@ -28,7 +28,7 @@ export function SettingsDialog() {
     const { isOpen, setIsOpen, activeTab, setActiveTab } = useSettings()
 
     const [isLoading, setIsLoading] = useState(true)
-    const [isSaving, setIsSaving] = useState(false)
+    const [, setIsSaving] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
     // User data state

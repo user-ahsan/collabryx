@@ -19,7 +19,7 @@ import { useSettings } from "@/hooks/use-settings"
 import Link from "next/link"
 import { useState } from "react"
 import { usePathname } from "next/navigation"
-import { useEffect } from "react"
+
 
 export function MobileNav() {
     const [open, setOpen] = useState(false)

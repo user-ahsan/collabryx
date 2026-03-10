@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import {
@@ -56,15 +56,15 @@ export function CreatePostModal() {
         register,
         handleSubmit,
         setValue,
-        watch,
         reset,
+        control,
         formState: { errors }
     } = useForm<PostFormValues>({
         resolver: zodResolver(postSchema),
         defaultValues: { content: "", intent: "" }
     })
 
-    const contentValue = watch("content")
+    const contentValue = useWatch({ name: "content", control })
 
     const { mutate, isPending } = useMutation({
         mutationFn: createPostMock,
@@ -101,6 +101,7 @@ export function CreatePostModal() {
         mutate({
             ...data,
             mediaFiles,
+            // eslint-disable-next-line react-hooks/purity
             id: Date.now(),
             author: "Maria Rodriguez",
             role: "Startup Founder",

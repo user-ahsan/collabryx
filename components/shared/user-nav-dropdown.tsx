@@ -20,7 +20,6 @@ import { useSettings } from "@/hooks/use-settings"
 import {
     User,
     Settings,
-    CreditCard,
     LogOut,
     Sparkles
 } from "lucide-react"

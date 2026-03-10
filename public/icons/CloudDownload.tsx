@@ -1,6 +1,6 @@
 "use client";
 
-import type { Transition } from "motion/react";
+
 import { motion, useAnimation } from "motion/react";
 
 interface CloudDownloadProps extends React.SVGAttributes<SVGSVGElement> {
