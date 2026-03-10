@@ -11,6 +11,7 @@ import { GlassCard } from "@/components/shared/glass-card"
 import { MatchScoreCompact } from "@/components/shared/match-score"
 import { MatchReasonBadge } from "@/components/ui/match-reason-badge"
 import { MatchCardDropdown } from "@/components/shared/glass-dropdown-menu"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface Insight {
     type: "complementary" | "shared" | "similar"
@@ -60,7 +61,7 @@ export function MatchCardListView({ match, index }: MatchCardListViewProps) {
             <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, delay: index * 0.03 }}
+                transition={{ duration: 0.2, delay: Math.min(index * 0.03, 0.3) }}
                 className="group"
             >
                 <GlassCard
@@ -116,7 +117,7 @@ export function MatchCardListView({ match, index }: MatchCardListViewProps) {
                                     </div>
                                 )}
 
-                                <div className="flex flex-wrap gap-1">
+                                <div className="flex flex-wrap gap-1 items-center">
                                     {match.skills.slice(0, 2).map((skill) => (
                                         <Badge
                                             key={skill}
@@ -127,9 +128,18 @@ export function MatchCardListView({ match, index }: MatchCardListViewProps) {
                                         </Badge>
                                     ))}
                                     {match.skills.length > 2 && (
-                                        <Badge variant="outline" className="text-[10px] px-2 py-0 font-medium border-dashed text-muted-foreground/70">
-                                            +{match.skills.length - 2}
-                                        </Badge>
+                                        <TooltipProvider delayDuration={300}>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Badge variant="outline" className="text-[10px] px-2 py-0 font-medium border-dashed text-muted-foreground/70 cursor-help">
+                                                        +{match.skills.length - 2}
+                                                    </Badge>
+                                                </TooltipTrigger>
+                                                <TooltipContent side="top" className="max-w-[200px] text-xs">
+                                                    <p>{match.skills.slice(2).join(", ")}</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
                                     )}
                                 </div>
                             </div>
@@ -145,7 +155,7 @@ export function MatchCardListView({ match, index }: MatchCardListViewProps) {
                             {!requestSent ? (
                                 <Button
                                     size="sm"
-                                    className="h-8 text-xs font-medium w-full sm:w-auto flex-1 sm:flex-none"
+                                    className="h-[36px] min-h-[36px] text-xs font-medium w-full sm:w-[110px] flex-1 sm:flex-none"
                                     onClick={(e) => {
                                         e.stopPropagation()
                                         setRequestSent(true)
@@ -157,11 +167,15 @@ export function MatchCardListView({ match, index }: MatchCardListViewProps) {
                             ) : (
                                 <Button
                                     size="sm"
-                                    disabled
-                                    className="h-8 text-xs w-full sm:w-auto flex-1 sm:flex-none cursor-not-allowed opacity-75 bg-emerald-600/10 text-emerald-500 border border-emerald-500/20"
-                                    onClick={(e) => e.stopPropagation()}
+                                    variant="outline"
+                                    className="h-[36px] min-h-[36px] text-xs w-full sm:w-[110px] flex-1 sm:flex-none bg-emerald-500/10 text-emerald-500 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 border-emerald-500/20 group/cancel transition-colors"
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        setRequestSent(false)
+                                    }}
                                 >
-                                    Request Sent
+                                    <span className="group-hover/cancel:hidden flex items-center justify-center w-full">Request Sent</span>
+                                    <span className="hidden group-hover/cancel:flex items-center justify-center w-full">Cancel</span>
                                 </Button>
                             )}
 
