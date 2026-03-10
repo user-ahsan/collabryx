@@ -75,6 +75,7 @@ export function ProfileSettingsTab({ userId }: { userId: string }) {
         const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
         if (!apiKey) return
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const w = window as any
         if (w.google && w.google.maps && w.google.maps.places) {
             setIsPlacesApiLoaded(true)
@@ -99,6 +100,7 @@ export function ProfileSettingsTab({ userId }: { userId: string }) {
     useEffect(() => {
         if (!isPlacesApiLoaded || !locationInputRef.current) return
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const w = window as any
         const autocomplete = new w.google.maps.places.Autocomplete(locationInputRef.current, {
             types: ['(cities)'],
@@ -149,9 +151,10 @@ export function ProfileSettingsTab({ userId }: { userId: string }) {
 
             // Re-fetch to ensure sync
             setTimeout(() => setSuccessMsg(null), 3000)
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err)
-            setError(err.message || "Failed to save profile.")
+            const errorMessage = err instanceof Error ? err.message : "Failed to save profile."
+            setError(errorMessage)
         } finally {
             setIsSaving(false)
         }

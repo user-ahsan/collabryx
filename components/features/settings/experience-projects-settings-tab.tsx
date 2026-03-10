@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
-import { Loader2, Plus, Trash2, Github, Linkedin, Instagram, Link as LinkIcon } from "lucide-react"
+import { Loader2, Plus, Trash2, Link as LinkIcon } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 
 export function ExperienceProjectsSettingsTab({ userId }: { userId: string }) {
@@ -17,15 +17,32 @@ export function ExperienceProjectsSettingsTab({ userId }: { userId: string }) {
     const [error, setError] = useState<string | null>(null)
     const [successMsg, setSuccessMsg] = useState<string | null>(null)
 
-    const [experiences, setExperiences] = useState<any[]>([])
-    const [projects, setProjects] = useState<any[]>([])
+    interface Experience {
+    id: string;
+    title: string;
+    compunknown?: string;
+    description?: string;
+    start_date?: string;
+    is_current?: boolean;
+}
+
+interface Project {
+    id: string;
+    title: string;
+    url?: string;
+    description?: string;
+    is_public?: boolean;
+}
+
+const [experiences, setExperiences] = useState<Experience[]>([])
+    const [projects, setProjects] = useState<Project[]>([])
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 if (process.env.NODE_ENV === 'development') {
                     setExperiences([
-                        { id: '1', title: 'Senior Software Engineer', company: 'TechStart', description: 'Built an AI-powered platform using Next.js and Supabase.', start_date: '2022-01-01', is_current: true }
+                        { id: '1', title: 'Senior Software Engineer', compunknown: 'TechStart', description: 'Built an AI-powered platform using Next.js and Supabase.', start_date: '2022-01-01', is_current: true }
                     ])
                     setProjects([
                         { id: '1', title: 'Collabryx Platform', url: 'https://collabryx.com', description: 'A platform to find co-founders utilizing AI matching.', is_public: true }
@@ -44,7 +61,7 @@ export function ExperienceProjectsSettingsTab({ userId }: { userId: string }) {
 
                 setExperiences(expRes.data || [])
                 setProjects(projRes.data || [])
-            } catch (err) {
+            } catch (err: unknown) {
                 console.error("Error fetching data:", err)
                 setError("Failed to load experiences and projects.")
             } finally {
@@ -60,7 +77,7 @@ export function ExperienceProjectsSettingsTab({ userId }: { userId: string }) {
             {
                 id: `new-${Date.now()}`,
                 title: "",
-                company: "",
+                compunknown: "",
                 description: "",
                 start_date: new Date().toISOString(),
                 is_current: true
@@ -82,11 +99,11 @@ export function ExperienceProjectsSettingsTab({ userId }: { userId: string }) {
         ])
     }
 
-    const updateExperience = (id: string, field: string, value: any) => {
+    const updateExperience = (id: string, field: string, value: unknown) => {
         setExperiences(prev => prev.map(e => e.id === id ? { ...e, [field]: value } : e))
     }
 
-    const updateProject = (id: string, field: string, value: any) => {
+    const updateProject = (id: string, field: string, value: unknown) => {
         setProjects(prev => prev.map(p => p.id === id ? { ...p, [field]: value } : p))
     }
 
@@ -109,7 +126,7 @@ export function ExperienceProjectsSettingsTab({ userId }: { userId: string }) {
 
             // For Experiences:
             const expsToUpsert = experiences
-                .filter(e => e.title || e.company)
+                .filter(e => e.title || e.compunknown)
                 .map(e => {
                     const { id, ...rest } = e
                     return id.startsWith('new-') ? { user_id: userId, ...rest } : { id, user_id: userId, ...rest }
@@ -126,7 +143,11 @@ export function ExperienceProjectsSettingsTab({ userId }: { userId: string }) {
             if (delExpErr) throw delExpErr
             if (expsToUpsert.length > 0) {
                 const { error: insExpErr } = await supabase.from('user_experiences').insert(
-                    expsToUpsert.map(e => { delete (e as any).id; return e })
+                    expsToUpsert.map(e => { 
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        delete (e as any).id; 
+                        return e 
+                    })
                 )
                 if (insExpErr) throw insExpErr
             }
@@ -143,7 +164,11 @@ export function ExperienceProjectsSettingsTab({ userId }: { userId: string }) {
             if (delProjErr) throw delProjErr
             if (projsToUpsert.length > 0) {
                 const { error: insProjErr } = await supabase.from('user_projects').insert(
-                    projsToUpsert.map(p => { delete (p as any).id; return p })
+                    projsToUpsert.map(p => { 
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        delete (p as any).id; 
+                        return p 
+                    })
                 )
                 if (insProjErr) throw insProjErr
             }
@@ -159,9 +184,10 @@ export function ExperienceProjectsSettingsTab({ userId }: { userId: string }) {
             setExperiences(expRes.data || [])
             setProjects(projRes.data || [])
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err)
-            setError(err.message || "Failed to save data.")
+            const errorMessage = err instanceof Error ? err.message : "Failed to save data."
+            setError(errorMessage)
         } finally {
             setIsSaving(false)
         }
@@ -220,10 +246,10 @@ export function ExperienceProjectsSettingsTab({ userId }: { userId: string }) {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>Company</Label>
+                                        <Label>Compunknown</Label>
                                         <Input
-                                            value={exp.company}
-                                            onChange={e => updateExperience(exp.id, 'company', e.target.value)}
+                                            value={exp.compunknown}
+                                            onChange={e => updateExperience(exp.id, 'compunknown', e.target.value)}
                                             className="bg-white/5 border-white/10 focus:border-primary/50"
                                             placeholder="e.g. Acme Corp"
                                         />

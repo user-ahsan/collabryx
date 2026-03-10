@@ -32,7 +32,6 @@ export function LoginForm() {
     const [isLoading, setIsLoading] = React.useState(false)
     const [showProviderDialog, setShowProviderDialog] = React.useState(false)
     const [providerToShow, setProviderToShow] = React.useState<"google" | "github" | "apple" | null>(null)
-    const router = useRouter()
     const supabase = createClient()
 
     const form = useForm<z.infer<typeof loginSchema>>({
@@ -53,7 +52,7 @@ export function LoginForm() {
             return
         }
 
-        window.location.href = "/auth-sync"
+        window.location.assign("/auth-sync")
     }
 
     const handleSocialLogin = async (provider: "google" | "github" | "apple") => {

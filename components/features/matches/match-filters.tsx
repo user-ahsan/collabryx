@@ -17,13 +17,11 @@ import { SemanticSearchDialog } from "./semantic-search-dialog"
 type ViewMode = "grid" | "list"
 
 interface MatchFiltersProps {
-    matchCount?: number
     viewMode?: ViewMode
     onViewModeChange?: (mode: ViewMode) => void
 }
 
 export function MatchFilters({
-    matchCount = 0,
     viewMode = "grid",
     onViewModeChange
 }: MatchFiltersProps) {

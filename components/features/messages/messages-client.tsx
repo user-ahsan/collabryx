@@ -2,8 +2,7 @@
 
 import { ChatSidebar } from "./chat-sidebar"
 import { ChatWindow } from "./chat-window"
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useState } from "react"
 
 interface MessagesClientProps {
     initialChatId?: string | null
@@ -11,15 +10,16 @@ interface MessagesClientProps {
 
 export function MessagesClient({ initialChatId = "1" }: MessagesClientProps) {
     const [selectedChatId, setSelectedChatId] = useState<string | null>(initialChatId)
+    const [prevInitialChatId, setPrevInitialChatId] = useState<string | null>(initialChatId)
     const [showSidebar, setShowSidebar] = useState(true)
-    const router = useRouter()
 
-    useEffect(() => {
+    if (initialChatId !== prevInitialChatId) {
+        setPrevInitialChatId(initialChatId)
         if (initialChatId) {
             setSelectedChatId(initialChatId)
             setShowSidebar(false)
         }
-    }, [initialChatId])
+    }
 
     const handleSelectChat = (chatId: string) => {
         setSelectedChatId(chatId)

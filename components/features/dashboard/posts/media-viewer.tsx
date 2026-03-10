@@ -6,6 +6,8 @@ import { X, Download, ZoomIn, ZoomOut } from "lucide-react"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 
+import Image from "next/image"
+
 interface MediaViewerProps {
     isOpen: boolean
     onClose: () => void
@@ -35,14 +37,16 @@ export function MediaViewer({ isOpen, onClose, url, type }: MediaViewerProps) {
 
                 <div className="relative w-full h-full flex items-center justify-center overflow-hidden">
                     {type === 'image' ? (
-                        <img
+                        <Image
                             src={url}
                             alt={`Media preview from ${url}`}
+                            fill
                             className={cn(
                                 "max-w-full max-h-full object-contain transition-transform duration-200 cursor-move"
                             )}
                             style={{ transform: `scale(${zoom})` }}
                             draggable={false}
+                            unoptimized
                         />
                     ) : (
                         <video

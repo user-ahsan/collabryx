@@ -39,11 +39,12 @@ export function StepInterestsAndGoals() {
     const { control, formState: { errors } } = useFormContext()
     const [interestInput, setInterestInput] = useState("")
 
-    const interests = useWatch({ control, name: "interests" }) || []
+const interests = useWatch({ control, name: "interests" })
 
     const dynamicGoals = useMemo(() => {
         const result: typeof GOAL_OPTIONS = []
-        interests.forEach((interest: string) => {
+        const interestsArray = interests || []
+        interestsArray.forEach((interest: string) => {
             const lower = interest.toLowerCase()
             Object.entries(DYNAMIC_GOALS).forEach(([key, goals]) => {
                 if (lower.includes(key)) {

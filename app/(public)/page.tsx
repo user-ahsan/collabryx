@@ -14,7 +14,6 @@ import { MeshGradientBackground } from "@/components/features/landing/mesh-gradi
 import { Marquee } from "@/components/ui/marquee"
 import { BorderBeam } from "@/components/ui/border-beam"
 import { ScrollVelocityRow } from "@/components/ui/scroll-based-velocity"
-import { ShinyText } from "@/components/ui/shiny-text"
 import { motion } from "motion/react"
 
 // Lazy load heavy sections for better performance

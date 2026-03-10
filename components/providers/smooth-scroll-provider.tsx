@@ -3,6 +3,12 @@
 import { useEffect } from 'react'
 import Lenis from 'lenis'
 
+declare global {
+  interface Window {
+    lenis?: Lenis;
+  }
+}
+
 export function SmoothScrollProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         const lenis = new Lenis({
@@ -23,11 +29,11 @@ export function SmoothScrollProvider({ children }: { children: React.ReactNode }
         requestAnimationFrame(raf)
 
             // Expose globally for imperative scrolling
-            ; (window as any).lenis = lenis;
+            window.lenis = lenis;
 
         return () => {
             lenis.destroy()
-            delete (window as any).lenis;
+            delete window.lenis;
         }
     }, [])
 

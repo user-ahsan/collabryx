@@ -2,7 +2,26 @@
 
 import { createClient } from "@/lib/supabase/server"
 
-export async function completeOnboarding(data: any, completionPercentage: number) {
+interface OnboardingData {
+    fullName: string;
+    displayName?: string;
+    headline: string;
+    location?: string;
+    skills: string[];
+    interests: string[];
+    goals?: string[];
+    experiences?: {
+        title?: string;
+        compunknown?: string;
+        description?: string;
+    }[];
+    links?: {
+        platform: string;
+        url: string;
+    }[];
+}
+
+export async function completeOnboarding(data: OnboardingData, completionPercentage: number) {
     const supabase = await createClient()
     const { data: userData, error: userError } = await supabase.auth.getUser()
 
@@ -56,11 +75,11 @@ export async function completeOnboarding(data: any, completionPercentage: number
     // 4. Insert Experience
     if (data.experiences && data.experiences.length > 0) {
         const expsToInsert = data.experiences
-            .filter((exp: any) => exp.title || exp.company)
-            .map((exp: any) => ({
+            .filter((exp) => exp.title || exp.compunknown)
+            .map((exp) => ({
                 user_id: userData.user.id,
                 title: exp.title,
-                company: exp.company,
+                compunknown: exp.compunknown,
                 description: exp.description || null,
                 start_date: new Date().toISOString(),
                 is_current: true

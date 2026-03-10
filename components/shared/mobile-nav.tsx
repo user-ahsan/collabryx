@@ -25,12 +25,14 @@ export function MobileNav() {
     const [open, setOpen] = useState(false)
 
     const pathname = usePathname()
+    const [prevPathname, setPrevPathname] = useState(pathname)
     const { openSettings } = useSettings()
 
     // Close sheet when route changes
-    useEffect(() => {
+    if (pathname !== prevPathname) {
+        setPrevPathname(pathname)
         setOpen(false)
-    }, [pathname])
+    }
 
     return (
         <>

@@ -20,6 +20,8 @@ import { Image as ImageIcon, Smile, X, Calendar, FileText, Loader2 } from "lucid
 import { useMutation } from "@tanstack/react-query"
 import { IntentPrompt } from "../intent-prompt"
 
+import Image from "next/image"
+
 const EMOJIS = [
     { char: "😀", label: "Smile" }, { char: "😂", label: "Laugh" }, { char: "❤️", label: "Love" },
     { char: "👍", label: "Thumbs Up" }, { char: "🔥", label: "Fire" }, { char: "✨", label: "Sparkles" },
@@ -165,7 +167,7 @@ export function CreatePostModal() {
                                 {mediaFiles.map((media, index) => (
                                     <div key={index} className="relative flex-shrink-0 group">
                                         {media.type === 'image' ? (
-                                            <img src={media.preview} alt="preview" className="h-32 w-32 object-cover rounded-xl border border-white/10 shadow-sm" />
+                                            <Image src={media.preview} alt="preview" width={128} height={128} unoptimized className="h-32 w-32 object-cover rounded-xl border border-white/10 shadow-sm" />
                                         ) : (
                                             <video src={media.preview} className="h-32 w-32 object-cover rounded-xl border border-white/10 shadow-sm" />
                                         )}

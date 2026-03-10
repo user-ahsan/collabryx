@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { Plus, Trash2, Github, Linkedin, Instagram, Link as LinkIcon, Briefcase } from "lucide-react"
+import { Plus, Trash2, Github, Linkedin, Instagram, Link as LinkIcon } from "lucide-react"
 import { GlassCard } from "@/components/shared/glass-card"
 import {
     DropdownMenu,
@@ -51,7 +51,7 @@ export function StepExperience() {
                             type="button"
                             variant="ghost"
                             size="sm"
-                            onClick={() => appendExp({ title: "", company: "", description: "" })}
+                            onClick={() => appendExp({ title: "", compunknown: "", description: "" })}
                             className="gap-2 h-8 hover:bg-primary/10 hover:text-primary transition-colors"
                         >
                             <Plus className="w-4 h-4" /> Add Experience
@@ -87,11 +87,11 @@ export function StepExperience() {
                                         />
                                     </div>
                                     <div className="grid gap-2">
-                                        <Label htmlFor={`experiences.${index}.company`}>Company / Organization</Label>
+                                        <Label htmlFor={`experiences.${index}.compunknown`}>Compunknown / Organization</Label>
                                         <Input
-                                            id={`experiences.${index}.company`}
+                                            id={`experiences.${index}.compunknown`}
                                             placeholder="e.g. TechStart Inc."
-                                            {...register(`experiences.${index}.company`)}
+                                            {...register(`experiences.${index}.compunknown`)}
                                             className="bg-white/5 border-white/10 focus:border-primary/50 focus:bg-white/10 transition-all duration-300"
                                         />
                                     </div>
@@ -149,10 +149,12 @@ export function StepExperience() {
                             </p>
                         )}
                         {linkFields.map((field, index) => {
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             const platformId = (field as any).platform || "portfolio"
                             const platform = LINK_PLATFORMS.find(p => p.id === platformId) || LINK_PLATFORMS[3]
                             const Icon = platform.icon
                             // Type cast errors because we can't reliably type dynamic index keys in the general case
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             const currentError = (errors.links as any)?.[index]?.url?.message
 
                             return (

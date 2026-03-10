@@ -188,6 +188,7 @@ export function SmoothCursor({
             window.removeEventListener("mousemove", throttledMouseMove)
             if (rafId) cancelAnimationFrame(rafId)
         }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [cursorX, cursorY, rotation, scale])
 
     // Don't render on mobile/touch devices

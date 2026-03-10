@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { GlassCard } from "@/components/shared/glass-card"
@@ -13,7 +14,6 @@ import {
     ArrowLeft,
     ThumbsUp
 } from "lucide-react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 
 import { PostCardDropdown } from "@/components/shared/glass-dropdown-menu"
@@ -114,7 +114,7 @@ export function PostDetailView({ post }: PostDetailViewProps) {
                             className="md:rounded-xl -mx-4 md:mx-0 overflow-hidden bg-black/5 cursor-pointer"
                             onClick={() => setMediaViewerOpen(true)}
                         >
-                            <img
+                            <Image unoptimized width={800} height={600} 
                                 src={post.mediaUrl}
                                 alt="Post media"
                                 className="w-full h-auto max-h-[600px] object-contain md:object-cover bg-muted"

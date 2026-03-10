@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { X, Download, Copy, Check, Edit3, Save } from "lucide-react"
 import { useState } from "react"
-import { cn } from "@/lib/utils"
 import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
 

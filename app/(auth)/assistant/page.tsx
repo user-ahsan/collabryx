@@ -69,7 +69,7 @@ export default function AssistantPage() {
         setWorkspaceOpen(true)
     }
 
-    const handleSaveToProfile = (content: string) => {
+    const handleSaveToProfile = () => {
         // In a real app, this would save to the user's profile
         toast.success("Content saved to your Projects section!")
     }

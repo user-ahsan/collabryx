@@ -20,7 +20,7 @@ const MOCK_POST = {
     }
 }
 
-export default function PostPage({ params }: { params: { id: string } }) {
+export default function PostPage() {
     return (
         <div className="min-h-screen bg-background md:bg-muted/10 md:py-8">
             <PostDetailView post={MOCK_POST} />

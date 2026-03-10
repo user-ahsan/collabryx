@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Sparkles, SendHorizontal } from "lucide-react"
+import { SendHorizontal } from "lucide-react"
 import { useState } from "react"
 
 export function ChatInput() {

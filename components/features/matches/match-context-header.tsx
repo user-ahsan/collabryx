@@ -1,7 +1,6 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
-import { Sparkles, Settings2 } from "lucide-react"
+import { Sparkles } from "lucide-react"
 import { motion } from "framer-motion"
 import { UpdatePreferencesDialog } from "./update-preferences-dialog"
 import { GlassCard } from "@/components/shared/glass-card"

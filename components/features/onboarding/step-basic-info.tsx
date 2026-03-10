@@ -4,23 +4,21 @@ import React, { useEffect, useRef, useState } from "react"
 import { useFormContext } from "react-hook-form"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
 
 export function StepBasicInfo() {
     const { register, setValue, formState: { errors } } = useFormContext()
     const locationInputRef = useRef<HTMLInputElement | null>(null)
-    const [isPlacesApiLoaded, setIsPlacesApiLoaded] = useState(false)
+    const [isPlacesApiLoaded, setIsPlacesApiLoaded] = useState(() => {
+        if (typeof window === "undefined") return false
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const w = window as any
+        return !!(w.google && w.google.maps && w.google.maps.places)
+    })
 
     // Setup Google Places API if key exists
     useEffect(() => {
         const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-        if (!apiKey) return
-
-        const w = window as any
-        if (w.google && w.google.maps && w.google.maps.places) {
-            setIsPlacesApiLoaded(true)
-            return
-        }
+        if (!apiKey || isPlacesApiLoaded) return
 
         const scriptId = 'google-maps-script'
         if (document.getElementById(scriptId)) return
@@ -33,14 +31,16 @@ export function StepBasicInfo() {
         script.onload = () => setIsPlacesApiLoaded(true)
         document.body.appendChild(script)
 
-        return () => {
+return () => {
             // cleanup if necessary, but usually keeping it loaded is fine
         }
-    }, [])
+         
+    }, [isPlacesApiLoaded])
 
     useEffect(() => {
         if (!isPlacesApiLoaded || !locationInputRef.current) return
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const w = window as any
         const autocomplete = new w.google.maps.places.Autocomplete(locationInputRef.current, {
             types: ['(cities)'],
