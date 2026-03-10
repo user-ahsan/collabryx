@@ -12,6 +12,7 @@ import { GlassCard } from "@/components/shared/glass-card"
 import { MatchScoreCompact } from "@/components/shared/match-score"
 import { MatchReasonBadge } from "@/components/ui/match-reason-badge"
 import { MatchCardDropdown } from "@/components/shared/glass-dropdown-menu"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
 interface MatchCardProps {
@@ -60,13 +61,13 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: index * 0.1, ease: "easeOut" }}
+                transition={{ duration: 0.4, delay: Math.min(index * 0.05, 0.3), ease: "easeOut" }}
                 className="h-full"
             >
                 <GlassCard
                     hoverable
                     className={cn(
-                        "group relative h-[240px] overflow-hidden transition-all duration-300",
+                        "group relative min-h-[260px] h-full overflow-hidden transition-all duration-300",
                         isLowMatch ? "opacity-60" : ""
                     )}
                     innerClassName="h-full cursor-pointer flex flex-col"
@@ -104,7 +105,7 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
 
                             {/* Match Score - Top Right */}
                             <div
-                                className="shrink-0 z-10"
+                                className="shrink-0 z-10 flex items-center justify-center p-1 -mr-1 -mt-1 cursor-pointer hover:bg-white/5 rounded-md transition-colors min-h-[44px] min-w-[44px]"
                                 onClick={(e) => {
                                     e.stopPropagation()
                                     setWhyModalOpen(true)
@@ -121,6 +122,11 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                             </p>
                         )}
 
+                        {/* Bio Sneak Peek */}
+                        <p className="text-xs text-muted-foreground/90 line-clamp-2 mb-3 leading-relaxed">
+                            {match.bio}
+                        </p>
+
                         {/* Minimalist Tags (2 skills, 1 insight) */}
                         <div className="flex flex-col gap-2 mb-auto">
                             {match.insights && match.insights.length > 0 && (
@@ -136,7 +142,7 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                                 </div>
                             )}
 
-                            <div className="flex flex-wrap gap-1.5">
+                            <div className="flex flex-wrap gap-1.5 items-center">
                                 {match.skills.slice(0, 2).map((skill) => (
                                     <Badge
                                         key={skill}
@@ -147,9 +153,18 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                                     </Badge>
                                 ))}
                                 {match.skills.length > 2 && (
-                                    <Badge variant="outline" className="text-[10px] px-2 py-0 font-medium border-dashed text-muted-foreground/70">
-                                        +{match.skills.length - 2}
-                                    </Badge>
+                                    <TooltipProvider delayDuration={300}>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Badge variant="outline" className="text-[10px] px-2 py-0 font-medium border-dashed text-muted-foreground/70 cursor-help">
+                                                    +{match.skills.length - 2}
+                                                </Badge>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="top" className="max-w-[200px] text-xs">
+                                                <p>{match.skills.slice(2).join(", ")}</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
                                 )}
                             </div>
                         </div>
@@ -158,7 +173,7 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                         <div className="flex gap-2 mt-4 pt-3 border-t border-border/40 items-center">
                             {!requestSent ? (
                                 <Button
-                                    className="flex-1 h-8 text-xs font-medium"
+                                    className="flex-1 h-[36px] text-xs font-medium min-h-[36px]"
                                     onClick={(e) => {
                                         e.stopPropagation()
                                         setRequestSent(true)
@@ -169,11 +184,15 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                                 </Button>
                             ) : (
                                 <Button
-                                    disabled
-                                    className="flex-1 h-8 text-xs cursor-not-allowed opacity-75 bg-emerald-600/10 text-emerald-500 border border-emerald-500/20"
-                                    onClick={(e) => e.stopPropagation()}
+                                    variant="outline"
+                                    className="flex-1 h-[36px] text-xs font-medium min-h-[36px] bg-emerald-500/10 text-emerald-500 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 border-emerald-500/20 group/cancel transition-colors"
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        setRequestSent(false)
+                                    }}
                                 >
-                                    Request Sent
+                                    <span className="group-hover/cancel:hidden flex items-center justify-center w-full">Request Sent</span>
+                                    <span className="hidden group-hover/cancel:flex items-center justify-center w-full">Cancel Request</span>
                                 </Button>
                             )}
 

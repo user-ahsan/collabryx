@@ -6,6 +6,8 @@ import { MatchContextHeader } from "@/components/features/matches/match-context-
 import { MatchFilters } from "@/components/features/matches/match-filters"
 import { useState } from "react"
 import { toast } from "sonner"
+import { Users } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 type ViewMode = "grid" | "list"
 
@@ -136,6 +138,8 @@ export default function MatchesPage() {
                 />
 
                 {/* Filter Bar */}
+
+                {/* Filter Bar */}
                 <MatchFilters
                     matchCount={MATCHES.length}
                     viewMode={viewMode}
@@ -143,7 +147,25 @@ export default function MatchesPage() {
                 />
 
                 {/* Grid or List Layout */}
-                {viewMode === "grid" ? (
+                {MATCHES.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-24 px-4 text-center">
+                        <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-primary/10 flex items-center justify-center mb-4 sm:mb-6">
+                            <Users className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
+                        </div>
+                        <h2 className="text-xl sm:text-2xl font-bold tracking-tight mb-2 text-foreground">
+                            No perfect matches found yet
+                        </h2>
+                        <p className="text-sm sm:text-base text-muted-foreground max-w-md mx-auto mb-6">
+                            We couldn't find anyone matching these exact criteria right now. Try broadening your preferences or check back later!
+                        </p>
+                        <Button
+                            variant="default"
+                            onClick={() => handleUpdatePreferences({ role: "Any", industry: "Any", type: "Any" })}
+                        >
+                            Reset Preferences
+                        </Button>
+                    </div>
+                ) : viewMode === "grid" ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 pb-20">
                         {MATCHES.map((match, index) => (
                             <MatchCard key={match.id} match={match} index={index} />

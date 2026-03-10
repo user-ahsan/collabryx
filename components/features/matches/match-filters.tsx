@@ -56,7 +56,7 @@ export function MatchFilters({
                         <div className="flex items-center gap-2 shrink-0">
                             {/* Role Filter */}
                             <Select defaultValue="all">
-                                <SelectTrigger className="h-10 w-[130px] text-xs sm:text-sm">
+                                <SelectTrigger className="h-10 w-[130px] text-xs sm:text-sm hidden md:flex">
                                     <SelectValue placeholder="Role" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -70,7 +70,7 @@ export function MatchFilters({
 
                             {/* Availability Filter */}
                             <Select defaultValue="any">
-                                <SelectTrigger className="h-10 w-[130px] text-xs sm:text-sm">
+                                <SelectTrigger className="h-10 w-[130px] text-xs sm:text-sm hidden lg:flex">
                                     <SelectValue placeholder="Availability" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -85,7 +85,7 @@ export function MatchFilters({
                             <Button
                                 variant="outline"
                                 size="icon"
-                                className="h-10 w-10 shrink-0 hidden sm:flex"
+                                className="h-10 w-10 shrink-0 flex lg:hidden"
                             >
                                 <SlidersHorizontal className="h-4 w-4" />
                             </Button>
