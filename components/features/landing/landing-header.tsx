@@ -6,6 +6,12 @@ import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
+// Utility function to sanitize content for safe DOM usage
+const sanitizeForDom = (content: string): string => {
+    // Remove any potentially dangerous characters while preserving basic alphanumeric and safe punctuation
+    return content.replace(/[^a-zA-Z0-9\s\-_]/g, '')
+}
+
 interface NavigationItem {
     name: string
     href: string
@@ -22,12 +28,18 @@ export const LandingHeader: React.FC = () => {
         }
         window.addEventListener("scroll", handleScroll)
 
-        // Dynamic navigation extraction
+        // Dynamic navigation extraction with XSS protection
         const sections = document.querySelectorAll('[data-section-name]')
-        const items = Array.from(sections).map(section => ({
-            name: section.getAttribute('data-section-name') || '',
-            href: `#${section.id}`
-        })).filter(item => item.name && item.href !== '#')
+        const items = Array.from(sections).map(section => {
+            // Sanitize the section name and ID to prevent XSS
+            const rawName = section.getAttribute('data-section-name') || ''
+            const sanitizedId = section.id.replace(/[^a-zA-Z0-9-_]/g, '')
+            
+            return {
+                name: sanitizeForDom(rawName),
+                href: sanitizedId ? `#${sanitizedId}` : '#'
+            }
+        }).filter(item => item.name && item.href !== '#')
 
         setDynamicNav(items)
 
@@ -108,7 +120,9 @@ export const LandingHeader: React.FC = () => {
                             onClick={(e) => {
                                 if (item.href.startsWith('#')) {
                                     e.preventDefault();
-                                    const element = document.querySelector(item.href);
+                                    // Use a sanitized selector to prevent XSS
+                                    const selector = item.href.replace(/[^a-zA-Z0-9-_#]/g, '')
+                                    const element = document.querySelector(selector);
                                     if (element) {
 if (window && 'lenis' in window) {
                                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -150,7 +164,9 @@ if (window && 'lenis' in window) {
                                 onClick={(e) => {
                                     if (item.href.startsWith('#')) {
                                         e.preventDefault();
-                                        const element = document.querySelector(item.href);
+                                        // Use a sanitized selector to prevent XSS
+                                        const selector = item.href.replace(/[^a-zA-Z0-9-_#]/g, '')
+                                        const element = document.querySelector(selector);
                                         if (element) {
 if (window && 'lenis' in window) {
                                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
