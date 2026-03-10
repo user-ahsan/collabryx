@@ -39,7 +39,7 @@ export function WhyMatchModal({ open, onOpenChange, match }: WhyMatchModalProps)
                         Why {match.name}?
                     </DialogTitle>
                     <DialogDescription className="text-sm sm:text-base">
-                        Here's how our AI calculated this <span className="font-bold text-primary">{match.compatibility}% match</span>
+                        Here&apos;s how our AI calculated this <span className="font-bold text-primary">{match.compatibility}% match</span>
                     </DialogDescription>
                 </DialogHeader>
 

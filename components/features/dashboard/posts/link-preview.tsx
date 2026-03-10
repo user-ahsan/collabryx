@@ -1,5 +1,6 @@
 import { Card } from "@/components/ui/card"
 import { ExternalLink, Globe } from "lucide-react"
+import Image from "next/image"
 
 interface LinkPreviewProps {
     url: string
@@ -20,8 +21,8 @@ export function LinkPreview({ url, title, description, image, siteName }: LinkPr
         <a href={url} target="_blank" rel="noopener noreferrer" className="block mt-3 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-xl" aria-label={`Open ${displayTitle} in a new tab`}>
             <Card className="overflow-hidden bg-muted/30 border-muted-foreground/20 hover:border-primary/30 transition-all flex flex-col sm:flex-row h-full">
                 {image ? (
-                    <div className="w-full sm:w-48 h-32 sm:h-auto bg-muted shrink-0">
-                        <img src={image} alt="" className="w-full h-full object-cover" />
+                    <div className="w-full sm:w-48 h-32 sm:h-auto bg-muted shrink-0 relative">
+                        <Image src={image} alt="" fill className="object-cover" sizes="(max-width: 640px) 100vw, 192px" />
                     </div>
                 ) : (
                     <div className="w-full sm:w-32 h-24 sm:h-auto bg-muted/50 shrink-0 flex items-center justify-center text-muted-foreground">

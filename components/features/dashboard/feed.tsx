@@ -29,8 +29,8 @@ import { AIContextCard } from "./ai-context-card"
 import { RequestReminderModal } from "./request-reminder/RequestReminderModal"
 import { GlassCard } from "@/components/shared/glass-card"
 
-export function Feed() {
-    const [posts, setPosts] = useState<Post[]>(MOCK_POSTS)
+export function Feed({ initialPosts }: { initialPosts?: Post[] }) {
+    const [posts, setPosts] = useState<Post[]>(initialPosts && initialPosts.length > 0 ? initialPosts : MOCK_POSTS)
     const [isFetching, setIsFetching] = useState(false)
 
     // ── API → Cache → Hardcoded Fallback ──
@@ -87,8 +87,10 @@ export function Feed() {
     }, [])
 
     useEffect(() => {
-        fetchPosts()
-    }, [fetchPosts])
+        if (!initialPosts || initialPosts.length === 0) {
+            fetchPosts()
+        }
+    }, [fetchPosts, initialPosts])
 
     // ── Memoized sort ──
     const sortedPosts = useMemo(() => sortPostsByPriority(posts), [posts])
