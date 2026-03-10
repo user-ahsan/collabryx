@@ -6,6 +6,7 @@
 
 export interface Post {
     id: string
+    authorId?: string
     author: string
     role: string
     time: string
@@ -64,6 +65,7 @@ export interface Comment {
 export const MOCK_POSTS: Post[] = [
     {
         id: "post-4",
+        authorId: "user-mr-4",
         author: "Maria Rodriguez",
         role: "Startup Founder",
         time: "1h ago",
@@ -76,6 +78,7 @@ export const MOCK_POSTS: Post[] = [
     },
     {
         id: "post-5",
+        authorId: "user-jp-5",
         author: "James Patterson",
         role: "Backend Developer",
         time: "90min ago",
@@ -88,6 +91,7 @@ export const MOCK_POSTS: Post[] = [
     },
     {
         id: "post-1",
+        authorId: "user-aj-1",
         author: "Alex Johnson",
         role: "Product Designer",
         time: "2h ago",
@@ -107,6 +111,7 @@ export const MOCK_POSTS: Post[] = [
     },
     {
         id: "post-2",
+        authorId: "user-sm-2",
         author: "Sarah Miller",
         role: "Growth Lead",
         time: "4h ago",
@@ -121,6 +126,7 @@ export const MOCK_POSTS: Post[] = [
     },
     {
         id: "post-3",
+        authorId: "user-dc-3",
         author: "David Chen",
         role: "Full Stack Dev",
         time: "6h ago",

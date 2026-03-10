@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button"
 import { UserPlus } from "lucide-react"
 import { motion } from "framer-motion"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { GlassCard } from "@/components/shared/glass-card"
 import { MatchScoreCompact } from "@/components/shared/match-score"
 import { MatchReasonBadge } from "@/components/ui/match-reason-badge"
 import { MatchCardDropdown } from "@/components/shared/glass-dropdown-menu"
-import { MatchProfileDialog } from "./match-profile-dialog"
 
 interface Insight {
     type: "complementary" | "shared" | "similar"
@@ -43,9 +43,9 @@ interface MatchCardListViewProps {
 }
 
 export function MatchCardListView({ match, index }: MatchCardListViewProps) {
+    const router = useRouter()
     const [isSaved, setIsSaved] = useState(false)
     const [requestSent, setRequestSent] = useState(false)
-    const [profileModalOpen, setProfileModalOpen] = useState(false)
 
     const isStrongMatch = match.compatibility >= 90
 
@@ -66,7 +66,7 @@ export function MatchCardListView({ match, index }: MatchCardListViewProps) {
                 <GlassCard
                     hoverable
                     className="p-3 sm:p-4 cursor-pointer"
-                    onClick={() => setProfileModalOpen(true)}
+                    onClick={() => router.push(`/profile/${match.id}`)}
                 >
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
                         {/* Avatar - Top Left */}
@@ -169,7 +169,7 @@ export function MatchCardListView({ match, index }: MatchCardListViewProps) {
                                 <MatchCardDropdown
                                     isSaved={isSaved}
                                     onSave={() => setIsSaved(!isSaved)}
-                                    onViewProfile={() => setProfileModalOpen(true)}
+                                    onViewProfile={() => router.push(`/profile/${match.id}`)}
                                     onReport={() => { }}
                                     onCopyLink={() => navigator.clipboard.writeText(window.location.href)}
                                 />
@@ -178,13 +178,6 @@ export function MatchCardListView({ match, index }: MatchCardListViewProps) {
                     </div>
                 </GlassCard>
             </motion.div>
-
-            {/* Profile Match Dialog */}
-            <MatchProfileDialog
-                open={profileModalOpen}
-                onOpenChange={setProfileModalOpen}
-                match={match}
-            />
         </>
     )
 }
