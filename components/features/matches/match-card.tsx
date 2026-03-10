@@ -6,8 +6,8 @@ import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
 import { UserPlus } from "lucide-react"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { WhyMatchModal } from "./why-match-modal"
-import { MatchProfileDialog } from "./match-profile-dialog"
 import { GlassCard } from "@/components/shared/glass-card"
 import { MatchScoreCompact } from "@/components/shared/match-score"
 import { MatchReasonBadge } from "@/components/ui/match-reason-badge"
@@ -41,8 +41,8 @@ const availabilityLabels: Record<string, string> = {
 }
 
 export function MatchCard({ match, index = 0 }: MatchCardProps) {
+    const router = useRouter()
     const [whyModalOpen, setWhyModalOpen] = useState(false)
-    const [profileModalOpen, setProfileModalOpen] = useState(false)
     const [requestSent, setRequestSent] = useState(false)
     const [isSaved, setIsSaved] = useState(false)
 
@@ -70,7 +70,7 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                         isLowMatch ? "opacity-60" : ""
                     )}
                     innerClassName="h-full cursor-pointer flex flex-col"
-                    onClick={() => setProfileModalOpen(true)}
+                    onClick={() => router.push(`/profile/${match.id}`)}
                 >
                     <div className="flex flex-col h-full p-4">
                         {/* Top Row: Avatar | Name & Role | Match Score */}
@@ -181,7 +181,7 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                                 <MatchCardDropdown
                                     isSaved={isSaved}
                                     onSave={() => setIsSaved(!isSaved)}
-                                    onViewProfile={() => setProfileModalOpen(true)}
+                                    onViewProfile={() => router.push(`/profile/${match.id}`)}
                                     onReport={() => { }}
                                     onCopyLink={() => navigator.clipboard.writeText(window.location.href)}
                                 />
@@ -191,17 +191,9 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                 </GlassCard>
             </motion.div>
 
-            {/* Why Match Modal */}
             <WhyMatchModal
                 open={whyModalOpen}
                 onOpenChange={setWhyModalOpen}
-                match={match}
-            />
-
-            {/* Profile Match Dialog */}
-            <MatchProfileDialog
-                open={profileModalOpen}
-                onOpenChange={setProfileModalOpen}
                 match={match}
             />
         </>

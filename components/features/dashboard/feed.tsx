@@ -52,6 +52,7 @@ export function Feed() {
             if (data && data.length > 0) {
                 const mapped: Post[] = data.map((r: Record<string, unknown>) => ({
                     id: String(r.id),
+                    authorId: r.author_id ? String(r.author_id) : undefined,
                     author: String(r.author_name ?? "Unknown"),
                     role: String(r.author_role ?? ""),
                     time: String(r.time_ago ?? ""),
@@ -217,6 +218,7 @@ export function Feed() {
                                 <PostCard className="relative z-10 pointer-events-none">
                                     <div className="pointer-events-auto">
                                         <PostHeader
+                                            authorId={post.authorId}
                                             author={post.author}
                                             role={post.role}
                                             time={post.time}
