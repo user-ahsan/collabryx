@@ -138,7 +138,6 @@ export function MatchesClient() {
 
                 {/* Filter Bar */}
                 <MatchFilters
-                    matchCount={MATCHES.length}
                     viewMode={viewMode}
                     onViewModeChange={setViewMode}
                 />
