@@ -1,6 +1,7 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
+import { completeTestUserOnboarding, isDevelopmentMode } from "@/lib/services/development"
 
 interface OnboardingData {
     fullName: string;
@@ -29,10 +30,20 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
         throw new Error("Unable to verify user authentication. Please log in again.")
     }
 
+    // In development mode with test user, use the development service
+    if (isDevelopmentMode() && userData.user.email === "test123@collabryx.com") {
+        const result = await completeTestUserOnboarding()
+        if (!result.success) {
+            throw new Error(result.error?.message || "Failed to complete onboarding in development mode.")
+        }
+        return { success: true }
+    }
+
     // 1. Update Profile
     const { error: profileError } = await supabase
         .from("profiles")
-        .update({
+        .upsert({
+            id: userData.user.id,
             full_name: data.fullName,
             display_name: data.displayName || null,
             headline: data.headline,
@@ -42,14 +53,13 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
             onboarding_completed: true,
             profile_completion: completionPercentage,
             updated_at: new Date().toISOString()
-        })
-        .eq("id", userData.user.id)
+        }, { onConflict: "id" })
 
     if (profileError) {
         throw new Error(profileError.message || profileError.details || "Failed to save profile information.")
     }
 
-    // 2. Insert Skills
+    // 2. Insert/Update Skills
     if (data.skills && data.skills.length > 0) {
         const skillsToInsert = data.skills.map((skill: string, index: number) => ({
             user_id: userData.user.id,
@@ -57,19 +67,23 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
             is_primary: index < 5,
         }))
 
-        const { error: skillsError } = await supabase.from("user_skills").insert(skillsToInsert)
-        if (skillsError) console.error("Skills insert error:", skillsError)
+        for (const skill of skillsToInsert) {
+            await supabase
+                .from("user_skills")
+                .upsert(skill, { onConflict: "user_id,skill_name" })
+        }
     }
 
-    // 3. Insert Interests
+    // 3. Insert/Update Interests
     if (data.interests && data.interests.length > 0) {
-        const interestsToInsert = data.interests.map((interest: string) => ({
-            user_id: userData.user.id,
-            interest: interest
-        }))
-
-        const { error: interestsError } = await supabase.from("user_interests").insert(interestsToInsert)
-        if (interestsError) console.error("Interests insert error:", interestsError)
+        for (const interest of data.interests) {
+            await supabase
+                .from("user_interests")
+                .upsert({
+                    user_id: userData.user.id,
+                    interest: interest
+                }, { onConflict: "user_id,interest" })
+        }
     }
 
     // 4. Insert Experience
@@ -78,15 +92,19 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
             .filter((exp) => exp.title || exp.compunknown)
             .map((exp) => ({
                 user_id: userData.user.id,
-                title: exp.title,
+                title: exp.title || exp.compunknown || "Untitled",
                 compunknown: exp.compunknown,
                 description: exp.description || null,
                 start_date: new Date().toISOString(),
-                is_current: true
+                is_current: true,
+                order_index: 0
             }))
         if (expsToInsert.length > 0) {
-            const { error: expError } = await supabase.from("user_experiences").insert(expsToInsert)
-            if (expError) console.error("Experience insert error:", expError)
+            for (const exp of expsToInsert) {
+                await supabase
+                    .from("user_experiences")
+                    .upsert(exp, { onConflict: "user_id,title" })
+            }
         }
     }
 

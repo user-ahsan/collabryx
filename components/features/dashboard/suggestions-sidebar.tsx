@@ -8,15 +8,28 @@ import { Sparkles, ArrowRight, UserPlus, Eye, Inbox } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
-import { createClient } from "@/lib/supabase/client"
 import { getCache, setCache, CACHE_KEYS } from "@/lib/dashboard-cache"
-import { MOCK_MATCHES } from "@/lib/mock-data/dashboard"
-import type { MatchSuggestion, MatchReason } from "@/lib/mock-data/dashboard"
+import { fetchMatches } from "@/lib/services/matches"
 import { MatchActivityCard } from "./match-activity-card"
 import { GlassCard } from "@/components/shared/glass-card"
 
 interface MatchIntelligencePanelProps {
     className?: string
+}
+
+interface MatchReason {
+    type: "skill" | "interest" | "availability"
+    label: string
+}
+
+interface UIMatchSuggestion {
+    id: string
+    name: string
+    role: string
+    avatar: string
+    initials: string
+    matchPercentage: number
+    reasons: MatchReason[]
 }
 
 const getReasonColor = (type: MatchReason["type"]) => {
@@ -31,59 +44,51 @@ const getReasonColor = (type: MatchReason["type"]) => {
 }
 
 export function SuggestionsSidebar({ className }: MatchIntelligencePanelProps) {
-    const [matches, setMatches] = useState<MatchSuggestion[]>(MOCK_MATCHES)
+    const [matches, setMatches] = useState<UIMatchSuggestion[]>([])
     const [isLoading, setIsLoading] = useState(false)
 
     // ── API → Cache → Hardcoded Fallback ──
-    const fetchMatches = useCallback(async () => {
+    const fetchMatchesData = useCallback(async () => {
         setIsLoading(true)
         try {
-            const supabase = createClient()
-            const {
-                data: { user },
-            } = await supabase.auth.getUser()
-            if (!user) throw new Error("Not authenticated")
-
-            const { data, error } = await supabase
-                .from("match_suggestions")
-                .select("*")
-                .eq("user_id", user.id)
-                .order("match_percentage", { ascending: false })
-                .limit(5)
+            const { data, error } = await fetchMatches({ limit: 5 })
 
             if (error) throw error
 
             if (data && data.length > 0) {
-                const mapped: MatchSuggestion[] = data.map(
-                    (r: Record<string, unknown>) => ({
-                        id: String(r.id),
-                        name: String(r.name ?? "Unknown"),
-                        role: String(r.role ?? ""),
-                        avatar: String(r.avatar ?? ""),
-                        initials: String(r.name ?? "U")
-                            .slice(0, 2)
-                            .toUpperCase(),
-                        matchPercentage:
-                            typeof r.match_percentage === "number"
-                                ? r.match_percentage
-                                : 0,
-                        reasons: Array.isArray(r.reasons)
-                            ? (r.reasons as MatchReason[])
-                            : [],
-                    })
-                )
+                // Create a UI-friendly type that combines match suggestion with profile info
+                const mapped = data.map((match) => ({
+                    id: match.id,
+                    name: match.matched_user_name ?? "Unknown",
+                    role: match.matched_user_role ?? "",
+                    avatar: match.matched_user_avatar ?? "",
+                    initials: match.matched_user_initials ?? "U",
+                    matchPercentage: match.match_percentage,
+                    reasons: Array.isArray(match.reasons)
+                        ? match.reasons.map((r: unknown) => {
+                            if (typeof r === "string") {
+                                return { type: "skill" as const, label: r }
+                            }
+                            if (typeof r === "object" && r !== null && "type" in r && "label" in r) {
+                                return {
+                                    type: (r as { type: string }).type as "skill" | "interest" | "availability",
+                                    label: (r as { label: string }).label,
+                                }
+                            }
+                            return { type: "skill" as const, label: String(r) }
+                        })
+                        : [],
+                }))
                 setMatches(mapped)
                 setCache(CACHE_KEYS.MATCHES, mapped)
             }
         } catch {
-            const cached = getCache<MatchSuggestion[]>(CACHE_KEYS.MATCHES)
+            const cached = getCache<UIMatchSuggestion[]>(CACHE_KEYS.MATCHES)
             if (cached) {
                 setMatches(cached)
                 toast.info("Showing cached match suggestions", {
                     id: "matches-cache",
                 })
-            } else {
-                setMatches(MOCK_MATCHES)
             }
         } finally {
             setIsLoading(false)
@@ -91,8 +96,8 @@ export function SuggestionsSidebar({ className }: MatchIntelligencePanelProps) {
     }, [])
 
     useEffect(() => {
-        fetchMatches()
-    }, [fetchMatches])
+        fetchMatchesData()
+    }, [fetchMatchesData])
 
     if (isLoading && matches.length === 0) {
         return <SuggestionsSidebarSkeleton className={className} />

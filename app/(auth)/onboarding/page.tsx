@@ -126,29 +126,6 @@ export default function OnboardingPage() {
 
             const completionPercentage = Math.round((filledFields / totalFields) * 100)
 
-            if (process.env.NODE_ENV === "development") {
-                const devProfileData = {
-                    full_name: data.fullName,
-                    display_name: data.displayName || null,
-                    headline: data.headline,
-                    location: data.location || null,
-                    website_url: data.links && data.links.length > 0 ? JSON.stringify(data.links) : null,
-                    looking_for: data.goals || [],
-                    onboarding_completed: true,
-                    profile_completion: completionPercentage,
-                    skills: data.skills || [],
-                    interests: data.interests || [],
-                    experiences: data.experiences || []
-                }
-                localStorage.setItem("collabryx_dev_profile", JSON.stringify(devProfileData))
-                document.cookie = "collabryx_dev_profile_completed=true; path=/";
-                toast.success("Profile setup complete! (Saved locally in Dev Mode)")
-                router.push("/dashboard")
-                router.refresh()
-                setIsSubmitting(false)
-                return
-            }
-
             await completeOnboarding(data, completionPercentage)
 
             toast.success("Profile setup complete!")
