@@ -71,26 +71,22 @@ export async function proxy(request: NextRequest) {
     }
 
     // Check onboarding status for authenticated users trying to access protected routes
-    if (user && isAuthRoute && !request.nextUrl.pathname.startsWith("/onboarding") && !request.nextUrl.pathname.startsWith("/auth-sync")) {
-        // Skip Supabase check if local development profile is complete
-        const isDevOnboardingComplete = process.env.NODE_ENV === "development" && request.cookies.get("collabryx_dev_profile_completed")?.value === "true"
+    // Only redirect to onboarding in development mode
+    if (user && isAuthRoute && !request.nextUrl.pathname.startsWith("/onboarding") && !request.nextUrl.pathname.startsWith("/auth-sync") && process.env.DEVELOPMENT_MODE === "true") {
+        const { data: profile } = await supabase
+            .from("profiles")
+            .select("onboarding_completed")
+            .eq("id", user.id)
+            .single()
 
-        if (!isDevOnboardingComplete) {
-            const { data: profile } = await supabase
-                .from("profiles")
-                .select("onboarding_completed")
-                .eq("id", user.id)
-                .single()
-
-            if (!profile || profile.onboarding_completed === false) {
-                const url = request.nextUrl.clone()
-                url.pathname = "/onboarding"
-                const redirectResponse = NextResponse.redirect(url)
-                supabaseResponse.cookies.getAll().forEach(cookie => {
-                    redirectResponse.cookies.set(cookie.name, cookie.value)
-                })
-                return redirectResponse
-            }
+        if (!profile || profile.onboarding_completed !== true) {
+            const url = request.nextUrl.clone()
+            url.pathname = "/onboarding"
+            const redirectResponse = NextResponse.redirect(url)
+            supabaseResponse.cookies.getAll().forEach(cookie => {
+                redirectResponse.cookies.set(cookie.name, cookie.value)
+            })
+            return redirectResponse
         }
     }
 

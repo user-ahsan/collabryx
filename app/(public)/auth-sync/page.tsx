@@ -29,7 +29,10 @@ export default async function AuthSyncPage() {
                 .eq("id", user.id)
                 .single()
 
-            if (!profile || profile.onboarding_completed === false) {
+            // Redirect to onboarding if:
+            // 1. Profile doesn't exist (new user), OR
+            // 2. Profile exists but onboarding is not completed
+            if (!profile || profile.onboarding_completed !== true) {
                 destination = "/onboarding"
             }
         }

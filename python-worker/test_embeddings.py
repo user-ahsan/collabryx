@@ -16,7 +16,7 @@ def test_model_loading():
     print(f"✓ Dimensions: {info['dimensions']}")
     print(f"✓ Device: {info['device']}")
     assert info['model_name'] == 'all-MiniLM-L6-v2'
-    assert info['dimensions'] == 768
+    assert info['dimensions'] == 384
     print("✓ Model loading test passed\n")
 
 
@@ -33,7 +33,7 @@ def test_embedding_generation():
     print(f"✓ Generated embedding of length: {len(embedding)}")
     print(f"✓ Generation time: {elapsed:.2f}ms")
     
-    assert len(embedding) == 768, f"Expected 768 dimensions, got {len(embedding)}"
+    assert len(embedding) == 384, f"Expected 384 dimensions, got {len(embedding)}"
     assert all(isinstance(v, float) for v in embedding), "Embedding should contain floats"
     
     # Check that embedding is normalized (magnitude should be close to 1)

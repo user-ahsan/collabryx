@@ -12,6 +12,8 @@ import { getCache, setCache, CACHE_KEYS } from "@/lib/dashboard-cache"
 import { fetchMatches } from "@/lib/services/matches"
 import { MatchActivityCard } from "./match-activity-card"
 import { GlassCard } from "@/components/shared/glass-card"
+import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
 
 interface MatchIntelligencePanelProps {
     className?: string
@@ -46,6 +48,34 @@ const getReasonColor = (type: MatchReason["type"]) => {
 export function SuggestionsSidebar({ className }: MatchIntelligencePanelProps) {
     const [matches, setMatches] = useState<UIMatchSuggestion[]>([])
     const [isLoading, setIsLoading] = useState(false)
+    const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null)
+    const router = useRouter()
+
+    // Fetch profile to check onboarding status
+    const fetchProfileStatus = useCallback(async () => {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        
+        if (user) {
+            const { data: profile } = await supabase
+                .from("profiles")
+                .select("onboarding_completed")
+                .eq("id", user.id)
+                .single()
+            
+            setOnboardingCompleted(profile?.onboarding_completed ?? false)
+        } else {
+            setOnboardingCompleted(true)
+        }
+    }, [])
+
+    useEffect(() => {
+        fetchProfileStatus()
+    }, [fetchProfileStatus])
+
+    const handleCompleteProfile = () => {
+        router.push("/onboarding")
+    }
 
     // ── API → Cache → Hardcoded Fallback ──
     const fetchMatchesData = useCallback(async () => {
@@ -101,6 +131,27 @@ export function SuggestionsSidebar({ className }: MatchIntelligencePanelProps) {
 
     if (isLoading && matches.length === 0) {
         return <SuggestionsSidebarSkeleton className={className} />
+    }
+
+    // Show skeleton for profile status while loading
+    if (onboardingCompleted === null) {
+        return (
+            <div className={cn("space-y-4", className)}>
+                <MatchActivityCard />
+                <GlassCard>
+                    <div className="p-4 md:p-5 flex flex-row items-center justify-between space-y-0 border-b border-white/[0.06]">
+                        <h3 className="text-base font-semibold flex items-center gap-2 text-foreground">
+                            <Sparkles className="h-4 w-4 text-primary" />
+                            Smart Matches
+                        </h3>
+                    </div>
+                    <div className="p-4 md:p-5 pt-3 md:pt-4 space-y-3">
+                        <Skeleton className="h-24 w-full rounded-xl" />
+                        <Skeleton className="h-24 w-full rounded-xl" />
+                    </div>
+                </GlassCard>
+            </div>
+        )
     }
 
     return (
@@ -225,36 +276,34 @@ export function SuggestionsSidebar({ className }: MatchIntelligencePanelProps) {
                         </div>
                     )}
 
-                    {/* Profile Strength Indicator */}
-                    <div className="mt-6 mb-2">
-                        <GlassCard innerClassName="p-5 md:p-6">
-                            <div className="flex items-center justify-between mb-3">
-                                <h4 className="font-semibold text-sm text-foreground">
-                                    Profile Strength
-                                </h4>
-                                <span className="text-sm font-bold text-primary">72%</span>
-                            </div>
-                            <div className="h-2 w-full bg-muted rounded-full overflow-hidden mb-3">
-                                <div 
-                                    className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full transition-all"
-                                    style={{ width: "72%" }}
-                                />
-                            </div>
-                            <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
-                                Complete your profile to get better{" "}
-                                <span className="font-medium text-foreground">
-                                    AI-powered matches
-                                </span>
-                            </p>
-                            <Button 
-                                variant="outline" 
-                                className="w-full transition-all group font-medium border-primary/20 hover:border-primary hover:bg-primary/5"
-                            >
-                                Complete Profile
-                                <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                            </Button>
-                        </GlassCard>
-                    </div>
+                    {/* Profile Strength Indicator - Only show if onboarding NOT completed */}
+                    {onboardingCompleted === false && (
+                        <div className="mt-6 mb-2">
+                            <GlassCard innerClassName="p-5 md:p-6">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h4 className="font-semibold text-sm text-foreground">
+                                        Complete Your Profile
+                                    </h4>
+                                    <span className="text-sm font-bold text-amber-500">Incomplete</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground mb-4 leading-relaxed">
+                                    Complete your profile to unlock{" "}
+                                    <span className="font-medium text-foreground">
+                                        AI-powered matches
+                                    </span>{" "}
+                                    and get better collaboration opportunities.
+                                </p>
+                                <Button 
+                                    variant="outline" 
+                                    className="w-full transition-all group font-medium border-primary/20 hover:border-primary hover:bg-primary/5"
+                                    onClick={handleCompleteProfile}
+                                >
+                                    Complete Profile
+                                    <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                                </Button>
+                            </GlassCard>
+                        </div>
+                    )}
                 </div>
             </GlassCard>
         </div>
