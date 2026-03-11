@@ -62,8 +62,8 @@ const interests = useWatch({ control, name: "interests" })
     return (
         <div className="space-y-8">
             <div className="space-y-2 text-center md:text-left">
-                <h2 className="text-2xl font-bold tracking-tight">Interests & Goals</h2>
-                <p className="text-muted-foreground">What industries do you care about, and what are you here to do?</p>
+                <h2 className="text-3xl font-bold tracking-tight">Interests & Goals</h2>
+                <p className="text-lg text-muted-foreground">What industries do you care about, and what are you here to do?</p>
             </div>
 
             <Controller
@@ -81,10 +81,10 @@ const interests = useWatch({ control, name: "interests" })
                     }
 
                     return (
-                        <div className="space-y-4 pt-2">
+                        <div className="space-y-5 pt-2">
                             <div className="space-y-1">
-                                <Label className="font-semibold text-base">Collaboration Goals <span className="text-muted-foreground font-normal">(Optional)</span></Label>
-                                <p className="text-sm text-muted-foreground">Select all that apply.</p>
+                                <Label className="font-semibold text-lg">Collaboration Goals <span className="text-muted-foreground font-normal">(Optional)</span></Label>
+                                <p className="text-base text-muted-foreground">Select all that apply.</p>
                             </div>
                             {typeof errors.goals?.message === "string" && (
                                 <p className="text-sm text-destructive pb-1">{errors.goals.message}</p>
@@ -100,26 +100,26 @@ const interests = useWatch({ control, name: "interests" })
                                             "relative cursor-pointer transition-all duration-300",
                                             isSelected ? "border-primary/50 bg-primary/5" : "border-border/10",
                                         )}
-                                        innerClassName="p-4 sm:p-5 flex flex-row items-start space-x-4"
+                                        innerClassName="p-5 sm:p-6 flex flex-row items-start space-x-4"
                                     >
                                         {/* Invisible label covering the whole card entirely */}
                                         <Label htmlFor={goal.id} className="absolute inset-0 z-10 cursor-pointer">
                                             <span className="sr-only">Toggle {goal.label}</span>
                                         </Label>
 
-                                        <div className="flex pt-0.5 shrink-0 relative z-20 pointer-events-none">
+                                        <div className="flex pt-1 shrink-0 relative z-20 pointer-events-none">
                                             <Checkbox
                                                 id={goal.id}
                                                 checked={isSelected}
                                                 onCheckedChange={(checked) => handleCheckedChange(goal.id, checked === true)}
-                                                className={cn("h-5 w-5 rounded-sm data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground", isSelected && "border-primary")}
+                                                className={cn("h-6 w-6 rounded-sm data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground", isSelected && "border-primary")}
                                             />
                                         </div>
-                                        <div className="flex flex-col flex-1 space-y-1 relative z-20 pointer-events-none">
-                                            <div className="font-semibold text-base leading-none">
+                                        <div className="flex flex-col flex-1 space-y-1.5 relative z-20 pointer-events-none">
+                                            <div className="font-semibold text-lg leading-none">
                                                 {goal.label}
                                             </div>
-                                            <p className="text-sm text-muted-foreground leading-relaxed">
+                                            <p className="text-base text-muted-foreground leading-relaxed">
                                                 {goal.description}
                                             </p>
                                         </div>
@@ -153,22 +153,22 @@ const interests = useWatch({ control, name: "interests" })
                     }
 
                     return (
-                        <div className="space-y-3 pt-6 border-t border-border/10">
-                            <Label htmlFor="interestsInput" className="font-semibold text-base">Your Interests / Industries</Label>
-                            <p className="text-sm text-muted-foreground">E.g., Fintech, EdTech, Web3, AI, Business</p>
-                            <div className="flex gap-2">
+                        <div className="space-y-4 pt-8 border-t border-border/10">
+                            <Label htmlFor="interestsInput" className="font-semibold text-lg">Your Interests / Industries</Label>
+                            <p className="text-base text-muted-foreground">E.g., Fintech, EdTech, Web3, AI, Business</p>
+                            <div className="flex gap-3">
                                 <Input
                                     id="interestsInput"
                                     value={interestInput}
                                     onChange={(e) => setInterestInput(e.target.value)}
                                     onKeyDown={handleAddInterest}
                                     placeholder="Add an interest (Press Enter)"
-                                    className="bg-white/5 border-white/10 focus:border-primary/50 focus:bg-white/10 transition-all duration-300"
+                                    className="h-12 bg-white/5 border-white/10 focus:border-primary/50 focus:bg-white/10 transition-all duration-300 text-base"
                                 />
                                 <button
                                     type="button"
                                     onClick={handleAddInterest}
-                                    className="flex items-center justify-center p-2 rounded-md bg-white/10 text-white hover:bg-white/20 transition-all duration-300 border border-white/10"
+                                    className="flex items-center justify-center px-4 rounded-md bg-white/10 text-white hover:bg-white/20 transition-all duration-300 border border-white/10"
                                 >
                                     <Plus className="w-5 h-5" />
                                 </button>
@@ -178,16 +178,16 @@ const interests = useWatch({ control, name: "interests" })
                             )}
 
                             {currentInterests.length > 0 && (
-                                <div className="flex flex-wrap gap-2 pt-2">
+                                <div className="flex flex-wrap gap-3 pt-3">
                                     {currentInterests.map((interest: string) => (
-                                        <Badge key={interest} variant="secondary" className="px-3 py-1.5 text-sm gap-1 pl-4 rounded-full bg-primary/10 hover:bg-primary/20 text-primary border-none">
+                                        <Badge key={interest} variant="secondary" className="px-4 py-2 text-base gap-2 pl-5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary border-none">
                                             {interest}
                                             <button
                                                 type="button"
                                                 onClick={() => handleRemoveInterest(interest)}
-                                                className="p-0.5 rounded-full hover:bg-primary/20 transition-colors ml-1"
+                                                className="p-1 rounded-full hover:bg-primary/20 transition-colors ml-1"
                                             >
-                                                <X className="w-3 h-3" />
+                                                <X className="w-4 h-4" />
                                             </button>
                                         </Badge>
                                     ))}

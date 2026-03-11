@@ -38,69 +38,69 @@ export function StepExperience() {
     return (
         <div className="space-y-8">
             <div className="space-y-2 text-center md:text-left">
-                <h2 className="text-2xl font-bold tracking-tight">Experience & Projects</h2>
-                <p className="text-muted-foreground">Add your experiences and link your portfolios.</p>
+                <h2 className="text-3xl font-bold tracking-tight">Experience & Projects</h2>
+                <p className="text-lg text-muted-foreground">Add your experiences and link your portfolios.</p>
             </div>
 
             <div className="space-y-10">
                 {/* Experiences Section */}
                 <div>
-                    <div className="flex items-center justify-between mb-4 border-b border-border/10 pb-2">
-                        <h3 className="font-semibold text-base">Experiences (Optional)</h3>
+                    <div className="flex items-center justify-between mb-5 border-b border-border/10 pb-3">
+                        <h3 className="font-semibold text-lg">Experiences (Optional)</h3>
                         <Button
                             type="button"
                             variant="ghost"
                             size="sm"
-                            onClick={() => appendExp({ title: "", compunknown: "", description: "" })}
-                            className="gap-2 h-8 hover:bg-primary/10 hover:text-primary transition-colors"
+                            onClick={() => appendExp({ title: "", company: "", description: "" })}
+                            className="gap-2 h-10 px-4 hover:bg-primary/10 hover:text-primary transition-colors"
                         >
-                            <Plus className="w-4 h-4" /> Add Experience
+                            <Plus className="w-5 h-5" /> Add Experience
                         </Button>
                     </div>
 
                     <div className="space-y-6">
                         {expFields.length === 0 && (
-                            <p className="text-sm text-muted-foreground text-center py-4 bg-white/5 rounded-lg border border-white/5 border-dashed">
+                            <p className="text-base text-muted-foreground text-center py-6 bg-white/5 rounded-lg border border-white/5 border-dashed">
                                 No experiences added yet. Click &quot;Add Experience&quot; to begin.
                             </p>
                         )}
                         {expFields.map((field, index) => (
-                            <GlassCard key={field.id} className="relative transition-all duration-300 border-border/10 p-4 sm:p-5">
+                            <GlassCard key={field.id} className="relative transition-all duration-300 border-border/10 p-5 sm:p-6">
                                 <Button
                                     type="button"
                                     variant="ghost"
                                     size="icon"
-                                    className="absolute top-3 right-3 h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                                    className="absolute top-4 right-4 h-9 w-9 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
                                     onClick={() => removeExp(index)}
                                 >
-                                    <Trash2 className="w-4 h-4" />
+                                    <Trash2 className="w-5 h-5" />
                                 </Button>
 
-                                <div className="space-y-4 pr-8">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor={`experiences.${index}.title`}>Job Title / Role</Label>
+                                <div className="space-y-5 pr-10">
+                                    <div className="grid gap-2.5">
+                                        <Label htmlFor={`experiences.${index}.title`} className="text-base font-medium">Job Title / Role</Label>
                                         <Input
                                             id={`experiences.${index}.title`}
                                             placeholder="e.g. Senior Developer"
                                             {...register(`experiences.${index}.title`)}
-                                            className="bg-white/5 border-white/10 focus:border-primary/50 focus:bg-white/10 transition-all duration-300"
+                                            className="h-12 bg-white/5 border-white/10 focus:border-primary/50 focus:bg-white/10 transition-all duration-300 text-base"
                                         />
                                     </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor={`experiences.${index}.compunknown`}>Compunknown / Organization</Label>
+                                    <div className="grid gap-2.5">
+                                        <Label htmlFor={`experiences.${index}.company`} className="text-base font-medium">Company / Organization</Label>
                                         <Input
-                                            id={`experiences.${index}.compunknown`}
+                                            id={`experiences.${index}.company`}
                                             placeholder="e.g. TechStart Inc."
-                                            {...register(`experiences.${index}.compunknown`)}
-                                            className="bg-white/5 border-white/10 focus:border-primary/50 focus:bg-white/10 transition-all duration-300"
+                                            {...register(`experiences.${index}.company`)}
+                                            className="h-12 bg-white/5 border-white/10 focus:border-primary/50 focus:bg-white/10 transition-all duration-300 text-base"
                                         />
                                     </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor={`experiences.${index}.description`}>Description</Label>
+                                    <div className="grid gap-2.5">
+                                        <Label htmlFor={`experiences.${index}.description`} className="text-base font-medium">Description</Label>
                                         <Textarea
                                             id={`experiences.${index}.description`}
                                             placeholder="What did you do?"
-                                            className="resize-none min-h-[80px] bg-white/5 border-white/10 focus:border-primary/50 focus:bg-white/10 transition-all duration-300"
+                                            className="resize-none min-h-[100px] bg-white/5 border-white/10 focus:border-primary/50 focus:bg-white/10 transition-all duration-300 text-base"
                                             {...register(`experiences.${index}.description`)}
                                         />
                                     </div>
@@ -112,39 +112,39 @@ export function StepExperience() {
 
                 {/* Portfolios / Links Section */}
                 <div>
-                    <div className="flex items-center justify-between mb-4 border-b border-border/10 pb-2">
-                        <h3 className="font-semibold text-base">Portfolio & Links (Optional)</h3>
+                    <div className="flex items-center justify-between mb-5 border-b border-border/10 pb-3">
+                        <h3 className="font-semibold text-lg">Portfolio & Links (Optional)</h3>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button
                                     type="button"
                                     variant="ghost"
                                     size="sm"
-                                    className="gap-2 h-8 bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 hover:text-primary transition-all duration-300 relative overflow-hidden"
+                                    className="gap-2 h-10 px-4 bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 hover:text-primary transition-all duration-300 relative overflow-hidden"
                                 >
                                     <div className="absolute inset-0 bg-white/5 backdrop-blur-sm pointer-events-none" />
-                                    <Plus className="w-4 h-4 relative z-10" />
+                                    <Plus className="w-5 h-5 relative z-10" />
                                     <span className="relative z-10">Add Link</span>
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48 bg-background/80 backdrop-blur-xl border-white/10">
+                            <DropdownMenuContent align="end" className="w-56 bg-background/80 backdrop-blur-xl border-white/10">
                                 {LINK_PLATFORMS.map((platform) => (
                                     <DropdownMenuItem
                                         key={platform.id}
-                                        className="gap-3 cursor-pointer hover:bg-white/5 transition-colors"
+                                        className="gap-3 cursor-pointer hover:bg-white/5 transition-colors py-3"
                                         onClick={() => appendLink({ platform: platform.id, url: "" })}
                                     >
-                                        <platform.icon className="w-4 h-4 text-muted-foreground" />
-                                        <span>{platform.label}</span>
+                                        <platform.icon className="w-5 h-5 text-muted-foreground" />
+                                        <span className="text-base">{platform.label}</span>
                                     </DropdownMenuItem>
                                 ))}
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="space-y-5">
                         {linkFields.length === 0 && (
-                            <p className="text-sm text-muted-foreground text-center py-4 bg-white/5 rounded-lg border border-white/5 border-dashed">
+                            <p className="text-base text-muted-foreground text-center py-6 bg-white/5 rounded-lg border border-white/5 border-dashed">
                                 No links added yet. Click &quot;Add Link&quot; to begin.
                             </p>
                         )}
@@ -158,18 +158,18 @@ export function StepExperience() {
                             const currentError = (errors.links as any)?.[index]?.url?.message
 
                             return (
-                                <div key={field.id} className="flex gap-2 items-start relative group">
+                                <div key={field.id} className="flex gap-3 items-start relative group">
                                     <input type="hidden" {...register(`links.${index}.platform` as const)} defaultValue={platformId} />
-                                    <div className="flex-1 grid gap-2">
+                                    <div className="flex-1 grid gap-2.5">
                                         <div className="relative flex items-center">
-                                            <div className="absolute left-3 flex items-center justify-center p-1 bg-white/5 rounded-md border border-white/5">
-                                                <Icon className="w-4 h-4 text-muted-foreground" />
+                                            <div className="absolute left-4 flex items-center justify-center p-2 bg-white/5 rounded-md border border-white/5">
+                                                <Icon className="w-5 h-5 text-muted-foreground" />
                                             </div>
                                             <Input
                                                 id={`links.${index}.url`}
                                                 placeholder={`https://${platform.id}.com/username`}
                                                 {...register(`links.${index}.url`)}
-                                                className="pl-12 bg-white/5 border-white/10 focus:border-primary/50 focus:bg-white/10 transition-all duration-300"
+                                                className="h-12 pl-14 bg-white/5 border-white/10 focus:border-primary/50 focus:bg-white/10 transition-all duration-300 text-base"
                                             />
                                         </div>
                                         {typeof currentError === "string" && (
@@ -180,10 +180,10 @@ export function StepExperience() {
                                         type="button"
                                         variant="ghost"
                                         size="icon"
-                                        className="h-10 w-10 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                                        className="h-12 w-12 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
                                         onClick={() => removeLink(index)}
                                     >
-                                        <Trash2 className="w-4 h-4" />
+                                        <Trash2 className="w-5 h-5" />
                                     </Button>
                                 </div>
                             )

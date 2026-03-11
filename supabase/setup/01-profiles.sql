@@ -54,8 +54,14 @@ CREATE POLICY "Users can view any profile" ON public.profiles
     FOR SELECT USING (true);
 
 -- Policy: Users can update only their own row
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 CREATE POLICY "Users can update own profile" ON public.profiles
     FOR UPDATE USING (auth.uid() = id);
+
+-- INSERT only allowed if id matches authenticated user (for edge cases where trigger hasn't run)
+DROP POLICY IF EXISTS "Users can insert own profile" ON public.profiles;
+CREATE POLICY "Users can insert own profile" ON public.profiles
+    FOR INSERT WITH CHECK (auth.uid() = id);
 
 -- Profile creation is handled via trigger on auth.users signup
 -- Create trigger to auto-create profile on signup

@@ -57,13 +57,14 @@ CREATE TABLE IF NOT EXISTS public.user_experiences (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
-    company TEXT NOT NULL,
+    company TEXT,
     description TEXT,
-    start_date DATE NOT NULL,
+    start_date DATE,
     end_date DATE,
     is_current BOOLEAN NOT NULL DEFAULT FALSE,
     order_index INTEGER NOT NULL DEFAULT 0,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(user_id, title)
 );
 
 -- Table: user_projects
@@ -303,7 +304,7 @@ CREATE TABLE IF NOT EXISTS public.theme_preferences (
 CREATE TABLE IF NOT EXISTS public.profile_embeddings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-    embedding VECTOR(768) NOT NULL,  -- all-MiniLM-L6-v2 produces 768-dimensional vectors
+    embedding VECTOR(768),  -- Nullable initially, filled when embedding is generated
     last_updated TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
     UNIQUE(user_id)
@@ -609,6 +610,11 @@ DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 CREATE POLICY "Users can update own profile" ON public.profiles
     FOR UPDATE USING (auth.uid() = id);
 
+-- INSERT only allowed if id matches authenticated user (for edge cases where trigger hasn't run)
+DROP POLICY IF EXISTS "Users can insert own profile" ON public.profiles;
+CREATE POLICY "Users can insert own profile" ON public.profiles
+    FOR INSERT WITH CHECK (auth.uid() = id);
+
 -- User skills RLS
 DROP POLICY IF EXISTS "Users can view any skills" ON public.user_skills;
 CREATE POLICY "Users can view any skills" ON public.user_skills
@@ -762,10 +768,35 @@ DROP POLICY IF EXISTS "Users can view own match suggestions" ON public.match_sug
 CREATE POLICY "Users can view own match suggestions" ON public.match_suggestions
     FOR SELECT USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Service role can insert match suggestions" ON public.match_suggestions;
+CREATE POLICY "Service role can insert match suggestions" ON public.match_suggestions
+    FOR INSERT WITH CHECK (auth.role() = 'service_role');
+
+DROP POLICY IF EXISTS "Users can update suggestion status" ON public.match_suggestions;
+CREATE POLICY "Users can update suggestion status" ON public.match_suggestions
+    FOR UPDATE USING (auth.uid() = user_id);
+
+-- Match activity RLS
+DROP POLICY IF EXISTS "Users can view own match activity" ON public.match_activity;
+CREATE POLICY "Users can view own match activity" ON public.match_activity
+    FOR SELECT USING (auth.uid() = target_user_id);
+
+DROP POLICY IF EXISTS "Service role can insert match activity" ON public.match_activity;
+CREATE POLICY "Service role can insert match activity" ON public.match_activity
+    FOR INSERT WITH CHECK (auth.role() = 'service_role');
+
+DROP POLICY IF EXISTS "Users can update match activity" ON public.match_activity;
+CREATE POLICY "Users can update match activity" ON public.match_activity
+    FOR UPDATE USING (auth.uid() = target_user_id);
+
 -- Conversations RLS
 DROP POLICY IF EXISTS "Users can view own conversations" ON public.conversations;
 CREATE POLICY "Users can view own conversations" ON public.conversations
     FOR SELECT USING (participant_1 = auth.uid() OR participant_2 = auth.uid());
+
+DROP POLICY IF EXISTS "Service role can create conversations" ON public.conversations;
+CREATE POLICY "Service role can create conversations" ON public.conversations
+    FOR INSERT WITH CHECK (auth.role() = 'service_role');
 
 DROP POLICY IF EXISTS "Users can update own conversations" ON public.conversations;
 CREATE POLICY "Users can update own conversations" ON public.conversations
@@ -789,6 +820,10 @@ CREATE POLICY "Users can send messages" ON public.messages
 DROP POLICY IF EXISTS "Users can view own notifications" ON public.notifications;
 CREATE POLICY "Users can view own notifications" ON public.notifications
     FOR SELECT USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Service role can insert notifications" ON public.notifications;
+CREATE POLICY "Service role can insert notifications" ON public.notifications
+    FOR INSERT WITH CHECK (auth.role() = 'service_role');
 
 DROP POLICY IF EXISTS "Users can update own notifications" ON public.notifications;
 CREATE POLICY "Users can update own notifications" ON public.notifications

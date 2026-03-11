@@ -33,8 +33,9 @@ CREATE POLICY "Users can view own notifications" ON public.notifications
     FOR SELECT USING (auth.uid() = user_id);
 
 -- Policy: System can create notifications (via edge functions/triggers)
-CREATE POLICY "System can create notifications" ON public.notifications
-    FOR INSERT WITH CHECK (false);
+-- Uses service role for edge function access
+CREATE POLICY "Service role can insert notifications" ON public.notifications
+    FOR INSERT WITH CHECK (auth.role() = 'service_role');
 
 -- Policy: Users can mark notifications as read
 CREATE POLICY "Users can update own notifications" ON public.notifications

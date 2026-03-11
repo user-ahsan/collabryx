@@ -20,7 +20,7 @@ export function ExperienceProjectsSettingsTab({ userId }: { userId: string }) {
     interface Experience {
     id: string;
     title: string;
-    compunknown?: string;
+    company?: string;
     description?: string;
     start_date?: string;
     is_current?: boolean;
@@ -42,7 +42,7 @@ const [experiences, setExperiences] = useState<Experience[]>([])
             try {
                 if (process.env.NODE_ENV === 'development') {
                     setExperiences([
-                        { id: '1', title: 'Senior Software Engineer', compunknown: 'TechStart', description: 'Built an AI-powered platform using Next.js and Supabase.', start_date: '2022-01-01', is_current: true }
+                        { id: '1', title: 'Senior Software Engineer', company: 'TechStart', description: 'Built an AI-powered platform using Next.js and Supabase.', start_date: '2022-01-01', is_current: true }
                     ])
                     setProjects([
                         { id: '1', title: 'Collabryx Platform', url: 'https://collabryx.com', description: 'A platform to find co-founders utilizing AI matching.', is_public: true }
@@ -77,7 +77,7 @@ const [experiences, setExperiences] = useState<Experience[]>([])
             {
                 id: `new-${Date.now()}`,
                 title: "",
-                compunknown: "",
+                company: "",
                 description: "",
                 start_date: new Date().toISOString(),
                 is_current: true
@@ -126,7 +126,7 @@ const [experiences, setExperiences] = useState<Experience[]>([])
 
             // For Experiences:
             const expsToUpsert = experiences
-                .filter(e => e.title || e.compunknown)
+                .filter(e => e.title || e.company)
                 .map(e => {
                     const { id, ...rest } = e
                     return id.startsWith('new-') ? { user_id: userId, ...rest } : { id, user_id: userId, ...rest }
@@ -246,10 +246,10 @@ const [experiences, setExperiences] = useState<Experience[]>([])
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>Compunknown</Label>
+                                        <Label>Company</Label>
                                         <Input
-                                            value={exp.compunknown}
-                                            onChange={e => updateExperience(exp.id, 'compunknown', e.target.value)}
+                                            value={exp.company}
+                                            onChange={e => updateExperience(exp.id, 'company', e.target.value)}
                                             className="bg-white/5 border-white/10 focus:border-primary/50"
                                             placeholder="e.g. Acme Corp"
                                         />
