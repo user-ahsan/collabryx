@@ -154,14 +154,7 @@ async def generate_embedding(request: EmbeddingRequest, background_tasks: Backgr
         )
     
     # Delegate heavy lifting to the background thread pool
-    background_tasks.add_task(
-        lambda: asyncio.get_event_loop().run_in_executor(
-            executor, 
-            generate_and_store_embedding, 
-            request.text, 
-            request.user_id
-        )
-    )
+    background_tasks.add_task(generate_and_store_embedding, request.text, request.user_id)
     
     return EmbeddingResponse(
         user_id=request.user_id,
@@ -184,14 +177,7 @@ async def generate_embedding_from_profile(request: ProfileDataRequest, backgroun
         )
         
         # Delegate heavy lifting to the background thread pool
-        background_tasks.add_task(
-            lambda: asyncio.get_event_loop().run_in_executor(
-                executor, 
-                generate_and_store_embedding, 
-                semantic_text, 
-                request.user_id
-            )
-        )
+        background_tasks.add_task(generate_and_store_embedding, semantic_text, request.user_id)
         
         return EmbeddingResponse(
             user_id=request.user_id,
