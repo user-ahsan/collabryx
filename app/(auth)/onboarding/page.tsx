@@ -16,7 +16,6 @@ import { StepBasicInfo } from "@/components/features/onboarding/step-basic-info"
 import { StepSkills } from "@/components/features/onboarding/step-skills"
 import { StepInterestsAndGoals } from "@/components/features/onboarding/step-interests-goals"
 import { StepExperience } from "@/components/features/onboarding/step-experience"
-import { EmbeddingProgress } from "./components/EmbeddingProgress"
 import { GlassCard } from "@/components/shared/glass-card"
 import { createClient } from "@/lib/supabase/client"
 import { completeOnboarding } from "./actions"
@@ -82,7 +81,6 @@ const transition = {
 export default function OnboardingPage() {
     const [currentStep, setCurrentStep] = useState(0)
     const [isSubmitting, setIsSubmitting] = useState(false)
-    const [completedUserId, setCompletedUserId] = useState<string | null>(null)
     const [userName, setUserName] = useState("")
     const router = useRouter()
 
@@ -184,8 +182,9 @@ export default function OnboardingPage() {
                     body: JSON.stringify({ user_id: result.userId })
                 }).catch(err => console.error("Embedding generation failed to start:", err));
                 
-                // Keep showing submitting state while we show the progress component
-                setCompletedUserId(result.userId);
+                toast.success("Profile setup complete! Your vector embedding is queued.");
+                router.push("/dashboard");
+                router.refresh();
             } else {
                 // If there's an error and we didn't get a user ID, we need to handle it
                 setIsSubmitting(false);
@@ -249,91 +248,67 @@ export default function OnboardingPage() {
 
                     {/* Form */}
                     <div className="p-6 sm:p-8 md:px-12 flex-1">
-                        {completedUserId ? (
-                            <div className="flex flex-col items-center justify-center py-12 space-y-8">
-                                <div className="text-center space-y-2">
-                                    <h3 className="text-2xl font-bold tracking-tight">Finalizing Setup</h3>
-                                    <p className="text-muted-foreground">We are generating your AI matching profile...</p>
-                                </div>
-                                <div className="w-full max-w-md p-6 rounded-xl border border-border/50 bg-background/50 backdrop-blur-sm">
-                                    <EmbeddingProgress 
-                                        userId={completedUserId}
-                                        onComplete={() => {
-                                            toast.success("Profile setup complete!")
-                                            router.push("/dashboard")
-                                            router.refresh()
-                                        }}
-                                        onFailed={() => {
-                                            toast.error("Matchmaking setup failed, but your profile is saved.")
-                                            router.push("/dashboard")
-                                            router.refresh()
-                                        }}
-                                    />
-                                </div>
+                        <FormProvider {...methods}>
+                            <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 flex flex-col">
+                                <div className="flex-1">
+                                <AnimatePresence mode="wait">
+                                    <motion.div
+                                        key={currentStep}
+                                        initial={{ opacity: 0, x: 20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: -20 }}
+                                        transition={transition}
+                                    >
+                                        {currentStep === 0 ? (
+                                            <StepWelcome onNext={handleNext} />
+                                        ) : currentStep === 1 ? (
+                                            <StepBasicInfo userName={userName} />
+                                        ) : currentStep === 2 ? (
+                                            <StepSkills />
+                                        ) : currentStep === 3 ? (
+                                            <StepInterestsAndGoals />
+                                        ) : (
+                                            <StepExperience />
+                                        )}
+                                    </motion.div>
+                                </AnimatePresence>
                             </div>
-                        ) : (
-                            <FormProvider {...methods}>
-                                <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 flex flex-col">
-                                    <div className="flex-1">
-                                    <AnimatePresence mode="wait">
-                                        <motion.div
-                                            key={currentStep}
-                                            initial={{ opacity: 0, x: 20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, x: -20 }}
-                                            transition={transition}
-                                        >
-                                            {currentStep === 0 ? (
-                                                <StepWelcome onNext={handleNext} />
-                                            ) : currentStep === 1 ? (
-                                                <StepBasicInfo userName={userName} />
-                                            ) : currentStep === 2 ? (
-                                                <StepSkills />
-                                            ) : currentStep === 3 ? (
-                                                <StepInterestsAndGoals />
-                                            ) : (
-                                                <StepExperience />
-                                            )}
-                                        </motion.div>
-                                    </AnimatePresence>
+
+                            {/* Navigation */}
+                            {currentStep > 0 && (
+                                <div className="flex items-center justify-between pt-6 border-t border-border/20">
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        onClick={handleBack}
+                                        disabled={currentStep <= 1 || isSubmitting}
+                                        className={currentStep <= 1 ? "invisible" : ""}
+                                    >
+                                        <ArrowLeft className="w-4 h-4 mr-2" />
+                                        Back
+                                    </Button>
+
+                                    <Button
+                                        type={isLastStep ? "submit" : "button"}
+                                        onClick={!isLastStep ? handleNext : undefined}
+                                        disabled={isSubmitting}
+                                        className="min-w-[140px]"
+                                    >
+                                        {isSubmitting ? (
+                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        ) : isLastStep ? (
+                                            "Complete Profile"
+                                        ) : (
+                                            <>
+                                                Next Step
+                                                <ArrowRight className="w-4 h-4 ml-2" />
+                                            </>
+                                        )}
+                                    </Button>
                                 </div>
-
-                                {/* Navigation */}
-                                {currentStep > 0 && (
-                                    <div className="flex items-center justify-between pt-6 border-t border-border/20">
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            onClick={handleBack}
-                                            disabled={currentStep <= 1 || isSubmitting}
-                                            className={currentStep <= 1 ? "invisible" : ""}
-                                        >
-                                            <ArrowLeft className="w-4 h-4 mr-2" />
-                                            Back
-                                        </Button>
-
-                                        <Button
-                                            type={isLastStep ? "submit" : "button"}
-                                            onClick={!isLastStep ? handleNext : undefined}
-                                            disabled={isSubmitting}
-                                            className="min-w-[140px]"
-                                        >
-                                            {isSubmitting ? (
-                                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                            ) : isLastStep ? (
-                                                "Complete Profile"
-                                            ) : (
-                                                <>
-                                                    Next Step
-                                                    <ArrowRight className="w-4 h-4 ml-2" />
-                                                </>
-                                            )}
-                                        </Button>
-                                    </div>
-                                )}
-                            </form>
-                        </FormProvider>
-                        )}
+                            )}
+                        </form>
+                    </FormProvider>
                     </div>
                 </GlassCard>
             </motion.div>
