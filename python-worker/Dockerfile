@@ -10,6 +10,9 @@ RUN apt-get update && apt-get install -y \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
+# Install CPU-only PyTorch first to reduce image size
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
 # Copy requirements first for better caching
 COPY requirements.txt .
 
@@ -26,5 +29,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
     CMD python -c "import requests; requests.get('http://localhost:8000/health', timeout=2)"
 
-# Run the server
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]
+# Run the server with 2 workers for parallel handling
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
