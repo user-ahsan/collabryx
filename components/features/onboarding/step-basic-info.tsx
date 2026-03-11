@@ -5,8 +5,12 @@ import { useFormContext } from "react-hook-form"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 
-export function StepBasicInfo() {
-    const { register, setValue, formState: { errors } } = useFormContext()
+interface StepBasicInfoProps {
+    userName?: string
+}
+
+export function StepBasicInfo({ userName }: StepBasicInfoProps) {
+    const { register, setValue, watch, formState: { errors } } = useFormContext()
     const locationInputRef = useRef<HTMLInputElement | null>(null)
     const [isPlacesApiLoaded, setIsPlacesApiLoaded] = useState(() => {
         if (typeof window === "undefined") return false
@@ -14,6 +18,8 @@ export function StepBasicInfo() {
         const w = window as any
         return !!(w.google && w.google.maps && w.google.maps.places)
     })
+
+    const fullName = watch("fullName")
 
     // Setup Google Places API if key exists
     useEffect(() => {
@@ -59,51 +65,54 @@ return () => {
     const locationRegister = register("location")
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             <div className="space-y-2 text-center md:text-left">
-                <h2 className="text-2xl font-bold tracking-tight">Basic Information</h2>
-                <p className="text-muted-foreground">Tell us a bit about yourself to get started.</p>
+                <h2 className="text-3xl font-bold tracking-tight">
+                    Hey{userName ? ` ${userName}` : ''}! 👋
+                </h2>
+                <p className="text-lg text-muted-foreground">Kindly fill in the following to complete your profile.</p>
             </div>
 
-            <div className="space-y-4">
-                <div className="grid gap-2">
-                    <Label htmlFor="fullName">Full Name</Label>
+            <div className="space-y-5">
+                <div className="grid gap-2.5">
+                    <Label htmlFor="fullName" className="text-base font-medium">Full Name</Label>
                     <Input
                         id="fullName"
-                        placeholder="John Doe"
+                        defaultValue={userName}
+                        placeholder="Enter your full name"
                         {...register("fullName")}
-                        className="bg-white/5 border-white/10 focus:border-primary/50 focus:bg-white/10 transition-all duration-300"
+                        className="h-12 bg-white/5 border-white/10 focus:border-primary/50 focus:bg-white/10 transition-all duration-300 text-base"
                     />
                     {typeof errors.fullName?.message === "string" && (
                         <p className="text-sm text-destructive">{errors.fullName.message}</p>
                     )}
                 </div>
 
-                <div className="grid gap-2">
-                    <Label htmlFor="displayName">Display Name <span className="text-muted-foreground font-normal">(Optional)</span></Label>
+                <div className="grid gap-2.5">
+                    <Label htmlFor="displayName" className="text-base font-medium">Display Name <span className="text-muted-foreground font-normal">(Optional)</span></Label>
                     <Input
                         id="displayName"
                         placeholder="johndoe"
                         {...register("displayName")}
-                        className="bg-white/5 border-white/10 focus:border-primary/50 focus:bg-white/10 transition-all duration-300"
+                        className="h-12 bg-white/5 border-white/10 focus:border-primary/50 focus:bg-white/10 transition-all duration-300 text-base"
                     />
                 </div>
 
-                <div className="grid gap-2">
-                    <Label htmlFor="headline">Headline / Role</Label>
+                <div className="grid gap-2.5">
+                    <Label htmlFor="headline" className="text-base font-medium">Headline / Role</Label>
                     <Input
                         id="headline"
                         placeholder="e.g. Full Stack Developer @ TechStart"
                         {...register("headline")}
-                        className="bg-white/5 border-white/10 focus:border-primary/50 focus:bg-white/10 transition-all duration-300"
+                        className="h-12 bg-white/5 border-white/10 focus:border-primary/50 focus:bg-white/10 transition-all duration-300 text-base"
                     />
                     {typeof errors.headline?.message === "string" && (
                         <p className="text-sm text-destructive">{errors.headline.message}</p>
                     )}
                 </div>
 
-                <div className="grid gap-2">
-                    <Label htmlFor="location">Location <span className="text-muted-foreground font-normal">(Optional)</span></Label>
+                <div className="grid gap-2.5">
+                    <Label htmlFor="location" className="text-base font-medium">Location <span className="text-muted-foreground font-normal">(Optional)</span></Label>
                     <Input
                         id="location"
                         placeholder="e.g. San Francisco, CA"
@@ -112,7 +121,7 @@ return () => {
                             locationRegister.ref(e)
                             locationInputRef.current = e
                         }}
-                        className="bg-white/5 border-white/10 focus:border-primary/50 focus:bg-white/10 transition-all duration-300"
+                        className="h-12 bg-white/5 border-white/10 focus:border-primary/50 focus:bg-white/10 transition-all duration-300 text-base"
                     />
                 </div>
             </div>

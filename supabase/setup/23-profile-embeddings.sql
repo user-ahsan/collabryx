@@ -10,7 +10,7 @@ CREATE EXTENSION IF NOT EXISTS vector;
 CREATE TABLE IF NOT EXISTS public.profile_embeddings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-    embedding VECTOR(768) NOT NULL,  -- all-MiniLM-L6-v2 produces 768-dimensional vectors
+    embedding VECTOR(768),  -- Nullable initially, filled when embedding is generated
     last_updated TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
     UNIQUE(user_id)

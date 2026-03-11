@@ -6,13 +6,14 @@ CREATE TABLE IF NOT EXISTS public.user_experiences (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
-    company TEXT NOT NULL,
+    company TEXT,
     description TEXT,
-    start_date DATE NOT NULL,
+    start_date DATE,
     end_date DATE,
     is_current BOOLEAN NOT NULL DEFAULT FALSE,
     order_index INTEGER NOT NULL DEFAULT 0,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(user_id, title)
 );
 
 -- Create indexes for performance

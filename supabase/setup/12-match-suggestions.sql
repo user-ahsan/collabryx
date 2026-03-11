@@ -33,9 +33,9 @@ CREATE POLICY "Users can view own match suggestions" ON public.match_suggestions
     FOR SELECT USING (auth.uid() = user_id);
 
 -- Policy: System can insert suggestions (via edge functions)
--- Users cannot manually insert suggestions
-CREATE POLICY "System can insert match suggestions" ON public.match_suggestions
-    FOR INSERT WITH CHECK (false);
+-- Uses service role for edge function access
+CREATE POLICY "Service role can insert match suggestions" ON public.match_suggestions
+    FOR INSERT WITH CHECK (auth.role() = 'service_role');
 
 -- Policy: Users can update status (dismiss, mark connected)
 CREATE POLICY "Users can update suggestion status" ON public.match_suggestions
