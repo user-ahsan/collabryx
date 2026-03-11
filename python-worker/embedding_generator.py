@@ -10,7 +10,7 @@ from typing import List
 class EmbeddingGenerator:
     """
     Singleton class to handle embedding generation using sentence-transformers
-    Model: all-MiniLM-L6-v2 (768 dimensions, optimized for semantic search)
+    Model: all-MiniLM-L6-v2 (384 dimensions, optimized for semantic search)
     """
     
     _instance = None
@@ -22,7 +22,7 @@ class EmbeddingGenerator:
     
     def __init__(self):
         if not hasattr(self, 'model'):
-            # Load the all-MiniLM-L6-v2 model (768 dimensions)
+            # Load the all-MiniLM-L6-v2 model (384 dimensions)
             # Optimized for semantic search, lightweight, fast
             print("Loading embedding model...")
             self.model = SentenceTransformer('all-MiniLM-L6-v2')
@@ -62,7 +62,7 @@ class EmbeddingGenerator:
         """Return model information"""
         return {
             "model_name": "all-MiniLM-L6-v2",
-            "dimensions": 768,
+            "dimensions": 384,
             "device": self.device,
             "max_seq_length": 256,
             "description": "Lightweight model optimized for semantic search"
