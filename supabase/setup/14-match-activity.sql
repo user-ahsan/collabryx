@@ -29,8 +29,9 @@ CREATE POLICY "Users can view own match activity" ON public.match_activity
     FOR SELECT USING (auth.uid() = target_user_id);
 
 -- Policy: System can insert match activity (via edge functions)
-CREATE POLICY "System can insert match activity" ON public.match_activity
-    FOR INSERT WITH CHECK (false);
+-- Uses service role for edge function access
+CREATE POLICY "Service role can insert match activity" ON public.match_activity
+    FOR INSERT WITH CHECK (auth.role() = 'service_role');
 
 -- Policy: Users can mark activity as read
 CREATE POLICY "Users can update match activity" ON public.match_activity

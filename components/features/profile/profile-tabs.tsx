@@ -19,7 +19,7 @@ const intentIcons = {
 interface Experience {
     id: string
     title: string
-    compunknown: string
+    company: string
     description: string
     startDate: string
     endDate?: string | null
@@ -52,7 +52,7 @@ export function ProfileTabs({
         {
             id: "1",
             title: "Senior Developer",
-            compunknown: "TechStart Inc.",
+            company: "TechStart Inc.",
             startDate: "2022",
             isCurrent: true,
             description: "Leading the frontend team, migrating legacy codebase to Next.js, and improving performance by 40%.",
@@ -60,7 +60,7 @@ export function ProfileTabs({
         {
             id: "2",
             title: "Software Engineer",
-            compunknown: "Creative Solutions",
+            company: "Creative Solutions",
             startDate: "2019",
             endDate: "2022",
             isCurrent: false,
@@ -221,7 +221,7 @@ export function ProfileTabs({
 
                                         <h4 className="font-bold text-base sm:text-lg text-foreground tracking-tight">{exp.title}</h4>
                                         <p className="text-sm text-emerald-500/90 dark:text-emerald-400 font-medium mt-0.5">
-                                            {exp.compunknown} <span className="text-muted-foreground px-1">•</span> <span className="text-muted-foreground">{exp.startDate} - {exp.isCurrent ? "Present" : exp.endDate}</span>
+                                            {exp.company} <span className="text-muted-foreground px-1">•</span> <span className="text-muted-foreground">{exp.startDate} - {exp.isCurrent ? "Present" : exp.endDate}</span>
                                         </p>
                                         {exp.description && (
                                             <p className="mt-3 text-sm text-muted-foreground leading-relaxed">

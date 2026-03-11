@@ -34,8 +34,9 @@ CREATE POLICY "Users can view own conversations" ON public.conversations
     );
 
 -- Policy: Conversations are created via messages, not directly
-CREATE POLICY "Users cannot create conversations directly" ON public.conversations
-    FOR INSERT WITH CHECK (false);
+-- Service role can create conversations (via edge functions)
+CREATE POLICY "Service role can create conversations" ON public.conversations
+    FOR INSERT WITH CHECK (auth.role() = 'service_role');
 
 -- Policy: Users can update their conversation (archive, unread count)
 CREATE POLICY "Users can update own conversations" ON public.conversations
