@@ -3,17 +3,25 @@ Collabryx Embedding Service
 FastAPI server for generating semantic embeddings using Sentence Transformers
 """
 
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import Optional, List
 import os
 import time
+import asyncio
+import concurrent.futures
 from dotenv import load_dotenv
+from supabase import create_client, Client
 
 from embedding_generator import generator, construct_semantic_text
 
 load_dotenv()
+
+# Initialize Supabase Client
+supabase_url = os.environ.get("SUPABASE_URL")
+supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+supabase: Optional[Client] = create_client(supabase_url, supabase_key) if supabase_url and supabase_key else None
 
 app = FastAPI(
     title="Collabryx Embedding Service",
@@ -39,12 +47,13 @@ class EmbeddingRequest(BaseModel):
 class EmbeddingResponse(BaseModel):
     """Response body containing generated embedding"""
     user_id: str
-    embedding: List[float]
-    dimensions: int
-    model: str
-    request_id: Optional[str] = None
     status: str = "success"
-    processing_time_ms: float
+    message: Optional[str] = None
+    embedding: Optional[List[float]] = None
+    dimensions: Optional[int] = None
+    model: Optional[str] = None
+    request_id: Optional[str] = None
+    processing_time_ms: Optional[float] = None
 
 class ProfileDataRequest(BaseModel):
     """Request body for generating embedding from profile data"""
@@ -53,6 +62,62 @@ class ProfileDataRequest(BaseModel):
     skills: List[dict] = Field(default_factory=list, description="User skills")
     interests: List[dict] = Field(default_factory=list, description="User interests")
     request_id: Optional[str] = Field(None, description="Optional request ID")
+
+from datetime import datetime
+
+# Thread pool for parallel execution
+executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
+
+def store_embedding(user_id: str, embedding: List[float], status: str):
+    """Store embedding in Supabase"""
+    if not supabase:
+        print(f"Warning: Supabase client not initialized. Cannot store embedding for {user_id}")
+        return
+        
+    try:
+        # Pad/slice to 768 dimensions for pgvector
+        target_dim = 768
+        if len(embedding) < target_dim:
+            embedding.extend([0.0] * (target_dim - len(embedding)))
+        elif len(embedding) > target_dim:
+            embedding = embedding[:target_dim]
+            
+        supabase.table("profile_embeddings").upsert({
+            "user_id": user_id,
+            "embedding": embedding,
+            "status": status,
+            "last_updated": datetime.utcnow().isoformat()
+        }).execute()
+        print(f"Successfully stored embedding for {user_id}")
+    except Exception as e:
+        print(f"Failed to store embedding for {user_id}: {e}")
+        try:
+            supabase.table("profile_embeddings").upsert({
+                "user_id": user_id,
+                "status": "failed",
+                "last_updated": datetime.utcnow().isoformat()
+            }).execute()
+        except Exception as inner_e:
+            print(f"Failed to update error status for {user_id}: {inner_e}")
+
+def generate_and_store_embedding(text: str, user_id: str):
+    """Background thread function to generate and save embedding"""
+    try:
+        print(f"Generating embedding for {user_id}...")
+        # Generate the actual embedding
+        embedding = generator.generate_embedding(text)
+        store_embedding(user_id, embedding, "completed")
+    except Exception as e:
+        print(f"Embedding generation failed for {user_id}: {e}")
+        if supabase:
+            try:
+                supabase.table("profile_embeddings").upsert({
+                    "user_id": user_id,
+                    "status": "failed",
+                    "last_updated": datetime.utcnow().isoformat()
+                }).execute()
+            except Exception as inner_e:
+                 print(f"Failed to update error status for {user_id}: {inner_e}")
 
 @app.get("/")
 async def root():
@@ -68,7 +133,8 @@ async def health():
     return {
         "status": "healthy",
         "timestamp": time.time(),
-        "model_info": generator.get_model_info()
+        "model_info": generator.get_model_info(),
+        "supabase_connected": supabase is not None
     }
 
 @app.get("/model-info")
@@ -77,80 +143,66 @@ async def model_info():
     return generator.get_model_info()
 
 @app.post("/generate-embedding", response_model=EmbeddingResponse)
-async def generate_embedding(request: EmbeddingRequest):
+async def generate_embedding(request: EmbeddingRequest, background_tasks: BackgroundTasks):
     """
-    Generate vector embedding for text input
-    
-    Returns:
-        768-dimensional vector embedding
+    Queue vector embedding generation for text input
     """
-    start_time = time.time()
-    
-    try:
-        if not request.text or len(request.text.strip()) == 0:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Text content is required"
-            )
-        
-        embedding = generator.generate_embedding(request.text)
-        processing_time = (time.time() - start_time) * 1000
-        
-        return EmbeddingResponse(
-            user_id=request.user_id,
-            embedding=embedding,
-            dimensions=len(embedding),
-            model="all-MiniLM-L6-v2",
-            request_id=request.request_id,
-            status="success",
-            processing_time_ms=round(processing_time, 2)
-        )
-    except ValueError as e:
+    if not request.text or len(request.text.strip()) == 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
+            detail="Text content is required"
         )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error generating embedding: {str(e)}"
+    
+    # Delegate heavy lifting to the background thread pool
+    background_tasks.add_task(
+        lambda: asyncio.get_event_loop().run_in_executor(
+            executor, 
+            generate_and_store_embedding, 
+            request.text, 
+            request.user_id
         )
+    )
+    
+    return EmbeddingResponse(
+        user_id=request.user_id,
+        status="queued",
+        message="Vector embedding queued for background processing",
+        request_id=request.request_id
+    )
 
 @app.post("/generate-embedding-from-profile", response_model=EmbeddingResponse)
-async def generate_embedding_from_profile(request: ProfileDataRequest):
+async def generate_embedding_from_profile(request: ProfileDataRequest, background_tasks: BackgroundTasks):
     """
-    Generate embedding from complete profile data
-    
-    Constructs semantic text from profile, skills, and interests
+    Queue embedding generation from complete profile data
     """
-    start_time = time.time()
-    
     try:
-        # Construct semantic text from profile data
+        # Construct semantic text from profile data (fast)
         semantic_text = construct_semantic_text(
             request.profile,
             request.skills,
             request.interests
         )
         
-        embedding = generator.generate_embedding(semantic_text)
-        processing_time = (time.time() - start_time) * 1000
+        # Delegate heavy lifting to the background thread pool
+        background_tasks.add_task(
+            lambda: asyncio.get_event_loop().run_in_executor(
+                executor, 
+                generate_and_store_embedding, 
+                semantic_text, 
+                request.user_id
+            )
+        )
         
         return EmbeddingResponse(
             user_id=request.user_id,
-            embedding=embedding,
-            dimensions=len(embedding),
-            model="all-MiniLM-L6-v2",
-            request_id=request.request_id,
-            status="success",
-            processing_time_ms=round(processing_time, 2)
+            status="queued",
+            message="Vector embedding queued for background processing",
+            request_id=request.request_id
         )
-    except HTTPException:
-        raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error generating embedding: {str(e)}"
+            detail=f"Error preparing embedding generation: {str(e)}"
         )
 
 if __name__ == "__main__":
