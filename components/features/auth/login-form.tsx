@@ -19,6 +19,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import { createClient } from "@/lib/supabase/client"
+import { isDevelopmentMode, getDevelopmentCredentials } from "@/lib/services/development"
 
 import { toast } from "sonner"
 import Link from "next/link"
@@ -34,9 +35,16 @@ export function LoginForm() {
     const [providerToShow, setProviderToShow] = React.useState<"google" | "github" | "apple" | null>(null)
     const supabase = createClient()
 
+    // Pre-populate test credentials in development mode
+    const isDev = isDevelopmentMode()
+    const devCredentials = isDev ? getDevelopmentCredentials() : { email: "", password: "" }
+
     const form = useForm<z.infer<typeof loginSchema>>({
         resolver: zodResolver(loginSchema),
-        defaultValues: { email: "", password: "" },
+        defaultValues: { 
+            email: isDev ? devCredentials.email : "", 
+            password: isDev ? devCredentials.password : "" 
+        },
     })
 
     const onLoginSubmit = async (data: z.infer<typeof loginSchema>) => {
@@ -111,6 +119,14 @@ export function LoginForm() {
                         <p className="text-muted-foreground text-base sm:text-lg">Enter your details to sign in</p>
                     </div>
 
+                    {isDev && (
+                        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4">
+                            <p className="text-yellow-600 dark:text-yellow-400 text-sm text-center">
+                                <strong>Development Mode:</strong> Test credentials pre-filled. 
+                                Click Sign In to continue.
+                            </p>
+                        </div>
+                    )}
                     <form onSubmit={form.handleSubmit(onLoginSubmit)} className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="login-email">Email</Label>

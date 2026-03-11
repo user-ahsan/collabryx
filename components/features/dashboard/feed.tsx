@@ -5,14 +5,10 @@ import { Button } from "@/components/ui/button"
 import { Bot, Inbox } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
-import { createClient } from "@/lib/supabase/client"
 import { getCache, setCache, CACHE_KEYS } from "@/lib/dashboard-cache"
-import {
-    MOCK_POSTS,
-    sortPostsByPriority,
-    getPostTypeBadge,
-} from "@/lib/mock-data/dashboard"
-import type { Post } from "@/lib/mock-data/dashboard"
+import { sortPostsByPriority, getPostTypeBadge } from "@/lib/mock-data/dashboard"
+import { fetchPosts } from "@/lib/services/posts"
+import type { PostWithAuthor } from "@/types/database.types"
 
 import { PostCard } from "./posts/post-card"
 import { PostHeader } from "./posts/post-header"
@@ -29,57 +25,59 @@ import { AIContextCard } from "./ai-context-card"
 import { RequestReminderModal } from "./request-reminder/RequestReminderModal"
 import { GlassCard } from "@/components/shared/glass-card"
 
-export function Feed({ initialPosts }: { initialPosts?: Post[] }) {
-    const [posts, setPosts] = useState<Post[]>(initialPosts && initialPosts.length > 0 ? initialPosts : MOCK_POSTS)
+// Extended type for UI component with additional UI fields
+interface PostUI extends PostWithAuthor {
+    author: string
+    role: string
+    time: string
+    avatar: string
+    initials: string
+    hasMedia: boolean
+    mediaType?: "image" | "video"
+    mediaUrls?: string[]
+    hasLink: boolean
+    linkUrl?: string
+    myReaction: string | null
+}
+
+export function Feed() {
+    const [posts, setPosts] = useState<PostUI[]>([])
     const [isFetching, setIsFetching] = useState(false)
 
     // ── API → Cache → Hardcoded Fallback ──
-    const fetchPosts = useCallback(async () => {
+    const fetchPostsData = useCallback(async () => {
         setIsFetching(true)
         try {
-            const supabase = createClient()
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) throw new Error("Not authenticated")
-
-            const { data, error } = await supabase
-                .from("posts")
-                .select("*")
-                .order("created_at", { ascending: false })
-                .limit(20)
+            const { data, error } = await fetchPosts({ limit: 20 })
 
             if (error) throw error
 
             if (data && data.length > 0) {
-                const mapped: Post[] = data.map((r: Record<string, unknown>) => ({
-                    id: String(r.id),
-                    authorId: r.author_id ? String(r.author_id) : undefined,
-                    author: String(r.author_name ?? "Unknown"),
-                    role: String(r.author_role ?? ""),
-                    time: String(r.time_ago ?? ""),
-                    content: String(r.content ?? ""),
-                    avatar: String(r.author_avatar ?? ""),
-                    initials: String(r.author_name ?? "U").slice(0, 2).toUpperCase(),
-                    postType: (r.post_type as Post["postType"]) || "general",
-                    hasMedia: Boolean(r.media_url || r.media_urls),
-                    mediaType: (r.media_type as Post["mediaType"]) || undefined,
-                    mediaUrls: r.media_urls ? (r.media_urls as string[]) : (r.media_url ? [String(r.media_url)] : undefined),
-                    hasLink: Boolean(r.link_url),
-                    linkUrl: r.link_url ? String(r.link_url) : undefined,
+                const mapped: PostUI[] = data.map((post) => ({
+                    ...post,
+                    author: post.author_name ?? "Unknown",
+                    role: post.author_role ?? "",
+                    time: post.time_ago ?? "",
+                    avatar: post.author_avatar ?? "",
+                    initials: (post.author_name ?? "U").slice(0, 2).toUpperCase(),
+                    hasMedia: Boolean(post.media_urls?.length || post.media_url),
+                    mediaType: post.media_type,
+                    mediaUrls: post.media_urls || (post.media_url ? [post.media_url] : undefined),
+                    hasLink: Boolean(post.link_url),
+                    linkUrl: post.link_url,
                     myReaction: null,
                 }))
                 setPosts(mapped)
                 setCache(CACHE_KEYS.FEED_POSTS, mapped)
             }
         } catch {
-            // API failed → try cache → fallback to hardcoded
-            const cached = getCache<Post[]>(CACHE_KEYS.FEED_POSTS)
+            // API failed → try cache
+            const cached = getCache<PostUI[]>(CACHE_KEYS.FEED_POSTS)
             if (cached) {
                 setPosts(cached)
-                toast.info("Couldn\u2019t load latest posts. Showing cached data.", {
+                toast.info("Couldn't load latest posts. Showing cached data.", {
                     id: "feed-cache-fallback",
                 })
-            } else {
-                setPosts(MOCK_POSTS)
             }
         } finally {
             setIsFetching(false)
@@ -87,10 +85,8 @@ export function Feed({ initialPosts }: { initialPosts?: Post[] }) {
     }, [])
 
     useEffect(() => {
-        if (!initialPosts || initialPosts.length === 0) {
-            fetchPosts()
-        }
-    }, [fetchPosts, initialPosts])
+        fetchPostsData()
+    }, [fetchPostsData])
 
     // ── Memoized sort ──
     const sortedPosts = useMemo(() => sortPostsByPriority(posts), [posts])

@@ -7,10 +7,9 @@ import { Bell, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { GlassCard } from "@/components/shared/glass-card"
 import { toast } from "sonner"
-import { createClient } from "@/lib/supabase/client"
 import { getCache, setCache, CACHE_KEYS } from "@/lib/dashboard-cache"
-import { MOCK_MATCH_ACTIVITY } from "@/lib/mock-data/dashboard"
-import type { MatchActivity } from "@/lib/mock-data/dashboard"
+import { fetchMatchActivity } from "@/lib/services/matches"
+import type { MatchActivityWithUser } from "@/lib/services/matches"
 
 interface MatchActivityCardProps {
     className?: string
@@ -19,34 +18,22 @@ interface MatchActivityCardProps {
 export function MatchActivityCard({
     className
 }: MatchActivityCardProps) {
-    const [activities, setActivities] = useState<MatchActivity[]>(MOCK_MATCH_ACTIVITY)
+    const [activities, setActivities] = useState<MatchActivityWithUser[]>([])
     const [isFetching, setIsFetching] = useState(false)
 
     const fetchActivities = useCallback(async () => {
         setIsFetching(true)
         try {
-            const supabase = createClient()
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) throw new Error("Not authenticated")
-
-            const { data, error } = await supabase
-                .from("match_activity")
-                .select("*")
-                .eq("target_user_id", user.id)
-                .order("created_at", { ascending: false })
-                .limit(5)
+            const { data, error } = await fetchMatchActivity({ limit: 5 })
 
             if (error) throw error
 
             if (data && data.length > 0) {
-                const mapped: MatchActivity[] = data.map((r: Record<string, unknown>) => ({
-                    id: String(r.id),
-                    type: (r.type as MatchActivity["type"]) || "profile_view",
-                    userName: String(r.user_name ?? "Unknown"),
-                    userAvatar: String(r.user_avatar ?? ""),
-                    userInitials: String(r.user_name ?? "U").slice(0, 2).toUpperCase(),
-                    matchPercentage: typeof r.match_percentage === "number" ? r.match_percentage : 0,
-                    activity: String(r.activity ?? ""),
+                const mapped: MatchActivityWithUser[] = data.map((activity) => ({
+                    ...activity,
+                    user_name: activity.user_name ?? "Unknown",
+                    user_avatar: activity.user_avatar ?? "",
+                    user_initials: activity.user_initials ?? "U",
                 }))
                 setActivities(mapped)
                 setCache(CACHE_KEYS.MATCH_ACTIVITY, mapped)
@@ -54,13 +41,11 @@ export function MatchActivityCard({
                 setActivities([])
             }
         } catch {
-            // API failed → try cache → fallback to hardcoded
-            const cached = getCache<MatchActivity[]>(CACHE_KEYS.MATCH_ACTIVITY)
+            // API failed → try cache
+            const cached = getCache<MatchActivityWithUser[]>(CACHE_KEYS.MATCH_ACTIVITY)
             if (cached) {
                 setActivities(cached)
                 toast.info("Showing cached activity data", { id: "match-activity-cache" })
-            } else {
-                setActivities(MOCK_MATCH_ACTIVITY)
             }
         } finally {
             setIsFetching(false)
@@ -109,18 +94,18 @@ export function MatchActivityCard({
                             className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-white/[0.04] transition-all duration-200 cursor-pointer"
                         >
                             <Avatar className="h-9 w-9 border border-white/[0.08] shadow-sm shrink-0">
-                                <AvatarImage src={activity.userAvatar} />
+                                <AvatarImage src={activity.user_avatar} />
                                 <AvatarFallback className="text-xs bg-blue-500/10 text-blue-400 font-bold">
-                                    {activity.userInitials}
+                                    {activity.user_initials}
                                 </AvatarFallback>
                             </Avatar>
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm text-foreground leading-snug">
-                                    <span className="font-medium">{activity.userName}</span>{" "}
+                                    <span className="font-medium">{activity.user_name}</span>{" "}
                                     <span className="text-muted-foreground">{activity.activity}</span>
                                 </p>
                                 <p className="text-xs font-semibold text-primary mt-1">
-                                    {activity.matchPercentage}% match
+                                    {activity.match_percentage}% match
                                 </p>
                             </div>
                         </div>

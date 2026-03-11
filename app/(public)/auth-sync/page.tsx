@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { completeTestUserOnboarding, isDevelopmentMode } from "@/lib/services/development"
 import { AuthSyncClient } from "./client"
 
 export default async function AuthSyncPage() {
@@ -10,14 +11,27 @@ export default async function AuthSyncPage() {
     if (!user) {
         destination = "/login"
     } else {
-        const { data: profile } = await supabase
-            .from("profiles")
-            .select("onboarding_completed")
-            .eq("id", user.id)
-            .single()
+        // In development mode, check if this is the test user and auto-complete onboarding
+        if (isDevelopmentMode() && user.email === "test123@collabryx.com") {
+            // Auto-complete onboarding for test user
+            const result = await completeTestUserOnboarding()
+            if (result.success) {
+                destination = "/dashboard"
+            } else {
+                console.error("Failed to auto-complete test user onboarding:", result.error)
+                destination = "/onboarding"
+            }
+        } else {
+            // Check regular user profile
+            const { data: profile } = await supabase
+                .from("profiles")
+                .select("onboarding_completed")
+                .eq("id", user.id)
+                .single()
 
-        if (!profile || profile.onboarding_completed === false) {
-            destination = "/onboarding"
+            if (!profile || profile.onboarding_completed === false) {
+                destination = "/onboarding"
+            }
         }
     }
 

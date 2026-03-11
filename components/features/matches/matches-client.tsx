@@ -1,115 +1,79 @@
 "use client"
 
+import { useState, useEffect, useCallback } from "react"
 import { MatchCard } from "@/components/features/matches/match-card"
 import { MatchCardListView } from "@/components/features/matches/match-card-list-view"
 import { MatchContextHeader } from "@/components/features/matches/match-context-header"
 import { MatchFilters } from "@/components/features/matches/match-filters"
-import { useState } from "react"
 import { toast } from "sonner"
 import { Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { getCache, setCache, CACHE_KEYS } from "@/lib/dashboard-cache"
+import { fetchMatches } from "@/lib/services/matches"
 
 type ViewMode = "grid" | "list"
 
-// Dummy data for visual verification
-const MATCHES = [
-    {
-        id: "1",
-        name: "Sarah Chen",
-        role: "Full Stack Developer",
-        avatar: "/avatars/01.png",
-        compatibility: 96,
-        skills: ["React", "Node.js", "TypeScript", "AWS", "PostgreSQL"],
-        bio: "Passionate about building scalable web applications and exploring AI integration. Looking for a designer to partner with on a SaaS idea.",
-        location: "San Francisco, CA",
-        timezone: "PST",
-        availability: "full-time" as const,
-        insights: [
-            { type: "complementary" as const, text: "Backend & Cloud" },
-            { type: "shared" as const, text: "AI Integration" }
-        ]
-    },
-    {
-        id: "2",
-        name: "Alex Rivera",
-        role: "UI/UX Designer",
-        avatar: "/avatars/02.png",
-        compatibility: 94,
-        skills: ["Figma", "Tailwind CSS", "User Research", "Prototyping"],
-        bio: "I create intuitive and beautiful user experiences. Love working with developers who care about the details.",
-        location: "Austin, TX",
-        timezone: "CST",
-        availability: "full-time" as const,
-        insights: [
-            { type: "complementary" as const, text: "Design-Dev Synergy" },
-            { type: "similar" as const, text: "SaaS Product" }
-        ]
-    },
-    {
-        id: "3",
-        name: "James Wilson",
-        role: "Product Manager",
-        avatar: "/avatars/03.png",
-        compatibility: 89,
-        skills: ["Agile", "Strategy", "User Stories", "Analytics", "Jira"],
-        bio: "Experienced PM looking to join a high-growth startup or find technical co-founders. Let's build something users love.",
-        location: "New York, NY",
-        timezone: "EST",
-        availability: "part-time" as const,
-        insights: [
-            { type: "complementary" as const, text: "Business Strategy" },
-            { type: "shared" as const, text: "Fintech" }
-        ]
-    },
-    {
-        id: "4",
-        name: "Emily Zhang",
-        role: "AI Researcher",
-        avatar: "/avatars/04.png",
-        compatibility: 91,
-        skills: ["Python", "PyTorch", "NLP", "Computer Vision"],
-        bio: "PhD student specializing in large language models. Interested in applying generative AI to creative tools.",
-        location: "Seattle, WA",
-        timezone: "PST",
-        availability: "side-project" as const,
-        insights: [
-            { type: "shared" as const, text: "Deep AI Knowledge" },
-            { type: "similar" as const, text: "Research-Driven" }
-        ]
-    },
-    {
-        id: "5",
-        name: "Michael Brown",
-        role: "Frontend Engineer",
-        avatar: "/avatars/05.png",
-        compatibility: 78,
-        skills: ["React", "Vue", "JavaScript", "Animation", "Three.js"],
-        bio: "Frontend wizard who loves bringing designs to life with smooth animations and interactive 3D elements.",
-        location: "London, UK",
-        timezone: "GMT",
-        availability: "full-time" as const,
-        insights: [
-            { type: "complementary" as const, text: "Frontend Expert" }
-        ]
-    },
-    {
-        id: "6",
-        name: "Jessica Lee",
-        role: "Marketing Specialist",
-        avatar: "/avatars/06.png",
-        compatibility: 75,
-        skills: ["SEO", "Content Marketing", "Social Media", "Analysis"],
-        bio: "Helping startups find their voice and reach their audience. Expert in growth hacking and community building.",
-        location: "Toronto, Canada",
-        timezone: "EST",
-        availability: "part-time" as const,
-        insights: [
-            { type: "complementary" as const, text: "Growth & Marketing" }
-        ]
-    },
-]
+// UI-compatible match type for component
+interface UIMatch {
+    id: string
+    name: string
+    role: string
+    avatar: string
+    compatibility: number
+    skills: string[]
+    bio: string
+    location: string
+    timezone: string
+    availability: "full-time" | "part-time" | "side-project"
+    insights: Array<{ type: "complementary" | "shared" | "similar"; text: string }>
+}
 
 export function MatchesClient() {
+    const [matches, setMatches] = useState<UIMatch[]>([])
+    const [isLoading, setIsLoading] = useState(true)
+
+    // Fetch matches from API
+    const fetchMatchesData = useCallback(async () => {
+        setIsLoading(true)
+        try {
+            const { data, error } = await fetchMatches({ limit: 20 })
+
+            if (error) throw error
+
+            // Transform Supabase data to UI format
+            const uiMatches: UIMatch[] = (data || []).map((match) => ({
+                id: match.id,
+                name: match.matched_user_name ?? "Unknown",
+                role: match.matched_user_role ?? "",
+                avatar: match.matched_user_avatar ?? "/avatars/01.png",
+                compatibility: match.match_percentage,
+                skills: [], // Would come from user_skills table
+                bio: "", // Would come from profile.bio
+                location: "", // Would come from profile.location
+                timezone: "PST", // Would come from profile
+                availability: "full-time" as const,
+                insights: [
+                    { type: "complementary" as const, text: "Matches your skills" },
+                ],
+            }))
+
+            setMatches(uiMatches)
+            setCache(CACHE_KEYS.MATCHES, uiMatches)
+        } catch {
+            // Try cache on error
+            const cached = getCache<UIMatch[]>(CACHE_KEYS.MATCHES)
+            if (cached) {
+                setMatches(cached)
+                toast.info("Showing cached matches", { id: "matches-cache" })
+            }
+        } finally {
+            setIsLoading(false)
+        }
+    }, [])
+
+    useEffect(() => {
+        fetchMatchesData()
+    }, [fetchMatchesData])
     const [preferences, setPreferences] = useState({
         role: "CTO",
         industry: "Fintech",
@@ -133,7 +97,7 @@ export function MatchesClient() {
                 <MatchContextHeader
                     preferences={preferences}
                     onUpdatePreferences={handleUpdatePreferences}
-                    matchCount={MATCHES.length}
+                    matchCount={matches.length}
                 />
 
                 {/* Filter Bar */}
@@ -143,7 +107,11 @@ export function MatchesClient() {
                 />
 
                 {/* Grid or List Layout */}
-                {MATCHES.length === 0 ? (
+                {isLoading ? (
+                    <div className="flex items-center justify-center py-24">
+                        <p className="text-muted-foreground">Loading matches...</p>
+                    </div>
+                ) : matches.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-24 px-4 text-center">
                         <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-primary/10 flex items-center justify-center mb-4 sm:mb-6">
                             <Users className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
@@ -163,13 +131,13 @@ export function MatchesClient() {
                     </div>
                 ) : viewMode === "grid" ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 pb-20">
-                        {MATCHES.map((match, index) => (
+                        {matches.map((match, index) => (
                             <MatchCard key={match.id} match={match} index={index} />
                         ))}
                     </div>
                 ) : (
                     <div className="flex flex-col gap-4 pb-20">
-                        {MATCHES.map((match, index) => (
+                        {matches.map((match, index) => (
                             <MatchCardListView key={match.id} match={match} index={index} />
                         ))}
                     </div>
