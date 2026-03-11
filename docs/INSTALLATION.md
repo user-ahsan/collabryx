@@ -134,6 +134,9 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
 
+# Python Worker (Embeddings)
+PYTHON_WORKER_URL=http://localhost:8000
+
 # Optional: Analytics and Monitoring
 # NEXT_PUBLIC_GA_ID=your-google-analytics-id
 # NEXT_PUBLIC_SENTRY_DSN=your-sentry-dsn
@@ -141,6 +144,37 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
 # Optional: Feature Flags
 # NEXT_PUBLIC_ENABLE_AI_FEATURES=true
 ```
+
+### Step 4: Setup Python Worker (Optional, for embeddings)
+
+To enable semantic matching with embeddings:
+
+1. **Install Python dependencies:**
+   ```bash
+   cd python-worker
+   pip install -r requirements.txt
+   ```
+
+2. **Start the embedding service:**
+   ```bash
+   uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+   ```
+
+3. **Verify the service:**
+   ```bash
+   curl http://localhost:8000/health
+   ```
+   
+   Expected response:
+   ```json
+   {
+     "status": "healthy",
+     "model_info": {
+       "model_name": "all-MiniLM-L6-v2",
+       "dimensions": 768
+     }
+   }
+   ```
 
 ---
 
