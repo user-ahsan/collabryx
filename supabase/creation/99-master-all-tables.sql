@@ -2,6 +2,9 @@
 -- This file contains all table definitions, RLS policies, and storage buckets
 -- Run this in the Supabase SQL Editor to set up your entire database
 
+-- Enable pgvector extension for vector embeddings
+CREATE EXTENSION IF NOT EXISTS vector;
+
 -- ===========================================
 -- SECTION 1: TABLES
 -- ===========================================
@@ -291,6 +294,22 @@ CREATE TABLE IF NOT EXISTS public.theme_preferences (
 );
 
 -- ===========================================
+-- VECTOR EMBEDDINGS TABLES
+-- ===========================================
+
+-- Table: profile_embeddings
+-- Stores vector embeddings for user profiles for semantic matching
+-- Uses pgvector extension for vector similarity search
+CREATE TABLE IF NOT EXISTS public.profile_embeddings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    embedding VECTOR(768) NOT NULL,  -- all-MiniLM-L6-v2 produces 768-dimensional vectors
+    last_updated TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'failed')),
+    UNIQUE(user_id)
+);
+
+-- ===========================================
 -- SECTION 2: INDEXES
 -- ===========================================
 
@@ -352,6 +371,15 @@ CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON public.notifications(
 
 -- AI Mentor sessions indexes
 CREATE INDEX IF NOT EXISTS idx_ai_mentor_sessions_user_id ON public.ai_mentor_sessions(user_id);
+
+-- Profile embeddings indexes
+CREATE INDEX IF NOT EXISTS idx_profile_embeddings_embedding 
+    ON public.profile_embeddings 
+    USING hnsw (embedding vector_cosine_ops);
+CREATE INDEX IF NOT EXISTS idx_profile_embeddings_user_id 
+    ON public.profile_embeddings (user_id);
+CREATE INDEX IF NOT EXISTS idx_profile_embeddings_status 
+    ON public.profile_embeddings (status);
 
 -- ===========================================
 -- SECTION 3: TRIGGERS
@@ -415,6 +443,21 @@ CREATE TRIGGER update_theme_preferences_updated_at
     FOR EACH ROW
     EXECUTE FUNCTION public.update_updated_at_column();
 
+-- Profile embeddings update trigger
+CREATE OR REPLACE FUNCTION public.update_embedding_timestamp()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.last_updated = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS update_embedding_timestamp ON public.profile_embeddings;
+CREATE TRIGGER update_embedding_timestamp
+    BEFORE UPDATE ON public.profile_embeddings
+    FOR EACH ROW
+    EXECUTE FUNCTION public.update_embedding_timestamp();
+
 -- Profile creation triggers
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
@@ -461,6 +504,45 @@ CREATE TRIGGER on_profile_created_theme
     FOR EACH ROW
     EXECUTE FUNCTION public.handle_new_theme_preferences();
 
+-- Embedding generation trigger
+CREATE OR REPLACE FUNCTION public.trigger_embedding_generation()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Only trigger when onboarding_completed changes to true
+    IF NEW.onboarding_completed = TRUE AND OLD.onboarding_completed = FALSE THEN
+        -- Insert a pending embedding record
+        INSERT INTO public.profile_embeddings (user_id, status)
+        VALUES (NEW.id, 'pending')
+        ON CONFLICT (user_id) DO UPDATE
+        SET status = 'pending', last_updated = NOW();
+        
+        -- Log the trigger event
+        INSERT INTO public.match_activity (
+            actor_user_id,
+            target_user_id,
+            type,
+            activity,
+            created_at
+        )
+        VALUES (
+            NEW.id,
+            NEW.id,
+            'profile_view',
+            'Embedding generation triggered',
+            NOW()
+        );
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trigger_generate_embedding ON public.profiles;
+CREATE TRIGGER trigger_generate_embedding
+    AFTER UPDATE OF onboarding_completed ON public.profiles
+    FOR EACH ROW
+    WHEN (NEW.onboarding_completed = TRUE AND OLD.onboarding_completed = FALSE)
+    EXECUTE FUNCTION public.trigger_embedding_generation();
+
 -- ===========================================
 -- SECTION 4: REALTIME
 -- ===========================================
@@ -488,6 +570,7 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.ai_mentor_sessions;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.ai_mentor_messages;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.notification_preferences;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.theme_preferences;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.profile_embeddings;
 
 -- ===========================================
 -- SECTION 5: ROW LEVEL SECURITY
@@ -738,6 +821,15 @@ DROP POLICY IF EXISTS "Users can manage own theme preferences" ON public.theme_p
 CREATE POLICY "Users can manage own theme preferences" ON public.theme_preferences
     FOR ALL USING (auth.uid() = user_id);
 
+-- Profile embeddings RLS
+-- Users can view their own embedding status
+DROP POLICY IF EXISTS "Users can view own embedding status" ON public.profile_embeddings;
+CREATE POLICY "Users can view own embedding status" ON public.profile_embeddings
+    FOR SELECT USING (auth.uid() = user_id);
+
+-- Service role only for creating/updating embeddings
+ALTER TABLE public.profile_embeddings ENABLE ROW LEVEL SECURITY;
+
 -- ===========================================
 -- SECTION 6: STORAGE BUCKETS
 -- ===========================================
@@ -884,6 +976,51 @@ USING (
 -- ===========================================
 -- SECTION 7: HELPER FUNCTIONS
 -- ===========================================
+
+-- Function to check if user has completed embedding generation
+CREATE OR REPLACE FUNCTION public.has_embedding(user_id UUID)
+RETURNS BOOLEAN AS $$
+DECLARE
+    embedding_count INTEGER;
+BEGIN
+    SELECT COUNT(*) INTO embedding_count
+    FROM public.profile_embeddings
+    WHERE public.profile_embeddings.user_id = $1
+      AND status = 'completed';
+    
+    RETURN embedding_count > 0;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to get embedding status for a user
+CREATE OR REPLACE FUNCTION public.get_embedding_status(user_id UUID)
+RETURNS TABLE (
+    user_id UUID,
+    status TEXT,
+    last_updated TIMESTAMPTZ,
+    has_embedding BOOLEAN
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        pe.user_id,
+        pe.status,
+        pe.last_updated,
+        (pe.status = 'completed') AS has_embedding
+    FROM public.profile_embeddings pe
+    WHERE pe.user_id = $1;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Function to manually trigger embedding regeneration
+CREATE OR REPLACE FUNCTION public.regenerate_embedding(user_id UUID)
+RETURNS VOID AS $$
+BEGIN
+    UPDATE public.profile_embeddings
+    SET status = 'pending', last_updated = NOW()
+    WHERE user_id = $1;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Function to get conversation between two users
 CREATE OR REPLACE FUNCTION public.get_conversation(user1 UUID, user2 UUID)
@@ -1039,3 +1176,9 @@ CREATE TRIGGER update_conversation_last_message_trigger
 -- 1. post-media      - For posts, messages, comments media (public read, auth write, 50MB limit)
 -- 2. profile-media   - For user avatars and banners (public read, auth write, 10MB limit)
 -- 3. project-media   - For project thumbnails (public read, auth write, 10MB limit)
+--
+-- Vector Embeddings:
+-- - profile_embeddings table stores 768-dimensional vectors using pgvector
+-- - Automatic generation triggered on onboarding completion
+-- - Used for semantic matching via cosine similarity
+-- - HNSW index for efficient similarity search

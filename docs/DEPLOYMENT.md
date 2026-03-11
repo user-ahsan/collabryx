@@ -70,6 +70,9 @@ SUPABASE_SERVICE_ROLE_KEY=your-production-service-role-key
 NEXT_PUBLIC_APP_URL=https://yourdomain.com
 NODE_ENV=production
 
+# Required: Python Worker (Embeddings)
+PYTHON_WORKER_URL=https://your-embedding-service.com
+
 # Optional: Analytics
 NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
 NEXT_PUBLIC_VERCEL_ANALYTICS_ID=your-analytics-id
@@ -81,6 +84,16 @@ NEXT_PUBLIC_SENTRY_DSN=https://your-sentry-dsn
 NEXT_PUBLIC_ENABLE_AI_FEATURES=true
 NEXT_PUBLIC_MAINTENANCE_MODE=false
 ```
+
+### Embeddings System Deployment
+
+The embeddings system requires three components:
+
+1. **Python Worker** - Self-hosted embedding service
+2. **Supabase Edge Function** - Orchestration layer
+3. **Database** - pgvector extension for vector storage
+
+See [VECTOR_EMBEDDINGS_DEPLOYMENT.md](./VECTOR_EMBEDDINGS_DEPLOYMENT.md) for detailed instructions.
 
 ---
 
@@ -328,16 +341,33 @@ Pass via `-e` flag or `.env` file with `docker-compose`
 ### Production Environment Variables
 
 ```env
-# Required
+# Required: Supabase
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
+
+# Required: Application
 NEXT_PUBLIC_APP_URL=
+NODE_ENV=production
+
+# Required: Python Worker (Embeddings)
+PYTHON_WORKER_URL=
 
 # Optional
 NEXT_PUBLIC_GA_ID=
 NEXT_PUBLIC_SENTRY_DSN=
 ```
+
+### Python Worker Deployment
+
+The Python worker is a self-hosted embedding service for semantic matching. Deploy it before the Next.js app:
+
+1. **Choose a hosting platform** (Railway, Render, or VPS)
+2. **Deploy the `python-worker` directory**
+3. **Get the service URL** (e.g., `https://embedding-service.up.railway.app`)
+4. **Add to environment variables**: `PYTHON_WORKER_URL`
+
+See [VECTOR_EMBEDDINGS_DEPLOYMENT.md](./VECTOR_EMBEDDINGS_DEPLOYMENT.md) for detailed instructions.
 
 ---
 

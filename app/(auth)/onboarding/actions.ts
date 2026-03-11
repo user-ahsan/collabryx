@@ -30,20 +30,26 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
         throw new Error("Unable to verify user authentication. Please log in again.")
     }
 
+    const userId = userData.user.id
+
     // In development mode with test user, use the development service
     if (isDevelopmentMode() && userData.user.email === "test123@collabryx.com") {
         const result = await completeTestUserOnboarding()
         if (!result.success) {
             throw new Error(result.error?.message || "Failed to complete onboarding in development mode.")
         }
-        return { success: true }
+        // Trigger embedding generation for test user
+        triggerEmbeddingGeneration(userId).catch(err => {
+            console.error("Failed to trigger embedding for test user:", err)
+        })
+        return { success: true, userId }
     }
 
     // 1. Update Profile
     const { error: profileError } = await supabase
         .from("profiles")
         .upsert({
-            id: userData.user.id,
+            id: userId,
             full_name: data.fullName,
             display_name: data.displayName || null,
             headline: data.headline,
@@ -62,7 +68,7 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
     // 2. Insert/Update Skills
     if (data.skills && data.skills.length > 0) {
         const skillsToInsert = data.skills.map((skill: string, index: number) => ({
-            user_id: userData.user.id,
+            user_id: userId,
             skill_name: skill,
             is_primary: index < 5,
         }))
@@ -80,7 +86,7 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
             await supabase
                 .from("user_interests")
                 .upsert({
-                    user_id: userData.user.id,
+                    user_id: userId,
                     interest: interest
                 }, { onConflict: "user_id,interest" })
         }
@@ -91,7 +97,7 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
         const expsToInsert = data.experiences
             .filter((exp) => exp.title || exp.compunknown)
             .map((exp) => ({
-                user_id: userData.user.id,
+                user_id: userId,
                 title: exp.title || exp.compunknown || "Untitled",
                 compunknown: exp.compunknown,
                 description: exp.description || null,
@@ -108,5 +114,67 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
         }
     }
 
-    return { success: true }
+    // 5. Trigger embedding generation (asynchronously)
+    // This runs in the background after onboarding is complete
+    triggerEmbeddingGeneration(userId).catch(err => {
+        console.error("Failed to trigger embedding generation:", err)
+    })
+
+    return { success: true, userId }
+}
+
+// Trigger embedding generation after onboarding
+export async function triggerEmbeddingGeneration(userId: string) {
+    const supabase = await createClient()
+    
+    // Get user session
+    const { data: { session } } = await supabase.auth.getSession()
+    
+    if (!session?.access_token) {
+        console.error("No session available for embedding generation")
+        return { success: false, message: "No session available" }
+    }
+
+    try {
+        // Call the Edge Function to generate embedding
+        const { data, error } = await supabase.functions.invoke("generate-embedding", {
+            body: { user_id: userId },
+        })
+
+        if (error) {
+            console.error("Edge Function error:", error)
+            return { success: false, message: error.message }
+        }
+
+        console.log("Embedding generation triggered:", data)
+        return { success: true, data }
+    } catch (error) {
+        console.error("Error triggering embedding generation:", error)
+        return { 
+            success: false, 
+            message: error instanceof Error ? error.message : "Unknown error" 
+        }
+    }
+}
+
+// Check embedding status for a user
+export async function getEmbeddingStatus(userId: string) {
+    const supabase = await createClient()
+    
+    const { data, error } = await supabase
+        .from("profile_embeddings")
+        .select("user_id, status, last_updated")
+        .eq("user_id", userId)
+        .single()
+
+    if (error) {
+        // If no embedding record exists yet
+        if (error.code === "PGRST116") {
+            return { status: "not_found", user_id: userId }
+        }
+        console.error("Error fetching embedding status:", error)
+        return { error: error.message }
+    }
+
+    return data
 }

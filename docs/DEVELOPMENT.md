@@ -42,6 +42,23 @@ The application will be available at:
 - 📊 React Developer Tools support
 - 🎨 Source maps for debugging
 
+### Python Worker (Embeddings)
+
+For full embedding functionality, run the Python worker service:
+
+```bash
+# Install dependencies
+cd python-worker
+pip install -r requirements.txt
+
+# Run the service
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+The service will be available at: http://localhost:8000
+
+**Note:** Without the Python worker, embedding generation will fail, but the application will still work with basic matching disabled.
+
 ---
 
 ## Development Workflow

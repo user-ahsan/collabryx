@@ -123,13 +123,21 @@ collabryx/
 │
 ├── supabase/                # Supabase backend
 │   ├── functions/         # Edge Functions (Deno)
-│   │   ├── ai-chat/      # AI chat endpoint
-│   │   └── webhooks/     # Webhook handlers
+│   │   ├── generate-embedding/  # Embedding generation endpoint
+│   │   ├── get-matches/         # Semantic matching endpoint
+│   │   └── ai-assistant/        # AI chat endpoint
 │   │
 │   ├── migrations/        # Database migrations
 │   │   └── *.sql         # Migration files
 │   │
 │   └── config.toml        # Supabase configuration
+│
+├── python-worker/          # Self-hosted embedding service
+│   ├── Dockerfile         # Container configuration
+│   ├── main.py            # FastAPI server
+│   ├── embedding_generator.py  # Sentence Transformers logic
+│   ├── requirements.txt   # Python dependencies
+│   └── test_embeddings.py # Test suite
 │
 ├── types/                   # TypeScript type definitions
 │   ├── database.types.ts  # Generated Supabase types
@@ -276,6 +284,54 @@ components/ui/
 - **Auth** - Built-in authentication with multiple providers
 - **Storage** - File upload and management
 - **Edge Functions** - Serverless functions (Deno runtime)
+- **pgvector** - Vector similarity search for semantic matching
+
+### Vector Embeddings System
+
+#### Semantic Matching Architecture
+
+Collabryx uses **vector embeddings** to enable semantic matching between users based on their profiles, skills, and interests.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Vector Embedding Flow                     │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  User Profile → Semantic Text → Embedding → Vector Storage  │
+│       (768 dimensions)             (pgvector)               │
+│                                                             │
+│  Matching: Cosine Similarity Search on Vector Embeddings    │
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+```
+
+#### Embedding Generation
+
+1. **Trigger**: On user onboarding completion
+2. **Input**: Profile data (role, headline, bio, skills, interests, goals)
+3. **Model**: `all-MiniLM-L6-v2` (768 dimensions, self-hosted)
+4. **Storage**: `profile_embeddings` table with pgvector
+
+#### Matching Algorithm
+
+```sql
+-- Cosine similarity search for semantic matching
+SELECT 
+    profiles.id,
+    1 - (pe.embedding <=> user_embedding) AS similarity
+FROM profile_embeddings pe
+JOIN profiles ON pe.user_id = profiles.id
+WHERE 1 - (pe.embedding <=> user_embedding) > 0.5
+ORDER BY similarity DESC
+LIMIT 10;
+```
+
+#### Components
+
+- **Python Worker**: FastAPI service running Sentence Transformers
+- **Edge Function**: `generate-embedding` orchestrates the process
+- **Frontend**: Progress UI + automatic generation on onboarding
+- **Database**: `profile_embeddings` table with HNSW index
 
 ### State Management
 
