@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 
 export async function GET(
   request: Request,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   const supabase = await createClient();
   
@@ -17,8 +17,11 @@ export async function GET(
     );
   }
 
+  // Await the params Promise
+  const { userId } = await params;
+
   // Users can only check their own embedding status
-  if (params.userId !== user.id) {
+  if (userId !== user.id) {
     return NextResponse.json(
       { error: "Cannot check embedding status for other users" },
       { status: 403 }
@@ -28,14 +31,14 @@ export async function GET(
   try {
     // Get embedding status using the helper function
     const { data, error } = await supabase
-      .rpc("get_embedding_status", { user_id: params.userId });
+      .rpc("get_embedding_status", { user_id: userId });
 
     if (error) {
       // Fallback to direct query if RPC fails
       const { data: directData, error: directError } = await supabase
         .from("profile_embeddings")
         .select("user_id, status, last_updated")
-        .eq("user_id", params.userId)
+        .eq("user_id", userId)
         .single();
 
       if (directError && directError.code !== "PGRST116") {
@@ -48,7 +51,7 @@ export async function GET(
 
       if (!directData) {
         return NextResponse.json({
-          user_id: params.userId,
+          user_id: userId,
           status: "not_found",
           last_updated: null,
           has_embedding: false
@@ -65,7 +68,7 @@ export async function GET(
     const status = data?.[0] || null;
     if (!status) {
       return NextResponse.json({
-        user_id: params.userId,
+        user_id: userId,
         status: "not_found",
         last_updated: null,
         has_embedding: false
