@@ -10,7 +10,7 @@ from typing import Optional, List
 import os
 import time
 import asyncio
-import concurrent.futures
+
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
@@ -66,7 +66,7 @@ class ProfileDataRequest(BaseModel):
 from datetime import datetime
 
 # Thread pool for parallel execution
-executor = concurrent.futures.ThreadPoolExecutor(max_workers=4)
+
 
 def store_embedding(user_id: str, embedding: List[float], status: str):
     """Store embedding in Supabase"""
