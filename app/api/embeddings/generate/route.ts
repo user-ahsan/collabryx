@@ -209,27 +209,11 @@ export async function POST(request: NextRequest) {
       throw new Error(`Python worker error: ${workerResponse.status} - ${errorText}`);
     }
 
-    const embeddingData: EmbeddingResponse = await workerResponse.json();
-
-    // Store embedding in database
-    await updateEmbeddingStatus(
-      supabase,
-      userId,
-      "completed",
-      embeddingData.embedding
-    );
-
-    // Return success response
+    // Return queued response immediately!
     return NextResponse.json({
         success: true,
-        message: "Embedding generated successfully",
-        data: {
-          user_id: userId,
-          dimensions: embeddingData.dimensions,
-          model: embeddingData.model,
-          status: "completed",
-          processing_time_ms: embeddingData.processing_time_ms,
-        },
+        message: "Your profile is being analyzed. Vector embedding is queued!",
+        data: { user_id: userId, status: "queued" },
     });
 
   } catch (error) {
