@@ -31,6 +31,12 @@ class EmbeddingGenerator:
             self._lock = asyncio.Lock()
             print(f"Embedding model loaded successfully. Using device: {self.device}")
     
+    def generate_embedding_sync(self, text: str) -> List[float]:
+        """
+        Synchronous version for use with thread pool executor
+        """
+        return self._generate_embedding_internal(text)
+    
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
@@ -52,28 +58,32 @@ class EmbeddingGenerator:
             Exception: If embedding generation fails after retries
         """
         async with self._lock:
-            try:
-                if not text or not text.strip():
-                    raise ValueError("Text cannot be empty")
-                
-                if len(text.strip()) < 10:
-                    raise ValueError("Text too short (minimum 10 characters)")
-                
-                if len(text) > 2000:
-                    text = text[:2000]
-                
-                embedding = self.model.encode(
-                    text, 
-                    convert_to_tensor=True,
-                    normalize_embeddings=True
-                )
-                
-                embedding = embedding.cpu().numpy().tolist()
-                
-                return embedding
-            except Exception as e:
-                print(f"Error generating embedding: {e}")
-                raise
+            return self._generate_embedding_internal(text)
+    
+    def _generate_embedding_internal(self, text: str) -> List[float]:
+        """Internal method for actual embedding generation"""
+        try:
+            if not text or not text.strip():
+                raise ValueError("Text cannot be empty")
+            
+            if len(text.strip()) < 10:
+                raise ValueError("Text too short (minimum 10 characters)")
+            
+            if len(text) > 2000:
+                text = text[:2000]
+            
+            embedding = self.model.encode(
+                text, 
+                convert_to_tensor=True,
+                normalize_embeddings=True
+            )
+            
+            embedding = embedding.cpu().numpy().tolist()
+            
+            return embedding
+        except Exception as e:
+            print(f"Error generating embedding: {e}")
+            raise
     
     def get_model_info(self) -> dict:
         """Return model information"""
@@ -85,7 +95,6 @@ class EmbeddingGenerator:
             "description": "Lightweight model optimized for semantic search"
         }
 
-# Singleton instance
 generator = EmbeddingGenerator()
 
 
