@@ -142,8 +142,40 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
         }
     }
 
-    // Embedding generation is now triggered directly from the frontend
-    // after this function returns successfully.
+    // RELIABLE: Queue embedding request in database FIRST (source of truth)
+    try {
+        const { data: queueData, error: queueError } = await supabase
+            .rpc('queue_embedding_request', {
+                p_user_id: userId,
+                p_trigger_source: 'onboarding'
+            });
+        
+        if (queueError) {
+            console.error('Failed to queue embedding:', queueError);
+            // Don't fail onboarding, but log for monitoring
+            // Background processor will handle it from the queue
+        } else {
+            console.log('Embedding queued successfully in DB:', queueData);
+        }
+    } catch (error) {
+        console.error('Embedding queue exception:', error);
+        // Continue - DB queue is reliable, API trigger is best-effort
+    }
+    
+    // THEN trigger API (best effort only - don't fail onboarding if this fails)
+    try {
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+        await fetch(`${appUrl}/api/embeddings/generate`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_id: userId }),
+            signal: AbortSignal.timeout(5000) // 5s timeout
+        });
+        console.log('Embedding API trigger successful');
+    } catch (error) {
+        // Already queued in DB, background processor will handle
+        console.error('Embedding API trigger failed (DB queue will handle):', error);
+    }
 
     return { success: true, userId }
 }

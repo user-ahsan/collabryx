@@ -8,6 +8,7 @@ import torch
 import asyncio
 from typing import List
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from embedding_validator import EmbeddingValidator
 
 
 class EmbeddingGenerator:
@@ -68,9 +69,14 @@ class EmbeddingGenerator:
                     normalize_embeddings=True
                 )
                 
-                embedding = embedding.cpu().numpy().tolist()
+                raw_embedding = embedding.cpu().numpy().tolist()
                 
-                return embedding
+                fixed_embedding, validation_result = EmbeddingValidator.validate_and_fix(raw_embedding)
+                
+                if not validation_result.is_valid:
+                    raise ValueError(f"Invalid embedding: {validation_result.message}")
+                
+                return fixed_embedding
             except Exception as e:
                 print(f"Error generating embedding: {e}")
                 raise
