@@ -10,7 +10,7 @@ interface StepBasicInfoProps {
 }
 
 export function StepBasicInfo({ userName }: StepBasicInfoProps) {
-    const { register, setValue, watch, formState: { errors } } = useFormContext()
+    const { register, setValue, formState: { errors } } = useFormContext()
     const locationInputRef = useRef<HTMLInputElement | null>(null)
     const [isPlacesApiLoaded, setIsPlacesApiLoaded] = useState(() => {
         if (typeof window === "undefined") return false

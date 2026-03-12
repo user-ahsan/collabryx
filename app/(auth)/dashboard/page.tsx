@@ -1,5 +1,19 @@
 import { Feed } from "@/components/features/dashboard/feed"
 import { SuggestionsSidebar } from "@/components/features/dashboard/suggestions-sidebar"
+import type { Metadata } from "next"
+
+export const revalidate = 60
+
+export const dynamic = "force-dynamic"
+
+export const metadata: Metadata = {
+  title: "Dashboard | Collabryx",
+  description: "Your personalized collaboration dashboard. Discover posts, opportunities, and connect with your network.",
+  robots: {
+    index: false,
+    follow: false,
+  },
+}
 
 export default function DashboardPage() {
     return (
