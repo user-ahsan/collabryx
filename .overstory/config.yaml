@@ -51,16 +51,19 @@ coordinator:
     allAgentsDone: false
     taskTrackerEmpty: false
     onShutdownSignal: false
-models:
+providers:
+  alibaba:
+    type: gateway
+    baseUrl: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
+    authTokenEnv: ALIBABA_API_KEY
+
 logging:
   verbose: false
   redactSecrets: true
 runtime:
-  default: claude
+  default: opencode
   shellInitDelayMs: 0
-  pi:
-    provider: anthropic
+  opencode:
+    provider: alibaba
     modelMap:
-      opus: anthropic/claude-opus-4-6
-      sonnet: anthropic/claude-sonnet-4-6
-      haiku: anthropic/claude-haiku-4-5
+      sonnet: alibaba/qwen-plus
