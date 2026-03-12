@@ -28,57 +28,67 @@ export function StepWelcome({ onNext }: StepWelcomeProps) {
     ]
 
     return (
-        <div className="space-y-8">
-            <div className="text-center space-y-3">
+        <div className="space-y-10 py-6">
+            {/* Welcome Header - Enhanced for full screen */}
+            <div className="text-center space-y-4">
+                <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="inline-flex items-center justify-center h-20 w-20 rounded-2xl bg-primary flex items-center justify-center shadow-2xl shadow-primary/30 mb-4"
+                >
+                    <span className="text-primary-foreground font-bold text-4xl">C</span>
+                </motion.div>
                 <motion.h2 
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-2xl md:text-3xl font-bold text-foreground"
+                    transition={{ delay: 0.2 }}
+                    className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground tracking-tight"
                 >
                     Welcome to Collabryx
                 </motion.h2>
                 <motion.p 
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                    className="text-muted-foreground text-base"
+                    transition={{ delay: 0.3 }}
+                    className="text-muted-foreground text-lg md:text-xl max-w-xl mx-auto"
                 >
-                    Let's set up your profile in just a few steps
+                    Let&apos;s set up your profile in just a few steps
                 </motion.p>
             </div>
 
-            <div className="grid gap-4">
+            {/* Feature Cards - Enhanced layout */}
+            <div className="grid gap-5 md:grid-cols-3">
                 {features.map((feature, index) => (
                     <motion.div
                         key={feature.title}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.2 + index * 0.1 }}
-                        className="flex items-center gap-4 p-4 rounded-xl bg-muted/30 border border-border/50"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.4 + index * 0.1 }}
+                        className="flex flex-col items-center text-center p-6 rounded-2xl bg-muted/30 border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10"
                     >
-                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                            <feature.icon className="w-5 h-5 text-primary" />
+                        <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 mb-4">
+                            <feature.icon className="w-7 h-7 text-primary" />
                         </div>
-                        <div>
-                            <p className="font-semibold text-foreground text-sm">{feature.title}</p>
-                            <p className="text-muted-foreground text-xs">{feature.description}</p>
-                        </div>
+                        <p className="font-semibold text-foreground text-base mb-1">{feature.title}</p>
+                        <p className="text-muted-foreground text-sm">{feature.description}</p>
                     </motion.div>
                 ))}
             </div>
 
+            {/* CTA Button - Enhanced */}
             <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.5 }}
-                className="pt-2"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.7 }}
+                className="pt-4"
             >
                 <Button 
                     onClick={onNext}
-                    className="w-full h-12 text-base font-semibold"
+                    className="w-full h-14 text-lg font-semibold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all duration-300"
                     size="lg"
                 >
-                    Let's get started
+                    Let&apos;s get started
                     <ArrowRight className="w-5 h-5 ml-2" />
                 </Button>
             </motion.div>
