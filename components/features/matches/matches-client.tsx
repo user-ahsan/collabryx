@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button"
 import { getCache, setCache, CACHE_KEYS } from "@/lib/dashboard-cache"
 import { fetchMatches } from "@/lib/services/matches"
 import { TOAST_MESSAGES, TOAST_IDS } from "@/lib/constants/toast-messages"
-import { formatInitials } from "@/lib/utils/format-initials"
 
 type ViewMode = "grid" | "list"
 
