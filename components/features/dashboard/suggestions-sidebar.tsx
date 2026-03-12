@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 import { getCache, setCache, CACHE_KEYS } from "@/lib/dashboard-cache"
 import { fetchMatches } from "@/lib/services/matches"
+import { TOAST_MESSAGES, TOAST_IDS } from "@/lib/constants/toast-messages"
 import { MatchActivityCard } from "./match-activity-card"
 import { GlassCard } from "@/components/shared/glass-card"
 import { createClient } from "@/lib/supabase/client"
@@ -116,9 +117,7 @@ export function SuggestionsSidebar({ className }: MatchIntelligencePanelProps) {
             const cached = getCache<UIMatchSuggestion[]>(CACHE_KEYS.MATCHES)
             if (cached) {
                 setMatches(cached)
-                toast.info("Showing cached match suggestions", {
-                    id: "matches-cache",
-                })
+                toast.info(TOAST_MESSAGES.MATCHES.CACHE, { id: TOAST_IDS.MATCHES })
             }
         } finally {
             setIsLoading(false)

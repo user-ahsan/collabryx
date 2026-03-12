@@ -10,6 +10,8 @@ import { Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { getCache, setCache, CACHE_KEYS } from "@/lib/dashboard-cache"
 import { fetchMatches } from "@/lib/services/matches"
+import { TOAST_MESSAGES, TOAST_IDS } from "@/lib/constants/toast-messages"
+import { formatInitials } from "@/lib/utils/format-initials"
 
 type ViewMode = "grid" | "list"
 
@@ -40,17 +42,16 @@ export function MatchesClient() {
 
             if (error) throw error
 
-            // Transform Supabase data to UI format
             const uiMatches: UIMatch[] = (data || []).map((match) => ({
                 id: match.id,
                 name: match.matched_user_name ?? "Unknown",
                 role: match.matched_user_role ?? "",
                 avatar: match.matched_user_avatar ?? "/avatars/01.png",
                 compatibility: match.match_percentage,
-                skills: [], // Would come from user_skills table
-                bio: "", // Would come from profile.bio
-                location: "", // Would come from profile.location
-                timezone: "PST", // Would come from profile
+                skills: [],
+                bio: "",
+                location: "",
+                timezone: "PST",
                 availability: "full-time" as const,
                 insights: [
                     { type: "complementary" as const, text: "Matches your skills" },
@@ -60,11 +61,10 @@ export function MatchesClient() {
             setMatches(uiMatches)
             setCache(CACHE_KEYS.MATCHES, uiMatches)
         } catch {
-            // Try cache on error
             const cached = getCache<UIMatch[]>(CACHE_KEYS.MATCHES)
             if (cached) {
                 setMatches(cached)
-                toast.info("Showing cached matches", { id: "matches-cache" })
+                toast.info(TOAST_MESSAGES.MATCHES.CACHE, { id: TOAST_IDS.MATCHES })
             }
         } finally {
             setIsLoading(false)
