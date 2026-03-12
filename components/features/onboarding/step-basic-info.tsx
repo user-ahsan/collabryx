@@ -19,8 +19,6 @@ export function StepBasicInfo({ userName }: StepBasicInfoProps) {
         return !!(w.google && w.google.maps && w.google.maps.places)
     })
 
-    const fullName = watch("fullName")
-
     // Setup Google Places API if key exists
     useEffect(() => {
         const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY

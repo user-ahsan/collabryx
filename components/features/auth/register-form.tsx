@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { motion } from "motion/react"
-import { Loader2, Mail, Lock, User, AlertCircle } from "lucide-react"
+import { Loader2, Mail, Lock, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -24,7 +24,6 @@ import { toast } from "sonner"
 import Link from "next/link"
 
 const signupSchema = z.object({
-    fullName: z.string().min(2, "Name must be at least 2 characters."),
     email: z.string().email("Please enter a valid email address."),
     password: z.string().min(8, "Password must be at least 8 characters."),
 })
@@ -37,7 +36,7 @@ export function RegisterForm() {
 
     const form = useForm<z.infer<typeof signupSchema>>({
         resolver: zodResolver(signupSchema),
-        defaultValues: { fullName: "", email: "", password: "" },
+        defaultValues: { email: "", password: "" },
     })
 
     const onSignupSubmit = async (data: z.infer<typeof signupSchema>) => {
@@ -45,11 +44,6 @@ export function RegisterForm() {
         const { error } = await supabase.auth.signUp({
             email: data.email,
             password: data.password,
-            options: {
-                data: {
-                    full_name: data.fullName,
-                },
-            },
         })
         setIsLoading(false)
 
@@ -119,23 +113,6 @@ export function RegisterForm() {
                     </div>
 
                     <form onSubmit={form.handleSubmit(onSignupSubmit)} className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="fullName">Full Name</Label>
-                            <div className="relative">
-                                <User className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
-                                <Input
-                                    id="fullName"
-                                    placeholder="John Doe"
-                                    className={inputClasses}
-                                    {...form.register("fullName")}
-                                    disabled={isLoading}
-                                />
-                            </div>
-                            {form.formState.errors.fullName && (
-                                <p className="text-sm text-destructive px-1">{form.formState.errors.fullName.message}</p>
-                            )}
-                        </div>
-
                         <div className="space-y-2">
                             <Label htmlFor="signup-email">Email</Label>
                             <div className="relative">

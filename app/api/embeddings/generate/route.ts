@@ -20,15 +20,6 @@ interface InterestData {
   interest: string;
 }
 
-interface EmbeddingResponse {
-  user_id: string;
-  embedding: number[];
-  dimensions: number;
-  model: string;
-  status: string;
-  processing_time_ms: number;
-}
-
 // Helper function to construct semantic text from profile data
 function constructSemanticText(
   profile: ProfileData,
@@ -276,7 +267,7 @@ export async function POST(request: NextRequest) {
     // Mark as failed
     try {
         await updateEmbeddingStatus(supabase, userId, "failed");
-    } catch (e) {
+    } catch {
         // Ignore
     }
 
