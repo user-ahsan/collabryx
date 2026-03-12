@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/client"
 import type { MatchSuggestion, MatchActivity, MatchPreference } from "@/types/database.types"
 import { executeOptimizedQuery } from "@/lib/database-optimization"
+import { formatInitials } from "@/lib/utils/format-initials"
 
 // ===========================================
 // MATCH SUGGESTIONS SERVICE
@@ -352,17 +353,6 @@ export async function updateMatchPreferences(
   }
 }
 
-// ===========================================
-// HELPER FUNCTIONS
-// ===========================================
 
-function formatInitials(name: string): string {
-  return name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2)
-}
 
 

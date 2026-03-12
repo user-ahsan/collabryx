@@ -8,6 +8,7 @@ import { MapPin, Clock, UserPlus, MessageSquare } from "lucide-react"
 import { MatchCardDropdown } from "@/components/shared/glass-dropdown-menu"
 import { MatchScore } from "@/components/shared/match-score"
 import { MatchReasonBadge } from "@/components/ui/match-reason-badge"
+import { formatInitials } from "@/lib/utils/format-initials"
 
 interface MatchProfileDialogProps {
     open: boolean
@@ -55,7 +56,7 @@ export function MatchProfileDialog({ open, onOpenChange, match }: MatchProfileDi
                             <Avatar className="h-20 w-20 ring-2 ring-border shadow-md">
                                 <AvatarImage src={match.avatar} alt={match.name} className="object-cover" />
                                 <AvatarFallback className="text-xl font-bold bg-muted text-foreground">
-                                    {match.name.split(" ").map((n) => n[0]).join("")}
+                                    {formatInitials(match.name)}
                                 </AvatarFallback>
                             </Avatar>
                             <div className="flex-1 mt-1 text-center sm:text-left">

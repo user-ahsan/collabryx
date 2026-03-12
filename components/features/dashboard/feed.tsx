@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Bot, Inbox } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { getInitials } from "@/lib/utils/format-initials"
 import { getCache, setCache, CACHE_KEYS } from "@/lib/dashboard-cache"
 import { sortPostsByPriority, getPostTypeBadge } from "@/lib/mock-data/dashboard"
 import { fetchPosts } from "@/lib/services/posts"
@@ -59,7 +60,7 @@ export function Feed() {
                     role: post.author_role ?? "",
                     time: post.time_ago ?? "",
                     avatar: post.author_avatar ?? "",
-                    initials: (post.author_name ?? "U").slice(0, 2).toUpperCase(),
+                    initials: getInitials(post.author_name, "U"),
                     hasMedia: Boolean(post.media_urls?.length || post.media_url),
                     mediaType: post.media_type,
                     mediaUrls: post.media_urls || (post.media_url ? [post.media_url] : undefined),

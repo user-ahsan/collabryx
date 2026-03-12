@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { MapPin, Link as LinkIcon, Calendar, UserPlus, MessageSquare, CheckCircle2, Clock, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { VerificationBadge } from "./verification-badge"
+import { formatInitials } from "@/lib/utils/format-initials"
 import { GlassCard } from "@/components/shared/glass-card"
 import { MatchCardDropdown } from "@/components/shared/glass-dropdown-menu"
 
@@ -67,7 +68,7 @@ export function ProfileHeader({
                     <Avatar className="h-24 w-24 sm:h-32 sm:w-32 md:h-36 md:w-36 ring-4 ring-background shadow-xl shrink-0 z-10 bg-background">
                         <AvatarImage src={avatarUrl} className="object-cover" />
                         <AvatarFallback className="text-2xl font-bold bg-muted text-foreground">
-                            {displayName.split(" ").map(n => n[0]).join("")}
+                            {formatInitials(displayName)}
                         </AvatarFallback>
                     </Avatar>
 

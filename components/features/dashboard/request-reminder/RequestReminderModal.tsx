@@ -35,6 +35,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { createClient } from "@/lib/supabase/client"
+import { getInitials } from "@/lib/utils/format-initials"
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -141,7 +142,7 @@ export function RequestReminderModal({ className }: RequestReminderModalProps) {
                     name: String(r.requester_name ?? "Unknown"),
                     role: String(r.requester_role ?? ""),
                     avatar: String(r.requester_avatar ?? ""),
-                    initials: String(r.requester_name ?? "U").slice(0, 2).toUpperCase(),
+                    initials: getInitials(r.requester_name as string | null, "U"),
                     message: String(r.message ?? ""),
                     timestamp: formatTimestamp(r.created_at as string),
                     projectTitle: String(r.project_title ?? ""),

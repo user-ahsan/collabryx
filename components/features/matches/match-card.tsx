@@ -14,6 +14,7 @@ import { MatchReasonBadge } from "@/components/ui/match-reason-badge"
 import { MatchCardDropdown } from "@/components/shared/glass-dropdown-menu"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
+import { formatInitials } from "@/lib/utils/format-initials"
 
 interface MatchCardProps {
     match: {
@@ -82,7 +83,7 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                                     <Avatar className="h-12 w-12">
                                         <AvatarImage src={match.avatar} alt={match.name} className="object-cover" />
                                         <AvatarFallback className="text-sm font-bold bg-muted text-foreground">
-                                            {match.name.split(" ").map(n => n[0]).join("")}
+                                            {formatInitials(match.name)}
                                         </AvatarFallback>
                                     </Avatar>
                                 </div>
