@@ -10,6 +10,7 @@ import { toast } from "sonner"
 import { getCache, setCache, CACHE_KEYS } from "@/lib/dashboard-cache"
 import { fetchMatchActivity } from "@/lib/services/matches"
 import type { MatchActivityWithUser } from "@/lib/services/matches"
+import { TOAST_MESSAGES, TOAST_IDS } from "@/lib/constants/toast-messages"
 
 interface MatchActivityCardProps {
     className?: string
@@ -41,11 +42,10 @@ export function MatchActivityCard({
                 setActivities([])
             }
         } catch {
-            // API failed → try cache
             const cached = getCache<MatchActivityWithUser[]>(CACHE_KEYS.MATCH_ACTIVITY)
             if (cached) {
                 setActivities(cached)
-                toast.info("Showing cached activity data", { id: "match-activity-cache" })
+                toast.info(TOAST_MESSAGES.ACTIVITY.CACHE, { id: TOAST_IDS.ACTIVITY })
             }
         } finally {
             setIsFetching(false)

@@ -1,15 +1,15 @@
 "use client"
 
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Bot, Inbox } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { toast } from "sonner"
 import { getInitials } from "@/lib/utils/format-initials"
 import { getCache, setCache, CACHE_KEYS } from "@/lib/dashboard-cache"
 import { sortPostsByPriority, getPostTypeBadge } from "@/lib/mock-data/dashboard"
 import { fetchPosts } from "@/lib/services/posts"
 import type { PostWithAuthor } from "@/types/database.types"
+import { toast } from "sonner"
 
 import { PostCard } from "./posts/post-card"
 import { PostHeader } from "./posts/post-header"
@@ -45,6 +45,22 @@ export function Feed() {
     const [posts, setPosts] = useState<PostUI[]>([])
     const [isFetching, setIsFetching] = useState(false)
 
+    // Map raw API data to UI format
+    const mapPostToUI = useCallback((post: PostWithAuthor): PostUI => ({
+        ...post,
+        author: post.author_name ?? "Unknown",
+        role: post.author_role ?? "",
+        time: post.time_ago ?? "",
+        avatar: post.author_avatar ?? "",
+        initials: getInitials(post.author_name, "U"),
+        hasMedia: Boolean(post.media_urls?.length || post.media_url),
+        mediaType: post.media_type,
+        mediaUrls: post.media_urls || (post.media_url ? [post.media_url] : undefined),
+        hasLink: Boolean(post.link_url),
+        linkUrl: post.link_url,
+        myReaction: null,
+    }), [])
+
     // ── API → Cache → Hardcoded Fallback ──
     const fetchPostsData = useCallback(async () => {
         setIsFetching(true)
@@ -54,25 +70,11 @@ export function Feed() {
             if (error) throw error
 
             if (data && data.length > 0) {
-                const mapped: PostUI[] = data.map((post) => ({
-                    ...post,
-                    author: post.author_name ?? "Unknown",
-                    role: post.author_role ?? "",
-                    time: post.time_ago ?? "",
-                    avatar: post.author_avatar ?? "",
-                    initials: getInitials(post.author_name, "U"),
-                    hasMedia: Boolean(post.media_urls?.length || post.media_url),
-                    mediaType: post.media_type,
-                    mediaUrls: post.media_urls || (post.media_url ? [post.media_url] : undefined),
-                    hasLink: Boolean(post.link_url),
-                    linkUrl: post.link_url,
-                    myReaction: null,
-                }))
+                const mapped = data.map(mapPostToUI)
                 setPosts(mapped)
                 setCache(CACHE_KEYS.FEED_POSTS, mapped)
             }
         } catch {
-            // API failed → try cache
             const cached = getCache<PostUI[]>(CACHE_KEYS.FEED_POSTS)
             if (cached) {
                 setPosts(cached)
@@ -83,7 +85,7 @@ export function Feed() {
         } finally {
             setIsFetching(false)
         }
-    }, [])
+    }, [mapPostToUI])
 
     useEffect(() => {
         fetchPostsData()
