@@ -349,3 +349,53 @@ export interface MatchActivityWithUser extends MatchActivity {
   user_avatar?: string;
   user_initials?: string;
 }
+
+// ===========================================
+// TABLE: embedding_dead_letter_queue
+// ===========================================
+export interface EmbeddingDeadLetterQueue {
+  id: string; // UUID
+  user_id: string; // UUID
+  semantic_text: string;
+  failure_reason?: string;
+  retry_count: number;
+  max_retries: number;
+  status: 'pending' | 'processing' | 'completed' | 'exhausted';
+  last_attempt?: string; // TIMESTAMPTZ
+  next_retry?: string; // TIMESTAMPTZ
+  created_at: string; // TIMESTAMPTZ
+  resolved_at?: string; // TIMESTAMPTZ
+}
+
+// DLQ Item with profile data for UI
+export interface DLQItemWithProfile extends EmbeddingDeadLetterQueue {
+  profiles?: {
+    display_name?: string;
+    email?: string;
+    avatar_url?: string;
+  };
+}
+
+// ===========================================
+// TABLE: embedding_pending_queue
+// ===========================================
+export interface EmbeddingPendingQueue {
+  id: string; // UUID
+  user_id: string; // UUID (UNIQUE)
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  trigger_source: 'onboarding' | 'manual' | 'admin' | 'api';
+  metadata?: Record<string, unknown>;
+  created_at: string; // TIMESTAMPTZ
+  first_attempt?: string; // TIMESTAMPTZ
+  last_attempt?: string; // TIMESTAMPTZ
+  completed_at?: string; // TIMESTAMPTZ
+  failure_reason?: string;
+}
+
+// Pending Queue Item with profile data for UI
+export interface PendingQueueItemWithProfile extends EmbeddingPendingQueue {
+  profiles?: {
+    display_name?: string;
+    email?: string;
+  };
+}
