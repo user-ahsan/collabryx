@@ -3,7 +3,7 @@
 
 project:
   name: collabryx
-  root: "D:\\Projects\\collabryx"
+  root: /mnt/d/Projects/collabryx
   canonicalBranch: main
   qualityGates:
     - name: Tests
@@ -51,19 +51,16 @@ coordinator:
     allAgentsDone: false
     taskTrackerEmpty: false
     onShutdownSignal: false
-providers:
-  alibaba:
-    type: gateway
-    baseUrl: "https://dashscope-intl.aliyuncs.com/compatible-mode/v1"
-    authTokenEnv: ALIBABA_API_KEY
-
+models:
 logging:
   verbose: false
   redactSecrets: true
 runtime:
-  default: opencode
+  default: claude
   shellInitDelayMs: 0
-  opencode:
-    provider: alibaba
+  pi:
+    provider: anthropic
     modelMap:
-      sonnet: alibaba/qwen-plus
+      opus: anthropic/claude-opus-4-6
+      sonnet: anthropic/claude-sonnet-4-6
+      haiku: anthropic/claude-haiku-4-5
