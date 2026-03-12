@@ -5,7 +5,10 @@ Uses Sentence Transformers to generate semantic embeddings for user profiles
 
 from sentence_transformers import SentenceTransformer
 import torch
+import asyncio
 from typing import List
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+
 
 class EmbeddingGenerator:
     """
@@ -22,41 +25,55 @@ class EmbeddingGenerator:
     
     def __init__(self):
         if not hasattr(self, 'model'):
-            # Load the all-MiniLM-L6-v2 model (384 dimensions)
-            # Optimized for semantic search, lightweight, fast
             print("Loading embedding model...")
             self.model = SentenceTransformer('all-MiniLM-L6-v2')
             self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+            self._lock = asyncio.Lock()
             print(f"Embedding model loaded successfully. Using device: {self.device}")
     
-    def generate_embedding(self, text: str) -> List[float]:
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type(Exception),
+        reraise=True
+    )
+    async def generate_embedding(self, text: str) -> List[float]:
         """
-        Generate embedding for a text string
+        Generate embedding for a text string with retry logic
         
         Args:
-            text: Input text to embed
+            text: Input text to embed (10-512 characters recommended)
             
         Returns:
-            List of 768-dimensional floats representing the embedding
+            List of 384-dimensional floats representing the embedding
+            
+        Raises:
+            ValueError: If text is empty or too short
+            Exception: If embedding generation fails after retries
         """
-        try:
-            if not text or not text.strip():
-                raise ValueError("Text cannot be empty")
-            
-            # Generate embedding
-            embedding = self.model.encode(
-                text, 
-                convert_to_tensor=True,
-                normalize_embeddings=True
-            )
-            
-            # Convert to list
-            embedding = embedding.cpu().numpy().tolist()
-            
-            return embedding
-        except Exception as e:
-            print(f"Error generating embedding: {e}")
-            raise
+        async with self._lock:
+            try:
+                if not text or not text.strip():
+                    raise ValueError("Text cannot be empty")
+                
+                if len(text.strip()) < 10:
+                    raise ValueError("Text too short (minimum 10 characters)")
+                
+                if len(text) > 2000:
+                    text = text[:2000]
+                
+                embedding = self.model.encode(
+                    text, 
+                    convert_to_tensor=True,
+                    normalize_embeddings=True
+                )
+                
+                embedding = embedding.cpu().numpy().tolist()
+                
+                return embedding
+            except Exception as e:
+                print(f"Error generating embedding: {e}")
+                raise
     
     def get_model_info(self) -> dict:
         """Return model information"""
@@ -82,13 +99,13 @@ def construct_semantic_text(profile: dict, skills: list, interests: list) -> str
         interests: List of user interests
         
     Returns:
-        Semantic text string for embedding
+        Semantic text string for embedding (max 2000 chars)
     """
     skills_text = ', '.join([s.get('skill_name', '') for s in skills]) if skills else 'None'
     interests_text = ', '.join([i.get('interest', '') for i in interests]) if interests else 'None'
     goals_text = ', '.join(profile.get('looking_for', [])) if profile.get('looking_for') else 'None'
     
-    return f"""
+    semantic_text = f"""
 Role: {profile.get('role', 'User')}.
 Headline: {profile.get('headline', '')}.
 Bio: {profile.get('bio', '')}.
@@ -97,3 +114,5 @@ Interests: {interests_text}.
 Goals: {goals_text}.
 Location: {profile.get('location', '')}.
     """.strip()
+    
+    return semantic_text[:2000]
