@@ -66,13 +66,6 @@ const STEPS = [
     { id: "experience", title: "Experience", component: StepExperience, schema: experienceSchema, icon: Briefcase },
 ]
 
-// Premium animation variants
-const pageVariants = {
-    initial: { opacity: 0, y: 20 },
-    animate: { opacity: 1, y: 0 },
-    exit: { opacity: 0, y: -20 }
-}
-
 const transition = {
     duration: 0.4,
     ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number]
@@ -83,28 +76,6 @@ export default function OnboardingPage() {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [userName, setUserName] = useState("")
     const router = useRouter()
-
-    // Fetch user info on mount
-    useEffect(() => {
-        async function fetchUser() {
-            const supabase = await createClient()
-            const { data: { user } } = await supabase.auth.getUser()
-            let name = ""
-            if (user?.user_metadata?.full_name) {
-                name = user.user_metadata.full_name
-            } else if (user?.email) {
-                // Extract name from email
-                name = user.email.split('@')[0]
-                name = name.charAt(0).toUpperCase() + name.slice(1)
-            }
-            setUserName(name)
-            // Pre-fill the form with the user's name
-            if (name) {
-                methods.setValue("fullName", name, { shouldValidate: true })
-            }
-        }
-        fetchUser()
-    }, [])
 
     const methods = useForm<OnboardingFormValues>({
         resolver: zodResolver(combinedSchema),
@@ -124,7 +95,24 @@ export default function OnboardingPage() {
 
     const { handleSubmit, trigger } = methods
     const isLastStep = currentStep === STEPS.length - 1
-    const CurrentStepComponent = STEPS[currentStep].component
+
+    // Fetch user info on mount
+    useEffect(() => {
+        async function fetchUser() {
+            const supabase = await createClient()
+            const { data: { user } } = await supabase.auth.getUser()
+            let name = ""
+            if (user?.user_metadata?.full_name) {
+                name = user.user_metadata.full_name
+            } else if (user?.email) {
+                // Extract name from email
+                name = user.email.split('@')[0]
+                name = name.charAt(0).toUpperCase() + name.slice(1)
+            }
+            setUserName(name)
+        }
+        fetchUser()
+    }, [])
 
     const handleNext = async () => {
         if (currentStep === 0) {
@@ -132,21 +120,25 @@ export default function OnboardingPage() {
             return
         }
 
-        let fieldsToValidate: string[] = []
+        let isStepValid = false
         
         if (currentStep === 1) {
-            fieldsToValidate = ['fullName', 'headline']
+            isStepValid = await trigger(['fullName', 'headline'])
         } else if (currentStep === 2) {
-            fieldsToValidate = ['skills']
+            isStepValid = await trigger(['skills'])
         } else if (currentStep === 3) {
-            fieldsToValidate = ['interests']
+            isStepValid = await trigger(['interests'])
         }
-
-        const isStepValid = await trigger(fieldsToValidate as any)
         if (isStepValid) {
             setCurrentStep(prev => Math.min(prev + 1, STEPS.length - 1))
         }
     }
+
+    useEffect(() => {
+        if (userName) {
+            methods.setValue("fullName", userName, { shouldValidate: true })
+        }
+    }, [userName, methods])
 
     const handleBack = () => {
         setCurrentStep(prev => Math.max(prev - 1, 0))
@@ -201,17 +193,17 @@ export default function OnboardingPage() {
 
     return (
         <div className="min-h-screen bg-background relative flex items-center justify-center overflow-hidden">
-            {/* Background */}
+            {/* Background - enhanced for full screen welcome */}
             <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:50px_50px]" />
             
-            {/* Animated orbs */}
+            {/* Animated orbs - larger and more prominent for welcome screen */}
             <motion.div
                 animate={{
                     scale: [1, 1.2, 1],
                     opacity: [0.3, 0.5, 0.3],
                 }}
                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/10 rounded-full blur-3xl"
+                className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"
             />
             <motion.div
                 animate={{
@@ -219,7 +211,7 @@ export default function OnboardingPage() {
                     opacity: [0.2, 0.4, 0.2],
                 }}
                 transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/10 rounded-full blur-3xl"
+                className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-secondary/10 rounded-full blur-3xl"
             />
 
             {/* Main Card */}
@@ -227,7 +219,7 @@ export default function OnboardingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, ease: "easeOut" }}
-                className="w-full max-w-2xl relative z-10 p-4 sm:p-6 lg:p-8"
+                className="w-full max-w-3xl relative z-10 p-4 sm:p-6 lg:p-8"
             >
                 <GlassCard 
                     hoverable 
