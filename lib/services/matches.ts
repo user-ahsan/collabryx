@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client"
 import type { MatchSuggestion, MatchActivity, MatchPreference } from "@/types/database.types"
+import { executeOptimizedQuery } from "@/lib/database-optimization"
 
 // ===========================================
 // MATCH SUGGESTIONS SERVICE
@@ -59,40 +60,50 @@ export async function fetchMatches(
     return { data: [], error: new Error("Please log in to view matches.") }
   }
 
-  let query = supabase
-    .from("match_suggestions")
-    .select(`
-      *,
-      matched_user:profiles (
-        full_name,
-        display_name,
-        avatar_url,
-        headline
-      )
-    `)
-    .eq("user_id", user.id)
-    .order("match_percentage", { ascending: false })
+  const { data: queryData, error: queryError } = await executeOptimizedQuery(async () => {
+    let query = supabase
+      .from("match_suggestions")
+      .select(`
+        id,
+        user_id,
+        matched_user_id,
+        match_percentage,
+        reasons,
+        ai_confidence,
+        ai_explanation,
+        status,
+        created_at,
+        expires_at,
+        matched_user:profiles (
+          full_name,
+          display_name,
+          avatar_url,
+          headline
+        )
+      `)
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .order("match_percentage", { ascending: false })
+      .limit(options.limit || 20)
 
-  if (options.limit) {
-    query = query.limit(options.limit)
+    if (options.minPercentage) {
+      query = query.gte("match_percentage", options.minPercentage)
+    }
+
+    if (options.status) {
+      query = query.eq("status", options.status)
+    }
+
+    const result = await query
+    return result.data as unknown as RawMatch[]
+  })
+
+  if (queryError || !queryData) {
+    console.error("Error fetching matches:", queryError)
+    return { data: [], error: queryError || new Error("No data returned") }
   }
 
-  if (options.minPercentage) {
-    query = query.gte("match_percentage", options.minPercentage)
-  }
-
-  if (options.status) {
-    query = query.eq("status", options.status)
-  }
-
-  const { data, error } = await query
-
-  if (error) {
-    console.error("Error fetching matches:", error)
-    return { data: [], error }
-  }
-
-  const mappedMatches: MatchSuggestionWithProfile[] = (data as RawMatch[] || []).map((match) => ({
+  const mappedMatches: MatchSuggestionWithProfile[] = (queryData || []).map((match) => ({
     id: match.id,
     user_id: match.user_id,
     matched_user_id: match.matched_user_id,

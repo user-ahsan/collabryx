@@ -1,88 +1,78 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import { completeTestUserOnboarding, isDevelopmentMode } from "@/lib/services/development"
+import { revalidatePath } from "next/cache"
+import { revalidateByTag, CACHE_TAGS } from "@/lib/cache-tags"
+import { validateOnboardingData, completionPercentageSchema } from "@/lib/validations/onboarding"
 
-interface OnboardingData {
-    fullName: string;
-    displayName?: string;
-    headline: string;
-    location?: string;
-    skills: string[];
-    interests: string[];
-    goals?: string[];
-    experiences?: {
-        title?: string;
-        company?: string;
-        description?: string;
-    }[];
-    links?: {
-        platform: string;
-        url?: string;
-    }[];
-}
-
-export async function completeOnboarding(data: OnboardingData, completionPercentage: number) {
+export async function completeOnboarding(rawData: unknown, rawPercentage: unknown) {
     const supabase = await createClient()
     const { data: userData, error: userError } = await supabase.auth.getUser()
 
     if (userError || !userData?.user) {
-        throw new Error("Unable to verify user authentication. Please log in again.")
+        return { 
+            success: false, 
+            error: "Unable to verify user authentication. Please log in again."
+        }
     }
 
     const userId = userData.user.id
 
-    // In development mode with test user, use the development service
-    if (isDevelopmentMode() && userData.user.email === "test123@collabryx.com") {
-        const result = await completeTestUserOnboarding()
-        if (!result.success) {
-            throw new Error(result.error?.message || "Failed to complete onboarding in development mode.")
+    // Validate input data with Zod
+    const validationResult = validateOnboardingData(rawData)
+    if (!validationResult.success) {
+        return {
+            success: false,
+            error: "Validation failed",
+            details: validationResult.errors
         }
-        // Frontend will trigger embedding generation
-        return { success: true, userId }
     }
+    const data = validationResult.data
+
+    // Validate completion percentage
+    const percentageResult = completionPercentageSchema.safeParse(rawPercentage)
+    if (!percentageResult.success) {
+        return {
+            success: false,
+            error: "Invalid completion percentage"
+        }
+    }
+    const completionPercentage = percentageResult.data
 
     // 1. Update Profile
     const userEmail = userData.user.email
     if (!userEmail) {
-        throw new Error("Your account doesn't have an email address. Please contact support.")
+        return {
+            success: false,
+            error: "Your account doesn't have an email address. Please contact support."
+        }
     }
     
-    let profileError = null
-    try {
-        const validLinks = data.links?.filter(l => l.url && l.url.trim()) || []
-        const result = await supabase
-            .from("profiles")
-            .upsert({
-                id: userId,
-                email: userEmail,
-                full_name: data.fullName,
-                display_name: data.displayName || null,
-                headline: data.headline,
-                location: data.location || null,
-                website_url: validLinks.length > 0 ? JSON.stringify(validLinks) : null,
-                looking_for: data.goals || [],
-                onboarding_completed: true,
-                profile_completion: completionPercentage,
-                updated_at: new Date().toISOString()
-            }, { onConflict: "id" })
-        profileError = result.error
-    } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : "Unknown database error"
-        // Check if it's a trigger/constraint error
-        if (errorMessage.includes("profile_embeddings") || errorMessage.includes("does not exist")) {
-            console.error("Missing database table. Please run migration for profile_embeddings table.", err)
-            throw new Error("Database setup incomplete. Please contact support or try again later. (Error: Missing table)")
-        }
-        throw new Error(`Database error: ${errorMessage}`)
-    }
+    const { error: profileError } = await supabase
+        .from("profiles")
+        .upsert({
+            id: userId,
+            email: userEmail,
+            full_name: data.fullName,
+            display_name: data.displayName || null,
+            headline: data.headline,
+            location: data.location || null,
+            website_url: data.links && data.links.length > 0 ? JSON.stringify(data.links) : null,
+            looking_for: data.goals || [],
+            onboarding_completed: true,
+            profile_completion: completionPercentage,
+            updated_at: new Date().toISOString()
+        }, { onConflict: "id" })
 
     if (profileError) {
         console.error("Profile upsert error:", profileError)
-        throw new Error(`Failed to save profile: ${profileError.message || profileError.details || "Unknown error"}. Please try again or contact support if the problem persists.`)
+        return {
+            success: false,
+            error: `Failed to save profile: ${profileError.message || "Unknown error"}`
+        }
     }
 
-    // 2. Insert/Update Skills
+    // 2. Insert/Update Skills (batch insert)
     if (data.skills && data.skills.length > 0) {
         const skillsToInsert = data.skills.map((skill: string, index: number) => ({
             user_id: userId,
@@ -90,104 +80,114 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
             is_primary: index < 5,
         }))
 
-        for (const skill of skillsToInsert) {
-            const { error: skillError } = await supabase
-                .from("user_skills")
-                .upsert(skill, { onConflict: "user_id,skill_name" })
-            if (skillError) {
-                console.error("Skills insert error:", skillError)
-                // Continue despite skill errors - not critical
-            }
+        const { error: skillError } = await supabase
+            .from("user_skills")
+            .upsert(skillsToInsert, { onConflict: "user_id,skill_name" })
+        if (skillError) {
+            console.error("Skills insert error:", skillError)
         }
     }
 
-    // 3. Insert/Update Interests
+    // 3. Insert/Update Interests (batch insert)
     if (data.interests && data.interests.length > 0) {
-        for (const interest of data.interests) {
-            const { error: interestError } = await supabase
-                .from("user_interests")
-                .upsert({
-                    user_id: userId,
-                    interest: interest
-                }, { onConflict: "user_id,interest" })
-            if (interestError) {
-                console.error("Interests insert error:", interestError)
-                // Continue despite interest errors - not critical
-            }
+        const interestsToInsert = data.interests.map((interest: string) => ({
+            user_id: userId,
+            interest: interest
+        }))
+
+        const { error: interestError } = await supabase
+            .from("user_interests")
+            .upsert(interestsToInsert, { onConflict: "user_id,interest" })
+        if (interestError) {
+            console.error("Interests insert error:", interestError)
         }
     }
 
-    // 4. Insert Experience
+    // 4. Insert Experience (batch insert)
     if (data.experiences && data.experiences.length > 0) {
         const expsToInsert = data.experiences
-            .filter((exp) => exp.title || exp.company)
-            .map((exp) => ({
+            .filter((exp: { title?: string; company?: string }) => exp.title || exp.company)
+            .map((exp: { title?: string; company?: string; description?: string }, index: number) => ({
                 user_id: userId,
                 title: exp.title || exp.company || "Untitled",
                 company: exp.company || null,
                 description: exp.description || null,
                 start_date: exp.title || exp.company ? new Date().toISOString().split('T')[0] : null,
                 is_current: true,
-                order_index: 0
+                order_index: index
             }))
+        
         if (expsToInsert.length > 0) {
-            for (const exp of expsToInsert) {
-                const { error: expError } = await supabase
-                    .from("user_experiences")
-                    .upsert(exp, { onConflict: "user_id,title" })
-                if (expError) {
-                    console.error("Experience insert error:", expError)
-                }
+            const { error: expError } = await supabase
+                .from("user_experiences")
+                .upsert(expsToInsert, { onConflict: "user_id,title" })
+            if (expError) {
+                console.error("Experience insert error:", expError)
             }
         }
     }
 
-    // Embedding generation is now triggered directly from the frontend
-    // after this function returns successfully.
+    // Revalidate cached data
+    try {
+        revalidatePath("/dashboard")
+        revalidatePath("/matches")
+        revalidateByTag(CACHE_TAGS.PROFILES)
+        revalidateByTag(CACHE_TAGS.USER_SKILLS)
+        revalidateByTag(CACHE_TAGS.USER_INTERESTS)
+    } catch (error) {
+        console.error("Failed to revalidate:", error)
+    }
 
     return { success: true, userId }
 }
 
-// Trigger embedding generation after onboarding
+// Trigger embedding generation using server-side Supabase client (no token exposure)
 export async function triggerEmbeddingGeneration(userId: string) {
     const supabase = await createClient()
     
-    // Get user session
-    const { data: { session } } = await supabase.auth.getSession()
-    
-    if (!session?.access_token) {
-        console.error("No session available for embedding generation")
-        return { success: false, message: "No session available" }
+    // Verify auth
+    const { data: userData, error: userError } = await supabase.auth.getUser()
+    if (userError || !userData?.user) {
+        return { 
+            success: false, 
+            error: "Unable to verify user authentication"
+        }
+    }
+
+    // Verify user owns this profile
+    if (userData.user.id !== userId) {
+        return {
+            success: false,
+            error: "Unauthorized to trigger embedding for this user"
+        }
     }
 
     try {
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
-        
-        // Call the Next.js API route to generate embedding
-        const response = await fetch(`${appUrl}/api/embeddings/generate`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                // Pass auth token via standard Authorization header
-                "Authorization": `Bearer ${session.access_token}`
-            },
-            body: JSON.stringify({ user_id: userId }),
-        })
+        const { error: updateError } = await supabase
+            .from("profile_embeddings")
+            .upsert({
+                user_id: userId,
+                status: "pending",
+                last_updated: new Date().toISOString()
+            }, { onConflict: "user_id" })
 
-        if (!response.ok) {
-            const errorText = await response.text()
-            console.error("API route error:", errorText)
-            return { success: false, message: errorText }
+        if (updateError) {
+            console.error("Failed to update embedding status:", updateError)
+            return {
+                success: false,
+                error: "Failed to initialize embedding generation"
+            }
         }
 
-        const data = await response.json()
-        console.log("Embedding generation triggered:", data)
-        return { success: true, data }
+        return { 
+            success: true, 
+            message: "Embedding generation started"
+        }
     } catch (error) {
         console.error("Error triggering embedding generation:", error)
         return { 
             success: false, 
-            message: error instanceof Error ? error.message : "Unknown error" 
+            error: error instanceof Error ? error.message : "Unknown error" 
         }
     }
 }
@@ -196,6 +196,19 @@ export async function triggerEmbeddingGeneration(userId: string) {
 export async function getEmbeddingStatus(userId: string) {
     const supabase = await createClient()
     
+    // Verify auth
+    const { data: userData, error: userError } = await supabase.auth.getUser()
+    if (userError || !userData?.user) {
+        return { error: "Unable to verify user authentication" }
+    }
+
+    // Verify user owns this profile
+    if (userData.user.id !== userId) {
+        return {
+            error: "Unauthorized to view embedding status for this user"
+        }
+    }
+
     const { data, error } = await supabase
         .from("profile_embeddings")
         .select("user_id, status, last_updated")
@@ -203,12 +216,11 @@ export async function getEmbeddingStatus(userId: string) {
         .single()
 
     if (error) {
-        // If no embedding record exists yet
         if (error.code === "PGRST116") {
             return { status: "not_found", user_id: userId }
         }
         console.error("Error fetching embedding status:", error)
-        return { error: error.message }
+        return { error: "Failed to fetch embedding status" }
     }
 
     return data

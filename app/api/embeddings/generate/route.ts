@@ -1,6 +1,15 @@
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient, SupabaseClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+
+export const runtime = "edge"
+
+export const dynamic = "force-dynamic"
+
+const EmbeddingRequestSchema = z.object({
+  user_id: z.string().uuid("Invalid user ID format").optional(),
+})
 
 interface ProfileData {
   id: string;
@@ -98,7 +107,6 @@ async function updateEmbeddingStatus(
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
   
-  // Authenticate user
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   
   if (authError || !user) {
@@ -112,9 +120,21 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json().catch(() => ({}));
-    const targetUserId = body.user_id;
     
-    // Verify target user is the authenticated user
+    const validationResult = EmbeddingRequestSchema.safeParse(body);
+    if (!validationResult.success) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: "Invalid request body",
+          details: String(validationResult.error) 
+        },
+        { status: 400 }
+      );
+    }
+    
+    const targetUserId = validationResult.data.user_id;
+    
     userId = targetUserId || user.id;
     if (userId !== user.id) {
       return NextResponse.json(
