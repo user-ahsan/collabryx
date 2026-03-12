@@ -5,3 +5,5 @@ pydantic==2.9.2
 python-dotenv==1.0.1
 requests==2.32.4
 supabase==2.3.0
+tenacity==8.2.3
+httpx==0.25.2

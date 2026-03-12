@@ -9,6 +9,7 @@ export interface EmbeddingStatus {
   user_id: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
   last_updated: string;
+  embedding?: number[];
 }
 
 export interface EmbeddingGenerationResult {
@@ -20,13 +21,14 @@ export interface EmbeddingGenerationResult {
     model: string;
     status: string;
     processing_time_ms?: number;
+    used_fallback?: boolean;
   };
   error?: string;
 }
 
 /**
  * Generate embedding for a user profile
- * Triggers the Edge Function to generate embedding using Python worker
+ * Triggers the API route to generate embedding using Python worker or Edge Function fallback
  */
 export async function generateUserEmbedding(userId: string): Promise<EmbeddingGenerationResult> {
   const supabase = createClient();
@@ -74,6 +76,33 @@ export async function generateUserEmbedding(userId: string): Promise<EmbeddingGe
 }
 
 /**
+ * Subscribe to embedding status updates via Supabase Realtime
+ * Returns an unsubscribe function
+ */
+export function subscribeToEmbeddingStatus(
+  userId: string,
+  callback: (status: EmbeddingStatus) => void
+): () => void {
+  const supabase = createClient();
+  
+  const channel = supabase
+    .channel(`embedding-status-${userId}`)
+    .on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'profile_embeddings',
+      filter: `user_id=eq.${userId}`
+    }, (payload) => {
+      callback(payload.new as EmbeddingStatus);
+    })
+    .subscribe();
+  
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}
+
+/**
  * Get the current embedding status for a user
  */
 export async function getEmbeddingStatus(userId: string): Promise<EmbeddingStatus | null> {
@@ -82,7 +111,7 @@ export async function getEmbeddingStatus(userId: string): Promise<EmbeddingStatu
   try {
     const { data, error } = await supabase
       .from("profile_embeddings")
-      .select("user_id, status, last_updated")
+      .select("user_id, status, last_updated, embedding")
       .eq("user_id", userId)
       .single();
 
