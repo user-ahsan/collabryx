@@ -12,6 +12,7 @@ import { MatchScoreCompact } from "@/components/shared/match-score"
 import { MatchReasonBadge } from "@/components/ui/match-reason-badge"
 import { MatchCardDropdown } from "@/components/shared/glass-dropdown-menu"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { formatInitials } from "@/lib/utils/format-initials"
 
 interface Insight {
     type: "complementary" | "shared" | "similar"
@@ -75,7 +76,7 @@ export function MatchCardListView({ match, index }: MatchCardListViewProps) {
                             <Avatar className="h-12 w-12 sm:h-14 sm:w-14 border border-border shrink-0">
                                 <AvatarImage src={match.avatar} className="object-cover" />
                                 <AvatarFallback className="text-sm font-bold bg-muted text-foreground">
-                                    {match.name.split(' ').map(n => n[0]).join('')}
+                                    {formatInitials(match.name)}
                                 </AvatarFallback>
                             </Avatar>
                             {isStrongMatch && (

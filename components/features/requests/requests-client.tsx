@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { UserPlus, X, CheckCircle2, Clock, Sparkles, Mail } from "lucide-react"
 import { GlassCard } from "@/components/shared/glass-card"
+import { formatInitials } from "@/lib/utils/format-initials"
 
 const RECEIVED_REQUESTS: ReceivedRequest[] = [
     {
@@ -118,7 +119,7 @@ function RequestCard({ request, type }: RequestCardProps) {
                 {/* Avatar */}
                 <Avatar className="h-14 w-14 sm:h-16 sm:w-16 border-2 border-border shrink-0">
                     <AvatarImage src={request.user.avatar} />
-                    <AvatarFallback>{request.user.name.split(' ').map((n: string) => n[0]).join('')}</AvatarFallback>
+                    <AvatarFallback>{formatInitials(request.user.name)}</AvatarFallback>
                 </Avatar>
 
                 {/* Content */}
