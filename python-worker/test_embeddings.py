@@ -5,6 +5,7 @@ Run this to verify the embedding service works correctly
 
 import sys
 import time
+import asyncio
 from embedding_generator import generator, construct_semantic_text
 
 
@@ -27,7 +28,7 @@ def test_embedding_generation():
     test_text = "Student React Developer passionate about Fintech"
     
     start_time = time.time()
-    embedding = generator.generate_embedding(test_text)
+    embedding = asyncio.run(generator.generate_embedding(test_text))
     elapsed = (time.time() - start_time) * 1000
     
     print(f"✓ Generated embedding of length: {len(embedding)}")
@@ -93,10 +94,31 @@ def test_empty_profile():
     print(f"Generated semantic text for empty profile:\n{semantic_text}\n")
     
     # Should still generate valid text
-    embedding = generator.generate_embedding(semantic_text)
-    assert len(embedding) == 768
+    embedding = asyncio.run(generator.generate_embedding(semantic_text))
+    assert len(embedding) == 384
     
     print("✓ Empty profile handling test passed\n")
+
+
+def test_input_validation():
+    """Test input validation"""
+    print("Testing input validation...")
+    
+    # Test empty text
+    try:
+        asyncio.run(generator.generate_embedding(""))
+        assert False, "Should have raised ValueError for empty text"
+    except ValueError as e:
+        print(f"✓ Correctly rejected empty text: {e}")
+    
+    # Test too short text
+    try:
+        asyncio.run(generator.generate_embedding("too short"))
+        assert False, "Should have raised ValueError for short text"
+    except ValueError as e:
+        print(f"✓ Correctly rejected short text: {e}")
+    
+    print("✓ Input validation test passed\n")
 
 
 def run_all_tests():
@@ -110,6 +132,7 @@ def run_all_tests():
         test_embedding_generation()
         test_semantic_text_construction()
         test_empty_profile()
+        test_input_validation()
         
         print("=" * 50)
         print("✓ ALL TESTS PASSED")

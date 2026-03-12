@@ -70,8 +70,8 @@ async function updateEmbeddingStatus(
   };
 
   if (embedding) {
-    // Pad embedding to 768 dimensions to match database schema
-    const targetDimensions = 768;
+    // Pad/slice to 384 dimensions to match database schema
+    const targetDimensions = 384;
     if (embedding.length < targetDimensions) {
       updateData.embedding = [
         ...embedding,
@@ -188,33 +188,87 @@ export async function POST(request: NextRequest) {
       interests || []
     );
 
+    // Try Python worker first
     const PYTHON_WORKER_URL = process.env.PYTHON_WORKER_URL || "http://localhost:8000";
+    let usedFallback = false;
 
-    // Call Python worker to generate embedding
-    const workerResponse = await fetch(`${PYTHON_WORKER_URL}/generate-embedding`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        text: semanticText,
-        user_id: userId,
-        request_id: crypto.randomUUID(),
-      }),
-    });
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-    if (!workerResponse.ok) {
-      const errorText = await workerResponse.text();
-      await updateEmbeddingStatus(supabase, userId, "failed");
-      throw new Error(`Python worker error: ${workerResponse.status} - ${errorText}`);
-    }
+      const workerResponse = await fetch(`${PYTHON_WORKER_URL}/generate-embedding`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          text: semanticText,
+          user_id: userId,
+          request_id: crypto.randomUUID(),
+        }),
+        signal: controller.signal,
+      });
 
-    // Return queued response immediately!
-    return NextResponse.json({
+      clearTimeout(timeoutId);
+
+      if (!workerResponse.ok) {
+        throw new Error(`Python worker error: ${workerResponse.status}`);
+      }
+
+      // Return queued response immediately!
+      return NextResponse.json({
         success: true,
         message: "Your profile is being analyzed. Vector embedding is queued!",
         data: { user_id: userId, status: "queued" },
-    });
+      });
+    } catch (workerError) {
+      console.log("Python worker unavailable, using Edge Function fallback:", workerError);
+      usedFallback = true;
+    }
+
+    // Fallback: Call Supabase Edge Function
+    if (usedFallback) {
+      const edgeFunctionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-embedding`;
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const edgeResponse = await fetch(edgeFunctionUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session?.access_token || ''}`,
+          "apikey": process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+        },
+        body: JSON.stringify({
+          user_id: userId,
+        }),
+      });
+
+      if (!edgeResponse.ok) {
+        const errorText = await edgeResponse.text();
+        await updateEmbeddingStatus(supabase, userId, "failed");
+        throw new Error(`Edge Function error: ${edgeResponse.status} - ${errorText}`);
+      }
+
+      const edgeData = await edgeResponse.json();
+      
+      return NextResponse.json({
+        success: true,
+        message: edgeData.message || "Embedding generated using fallback method",
+        data: {
+          user_id: userId,
+          status: "completed",
+          ...edgeData.data,
+        },
+      });
+    }
+
+    // Should not reach here
+    await updateEmbeddingStatus(supabase, userId, "failed");
+    return NextResponse.json(
+      { success: false, error: "Embedding generation failed" },
+      { status: 500 }
+    );
 
   } catch (error) {
     console.error("Error in embeddings generate:", error);
