@@ -1,209 +1,274 @@
 # Collabryx Embedding Service
 
-Self-hosted vector embedding service for Collabryx user profiles.
+Optimized Python worker service for generating semantic embeddings using Sentence Transformers.
 
-## Overview
+## 🎯 Features
 
-This service generates semantic embeddings for user profiles using the `all-MiniLM-L6-v2` model from Sentence Transformers. These embeddings are used for semantic matching to connect users with complementary collaborators.
+- **Semantic Embeddings** - 384-dimensional vectors using `all-MiniLM-L6-v2`
+- **Async Queue Processing** - Background job processing with configurable concurrency
+- **Health Monitoring** - Real-time health checks with terminal pings every 30s
+- **Dead Letter Queue** - Automatic retry logic with poison pill handling
+- **Pause/Resume** - Control queue processing without restart
+- **Graceful Shutdown** - Proper queue draining on shutdown
+- **Comprehensive Testing** - Pytest suite with 80%+ coverage
 
-## Model Information
+## 📦 Quick Start
 
-- **Model**: `sentence-transformers/all-MiniLM-L6-v2`
-- **Dimensions**: 768
-- **Max Sequence Length**: 256 tokens
-- **Optimization**: Optimized for semantic search
+### Build & Run
 
-## Features
+```bash
+# Build Docker image (~1.5-2GB optimized)
+make build
 
-- **Fast**: Optimized model with low latency
-- **Lightweight**: Small model size (~80MB)
-- **Self-hosted**: No external API dependencies
-- **Accurate**: State-of-the-art semantic understanding
+# Run service
+make run
 
-## Directory Structure
+# View logs
+make logs
 
-```
-python-worker/
-├── Dockerfile              # Container configuration
-├── docker-compose.yml      # Local development
-├── requirements.txt        # Python dependencies
-├── main.py                 # FastAPI server
-├── embedding_generator.py  # Core embedding logic
-├── test_embeddings.py      # Test suite
-└── README.md              # This file
+# Check health
+make health
 ```
 
-## Installation
+### Environment Variables
 
-### Local Development
+```bash
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-key
+ALLOWED_ORIGINS=http://localhost:3000
+```
 
-1. **Install Python dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
+## 🔧 Make Commands
 
-2. **Run the server**:
-   ```bash
-   uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-   ```
+| Command | Description |
+|---------|-------------|
+| `make build` | Build Docker image |
+| `make run` | Start service |
+| `make stop` | Stop service |
+| `make logs` | View logs |
+| `make health` | Check health |
+| `make pause` | Pause queue |
+| `make resume` | Resume queue |
+| `make queue-status` | Queue status |
+| `make dlq` | View DLQ |
+| `make dlq-retry` | Retry DLQ |
+| `make test` | Run tests |
 
-### Docker Deployment
+## 📊 API Endpoints
 
-1. **Build the image**:
-   ```bash
-   docker build -t collabryx-embedding-service .
-   ```
+### Health & Monitoring
 
-2. **Run the container**:
-   ```bash
-   docker run -p 8000:8000 collabryx-embedding-service
-   ```
+```bash
+# Health check
+GET /health
 
-3. **Or use docker-compose**:
-   ```bash
-   docker-compose up
-   ```
+# Model info
+GET /model-info
 
-## API Endpoints
+# Service info
+GET /
+```
 
-### GET /
+### Queue Management
 
-Returns service information.
+```bash
+# Pause processing
+POST /queue/pause
 
-**Response**:
-```json
+# Resume processing
+POST /queue/resume
+
+# Queue status
+GET /queue/status
+
+# View dead letter queue
+GET /queue/dlq
+
+# Retry DLQ messages
+POST /queue/dlq/retry
+```
+
+### Generate Embeddings
+
+```bash
+# From text
+POST /generate-embedding
 {
-  "message": "Collabryx Embedding Service",
-  "model_info": {
-    "model_name": "all-MiniLM-L6-v2",
-    "dimensions": 768,
-    "device": "cuda" | "cpu",
-    "max_seq_length": 256
-  }
+  "text": "Student React Developer passionate about Fintech",
+  "user_id": "user-123",
+  "request_id": "req-456"
+}
+
+# From profile data
+POST /generate-embedding-from-profile
+{
+  "user_id": "user-123",
+  "profile": {...},
+  "skills": [...],
+  "interests": [...]
 }
 ```
 
-### GET /health
+## 🏗️ Architecture
 
-Health check endpoint.
+### Queue System
 
-**Response**:
+```
+┌─────────────┐     ┌──────────────┐     ┌─────────────┐
+│   Request   │────▶│  Async Queue │────▶│  Processor  │
+│   (HTTP)    │     │  (max: 100)  │     │  (max: 5)   │
+└─────────────┘     └──────────────┘     └─────────────┘
+                                              │
+                                              ▼
+                                       ┌─────────────┐
+                                       │   Supabase  │
+                                       │  (Storage)  │
+                                       └─────────────┘
+```
+
+### Retry Logic
+
+- **Max Retries:** 3 attempts per message
+- **Backoff:** Exponential (2s, 4s, 8s)
+- **DLQ:** Failed messages moved after 3 retries
+- **Manual Retry:** `/queue/dlq/retry` endpoint
+
+### Health Check Response
+
 ```json
 {
   "status": "healthy",
-  "timestamp": 1234567890.123,
-  "model_info": { ... }
+  "timestamp": "2026-03-12T10:30:00",
+  "uptime_seconds": 3600,
+  "model_loaded": true,
+  "supabase_connected": true,
+  "queue_size": 5,
+  "queue_capacity": 100,
+  "queue_paused": false,
+  "processed_count": 150,
+  "failed_count": 3,
+  "dlq_size": 2,
+  "concurrent_processing": 2
 }
 ```
 
-### POST /generate-embedding
-
-Generate embedding for text input.
-
-**Request**:
-```json
-{
-  "text": "Role: Student. Headline: React Developer...",
-  "user_id": "uuid-of-user",
-  "request_id": "optional-request-id"
-}
-```
-
-**Response**:
-```json
-{
-  "user_id": "uuid-of-user",
-  "embedding": [0.1, 0.2, ..., 0.9],  // 768 dimensions
-  "dimensions": 768,
-  "model": "all-MiniLM-L6-v2",
-  "request_id": "optional-request-id",
-  "status": "success",
-  "processing_time_ms": 45.23
-}
-```
-
-### POST /generate-embedding-from-profile
-
-Generate embedding from complete profile data.
-
-**Request**:
-```json
-{
-  "user_id": "uuid-of-user",
-  "profile": {
-    "role": "Student",
-    "headline": "React Developer",
-    "bio": "...",
-    "looking_for": ["cofounder", "teammate"],
-    "location": "San Francisco"
-  },
-  "skills": [
-    {"skill_name": "React", "proficiency": "advanced"}
-  ],
-  "interests": [
-    {"interest": "Fintech"}
-  ],
-  "request_id": "optional-request-id"
-}
-```
-
-## Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `PYTHONUNBUFFERED` | Disable output buffering | 1 |
-
-## Deployment
-
-### Railway (Recommended)
-
-1. Push this directory to GitHub
-2. Connect to Railway
-3. Set environment variables
-4. Deploy
-
-### Render
-
-1. Create new Web Service
-2. Connect to GitHub repository
-3. Set build command: `pip install -r requirements.txt`
-4. Set start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
-
-### Self-hosted VPS
-
-1. Install Docker
-2. Pull or build the image
-3. Run with proper networking
-
-## Testing
-
-Run the test suite:
+## 🧪 Testing
 
 ```bash
-python test_embeddings.py
+# Run all tests
+make test
+
+# With coverage
+make test-cov
+
+# View coverage report
+open htmlcov/index.html
 ```
 
-## Integration with Collabryx
+### Test Structure
 
-The Python worker is called by the Supabase Edge Function (`generate-embedding`) which:
+```
+tests/
+├── conftest.py          # Fixtures
+├── test_embedding.py    # Embedding tests
+└── __init__.py
+```
 
-1. Fetches user profile data from Supabase
-2. Constructs semantic text from profile, skills, and interests
-3. Calls this service via HTTP
-4. Stores the resulting embedding in the `profile_embeddings` table
+## 🐳 Docker Optimization
 
-## Performance
+### Image Size Comparison
 
-- **Cold start**: ~2-3 seconds (model loading)
-- **Inference**: ~10-50ms per embedding
-- **Memory usage**: ~200MB (model + dependencies)
+| Stage | Size | Notes |
+|-------|------|-------|
+| Original | ~12GB | Full PyTorch CUDA |
+| Optimized | ~1.5-2GB | CPU-only, multi-stage |
 
-## Notes
+### Optimization Techniques
 
-- The model loads on first request (lazy loading)
-- Consider warming up the model on startup for production
-- GPU acceleration is automatically used if available
+1. **Multi-stage build** - Builder + Runtime stages
+2. **CPU-only PyTorch** - `torch==2.5.1+cpu`
+3. **uv package manager** - 10-15x faster than pip
+4. **Slim base image** - `python:3.11-slim-bookworm`
+5. **No build tools** - Removed gcc/g++ from runtime
+6. **.dockerignore** - Exclude unnecessary files
 
-## License
+## 📈 Monitoring
 
-MIT License
+### Terminal Health Pings
+
+Every 30 seconds:
+```
+❤️ Health Check | Queue: 5/100 | Processed: 150 | Failed: 3 | Uptime: 60.0m | Paused: False
+```
+
+### Key Metrics
+
+- **Queue Size** - Current pending jobs
+- **Processed Count** - Total successful embeddings
+- **Failed Count** - Total failures
+- **DLQ Size** - Messages awaiting retry
+- **Concurrent Processing** - Active workers
+- **Uptime** - Service uptime
+
+## 🔒 Security
+
+- **Non-root user** - Runs as `appuser`
+- **Environment variables** - No hardcoded secrets
+- **Supabase timeouts** - 5s query timeout
+- **Input validation** - Pydantic v2 validators
+- **CORS** - Configured origins only
+
+## 🐛 Troubleshooting
+
+### Queue Stuck
+
+```bash
+# Check status
+make queue-status
+
+# Pause and resume
+make pause
+make resume
+```
+
+### High Failure Rate
+
+```bash
+# View DLQ
+make dlq
+
+# Retry failed
+make dlq-retry
+
+# Check logs
+make logs-error
+```
+
+### Memory Issues
+
+```bash
+# Check resource limits in docker-compose.yml
+# Default: 2G memory, 2 CPU
+```
+
+## 📝 Changelog
+
+### v1.1.0 (2026-03-12)
+
+- ✅ Fixed Pydantic v2 validators
+- ✅ Added Supabase timeouts
+- ✅ Fixed CPU-bound blocking with thread pool
+- ✅ Added queue pause/resume
+- ✅ Added health monitor with terminal pings
+- ✅ Added dead letter queue
+- ✅ Added graceful shutdown
+- ✅ Optimized Docker image (12GB → ~2GB)
+- ✅ Added comprehensive pytest suite
+
+### v1.0.0
+
+- Initial release
+
+## 📄 License
+
+Proprietary - Collabryx
