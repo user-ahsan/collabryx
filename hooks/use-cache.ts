@@ -99,6 +99,7 @@ export function useCacheOnly<T>(key: string): T | null {
   useEffect(() => {
     const cached = getCache<T>(key)
     if (cached) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setData(cached)
     }
   }, [key])

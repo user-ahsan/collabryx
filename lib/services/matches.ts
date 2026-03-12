@@ -54,7 +54,7 @@ export async function fetchMatches(
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
   if (authError) {
-    logger.error("Authentication failed", authError)
+    logger.app.error("Authentication failed", authError)
     return { data: [], error: new Error("Authentication failed. Please log in again.") }
   }
 
@@ -101,7 +101,7 @@ export async function fetchMatches(
   })
 
   if (queryError || !queryData) {
-    logger.error("Failed to fetch matches", queryError)
+    logger.app.error("Failed to fetch matches", queryError)
     return { data: [], error: queryError || new Error("No data returned") }
   }
 
@@ -134,7 +134,7 @@ export async function dismissMatch(matchId: string): Promise<{ error: Error | nu
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError) {
-      logger.error("Authentication failed", authError)
+      logger.app.error("Authentication failed", authError)
       return { error: new Error("Authentication failed. Please log in again.") }
     }
 
@@ -152,7 +152,7 @@ export async function dismissMatch(matchId: string): Promise<{ error: Error | nu
 
     return { error: null }
   } catch (error) {
-    logger.error("Failed to dismiss match", error)
+    logger.app.error("Failed to dismiss match", error)
     return { error: error instanceof Error ? error : new Error("Unknown error") }
   }
 }
@@ -166,7 +166,7 @@ export async function connectWithMatch(matchedUserId: string): Promise<{ error: 
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError) {
-      logger.error("Authentication failed", authError)
+      logger.app.error("Authentication failed", authError)
       return { error: new Error("Authentication failed. Please log in again.") }
     }
 
@@ -194,7 +194,7 @@ export async function connectWithMatch(matchedUserId: string): Promise<{ error: 
 
     return { error: null }
   } catch (error) {
-    logger.error("Failed to connect with match", error)
+    logger.app.error("Failed to connect with match", error)
     return { error: error instanceof Error ? error : new Error("Unknown error") }
   }
 }
@@ -260,7 +260,7 @@ export async function fetchMatchActivity(
 
     return { data: mappedActivities, error: null }
   } catch (error) {
-    logger.error("Failed to fetch match activity", error)
+    logger.app.error("Failed to fetch match activity", error)
     return { data: [], error: error instanceof Error ? error : new Error("Unknown error") }
   }
 }
@@ -287,7 +287,7 @@ export async function markActivityRead(activityId: string): Promise<{ error: Err
 
     return { error: null }
   } catch (error) {
-    logger.error("Failed to mark activity as read", error)
+    logger.app.error("Failed to mark activity as read", error)
     return { error: error instanceof Error ? error : new Error("Unknown error") }
   }
 }
@@ -318,7 +318,7 @@ export async function fetchMatchPreferences(): Promise<{
 
     return { data, error: null }
   } catch (error) {
-    logger.error("Failed to fetch match preferences", error)
+    logger.app.error("Failed to fetch match preferences", error)
     return { data: null, error: error instanceof Error ? error : new Error("Unknown error") }
   }
 }
@@ -349,7 +349,7 @@ export async function updateMatchPreferences(
 
     return { data, error: null }
   } catch (error) {
-    logger.error("Failed to update match preferences", error)
+    logger.app.error("Failed to update match preferences", error)
     return { data: null, error: error instanceof Error ? error : new Error("Unknown error") }
   }
 }
