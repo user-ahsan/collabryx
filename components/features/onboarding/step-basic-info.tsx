@@ -6,61 +6,43 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
+import { toast } from "sonner"
 
 interface StepBasicInfoProps {
     userName?: string
+    onNameExtracted?: (displayName: string) => void
 }
 
-export function StepBasicInfo({ userName }: StepBasicInfoProps) {
-    const { register, setValue, formState: { errors } } = useFormContext()
+export function StepBasicInfo({ userName, onNameExtracted }: StepBasicInfoProps) {
+    const { register, setValue, formState: { errors }, watch } = useFormContext()
     const locationInputRef = useRef<HTMLInputElement | null>(null)
-    const [isPlacesApiLoaded, setIsPlacesApiLoaded] = useState(() => {
-        if (typeof window === "undefined") return false
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const w = window as any
-        return !!(w.google && w.google.maps && w.google.maps.places)
-    })
+    const fullNameValue = watch("fullName")
 
-    // Setup Google Places API if key exists
+    // Extract display name from full name using regex
     useEffect(() => {
-        const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-        if (!apiKey || isPlacesApiLoaded) return
-
-        const scriptId = 'google-maps-script'
-        if (document.getElementById(scriptId)) return
-
-        const script = document.createElement('script')
-        script.id = scriptId
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`
-        script.async = true
-        script.defer = true
-        script.onload = () => setIsPlacesApiLoaded(true)
-        document.body.appendChild(script)
-
-return () => {
-            // cleanup if necessary, but usually keeping it loaded is fine
+        if (fullNameValue && onNameExtracted) {
+            // Extract first name or create display name from full name
+            const displayName = fullNameValue
+                .trim()
+                .toLowerCase()
+                .replace(/[^a-z0-9\s]/g, '') // Remove special characters
+                .replace(/\s+/g, '_') // Replace spaces with underscores
+                .slice(0, 30) // Limit length
+            
+            onNameExtracted(displayName)
         }
-         
-    }, [isPlacesApiLoaded])
+    }, [fullNameValue, onNameExtracted])
 
-    useEffect(() => {
-        if (!isPlacesApiLoaded || !locationInputRef.current) return
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const w = window as any
-        const autocomplete = new w.google.maps.places.Autocomplete(locationInputRef.current, {
-            types: ['(cities)'],
-        })
-
-        autocomplete.addListener('place_changed', () => {
-            const place = autocomplete.getPlace()
-            if (place && place.formatted_address) {
-                setValue('location', place.formatted_address, { shouldValidate: true, shouldDirty: true })
-            } else if (place && place.name) {
-                setValue('location', place.name, { shouldValidate: true, shouldDirty: true })
-            }
-        })
-    }, [isPlacesApiLoaded, setValue])
+    // Location validation helper
+    const validateLocation = (value: string) => {
+        if (!value) return true // Optional field
+        // Basic location format validation: City, State/Country or City, State Code
+        const locationPattern = /^[A-Za-z\s]+,\s*[A-Za-z\s]+$/
+        if (!locationPattern.test(value)) {
+            return "Please enter location in format: City, State or City, Country"
+        }
+        return true
+    }
 
     const locationRegister = register("location")
 
@@ -79,15 +61,25 @@ return () => {
                     <Input
                         id="fullName"
                         defaultValue={userName}
-                        placeholder="Enter your full name"
-                        {...register("fullName")}
+                        placeholder="e.g. John Doe"
+                        {...register("fullName", {
+                            required: "Full name is required",
+                            minLength: {
+                                value: 2,
+                                message: "Name must be at least 2 characters"
+                            },
+                            pattern: {
+                                value: /^[A-Za-z\s]+$/,
+                                message: "Name can only contain letters and spaces"
+                            }
+                        })}
                         className={cn(
                             "h-12 text-base transition-all duration-300",
                             glass("input")
                         )}
                     />
-                    {typeof errors.fullName?.message === "string" && (
-                        <p className="text-sm text-destructive">{errors.fullName.message}</p>
+                    {errors.fullName?.message && (
+                        <p className="text-sm text-destructive">{errors.fullName.message as string}</p>
                     )}
                 </div>
 
@@ -96,12 +88,24 @@ return () => {
                     <Input
                         id="displayName"
                         placeholder="johndoe"
-                        {...register("displayName")}
+                        {...register("displayName", {
+                            pattern: {
+                                value: /^[a-z0-9_]+$/,
+                                message: "Display name can only contain lowercase letters, numbers, and underscores"
+                            },
+                            maxLength: {
+                                value: 30,
+                                message: "Display name must be less than 30 characters"
+                            }
+                        })}
                         className={cn(
                             "h-12 text-base transition-all duration-300",
                             glass("input")
                         )}
                     />
+                    {errors.displayName?.message && (
+                        <p className="text-sm text-destructive">{errors.displayName.message as string}</p>
+                    )}
                 </div>
 
                 <div className="grid gap-2.5">
@@ -109,14 +113,24 @@ return () => {
                     <Input
                         id="headline"
                         placeholder="e.g. Full Stack Developer @ TechStart"
-                        {...register("headline")}
+                        {...register("headline", {
+                            required: "Headline is required",
+                            minLength: {
+                                value: 5,
+                                message: "Headline must be at least 5 characters"
+                            },
+                            maxLength: {
+                                value: 100,
+                                message: "Headline must be less than 100 characters"
+                            }
+                        })}
                         className={cn(
                             "h-12 text-base transition-all duration-300",
                             glass("input")
                         )}
                     />
-                    {typeof errors.headline?.message === "string" && (
-                        <p className="text-sm text-destructive">{errors.headline.message}</p>
+                    {errors.headline?.message && (
+                        <p className="text-sm text-destructive">{errors.headline.message as string}</p>
                     )}
                 </div>
 
@@ -134,6 +148,16 @@ return () => {
                             "h-12 text-base transition-all duration-300",
                             glass("input")
                         )}
+                        onBlur={(e) => {
+                            const value = e.target.value
+                            if (value) {
+                                const validation = validateLocation(value)
+                                if (validation !== true) {
+                                    toast.error(validation)
+                                    setValue('location', '', { shouldValidate: true })
+                                }
+                            }
+                        }}
                     />
                 </div>
             </div>

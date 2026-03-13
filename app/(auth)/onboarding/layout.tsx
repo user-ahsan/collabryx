@@ -11,41 +11,38 @@ import { createClient } from "@/lib/supabase/client"
 function OnboardingLayoutContent({ children, isNewUser }: { children: React.ReactNode, isNewUser: boolean }) {
     const { isCollapsed } = useSidebar()
 
-    // For new users, show only the welcome screen without sidebar
+    // For new users, show only the onboarding screen without sidebar
     if (isNewUser) {
         return (
-            <>
-                <SettingsDialog />
+            <div className="min-h-screen bg-background">
                 {children}
-            </>
+            </div>
         )
     }
 
     // For returning users, show normal layout with sidebar
     return (
-        <>
-            <div className="min-h-screen bg-background flex flex-col md:flex-row">
-                {/* Mobile Navigation */}
-                <MobileNav />
+        <div className="min-h-screen bg-background flex flex-col md:flex-row">
+            {/* Mobile Navigation */}
+            <MobileNav />
 
-                {/* Desktop Sidebar */}
-                <aside className={cn(
-                    "hidden md:flex flex-col fixed inset-y-0 left-0 z-50 border-r bg-background transition-all duration-300 ease-in-out",
-                    isCollapsed ? "w-[80px]" : "w-[280px]"
-                )}>
-                    <SidebarNav />
-                </aside>
+            {/* Desktop Sidebar */}
+            <aside className={cn(
+                "hidden md:flex flex-col fixed inset-y-0 left-0 z-50 border-r bg-background transition-all duration-300 ease-in-out",
+                isCollapsed ? "w-[80px]" : "w-[280px]"
+            )}>
+                <SidebarNav />
+            </aside>
 
-                {/* Main Content */}
-                <main className={cn(
-                    "flex-1 transition-all duration-300 ease-in-out pt-0 md:pt-0 min-h-screen pb-6 md:pb-0",
-                    isCollapsed ? "md:ml-[80px]" : "md:ml-[280px]"
-                )}>
-                    {children}
-                </main>
-            </div>
+            {/* Main Content */}
+            <main className={cn(
+                "flex-1 transition-all duration-300 ease-in-out pt-0 md:pt-0 min-h-screen pb-6 md:pb-0",
+                isCollapsed ? "md:ml-[80px]" : "md:ml-[280px]"
+            )}>
+                {children}
+            </main>
             <SettingsDialog />
-        </>
+        </div>
     )
 }
 
@@ -72,18 +69,12 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
             setIsNewUser(!profile || profile.onboarding_completed !== true)
         }
 
-        requestAnimationFrame(() => {
-            checkOnboardingStatus()
-        })
+        checkOnboardingStatus()
     }, [])
 
     // Show nothing until we determine user status
     if (isNewUser === null) {
-        return (
-            <div className="min-h-screen bg-background flex items-center justify-center">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-            </div>
-        )
+        return null
     }
 
     return (
