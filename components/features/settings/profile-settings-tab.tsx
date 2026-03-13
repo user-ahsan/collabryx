@@ -8,6 +8,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Loader2 } from "lucide-react"
+import { validateProfileSettings } from "@/lib/validations/settings"
+import { toast } from "sonner"
 
 export function ProfileSettingsTab({ userId }: { userId: string }) {
     const supabase = createClient()
@@ -125,6 +127,22 @@ export function ProfileSettingsTab({ userId }: { userId: string }) {
         setError(null)
         setSuccessMsg(null)
 
+        // Validate before saving
+        const validation = validateProfileSettings({
+            displayName: profile.display_name,
+            fullName: profile.full_name,
+            headline: profile.headline,
+            bio: profile.bio,
+            location: profile.location,
+            websiteUrl: profile.website_url,
+        })
+
+        if (!validation.success) {
+            setError(validation.errors[0])
+            setIsSaving(false)
+            return
+        }
+
         try {
             if (process.env.NODE_ENV === 'development') {
                 await new Promise(resolve => setTimeout(resolve, 500))
@@ -148,6 +166,7 @@ export function ProfileSettingsTab({ userId }: { userId: string }) {
 
             if (updateError) throw updateError
             setSuccessMsg("Profile saved successfully.")
+            toast.success("Profile updated")
 
             // Re-fetch to ensure sync
             setTimeout(() => setSuccessMsg(null), 3000)
@@ -155,6 +174,7 @@ export function ProfileSettingsTab({ userId }: { userId: string }) {
             console.error(err)
             const errorMessage = err instanceof Error ? err.message : "Failed to save profile."
             setError(errorMessage)
+            toast.error(errorMessage)
         } finally {
             setIsSaving(false)
         }

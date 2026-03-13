@@ -19,6 +19,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Image as ImageIcon, Smile, X, Calendar, FileText, Loader2 } from "lucide-react"
 import { useMutation } from "@tanstack/react-query"
 import { IntentPrompt } from "../intent-prompt"
+import { validateImage, validateDocument, getFileCategory } from "@/lib/utils/file-validation"
+import { toast } from "sonner"
 
 import Image from "next/image"
 
@@ -78,12 +80,46 @@ export function CreatePostModal() {
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
-            const newFiles = Array.from(e.target.files).map(file => ({
-                file,
-                preview: URL.createObjectURL(file),
-                type: (file.type.startsWith('video') ? 'video' : 'image') as 'image' | 'video'
-            }))
-            setMediaFiles(prev => [...prev, ...newFiles])
+            const files = Array.from(e.target.files)
+            const validFiles: MediaFile[] = []
+
+            for (const file of files) {
+                // Validate file
+                const category = getFileCategory(file.type)
+                
+                if (category === "image") {
+                    const validation = validateImage(file, { maxSize: 50 * 1024 * 1024 }) // 50MB for posts
+                    if (!validation.valid) {
+                        toast.error(`"${file.name}": ${validation.error}`)
+                        continue
+                    }
+                } else if (category === "video") {
+                    const sizeValidation = validateImage(file, { maxSize: 50 * 1024 * 1024 })
+                    if (!sizeValidation.valid) {
+                        toast.error(`"${file.name}": ${sizeValidation.error}`)
+                        continue
+                    }
+                } else if (category === "document") {
+                    const validation = validateDocument(file)
+                    if (!validation.valid) {
+                        toast.error(`"${file.name}": ${validation.error}`)
+                        continue
+                    }
+                } else {
+                    toast.error(`"${file.name}": Unsupported file type`)
+                    continue
+                }
+
+                validFiles.push({
+                    file,
+                    preview: URL.createObjectURL(file),
+                    type: (file.type.startsWith('video') ? 'video' : 'image') as 'image' | 'video'
+                })
+            }
+
+            if (validFiles.length > 0) {
+                setMediaFiles(prev => [...prev, ...validFiles])
+            }
         }
         if (fileInputRef.current) fileInputRef.current.value = ''
     }
