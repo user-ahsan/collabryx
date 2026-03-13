@@ -8,7 +8,7 @@ import {
   dismissMatch,
   connectWithMatch,
   fetchMatchActivity,
-  markActivityAsRead,
+  markActivityRead,
   fetchMatchPreferences,
   updateMatchPreferences,
 } from '@/lib/services/matches'
@@ -70,11 +70,11 @@ export function useMatchActivity() {
   })
 }
 
-export function useMarkActivityAsRead() {
+export function useMarkActivityRead() {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: markActivityAsRead,
+    mutationFn: markActivityRead,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: MATCH_QUERY_KEYS.activity() })
     },

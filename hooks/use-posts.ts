@@ -6,7 +6,8 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { fetchPosts, createPost, deletePost, addReaction, removeReaction } from '@/lib/services/posts'
-import type { PostsQueryOptions, PostWithAuthor } from '@/lib/services/posts'
+import type { PostsQueryOptions } from '@/lib/services/posts'
+import type { PostWithAuthor } from '@/types/database.types'
 
 export const POST_QUERY_KEYS = {
   all: ['posts'] as const,
@@ -56,7 +57,7 @@ export function useAddReaction() {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: addReaction,
+    mutationFn: ({ postId, emoji }: { postId: string; emoji: string }) => addReaction(postId, emoji),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.lists() })
     },
@@ -67,7 +68,7 @@ export function useRemoveReaction() {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: removeReaction,
+    mutationFn: ({ postId }: { postId: string }) => removeReaction(postId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: POST_QUERY_KEYS.lists() })
     },
