@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "lib": ["deno.ns", "dom", "dom.iterable", "deno.unstable"],
+    "types": ["@supabase/functions-js"]
+  },
+  "imports": {
+    "https://deno.land/std@0.168.0/": "https://deno.land/std@0.168.0/",
+    "https://esm.sh/@supabase/supabase-js@2.45.1": "https://esm.sh/@supabase/supabase-js@2.45.1"
+  }
+}
