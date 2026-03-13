@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { ArrowLeft, MoreVertical, Phone, Video } from "lucide-react"
 import { MessageInput } from "./message-input"
+import { glass } from "@/lib/utils/glass-variants"
 
 interface ChatWindowProps {
     chatId?: string
@@ -45,7 +46,11 @@ export function ChatWindow({ chatId, onBackToList }: ChatWindowProps) {
     return (
         <div className="flex flex-col h-full">
             {/* Header */}
-            <div className="flex items-center justify-between p-3 md:p-4 border-b">
+            <div className={cn(
+                "flex items-center justify-between p-3 md:p-4",
+                glass("divider"),
+                "border-b"
+            )}>
                 <div className="flex items-center gap-2 md:gap-3">
                     {/* Back button - only on mobile */}
                     <Button
@@ -92,10 +97,10 @@ export function ChatWindow({ chatId, onBackToList }: ChatWindowProps) {
                         >
                             <div
                                 className={cn(
-                                    "rounded-lg p-2.5 md:p-3 text-sm max-w-[95%] md:max-w-[80%]",
+                                    "rounded-2xl p-2.5 md:p-3 text-sm max-w-[95%] md:max-w-[80%] shadow-sm transition-all",
                                     msg.senderId === "me"
-                                        ? "bg-primary text-primary-foreground rounded-br-none"
-                                        : "bg-muted rounded-bl-none"
+                                        ? "bg-primary/90 backdrop-blur-md text-primary-foreground rounded-br-none shadow-[0_4px_32px_0_rgba(59,130,246,0.06)]"
+                                        : "bg-background/40 backdrop-blur-md rounded-bl-none border border-border/40"
                                 )}
                             >
                                 {msg.text}

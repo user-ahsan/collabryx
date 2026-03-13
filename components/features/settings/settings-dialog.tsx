@@ -23,6 +23,8 @@ import { User, Shield, Bell, CreditCard, Loader2, Info, Code2, Briefcase } from 
 import { ProfileSettingsTab } from "./profile-settings-tab"
 import { SkillsInterestsSettingsTab } from "./skills-settings-tab"
 import { ExperienceProjectsSettingsTab } from "./experience-projects-settings-tab"
+import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 
 export function SettingsDialog() {
     const { isOpen, setIsOpen, activeTab, setActiveTab } = useSettings()
@@ -132,14 +134,10 @@ export function SettingsDialog() {
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogContent className="max-w-[95vw] md:max-w-5xl p-0 h-[85vh] overflow-hidden bg-blue-950/[0.05] backdrop-blur-2xl border border-blue-400/10 shadow-[0_4px_32px_0_rgba(59,130,246,0.06),0_1px_0_0_rgba(255,255,255,0.06)_inset] sm:rounded-2xl">
-                {/* Top highlight streak */}
-                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-300/30 to-transparent pointer-events-none z-0" />
-                {/* Left edge highlight */}
-                <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-blue-300/20 via-transparent to-transparent pointer-events-none z-0" />
-                {/* Blue ambient tint overlay */}
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.04] via-transparent to-indigo-500/[0.03] pointer-events-none z-0" />
-
+            <DialogContent className={cn(
+                "max-w-[95vw] md:max-w-5xl p-0 h-[85vh] overflow-hidden sm:rounded-2xl",
+                glass("overlay")
+            )}>
                 <div className="relative z-10 flex flex-col h-full w-full">
                     <DialogTitle className="sr-only">Account Settings</DialogTitle>
                     <DialogDescription className="sr-only">
@@ -167,27 +165,51 @@ export function SettingsDialog() {
                             {/* Sidebar inside Dialog */}
                             <div className="md:w-60 shrink-0 md:border-r md:border-white/10 overflow-y-auto">
                                 <TabsList className="flex md:flex-col h-auto w-full items-stretch justify-start p-2 md:p-4 gap-1 bg-transparent">
-                                    <TabsTrigger value="profile" className="justify-start gap-2 px-3 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all text-sm font-medium">
+                                    <TabsTrigger value="profile" className={cn(
+                                        "justify-start gap-2 px-3 py-2 transition-all text-sm font-medium rounded-lg",
+                                        "data-[state=active]:bg-background/50 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/40",
+                                        "hover:bg-white/[0.04]"
+                                    )}>
                                         <User className="h-4 w-4" />
                                         <span className="hidden md:inline">Profile</span>
                                     </TabsTrigger>
-                                    <TabsTrigger value="skills" className="justify-start gap-2 px-3 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all text-sm font-medium">
+                                    <TabsTrigger value="skills" className={cn(
+                                        "justify-start gap-2 px-3 py-2 transition-all text-sm font-medium rounded-lg",
+                                        "data-[state=active]:bg-background/50 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/40",
+                                        "hover:bg-white/[0.04]"
+                                    )}>
                                         <Code2 className="h-4 w-4" />
                                         <span className="hidden md:inline">Skills & Interests</span>
                                     </TabsTrigger>
-                                    <TabsTrigger value="experience" className="justify-start gap-2 px-3 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all text-sm font-medium">
+                                    <TabsTrigger value="experience" className={cn(
+                                        "justify-start gap-2 px-3 py-2 transition-all text-sm font-medium rounded-lg",
+                                        "data-[state=active]:bg-background/50 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/40",
+                                        "hover:bg-white/[0.04]"
+                                    )}>
                                         <Briefcase className="h-4 w-4" />
                                         <span className="hidden md:inline">Experience & Projects</span>
                                     </TabsTrigger>
-                                    <TabsTrigger value="account" className="justify-start gap-2 px-3 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all text-sm font-medium">
+                                    <TabsTrigger value="account" className={cn(
+                                        "justify-start gap-2 px-3 py-2 transition-all text-sm font-medium rounded-lg",
+                                        "data-[state=active]:bg-background/50 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/40",
+                                        "hover:bg-white/[0.04]"
+                                    )}>
                                         <Shield className="h-4 w-4" />
                                         <span className="hidden md:inline">Account</span>
                                     </TabsTrigger>
-                                    <TabsTrigger value="notifications" className="justify-start gap-2 px-3 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all text-sm font-medium">
+                                    <TabsTrigger value="notifications" className={cn(
+                                        "justify-start gap-2 px-3 py-2 transition-all text-sm font-medium rounded-lg",
+                                        "data-[state=active]:bg-background/50 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/40",
+                                        "hover:bg-white/[0.04]"
+                                    )}>
                                         <Bell className="h-4 w-4" />
                                         <span className="hidden md:inline">Notifications</span>
                                     </TabsTrigger>
-                                    <TabsTrigger value="billing" className="justify-start gap-2 px-3 py-2 data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all text-sm font-medium">
+                                    <TabsTrigger value="billing" className={cn(
+                                        "justify-start gap-2 px-3 py-2 transition-all text-sm font-medium rounded-lg",
+                                        "data-[state=active]:bg-background/50 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/40",
+                                        "hover:bg-white/[0.04]"
+                                    )}>
                                         <CreditCard className="h-4 w-4" />
                                         <span className="hidden md:inline">Billing</span>
                                     </TabsTrigger>

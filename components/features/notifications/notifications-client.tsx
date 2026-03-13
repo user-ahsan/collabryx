@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { Bell, Heart, MessageSquare, UserPlus } from "lucide-react"
 import { toast } from "sonner"
+import { GlassCard } from "@/components/shared/glass-card"
+import { glass } from "@/lib/utils/glass-variants"
 
 interface Notification {
     id: string
@@ -52,25 +54,26 @@ export function NotificationsClient({ initialNotifications }: NotificationsClien
 
             <div className="space-y-4">
                 {notifications.length === 0 ? (
-                    <div className="text-center py-12">
+                    <GlassCard innerClassName="text-center py-12">
                         <Bell className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                         <p className="text-muted-foreground">No notifications yet</p>
-                    </div>
+                    </GlassCard>
                 ) : (
                     notifications.map((n) => (
-                        <div
+                        <GlassCard
                             key={n.id}
                             className={cn(
-                                "group flex items-start gap-4 p-5 rounded-xl border transition-all hover:bg-muted/30 hover:shadow-sm",
-                                !n.read ? "bg-card border-l-4 border-l-primary" : "bg-card/50 border-border/40"
+                                "group transition-all hover:-translate-y-0.5",
+                                !n.read ? "border-l-4 border-l-primary" : ""
                             )}
+                            innerClassName="flex items-start gap-4 p-5"
                         >
                             <div className={cn(
-                                "mt-1 p-2 rounded-full shrink-0",
-                                n.type === "connect" && "bg-blue-500/10 text-blue-600",
-                                n.type === "message" && "bg-green-500/10 text-green-600",
-                                n.type === "like" && "bg-red-500/10 text-red-600",
-                                n.type === "system" && "bg-yellow-500/10 text-yellow-600"
+                                "mt-1 p-2 rounded-full shrink-0 backdrop-blur-sm",
+                                n.type === "connect" && glass("badgeInfo"),
+                                n.type === "message" && glass("badgeSuccess"),
+                                n.type === "like" && glass("badgeError"),
+                                n.type === "system" && glass("badgeWarning")
                             )}>
                                 {n.type === "connect" && <UserPlus className="h-4.5 w-4.5" />}
                                 {n.type === "message" && <MessageSquare className="h-4.5 w-4.5" />}
@@ -93,7 +96,7 @@ export function NotificationsClient({ initialNotifications }: NotificationsClien
                                     </div>
                                 )}
                             </div>
-                        </div>
+                        </GlassCard>
                     ))
                 )}
             </div>

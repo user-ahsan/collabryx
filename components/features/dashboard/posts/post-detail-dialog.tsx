@@ -13,6 +13,7 @@ import { CommentSection } from "../comments/comment-section"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { GlassCard } from "@/components/shared/glass-card"
 import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 
 interface PostDetailDialogProps {
     isOpen: boolean
@@ -84,7 +85,11 @@ export function PostDetailDialog({
                 {hasMedia ? (
                     // ─── Dual-Column Layout (Media Posts) ───
                     <GlassCard className="w-full h-full" innerClassName="flex flex-col md:flex-row w-full h-full">
-                        <div className="w-full min-h-[40vh] md:h-full md:w-[65%] lg:w-[70%] xl:w-[72%] bg-black/40 backdrop-blur-md flex flex-col justify-center relative border-b border-blue-400/10 md:border-b-0 md:border-r group/media overflow-hidden">
+                        <div className={cn(
+                            "w-full min-h-[40vh] md:h-full md:w-[65%] lg:w-[70%] xl:w-[72%] flex flex-col justify-center relative border-b md:border-b-0 md:border-r group/media overflow-hidden",
+                            glass("mediaOverlay"),
+                            "border-b border-blue-400/10"
+                        )}>
                             {/* CSS Snap Carousel for media in the dialog */}
                             <div
                                 ref={scrollContainerRef}
@@ -117,10 +122,13 @@ export function PostDetailDialog({
                             {post.mediaUrls && post.mediaUrls.length > 1 && (
                                 <>
                                     {currentIndex > 0 && (
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full h-10 w-10 backdrop-blur-sm border border-white/10 md:opacity-0 md:group-hover/media:opacity-100 transition-opacity"
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className={cn(
+                                                    "absolute left-4 top-1/2 -translate-y-1/2 text-white rounded-full h-10 w-10 md:opacity-0 md:group-hover/media:opacity-100 transition-opacity",
+                                                    glass("mediaOverlay")
+                                                )}
                                             onClick={(e) => {
                                                 e.preventDefault()
                                                 e.stopPropagation()
@@ -131,10 +139,13 @@ export function PostDetailDialog({
                                         </Button>
                                     )}
                                     {currentIndex < post.mediaUrls.length - 1 && (
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/40 hover:bg-black/60 text-white rounded-full h-10 w-10 backdrop-blur-sm border border-white/10 md:opacity-0 md:group-hover/media:opacity-100 transition-opacity"
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className={cn(
+                                                    "absolute right-4 top-1/2 -translate-y-1/2 text-white rounded-full h-10 w-10 md:opacity-0 md:group-hover/media:opacity-100 transition-opacity",
+                                                    glass("mediaOverlay")
+                                                )}
                                             onClick={(e) => {
                                                 e.preventDefault()
                                                 e.stopPropagation()
@@ -145,7 +156,10 @@ export function PostDetailDialog({
                                         </Button>
                                     )}
 
-                                    <div className="absolute top-4 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 md:right-4 bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-medium z-10 pointer-events-none">
+                                    <div className={cn(
+                                        "absolute top-4 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 md:right-4 text-white px-3 py-1 rounded-full text-xs font-medium z-10 pointer-events-none",
+                                        glass("mediaCounter")
+                                    )}>
                                         {currentIndex + 1} / {post.mediaUrls.length}
                                     </div>
                                 </>

@@ -13,6 +13,8 @@ import { Search, SlidersHorizontal, LayoutGrid, List, Sparkles } from "lucide-re
 import { GlassCard } from "@/components/shared/glass-card"
 import { useState } from "react"
 import { SemanticSearchDialog } from "./semantic-search-dialog"
+import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 
 type ViewMode = "grid" | "list"
 
@@ -89,7 +91,10 @@ export function MatchFilters({
                             </Button>
 
                             {/* View Toggle */}
-                            <div className="flex items-center gap-1 p-1 rounded-lg border bg-background">
+                            <div className={cn(
+                                "flex items-center gap-1 p-1 rounded-lg border",
+                                glass("subtle")
+                            )}>
                                 <Button
                                     variant={viewMode === "grid" ? "secondary" : "ghost"}
                                     size="sm"
