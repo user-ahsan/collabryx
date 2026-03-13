@@ -2,8 +2,7 @@
 fastapi==0.115.6
 uvicorn[standard]==0.32.0
 
-# ML/AI - CPU-only PyTorch and sentence-transformers
-torch==2.5.1+cpu
+# ML/AI - sentence-transformers (torch installed separately with CPU index)
 sentence-transformers==3.3.1
 
 # Validation
@@ -11,11 +10,10 @@ pydantic==2.9.2
 pydantic-settings==2.6.1
 
 # HTTP client
-httpx==0.27.2
+httpx>=0.24.0
 
 # Database
-supabase==2.3.0
-postgrest==0.19.0
+supabase>=2.3.0
 
 # Retry logic
 tenacity==9.0.0
