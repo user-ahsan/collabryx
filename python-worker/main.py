@@ -20,8 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 import threading
 
 from dotenv import load_dotenv
-from supabase import create_client, Client, ClientOptions
-from postgrest import SyncPostgrestClient
+from supabase import create_client, Client
 
 from embedding_generator import generator, construct_semantic_text
 
@@ -47,6 +46,7 @@ request_queue: asyncio.Queue = asyncio.Queue(maxsize=MAX_QUEUE_SIZE)
 processing_semaphore: asyncio.Semaphore = asyncio.Semaphore(MAX_CONCURRENT_PROCESSING)
 queue_paused = False
 queue_paused_event = asyncio.Event()
+queue_paused_event.set()  # Start in resumed state
 shutdown_event = asyncio.Event()
 
 processed_count = 0
@@ -69,17 +69,8 @@ def init_supabase_client():
     global supabase
     if SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
         try:
-            postgrest_client = SyncPostgrestClient(
-                base_url=f"{SUPABASE_URL}/rest/v1",
-                headers={"apikey": SUPABASE_SERVICE_ROLE_KEY},
-                timeout=SUPABASE_TIMEOUT
-            )
-            supabase = create_client(
-                SUPABASE_URL, 
-                SUPABASE_SERVICE_ROLE_KEY,
-                options=ClientOptions(postgrest_client=postgrest_client)
-            )
-            logger.info("Supabase client initialized successfully with timeout")
+            supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+            logger.info("Supabase client initialized successfully")
         except Exception as e:
             logger.error(f"Failed to initialize Supabase client: {e}")
             supabase = None
@@ -100,6 +91,7 @@ async def health_monitor():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global queue_paused
     validate_env_vars()
     init_supabase_client()
     logger.info("Embedding service starting up...")
@@ -107,14 +99,13 @@ async def lifespan(app: FastAPI):
     monitor_task = asyncio.create_task(health_monitor())
     processor_task = asyncio.create_task(queue_processor())
     
-    logger.info("✅ Service ready")
+    logger.info(f"✅ Service ready | Queue: {'PAUSED' if queue_paused else 'RUNNING'}")
     
     yield
     
     logger.info("Initiating graceful shutdown...")
     shutdown_event.set()
     
-    global queue_paused
     queue_paused = True
     queue_paused_event.set()
     
@@ -305,16 +296,20 @@ async def generate_and_store_embedding(text: str, user_id: str, request_id: Opti
             request_queue.task_done()
 
 async def queue_processor():
+    logger.info("Queue processor started, waiting for requests...")
     while not shutdown_event.is_set():
         try:
             text, user_id, request_id, retry_count = await request_queue.get()
+            logger.info(f"Dequeued request for user {user_id}, processing...")
             asyncio.create_task(generate_and_store_embedding(text, user_id, request_id, retry_count))
         except asyncio.CancelledError:
+            logger.info("Queue processor cancelled, shutting down...")
             break
         except Exception as e:
-            logger.error(f"Queue processor error: {e}")
+            logger.error(f"Queue processor error: {e}", exc_info=True)
             if not shutdown_event.is_set():
                 await asyncio.sleep(1)
+    logger.info("Queue processor stopped")
 
 @app.get("/")
 async def root():
@@ -451,18 +446,24 @@ async def generate_embedding_from_profile(request: ProfileDataRequest):
 @app.post("/queue/pause")
 async def pause_queue():
     global queue_paused
+    if queue_paused:
+        logger.warning("Queue already paused")
+        return {"status": "already_paused", "queue_size": request_queue.qsize(), "message": "Queue was already paused"}
     queue_paused = True
     queue_paused_event.clear()
-    logger.info("Queue paused by user request")
-    return {"status": "paused", "queue_size": request_queue.qsize()}
+    logger.info("✅ Queue paused by user request")
+    return {"status": "paused", "queue_size": request_queue.qsize(), "message": "Queue processing paused"}
 
 @app.post("/queue/resume")
 async def resume_queue():
     global queue_paused
+    if not queue_paused:
+        logger.warning("Queue already running")
+        return {"status": "already_running", "queue_size": request_queue.qsize(), "message": "Queue was already running"}
     queue_paused = False
     queue_paused_event.set()
-    logger.info("Queue resumed by user request")
-    return {"status": "resumed", "queue_size": request_queue.qsize()}
+    logger.info("✅ Queue resumed by user request")
+    return {"status": "resumed", "queue_size": request_queue.qsize(), "message": "Queue processing resumed"}
 
 @app.get("/queue/status")
 async def get_queue_status():
