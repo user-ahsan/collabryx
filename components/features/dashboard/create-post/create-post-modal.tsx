@@ -1,28 +1,20 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { useForm, useWatch } from "react-hook-form"
+import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Image as ImageIcon, Smile, X, Calendar, FileText, Loader2 } from "lucide-react"
-import { useMutation } from "@tanstack/react-query"
-import { IntentPrompt } from "../intent-prompt"
-import { validateImage, validateDocument, getFileCategory } from "@/lib/utils/file-validation"
+import { ImageIcon, Calendar, FileText, Smile, Send, X } from "lucide-react"
+import { IntentPrompt } from "./intent-prompt"
+import { completeOnboarding } from "@/lib/services/profiles"
 import { toast } from "sonner"
-
 import Image from "next/image"
+import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 
 const EMOJIS = [
     { char: "😀", label: "Smile" }, { char: "😂", label: "Laugh" }, { char: "❤️", label: "Love" },
@@ -150,24 +142,31 @@ export function CreatePostModal() {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <div className="relative rounded-xl md:rounded-2xl overflow-hidden bg-blue-950/[0.05] backdrop-blur-2xl border border-blue-400/10 shadow-[0_4px_32px_0_rgba(59,130,246,0.06),0_1px_0_0_rgba(255,255,255,0.06)_inset] hover:shadow-[0_8px_40px_0_rgba(59,130,246,0.12),0_1px_0_0_rgba(255,255,255,0.08)_inset] transition-all duration-500 cursor-text p-3 md:p-5">
-                    {/* Top highlight streak */}
-                    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-300/30 to-transparent pointer-events-none" />
-                    <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-blue-300/20 via-transparent to-transparent pointer-events-none" />
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.04] via-transparent to-indigo-500/[0.03] pointer-events-none" />
+                <div className={cn(
+                    "relative rounded-xl md:rounded-2xl overflow-hidden transition-all duration-500 cursor-text p-3 md:p-5",
+                    glass("card"),
+                    glass("hoverable")
+                )}>
                     <div className="relative z-10 flex gap-3 md:gap-4 items-center">
-                        <Avatar className="h-10 w-10 md:h-12 md:w-12 ring-2 ring-background shadow-sm shrink-0">
+                        <Avatar className="h-10 w-10 md:h-12 md:w-12 ring-2 ring-border shadow-sm shrink-0">
                             <AvatarImage src="/avatars/05.png" />
                             <AvatarFallback>MR</AvatarFallback>
                         </Avatar>
-                        <div className="flex-1 bg-white/[0.03] hover:bg-white/[0.05] border border-white/[0.05] hover:border-blue-500/20 transition-all rounded-full px-4 py-2.5 md:py-3 cursor-text">
+                        <div className={cn(
+                            "flex-1 border transition-all rounded-full px-4 py-2.5 md:py-3 cursor-text",
+                            glass("subtle"),
+                            "hover:border-blue-500/20"
+                        )}>
                             <span className="text-muted-foreground text-sm md:text-base font-medium">What are you trying to build?</span>
                         </div>
                     </div>
                 </div>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[600px] p-0 gap-0 overflow-hidden bg-background/95 backdrop-blur-2xl border border-blue-500/20 shadow-[0_8px_40px_0_rgba(0,0,0,0.5),0_0_60px_-20px_rgba(59,130,246,0.1)]">
-                <DialogHeader className="px-5 py-4 border-b border-blue-500/10 bg-blue-500/[0.02]">
+            <DialogContent className={cn(
+                "sm:max-w-[600px] p-0 gap-0 overflow-hidden sm:rounded-2xl",
+                glass("overlay")
+            )}>
+                <DialogHeader className={cn("px-5 py-4 border-b", glass("divider"))}>
                     <DialogTitle className="text-lg font-bold">Create Post</DialogTitle>
                     <DialogDescription className="sr-only">
                         Share your updates, projects, or look for teammates with the community.
@@ -177,7 +176,7 @@ export function CreatePostModal() {
                 <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col">
                     <div className="p-5 max-h-[60vh] overflow-y-auto no-scrollbar">
                         <div className="flex gap-4 items-start mb-4">
-                            <Avatar className="h-10 w-10 ring-2 ring-background shadow-sm shrink-0 mt-1">
+                            <Avatar className="h-10 w-10 ring-2 ring-border shadow-sm shrink-0 mt-1">
                                 <AvatarImage src="/avatars/05.png" />
                                 <AvatarFallback>MR</AvatarFallback>
                             </Avatar>
@@ -221,7 +220,7 @@ export function CreatePostModal() {
                         )}
                     </div>
 
-                    <div className="p-4 border-t border-blue-500/10 bg-blue-500/[0.02]">
+                    <div className={cn("p-4 border-t", glass("divider"))}>
                         <div className="flex items-center justify-between mb-4">
                             <span className="text-sm font-semibold text-muted-foreground pl-1">Add to your post</span>
                             <div className="flex items-center gap-1">
