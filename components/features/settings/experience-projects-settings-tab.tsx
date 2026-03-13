@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Loader2, Plus, Trash2, Link as LinkIcon } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
+import { validateExperienceProjectsSettings } from "@/lib/validations/settings"
+import { toast } from "sonner"
 
 export function ExperienceProjectsSettingsTab({ userId }: { userId: string }) {
     const supabase = createClient()
@@ -112,6 +114,32 @@ const [experiences, setExperiences] = useState<Experience[]>([])
         setError(null)
         setSuccessMsg(null)
 
+        // Validate before saving
+        const validation = validateExperienceProjectsSettings({
+            experiences: experiences.map(e => ({
+                id: e.id,
+                title: e.title,
+                company: e.company,
+                description: e.description,
+                start_date: e.start_date,
+                is_current: e.is_current,
+            })),
+            projects: projects.map(p => ({
+                id: p.id,
+                title: p.title,
+                url: p.url,
+                description: p.description,
+                is_public: p.is_public,
+            })),
+        })
+
+        if (!validation.success) {
+            setError(validation.errors[0])
+            toast.error(validation.errors[0])
+            setIsSaving(false)
+            return
+        }
+
         try {
             if (process.env.NODE_ENV === 'development') {
                 await new Promise(resolve => setTimeout(resolve, 500))
@@ -120,30 +148,19 @@ const [experiences, setExperiences] = useState<Experience[]>([])
                 return
             }
 
-            // Delete existing then re-insert to handle additions and removals easily for array based state
-            // If they have existing IDs, we should probably update them, but deleting all and inserting is easier if we don't have FK constraints relying on them.
-            // Better to properly upsert.
-
-            // For Experiences:
-            const expsToUpsert = experiences
+            // For Experiences: Delete all then insert
+            const expsToInsert = experiences
                 .filter(e => e.title || e.company)
                 .map(e => {
                     const { id, ...rest } = e
-                    return id.startsWith('new-') ? { user_id: userId, ...rest } : { id, user_id: userId, ...rest }
+                    return { user_id: userId, ...rest }
                 })
 
-            if (expsToUpsert.length > 0) {
-                const { error: expError } = await supabase.from('user_experiences').upsert(expsToUpsert)
-                if (expError) throw expError
-            }
-
-            // Handle deleted experiences (ones that are in DB but missing from state logic would be harder. I will just rely on the trash button keeping them in an array of 'deleted' or full sync)
-            // A more robust way: Delete everything for this user, then insert.
             const { error: delExpErr } = await supabase.from('user_experiences').delete().eq('user_id', userId)
             if (delExpErr) throw delExpErr
-            if (expsToUpsert.length > 0) {
+            if (expsToInsert.length > 0) {
                 const { error: insExpErr } = await supabase.from('user_experiences').insert(
-                    expsToUpsert.map(e => { 
+                    expsToInsert.map(e => { 
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         delete (e as any).id; 
                         return e 
@@ -152,19 +169,19 @@ const [experiences, setExperiences] = useState<Experience[]>([])
                 if (insExpErr) throw insExpErr
             }
 
-            // For Projects:
-            const projsToUpsert = projects
+            // For Projects: Delete all then insert
+            const projsToInsert = projects
                 .filter(p => p.title)
                 .map(p => {
                     const { id, ...rest } = p
-                    return id.startsWith('new-') ? { user_id: userId, ...rest } : { id, user_id: userId, ...rest }
+                    return { user_id: userId, ...rest }
                 })
 
             const { error: delProjErr } = await supabase.from('user_projects').delete().eq('user_id', userId)
             if (delProjErr) throw delProjErr
-            if (projsToUpsert.length > 0) {
+            if (projsToInsert.length > 0) {
                 const { error: insProjErr } = await supabase.from('user_projects').insert(
-                    projsToUpsert.map(p => { 
+                    projsToInsert.map(p => { 
                         // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         delete (p as any).id; 
                         return p 
@@ -174,6 +191,7 @@ const [experiences, setExperiences] = useState<Experience[]>([])
             }
 
             setSuccessMsg("Experience & Projects saved successfully.")
+            toast.success("Experience & projects updated")
             setTimeout(() => setSuccessMsg(null), 3000)
 
             // Refetch to get actual IDs
@@ -188,6 +206,7 @@ const [experiences, setExperiences] = useState<Experience[]>([])
             console.error(err)
             const errorMessage = err instanceof Error ? err.message : "Failed to save data."
             setError(errorMessage)
+            toast.error(errorMessage)
         } finally {
             setIsSaving(false)
         }

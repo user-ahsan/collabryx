@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, Plus, X } from "lucide-react"
+import { validateSkillsSettings } from "@/lib/validations/settings"
+import { toast } from "sonner"
 
 export function SkillsInterestsSettingsTab({ userId }: { userId: string }) {
     const supabase = createClient()
@@ -88,6 +90,19 @@ export function SkillsInterestsSettingsTab({ userId }: { userId: string }) {
         setError(null)
         setSuccessMsg(null)
 
+        // Validate before saving
+        const validation = validateSkillsSettings({
+            skills: skills.map(s => ({ skill_name: s.skill_name })),
+            interests: interests.map(i => ({ interest: i.interest })),
+        })
+
+        if (!validation.success) {
+            setError(validation.errors[0])
+            toast.error(validation.errors[0])
+            setIsSaving(false)
+            return
+        }
+
         try {
             if (process.env.NODE_ENV === 'development') {
                 await new Promise(resolve => setTimeout(resolve, 500))
@@ -117,11 +132,13 @@ export function SkillsInterestsSettingsTab({ userId }: { userId: string }) {
             }
 
             setSuccessMsg("Skills & Interests saved successfully.")
+            toast.success("Skills & interests updated")
             setTimeout(() => setSuccessMsg(null), 3000)
         } catch (err: unknown) {
             console.error(err)
             const errorMessage = err instanceof Error ? err.message : "Failed to save data."
             setError(errorMessage)
+            toast.error(errorMessage)
         } finally {
             setIsSaving(false)
         }

@@ -128,27 +128,37 @@ export function RequestReminderModal({ className }: RequestReminderModalProps) {
             if (!user) throw new Error("Not authenticated")
 
             const { data, error } = await supabase
-                .from("collaboration_requests")
-                .select("*")
-                .eq("target_user_id", user.id)
+                .from("connections")
+                .select(`
+                    *,
+                    requester:profiles!requester_id (
+                        display_name,
+                        headline,
+                        avatar_url
+                    )
+                `)
+                .eq("receiver_id", user.id)
                 .eq("status", "pending")
                 .order("created_at", { ascending: false })
 
             if (error) throw error
 
             if (data && data.length > 0) {
-                const mapped: PendingRequest[] = data.map((r: Record<string, unknown>) => ({
-                    id: String(r.id),
-                    name: String(r.requester_name ?? "Unknown"),
-                    role: String(r.requester_role ?? ""),
-                    avatar: String(r.requester_avatar ?? ""),
-                    initials: getInitials(r.requester_name as string | null, "U"),
-                    message: String(r.message ?? ""),
-                    timestamp: formatTimestamp(r.created_at as string),
-                    projectTitle: String(r.project_title ?? ""),
-                    matchPercentage: typeof r.match_percentage === "number" ? r.match_percentage : undefined,
-                    userId: String(r.requester_id ?? r.id),
-                }))
+                const mapped: PendingRequest[] = data.map((r: Record<string, unknown>) => {
+                    const requester = r.requester as Record<string, unknown> || {}
+                    return {
+                        id: String(r.id),
+                        name: String(requester.display_name ?? requester.full_name ?? "Unknown"),
+                        role: String(requester.headline ?? ""),
+                        avatar: String(requester.avatar_url ?? ""),
+                        initials: getInitials(requester.display_name as string | null, "U"),
+                        message: String(r.message ?? ""),
+                        timestamp: formatTimestamp(r.created_at as string),
+                        projectTitle: "Connection Request",
+                        matchPercentage: undefined,
+                        userId: String(r.requester_id),
+                    }
+                })
                 setLocalRequests(mapped)
                 setCachedRequests(mapped)
             } else {
@@ -190,7 +200,7 @@ export function RequestReminderModal({ className }: RequestReminderModalProps) {
         try {
             const supabase = createClient()
             await supabase
-                .from("collaboration_requests")
+                .from("connections")
                 .update({ status: type === "accept" ? "accepted" : "declined" })
                 .eq("id", id)
         } catch {
@@ -221,7 +231,7 @@ export function RequestReminderModal({ className }: RequestReminderModalProps) {
                             try {
                                 const supabase = createClient()
                                 supabase
-                                    .from("collaboration_requests")
+                                    .from("connections")
                                     .update({ status: "pending" })
                                     .eq("id", id)
                                     .then(() => { })
