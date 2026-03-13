@@ -51,13 +51,14 @@ export function WhyMatchModal({ open, onOpenChange, match }: WhyMatchModalProps)
                 <div className="space-y-6 mt-4">
                     {/* Skills Overlap */}
                     <div className="space-y-3">
-                        <div className="flex items-center gap-2">
-                            <div className={cn(
-                                "flex items-center justify-center w-8 h-8 rounded-lg backdrop-blur-sm",
-                                glass("badge")
-                            )}>
-                                <Brain className="h-4 w-4 text-primary" />
-                            </div>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <div className={cn(
+                                    "flex items-center justify-center w-8 h-8 rounded-lg backdrop-blur-sm",
+                                    glass("badge")
+                                )}>
+                                    <Brain className="h-4 w-4 text-primary" />
+                                </div>
                                 <div>
                                     <h3 className="font-semibold text-foreground">Skills Overlap</h3>
                                     <p className="text-xs text-muted-foreground">Shared technical expertise</p>
