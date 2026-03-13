@@ -222,6 +222,29 @@ export async function POST(request: NextRequest) {
 
       clearTimeout(timeoutId);
 
+      // Handle rate limit response
+      if (workerResponse.status === 429) {
+        const rateLimitData = await workerResponse.json();
+        return NextResponse.json(
+          {
+            success: false,
+            error: "Rate limit exceeded",
+            message: rateLimitData.detail?.message || "Maximum 3 embedding requests per hour",
+            retry_after: rateLimitData.detail?.retry_after,
+            reset_at: rateLimitData.detail?.reset_at,
+            remaining: rateLimitData.detail?.remaining
+          },
+          {
+            status: 429,
+            headers: {
+              'Retry-After': rateLimitData.detail?.retry_after?.toString() || '3600',
+              'X-RateLimit-Remaining': rateLimitData.detail?.remaining?.toString() || '0',
+              'X-RateLimit-Reset': rateLimitData.detail?.reset_at || ''
+            }
+          }
+        );
+      }
+
       if (!workerResponse.ok) {
         throw new Error(`Python worker error: ${workerResponse.status}`);
       }

@@ -5,6 +5,20 @@
 
 import { createClient } from "@/lib/supabase/client";
 
+export class RateLimitError extends Error {
+  retryAfter: number;
+  resetAt: string;
+  remaining: number;
+
+  constructor(message: string, retryAfter: number, resetAt: string, remaining: number) {
+    super(message);
+    this.name = 'RateLimitError';
+    this.retryAfter = retryAfter;
+    this.resetAt = resetAt;
+    this.remaining = remaining;
+  }
+}
+
 export interface EmbeddingStatus {
   user_id: string;
   status: 'pending' | 'processing' | 'completed' | 'failed';
@@ -56,6 +70,16 @@ export async function generateUserEmbedding(userId: string): Promise<EmbeddingGe
       }
     );
 
+    if (response.status === 429) {
+      const data = await response.json();
+      throw new RateLimitError(
+        data.detail?.message || 'Rate limit exceeded',
+        data.detail?.retry_after || 3600,
+        data.detail?.reset_at || '',
+        data.detail?.remaining || 0
+      );
+    }
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       return {
@@ -67,6 +91,14 @@ export async function generateUserEmbedding(userId: string): Promise<EmbeddingGe
 
     return response.json();
   } catch (error) {
+    if (error instanceof RateLimitError) {
+      const minutes = Math.ceil(error.retryAfter / 60);
+      return {
+        success: false,
+        message: `Embedding rate limit exceeded. Try again in ${minutes} minute${minutes > 1 ? 's' : ''}.`,
+        error: 'RateLimitError'
+      };
+    }
     return {
       success: false,
       message: "Failed to generate embedding",
