@@ -15,6 +15,7 @@ COPY requirements.txt .
 # Create virtual environment and install dependencies
 RUN uv venv /app/.venv
 ENV PATH="/app/.venv/bin:$PATH"
+RUN uv pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
 RUN uv pip install --no-cache-dir -r requirements.txt
 
 # Stage 2: Runtime - Minimal production image
