@@ -3,6 +3,8 @@
 import { motion } from "framer-motion"
 import { ArrowRight, User, Zap, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 
 interface StepWelcomeProps {
     onNext?: () => void
@@ -65,9 +67,16 @@ export function StepWelcome({ onNext }: StepWelcomeProps) {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4 + index * 0.1 }}
-                        className="flex flex-col items-center text-center p-6 rounded-2xl bg-muted/30 border border-border/50 hover:border-primary/30 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10"
+                        className={cn(
+                            "flex flex-col items-center text-center p-6 rounded-2xl border transition-all duration-300 hover:-translate-y-1",
+                            glass("subtle"),
+                            "hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10"
+                        )}
                     >
-                        <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 mb-4">
+                        <div className={cn(
+                            "h-14 w-14 rounded-xl flex items-center justify-center shrink-0 mb-4 backdrop-blur-sm",
+                            glass("badge")
+                        )}>
                             <feature.icon className="w-7 h-7 text-primary" />
                         </div>
                         <p className="font-semibold text-foreground text-base mb-1">{feature.title}</p>

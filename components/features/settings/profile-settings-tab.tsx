@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button"
 import { Loader2 } from "lucide-react"
 import { validateProfileSettings } from "@/lib/validations/settings"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 
 export function ProfileSettingsTab({ userId }: { userId: string }) {
     const supabase = createClient()
@@ -189,10 +191,10 @@ export function ProfileSettingsTab({ userId }: { userId: string }) {
     }
 
     return (
-        <Card className="border-none shadow-none bg-transparent">
+        <Card className={cn("border-none shadow-none bg-transparent", glass("cardInner"))}>
             <CardHeader className="px-0 pt-0">
                 <CardTitle>Profile Information</CardTitle>
-                <CardDescription>Update your public profile details.</CardDescription>
+                <CardDescription>Update your profile details and public information.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 px-0 pb-0">
                 {error && <div className="text-sm font-medium text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>}
@@ -211,15 +213,52 @@ export function ProfileSettingsTab({ userId }: { userId: string }) {
                             className="bg-white/5 border-white/10 opacity-70 cursor-not-allowed"
                         />
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="display_name">Display Name</Label>
-                        <Input
-                            id="display_name"
-                            value={profile.display_name}
-                            onChange={(e) => updateField("display_name", e.target.value)}
-                            className="bg-white/5 border-white/10 focus:border-primary/50"
-                        />
-                    </div>
+                <div className="space-y-2">
+                    <Label htmlFor="display_name">Display Name</Label>
+                    <Input
+                        id="display_name"
+                        value={profile.display_name}
+                        onChange={(e) => setProfile(prev => ({ ...prev, display_name: e.target.value }))}
+                        className={cn("focus:border-primary/50", glass("input"))}
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="full_name">Full Name</Label>
+                    <Input
+                        id="full_name"
+                        value={profile.full_name}
+                        onChange={(e) => setProfile(prev => ({ ...prev, full_name: e.target.value }))}
+                        className={cn("focus:border-primary/50", glass("input"))}
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="bio">Bio</Label>
+                    <Textarea
+                        id="bio"
+                        value={profile.bio}
+                        onChange={(e) => setProfile(prev => ({ ...prev, bio: e.target.value }))}
+                        className={cn("min-h-[100px] focus:border-primary/50", glass("input"))}
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="location">Location</Label>
+                    <Input
+                        id="location"
+                        ref={locationInputRef}
+                        value={profile.location}
+                        onChange={(e) => setProfile(prev => ({ ...prev, location: e.target.value }))}
+                        className={cn("focus:border-primary/50", glass("input"))}
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="website_url">Website URL</Label>
+                    <Input
+                        id="website_url"
+                        value={profile.website_url}
+                        onChange={(e) => setProfile(prev => ({ ...prev, website_url: e.target.value }))}
+                        className={cn("focus:border-primary/50", glass("input"))}
+                    />
+                </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

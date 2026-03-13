@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/badge"
 import { Loader2, Plus, X } from "lucide-react"
 import { validateSkillsSettings } from "@/lib/validations/settings"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 
 export function SkillsInterestsSettingsTab({ userId }: { userId: string }) {
     const supabase = createClient()
@@ -153,10 +155,10 @@ export function SkillsInterestsSettingsTab({ userId }: { userId: string }) {
     }
 
     return (
-        <Card className="border-none shadow-none bg-transparent">
+        <Card className={cn("border-none shadow-none bg-transparent", glass("cardInner"))}>
             <CardHeader className="px-0 pt-0">
                 <CardTitle>Skills & Interests</CardTitle>
-                <CardDescription>Manage your top skills and professional interests.</CardDescription>
+                <CardDescription>Add your skills and interests to improve matching.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 px-0 pb-0">
                 {error && <div className="text-sm font-medium text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>}
