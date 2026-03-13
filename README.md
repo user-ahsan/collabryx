@@ -8,6 +8,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-Enabled-green?style=flat-square&logo=supabase)](https://supabase.com/)
 [![React](https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react)](https://react.dev/)
+[![Testing](https://img.shields.io/badge/testing-vitest-yellow?style=flat-square)](https://vitest.dev/)
 
 </div>
 
@@ -15,55 +16,61 @@
 
 ## 📖 Overview
 
-**Collabryx** is a cutting-edge collaborative platform built with modern web technologies. It combines powerful real-time collaboration features with AI integration, stunning 3D visualizations, and a premium user experience designed to wow users from the first interaction.
+**Collabryx** is a cutting-edge collaborative platform built with modern web technologies. It combines powerful real-time collaboration features with AI integration, stunning 3D visualizations, and a premium user experience.
 
 ### ✨ Key Features
 
-- 🤖 **AI-Powered Collaboration** - Intelligent assistance and automation
+- 🤖 **AI-Powered Collaboration** - Intelligent assistance and semantic matching with vector embeddings
 - 🌍 **Interactive 3D Visualizations** - Powered by Three.js and React Three Fiber
 - 🔐 **Secure Authentication** - Supabase Auth with Row Level Security
 - ⚡ **Real-time Updates** - Live collaboration and data synchronization
 - 🎨 **Premium UI/UX** - Modern design with smooth animations and micro-interactions
 - 📱 **Responsive Design** - Seamless experience across all devices
 - 🌙 **Dark Mode Support** - Eye-friendly theme switching
+- ✅ **Test Coverage** - Comprehensive test suite with Vitest and React Testing Library
 
 ---
 
 ## 🏗️ Tech Stack
 
 ### Core Framework
-- **[Next.js](https://nextjs.org/)** - React framework with App Router
-- **[TypeScript](https://www.typescriptlang.org/)** - Type-safe development
-- **[React](https://react.dev/)** - Library for web and native user interfaces
+- **[Next.js 16](https://nextjs.org/)** - React framework with App Router
+- **[TypeScript 5](https://www.typescriptlang.org/)** - Type-safe development
+- **[React 19](https://react.dev/)** - Library for web and native user interfaces
 
 ### Backend & Database
-- **[Supabase](https://supabase.com/)** - PostgreSQL database, Authentication, and Real-time subscriptions
-- **[React Query](https://tanstack.com/query/latest)** - Powerful server state management
+- **[Supabase](https://supabase.com/)** - PostgreSQL database, Authentication, Real-time, Edge Functions
+- **[pgvector](https://github.com/pgvector/pgvector)** - Vector similarity search
+- **[React Query 5](https://tanstack.com/query/latest)** - Server state management
+
+### Testing
+- **[Vitest](https://vitest.dev/)** - Fast unit test framework
+- **[React Testing Library](https://testing-library.com/react)** - Component testing
 
 ### UI & Styling
-- **[Tailwind CSS](https://tailwindcss.com/)** - Utility-first CSS framework
+- **[Tailwind CSS 4](https://tailwindcss.com/)** - Utility-first CSS framework
 - **[Radix UI](https://www.radix-ui.com/)** - Accessible component primitives
-- **[Framer Motion](https://www.framer.com/motion/)** - Production-ready animations
+- **[Framer Motion 12](https://www.framer.com/motion/)** - Production-ready animations
 - **[shadcn/ui](https://ui.shadcn.com/)** - Beautiful, reusable components
-- **[Sonner](https://sonner.emilkowal.ski/)** - An opinionated toast component for React
-- **[Lucide React](https://lucide.dev/)** - Beautiful & consistent icon toolkit
+- **[Sonner](https://sonner.emilkowal.ski/)** - Toast notifications
+- **[Lucide React](https://lucide.dev/)** - Icon toolkit
 
 ### 3D & Visualization
 - **[Three.js](https://threejs.org/)** - 3D graphics library
 - **[@react-three/fiber](https://docs.pmnd.rs/react-three-fiber/)** - React renderer for Three.js
-- **[@react-three/drei](https://github.com/pmndrs/drei)** - Useful helpers for R3F
-- **[GSAP](https://gsap.com/)** - Professional-grade animation
-- **[Lenis](https://lenis.darkroom.engineering/)** - Smooth scroll library
+- **[@react-three/drei](https://github.com/pmndrs/drei)** - R3F helpers
+- **[GSAP 3](https://gsap.com/)** - Professional-grade animations
+- **[Lenis](https://lenis.darkroom.engineering/)** - Smooth scroll
 - **[Cobe](https://github.com/shuding/cobe)** - Lightweight WebGL globe
-- **[Maath](https://github.com/pmndrs/maath)** - Mathematics helpers for 3D
 
 ### AI & Analysis
-- **[face-api.js](https://github.com/justadudewhohacks/face-api.js/)** - JavaScript API for face detection and recognition
+- **Sentence Transformers** - Semantic embeddings (Python worker)
+- **[face-api.js](https://github.com/justadudewhohacks/face-api.js/)** - Face detection/recognition
 
 ### State & Forms
-- **[Zustand](https://zustand-demo.pmnd.rs/)** - Lightweight state management
-- **[React Hook Form](https://react-hook-form.com/)** - Performant form validation
-- **[Zod](https://zod.dev/)** - TypeScript-first schema validation
+- **[Zustand 5](https://zustand-demo.pmnd.rs/)** - Lightweight state management
+- **[React Hook Form](https://react-hook-form.com/)** - Form validation
+- **[Zod](https://zod.dev/)** - Schema validation
 
 ---
 
@@ -71,11 +78,10 @@
 
 ### Prerequisites
 
-Ensure you have the following installed on your machine:
-
-- **Node.js** (LTS recommended)
-- **npm** or **yarn**
+- **Node.js 20+** (LTS)
+- **npm** or **yarn** or **bun**
 - **Git**
+- **Python 3.9+** (optional, for embedding worker)
 
 ### Installation
 
@@ -99,7 +105,18 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) to view the application.
 
-📚 **Need detailed setup instructions?** See [Installation Guide](./docs/INSTALLATION.md)
+### Run Tests
+
+```bash
+# Run all tests
+npm run test
+
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage
+npm run test:coverage
+```
 
 ---
 
@@ -108,26 +125,54 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 ```
 collabryx/
 ├── app/                        # Next.js App Router
-│   ├── (auth)/                # Protected routes
-│   ├── (public)/              # Public routes
+│   ├── (auth)/                # Protected routes (dashboard, messages, etc.)
+│   ├── (public)/              # Public routes (landing, login, register)
 │   └── api/                   # API routes
 ├── components/
 │   ├── features/              # Domain-specific components
+│   │   ├── assistant/         # AI assistant feature
+│   │   ├── dashboard/         # Dashboard components
+│   │   ├── matches/           # Matching system
+│   │   ├── messages/          # Messaging
+│   │   ├── onboarding/        # Onboarding flow
+│   │   └── profile/           # User profile
 │   ├── shared/                # Cross-feature components
+│   │   ├── glass-card.tsx     # Glassmorphism card
+│   │   ├── sidebar-nav.tsx    # Navigation
+│   │   └── user-nav-dropdown.tsx
 │   └── ui/                    # shadcn/ui primitives
 ├── hooks/                     # Custom React hooks
-├── lib/                       # Utilities and configurations
-│   ├── supabase/             # Supabase client setup
-│   └── utils/                # Helper functions
+│   ├── use-auth.ts            # Authentication
+│   ├── use-chat.ts            # Chat functionality
+│   ├── use-matches.ts         # Matching logic
+│   └── use-settings.ts        # User settings
+├── lib/
+│   ├── supabase/              # Supabase client setup
+│   ├── services/              # Business logic
+│   │   ├── embeddings.ts      # Embedding generation
+│   │   ├── matches.ts         # Matching service
+│   │   └── profiles.ts        # Profile service
+│   └── utils/                 # Helper functions
+├── tests/                     # Test suite
+│   ├── components/            # Component tests
+│   ├── hooks/                 # Hook tests
+│   └── services/              # Service tests
 ├── docs/                      # Documentation
+│   ├── 01-getting-started/    # Installation, development
+│   ├── 02-architecture/       # Architecture overview
+│   ├── 03-core-features/      # Feature docs
+│   ├── 04-infrastructure/     # Infrastructure
+│   ├── 05-deployment/         # Deployment guides
+│   ├── 06-contributing/       # Contributing guide
+│   └── 07-reference/          # Reference docs
+├── python-worker/             # Python embedding service
+├── supabase/
+│   ├── functions/             # Edge Functions (Deno)
+│   └── setup/                 # Database schema (22 tables)
 ├── public/                    # Static assets
-├── supabase/                  # Supabase configuration
-│   ├── functions/            # Edge functions
-│   └── migrations/           # Database migrations
-└── types/                     # TypeScript type definitions
+├── types/                     # TypeScript types
+└── expected-objects/          # Backend schema specs
 ```
-
-📖 **Learn more:** [Architecture Guide](./docs/ARCHITECTURE.md)
 
 ---
 
@@ -139,48 +184,146 @@ collabryx/
 | `npm run build` | Build production-ready application |
 | `npm run start` | Start production server |
 | `npm run lint` | Run ESLint for code quality |
+| `npm run test` | Run Vitest test suite |
+| `npm run test:watch` | Run tests in watch mode |
+| `npm run test:coverage` | Run tests with coverage report |
 
-🔧 **Development workflow:** [Development Guide](./docs/DEVELOPMENT.md)
+---
+
+## 🧪 Testing
+
+Collabryx includes a comprehensive test suite:
+
+### Test Structure
+
+```
+tests/
+├── components/
+│   └── shared/
+│       └── glass-card.test.tsx
+├── hooks/
+│   ├── use-chat.test.ts
+│   ├── use-messages.test.ts
+│   └── use-settings.test.ts
+└── services/
+    └── embeddings.test.ts
+```
+
+### Running Tests
+
+```bash
+# Run all tests
+npm run test
+
+# Run specific test file
+npm run test tests/components/shared/glass-card.test.tsx
+
+# Run with coverage
+npm run test:coverage
+```
 
 ---
 
 ## 📚 Documentation
 
-Comprehensive documentation is available in the `/docs` directory:
-
-| Document | Description |
-|----------|-------------|
-| **[Installation Guide](./docs/INSTALLATION.md)** | Detailed setup instructions for new machines |
-| **[Development Guide](./docs/DEVELOPMENT.md)** | Development workflow and best practices |
-| **[Architecture Guide](./docs/ARCHITECTURE.md)** | Project structure and design decisions |
-| **[Deployment Guide](./docs/DEPLOYMENT.md)** | Production deployment instructions |
-| **[Contributing Guide](./docs/CONTRIBUTING.md)** | How to contribute to the project |
-| **[API Documentation](./docs/API.md)** | API routes and usage |
+| Category | Documents |
+|----------|-----------|
+| **Getting Started** | [Installation](./docs/01-getting-started/installation.md) • [Development](./docs/01-getting-started/development.md) |
+| **Architecture** | [Overview](./docs/02-architecture/overview.md) |
+| **Core Features** | [Vector Embeddings](./docs/03-core-features/vector-embeddings/overview.md) • [AI Assistant](./docs/03-core-features/ai-assistant/overview.md) |
+| **Infrastructure** | [Python Worker](./docs/04-infrastructure/python-worker/overview.md) |
+| **Deployment** | [Overview](./docs/05-deployment/overview.md) |
+| **Contributing** | [Guide](./docs/06-contributing/guide.md) |
+| **Reference** | [Environment Variables](./docs/07-reference/environment-variables.md) • [Commands](./docs/07-reference/commands.md) |
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](./docs/CONTRIBUTING.md) for details on:
+We welcome contributions! See our [Contributing Guide](./docs/06-contributing/guide.md) for details on:
 
 - Code of Conduct
 - Development workflow
-- Coding standards
+- Coding standards (TypeScript, React, Tailwind)
+- Git workflow (conventional commits)
 - Pull request process
+- Testing requirements
+
+### Quick Start for Contributors
+
+```bash
+# Fork the repository
+git clone https://github.com/your-username/collabryx.git
+
+# Create a branch
+git checkout -b feature/your-feature-name
+
+# Make changes and test
+npm run dev
+npm run test
+
+# Commit with conventional commits
+git commit -m "feat: add new feature"
+
+# Push and create PR
+git push origin feature/your-feature-name
+```
 
 ---
 
 ## 🔐 Environment Variables
 
-Required environment variables (see [Installation Guide](./docs/INSTALLATION.md) for details):
+Required environment variables:
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+# Supabase (Required)
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# Python Worker (Optional, for embeddings)
+PYTHON_WORKER_URL=http://localhost:8000
+
+# Optional
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+NODE_ENV=development
 ```
 
 ⚠️ **Never commit `.env.local` to version control!**
+
+📖 **Complete reference:** [Environment Variables](./docs/07-reference/environment-variables.md)
+
+---
+
+## 📊 Database
+
+Collabryx uses **22 tables** in Supabase (PostgreSQL) with:
+
+- Row Level Security (RLS) on all tables
+- Realtime subscriptions enabled
+- Automatic embedding generation triggers
+- Optimized indexes for performance
+
+### Core Tables
+
+| Table | Purpose |
+|-------|---------|
+| `profiles` | User profiles |
+| `user_skills` | User skills |
+| `user_interests` | User interests |
+| `user_experiences` | Work experience |
+| `user_projects` | Projects portfolio |
+| `posts` | Social posts |
+| `comments` | Post comments |
+| `connections` | User connections |
+| `match_suggestions` | AI match suggestions |
+| `match_scores` | Match compatibility scores |
+| `conversations` | Chat conversations |
+| `messages` | Chat messages |
+| `notifications` | User notifications |
+| `profile_embeddings` | Vector embeddings (768 dim) |
+
+📖 **Complete schema:** [expected-objects/](./expected-objects/) • [Database Setup](./supabase/setup/)
 
 ---
 
@@ -192,8 +335,6 @@ This project is private and proprietary. All rights reserved.
 
 ## 🆘 Support
 
-Having issues? Check out:
-
 - 📖 [Documentation](./docs/)
 - 🐛 [Issue Tracker](https://github.com/your-username/collabryx/issues)
 - 💬 [Discussions](https://github.com/your-username/collabryx/discussions)
@@ -202,6 +343,6 @@ Having issues? Check out:
 
 <div align="center">
 
-**Built with ❤️ using Next.js, TypeScript, and Supabase**
+**Built with ❤️ using Next.js, TypeScript, Supabase, and Three.js**
 
 </div>

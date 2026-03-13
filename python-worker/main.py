@@ -60,7 +60,14 @@ MAX_QUEUE_SIZE = 100
 request_queue = asyncio.Queue(maxsize=MAX_QUEUE_SIZE)
 processing_semaphore = asyncio.Semaphore(5)  # Max 5 concurrent generations
 
-@app.asynccontextmanager
+# Initialize FastAPI app
+app = FastAPI(
+    title="Collabryx Embedding Service",
+    description="Generate semantic embeddings for user profiles using Sentence Transformers",
+    version="1.0.0",
+)
+
+@asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifecycle with background tasks"""
     validate_env_vars()
@@ -88,12 +95,8 @@ async def lifespan(app: FastAPI):
     logger.info("Embedding service shutting down...")
 
 
-app = FastAPI(
-    title="Collabryx Embedding Service",
-    description="Generate semantic embeddings for user profiles using Sentence Transformers",
-    version="1.0.0",
-    lifespan=lifespan
-)
+# Add lifespan to app
+app.lifespan = lifespan
 
 # CORS middleware with specific origins
 app.add_middleware(
@@ -385,18 +388,18 @@ async def process_pending_queue():
                         .execute()
                     
                     # Get user profile data
-                    profile_response = supabase.from("profiles")\
+                    profile_response = supabase.from_("profiles")\
                         .select("id, display_name, headline, bio, location, looking_for")\
                         .eq("id", item["user_id"])\
                         .single()\
                         .execute()
                     
-                    skills_response = supabase.from("user_skills")\
+                    skills_response = supabase.from_("user_skills")\
                         .select("skill_name")\
                         .eq("user_id", item["user_id"])\
                         .execute()
                     
-                    interests_response = supabase.from("user_interests")\
+                    interests_response = supabase.from_("user_interests")\
                         .select("interest")\
                         .eq("user_id", item["user_id"])\
                         .execute()
