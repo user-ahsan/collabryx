@@ -3,6 +3,7 @@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { cn } from "@/lib/utils"
 import { Bot, User } from "lucide-react"
+import { glass } from "@/lib/utils/glass-variants"
 
 interface Message {
     role: "user" | "assistant"
@@ -18,8 +19,10 @@ export function MessageBubble({ message }: MessageBubbleProps) {
 
     return (
         <div className={cn(
-            "flex gap-3 md:gap-4 p-3 md:p-4 rounded-xl",
-            isAssistant ? "bg-muted/50" : "bg-background"
+            "flex gap-3 md:gap-4 p-3 md:p-4 rounded-xl shadow-sm transition-all",
+            isAssistant 
+                ? glass("bubble") + " border border-border/40" 
+                : glass("buttonPrimary") + " text-primary-foreground"
         )}>
             <Avatar className="h-7 w-7 md:h-8 md:w-8 mt-0.5 md:mt-1 border shrink-0">
                 {isAssistant ? (

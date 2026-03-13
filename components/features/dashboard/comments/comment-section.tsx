@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Send, Smile, ThumbsUp, Heart, Flame, Frown, Angry } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { RichTextDisplay } from "../posts/rich-text-display"
+import { GlassBubble, GlassBubbleBadge, GlassReactionPicker } from "@/components/shared/glass-bubble"
 import { cn } from "@/lib/utils"
 
 const COMMENT_REACTIONS = [
@@ -112,29 +113,29 @@ function CommentItem({
             </Avatar>
 
             <div className="flex-1 min-w-0 max-w-full">
-                <div className="flex items-start gap-2 max-w-full">
-                    <div className="bg-background/40 backdrop-blur-md border border-border/40 rounded-2xl rounded-tl-none px-3 py-2 inline-block relative group/bubble hover:bg-background/60 transition-colors max-w-full break-words shadow-sm">
-                        <p className="text-sm font-semibold text-foreground cursor-pointer hover:underline mb-0.5">
-                            {comment.author.name}
-                        </p>
-                        <RichTextDisplay
-                            content={comment.content}
-                            className="text-sm text-foreground/90 leading-snug"
-                            truncate={true}
-                            maxWords={40}
-                        />
-
-                        {/* Like Count Badge */}
-                        {comment.likes > 0 && (
-                            <div className="absolute -bottom-2.5 right-1 bg-background border border-white/10 shadow-sm rounded-full px-1.5 py-0.5 flex items-center gap-1 z-10">
-                                <div className="bg-primary/10 rounded-full p-0.5">
-                                    <ThumbsUp className="h-2 w-2 text-primary fill-primary" />
-                                </div>
-                                <span className="text-[10px] text-muted-foreground font-medium">{comment.likes}</span>
-                            </div>
-                        )}
-                    </div>
+                <GlassBubble variant="comment" className="inline-block relative group/bubble max-w-full break-words">
+                <div className="px-3 py-2">
+                    <p className="text-sm font-semibold text-foreground cursor-pointer hover:underline mb-0.5">
+                        {comment.author.name}
+                    </p>
+                    <RichTextDisplay
+                        content={comment.content}
+                        className="text-sm text-foreground/90 leading-snug"
+                        truncate={true}
+                        maxWords={40}
+                    />
                 </div>
+
+                {/* Like Count Badge */}
+                {comment.likes > 0 && (
+                    <GlassBubbleBadge>
+                        <div className="bg-primary/10 rounded-full p-0.5">
+                            <ThumbsUp className="h-2 w-2 text-primary fill-primary" />
+                        </div>
+                        <span className="text-[10px] text-muted-foreground font-medium">{comment.likes}</span>
+                    </GlassBubbleBadge>
+                )}
+            </GlassBubble>
 
                 <div className="flex items-center gap-4 mt-1.5 ml-2">
                     <div className="group/likes relative">
@@ -148,12 +149,15 @@ function CommentItem({
                         {/* Hover Reaction Menu with Bridge */}
                         <div className="absolute bottom-full left-0 mb-0 hidden group-hover/likes:flex flex-col items-start animate-in slide-in-from-bottom-1 fade-in duration-200 z-50">
                             <div className="h-2 w-full bg-transparent" />
-                            <div className="bg-background border border-white/10 shadow-xl rounded-full p-1 gap-1 flex items-center -ml-2">
+                            <div className={cn(
+                                "rounded-full p-1 gap-1 flex items-center -ml-2",
+                                "bg-card/80 backdrop-blur-xl border-border/60 shadow-lg"
+                            )}>
                                 {COMMENT_REACTIONS.map((reaction) => (
                                     <button
                                         key={reaction.id}
                                         aria-label={`React with ${reaction.id}`}
-                                        className="h-8 w-8 flex items-center justify-center hover:bg-muted rounded-full hover:scale-125 transition-transform text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
+                                        className="h-8 w-8 flex items-center justify-center hover:bg-white/[0.08] rounded-full hover:scale-125 transition-transform text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
                                         onClick={(e) => {
                                             e.stopPropagation()
                                             onToggleLike(comment.id)
@@ -185,7 +189,11 @@ function CommentItem({
                             value={replyText}
                             onChange={(e) => setReplyText(e.target.value)}
                             placeholder={`Reply to ${comment.author.name.split(' ')[0]}...`}
-                            className="h-8 text-[13px] rounded-full bg-background border border-border/40 focus:bg-background focus:border-border pr-10 transition-all font-medium"
+                            className={cn(
+                                "h-8 text-[13px] rounded-full pr-10 transition-all font-medium",
+                                "bg-background/40 backdrop-blur-md border border-border/40",
+                                "focus:bg-background/60 focus:border-border"
+                            )}
                         />
                         {replyText.trim() && (
                             <Button
@@ -352,7 +360,10 @@ export function CommentSection({ comments: initialComments = DUMMY_COMMENTS, onA
             </div>
 
             {/* Input Area */}
-            <div className="flex gap-2 md:gap-3 items-center sticky bottom-0 pt-2 pb-1 md:pb-2 bg-background/80 backdrop-blur-md z-10 mt-auto">
+            <div className={cn(
+                "flex gap-2 md:gap-3 items-center sticky bottom-0 pt-2 pb-1 md:pb-2 z-10 mt-auto",
+                "bg-background/80 backdrop-blur-xl border-t border-border/40"
+            )}>
                 <Avatar className="h-8 w-8 hidden sm:block shrink-0">
                     <AvatarImage src="/avatars/01.png" />
                     <AvatarFallback>ME</AvatarFallback>
@@ -362,7 +373,11 @@ export function CommentSection({ comments: initialComments = DUMMY_COMMENTS, onA
                         value={text}
                         onChange={(e) => setText(e.target.value)}
                         placeholder="Write a comment..."
-                        className="h-9 w-full text-sm rounded-full bg-background border border-border/40 focus:bg-background focus:border-border pr-20 transition-all font-medium placeholder:text-muted-foreground/50"
+                        className={cn(
+                            "h-9 w-full text-sm rounded-full pr-20 transition-all font-medium placeholder:text-muted-foreground/50",
+                            "bg-background/40 backdrop-blur-md border border-border/40",
+                            "focus:bg-background/60 focus:border-border"
+                        )}
                     />
                     <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center pr-1">
                         <Popover>

@@ -15,6 +15,8 @@ import {
     ThumbsUp
 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 
 import { PostCardDropdown } from "@/components/shared/glass-dropdown-menu"
 import { RichTextDisplay } from "./rich-text-display"
@@ -55,7 +57,10 @@ export function PostDetailView({ post }: PostDetailViewProps) {
     return (
         <div className="max-w-2xl mx-auto w-full pb-20 md:pb-10">
             {/* Mobile Back Header */}
-            <div className="md:hidden sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b p-3 flex items-center gap-3 mb-4">
+            <div className={cn(
+                "md:hidden sticky top-0 z-40 p-3 flex items-center gap-3 mb-4",
+                glass("header")
+            )}>
                 <Button aria-label="Go back" variant="ghost" size="icon" onClick={() => router.back()} className="-ml-2">
                     <ArrowLeft className="h-5 w-5" />
                 </Button>
@@ -74,7 +79,7 @@ export function PostDetailView({ post }: PostDetailViewProps) {
                 {/* Header */}
                 <div className="flex items-start justify-between mb-4">
                     <div className="flex gap-3 md:gap-4">
-                        <Avatar className="h-10 w-10 md:h-12 md:w-12 ring-2 ring-background cursor-pointer">
+                        <Avatar className="h-10 w-10 md:h-12 md:w-12 ring-2 ring-border cursor-pointer">
                             <AvatarImage src={post.avatar} />
                             <AvatarFallback>{post.initials}</AvatarFallback>
                         </Avatar>

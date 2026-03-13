@@ -9,6 +9,7 @@ import { VerificationBadge } from "./verification-badge"
 import { formatInitials } from "@/lib/utils/format-initials"
 import { GlassCard } from "@/components/shared/glass-card"
 import { MatchCardDropdown } from "@/components/shared/glass-dropdown-menu"
+import { glass } from "@/lib/utils/glass-variants"
 
 type ConnectionStatus = "none" | "connected" | "pending"
 type CollaborationReadiness = "available" | "open" | "not-available"
@@ -65,7 +66,7 @@ export function ProfileHeader({
             <div className="px-4 sm:px-6 md:px-8 pb-6 md:pb-8">
                 <div className="flex flex-col md:flex-row gap-4 md:gap-6 items-start -mt-12 sm:-mt-16">
                     {/* Avatar */}
-                    <Avatar className="h-24 w-24 sm:h-32 sm:w-32 md:h-36 md:w-36 ring-4 ring-background shadow-xl shrink-0 z-10 bg-background">
+                    <Avatar className="h-24 w-24 sm:h-32 sm:w-32 md:h-36 md:w-36 ring-4 ring-border shadow-xl shrink-0 z-10 bg-background">
                         <AvatarImage src={avatarUrl} className="object-cover" />
                         <AvatarFallback className="text-2xl font-bold bg-muted text-foreground">
                             {formatInitials(displayName)}
@@ -109,7 +110,7 @@ export function ProfileHeader({
                                             Request Sent
                                         </Button>
                                     )}
-                                    <Button variant="outline" size="default" className="w-full sm:w-auto bg-background/50 hover:bg-background/80 shadow-sm backdrop-blur-sm">
+                                    <Button variant="outline" size="default" className={cn("w-full sm:w-auto shadow-sm backdrop-blur-sm transition-all", glass("buttonGhost"))}>
                                         <MessageSquare className="mr-2 h-4 w-4" />
                                         Message
                                     </Button>

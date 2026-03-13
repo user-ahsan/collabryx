@@ -13,6 +13,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Sparkles, Loader2 } from "lucide-react"
 import { useState } from "react"
+import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 
 interface SemanticSearchDialogProps {
     open: boolean
@@ -45,7 +47,10 @@ export function SemanticSearchDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="w-[95vw] sm:w-full sm:max-w-[600px] overflow-hidden border-primary/20 bg-background/95 backdrop-blur-xl">
+            <DialogContent className={cn(
+                "w-[95vw] sm:w-full sm:max-w-[600px] overflow-hidden sm:rounded-2xl",
+                glass("overlay")
+            )}>
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-xl sm:text-2xl">
                         <Sparkles className="h-5 w-5 text-primary" />
@@ -65,7 +70,10 @@ export function SemanticSearchDialog({
                             id="project"
                             value={projectDetails}
                             onChange={(e) => setProjectDetails(e.target.value)}
-                            className="min-h-[100px] bg-muted/50 resize-none focus:bg-background transition-colors"
+                            className={cn(
+                                "min-h-[100px] resize-none transition-all",
+                                glass("input")
+                            )}
                             placeholder="Describe what you're building..."
                         />
                     </div>
@@ -77,7 +85,10 @@ export function SemanticSearchDialog({
                             id="bio"
                             value={userBio}
                             onChange={(e) => setUserBio(e.target.value)}
-                            className="min-h-[100px] bg-muted/50 resize-none focus:bg-background transition-colors"
+                            className={cn(
+                                "min-h-[100px] resize-none transition-all",
+                                glass("input")
+                            )}
                             placeholder="Describe your background and what you bring to the table..."
                         />
                     </div>
