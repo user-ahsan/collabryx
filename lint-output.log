@@ -1,0 +1,59 @@
+
+> collabryx@0.1.0 lint
+> eslint
+
+
+D:\Projects\collabryx\tests\hooks\use-auth.test.ts
+  39:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Projects\collabryx\tests\hooks\use-matches.test.ts
+   11:9   warning  'mockMatches' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   64:23  error    Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+   72:28  error    Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+   93:28  error    Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  114:28  error    Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  144:28  error    Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+
+D:\Projects\collabryx\tests\hooks\use-profile.test.ts
+   43:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   51:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   71:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   92:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  115:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  128:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Projects\collabryx\tests\services\matches.test.ts
+   10:9   warning  'mockMatches' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   44:23  error    Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+   53:30  error    Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+   83:30  error    Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  102:30  error    Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+  133:30  error    Unexpected any. Specify a different type          @typescript-eslint/no-explicit-any
+
+D:\Projects\collabryx\tests\services\posts.test.ts
+   46:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   51:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   65:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   78:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   98:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  151:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  187:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Projects\collabryx\tests\services\profiles.test.ts
+   44:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   49:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   62:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   75:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   97:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  129:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  157:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  173:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  189:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  205:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Projects\collabryx\tests\setup.ts
+  117:6  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  125:6  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 38 problems (36 errors, 2 warnings)
+
