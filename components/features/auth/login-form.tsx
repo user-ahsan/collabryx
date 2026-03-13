@@ -139,12 +139,12 @@ export function LoginForm() {
                         <div className="space-y-2">
                             <Label htmlFor="login-email">Email</Label>
                             <div className="relative">
-                                <Mail className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
                                 <Input
                                     id="login-email"
                                     type="email"
                                     placeholder="m@example.com"
-                                    className={inputClasses}
+                                    className={cn(inputClasses, "pl-10")}
                                     {...form.register("email")}
                                     disabled={isLoading}
                                 />
@@ -162,12 +162,12 @@ export function LoginForm() {
                                 </Button>
                             </div>
                             <div className="relative">
-                                <Lock className="absolute left-3 top-3.5 h-5 w-5 text-muted-foreground" />
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
                                 <Input
                                     id="password"
                                     type="password"
                                     placeholder="Password"
-                                    className={inputClasses}
+                                    className={cn(inputClasses, "pl-10")}
                                     {...form.register("password")}
                                     disabled={isLoading}
                                 />
