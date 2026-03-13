@@ -100,21 +100,21 @@ const profileText = [
 
 ## Database Schema
 
-### profile_embeddings Table
+### Core Tables
+
+#### profile_embeddings (Main Storage)
 
 ```sql
 CREATE TABLE profile_embeddings (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES profiles(id) ON DELETE CASCADE UNIQUE,
-  embedding vector(768),
+  embedding vector(384),  -- Updated to 384 dimensions
+  status TEXT DEFAULT 'pending',  -- pending, completed, failed
+  metadata JSONB DEFAULT '{}',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-```
 
-### Indexes
-
-```sql
 -- HNSW index for fast similarity search
 CREATE INDEX profile_embeddings_embedding_idx 
 ON profile_embeddings 
@@ -122,15 +122,99 @@ USING hnsw (embedding vector_cosine_ops)
 WITH (m = 16, ef_construction = 64);
 ```
 
-### Triggers
+#### embedding_dead_letter_queue (Retry System)
 
 ```sql
--- Auto-update updated_at
-CREATE TRIGGER update_profile_embeddings_timestamp
-  BEFORE UPDATE ON profile_embeddings
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
+CREATE TABLE embedding_dead_letter_queue (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  semantic_text TEXT NOT NULL,
+  failure_reason TEXT,
+  retry_count INTEGER DEFAULT 0,
+  max_retries INTEGER DEFAULT 3,
+  status TEXT NOT NULL DEFAULT 'pending',
+  last_attempt TIMESTAMPTZ,
+  next_retry TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  resolved_at TIMESTAMPTZ
+);
+
+-- Indexes for efficient querying
+CREATE INDEX idx_dlq_status_retry ON embedding_dead_letter_queue(status, next_retry);
+CREATE INDEX idx_dlq_user_id ON embedding_dead_letter_queue(user_id);
 ```
+
+#### embedding_rate_limits (Rate Limiting)
+
+```sql
+CREATE TABLE embedding_rate_limits (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  request_count INTEGER DEFAULT 1,
+  window_start TIMESTAMPTZ DEFAULT NOW(),
+  window_end TIMESTAMPTZ DEFAULT NOW() + INTERVAL '1 hour',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX idx_rate_limit_user_window ON embedding_rate_limits(user_id, window_end);
+```
+
+#### embedding_pending_queue (Onboarding Queue)
+
+```sql
+CREATE TABLE embedding_pending_queue (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL UNIQUE REFERENCES profiles(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'pending',
+  trigger_source TEXT NOT NULL DEFAULT 'onboarding',
+  metadata JSONB DEFAULT '{}',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  first_attempt TIMESTAMPTZ,
+  last_attempt TIMESTAMPTZ,
+  completed_at TIMESTAMPTZ,
+  failure_reason TEXT
+);
+
+CREATE INDEX idx_pending_queue_status ON embedding_pending_queue (status);
+CREATE INDEX idx_pending_queue_created ON embedding_pending_queue (created_at);
+```
+
+### Database Functions
+
+#### Rate Limit Check Function
+
+```sql
+CREATE OR REPLACE FUNCTION check_embedding_rate_limit(p_user_id UUID)
+RETURNS TABLE (allowed BOOLEAN, remaining INTEGER, reset_at TIMESTAMPTZ) AS $$
+-- Returns: allowed (boolean), remaining (integer), reset_at (timestamptz)
+-- Limit: 3 requests per hour per user
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+#### Queue Embedding Request Function
+
+```sql
+CREATE OR REPLACE FUNCTION queue_embedding_request(
+    p_user_id UUID,
+    p_trigger_source TEXT DEFAULT 'onboarding'
+)
+RETURNS UUID AS $$
+-- Queue embedding request with duplicate prevention
+-- Returns: queue item ID
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+### Setup
+
+Run the complete embedding system setup:
+
+```sql
+-- Execute in Supabase SQL Editor
+-- File: supabase/setup/99-embedding-system-complete.sql
+```
+
+This creates all tables, indexes, functions, and RLS policies.
 
 ---
 
