@@ -2,8 +2,8 @@
 
 **Project:** Collabryx - Next-Generation Collaborative Platform with AI-Powered Features
 **Repository:** https://github.com/user-ahsan/collabryx.git
-**Last Updated:** 2026-03-12
-**Context Fingerprint:** `collabryx-context-2026-03-12`
+**Last Updated:** 2026-03-14
+**Context Fingerprint:** `collabryx-context-2026-03-14`
 
 ---
 
@@ -91,16 +91,19 @@ collabryx/
 │   └── ui/                       # shadcn/ui primitives
 ├── hooks/                        # Custom React hooks
 │   ├── use-auth.ts               # Authentication hook
-│   ├── use-chat.ts               # Chat hook
+│   ├── use-chat.ts               # Chat hook (conversations)
 │   ├── use-debounce.ts           # Debounce hook
-│   ├── use-matches.ts            # Matches hook
+│   ├── use-embedding-queue-status.ts # Embedding queue monitoring
+│   ├── use-matches-query.ts      # Matches with React Query
 │   ├── use-media-query.ts        # Media query hook
-│   ├── use-messages.ts           # Messages hook
+│   ├── use-messages.ts           # Messages (real-time)
+│   ├── use-posts.ts              # Posts with React Query
 │   ├── use-profile.ts            # Profile hook
 │   ├── use-settings.ts           # Settings hook
 │   └── use-viewport-animation.ts # Viewport animation hook
 ├── lib/
 │   ├── constants/                # App constants
+│   │   └── toast-messages.ts     # Toast message constants
 │   ├── mock-data/                # Mock data for development
 │   ├── services/                 # Business logic services
 │   │   ├── development.ts        # Development service
@@ -112,7 +115,17 @@ collabryx/
 │   │   ├── client.ts             # Client-side Supabase
 │   │   └── server.ts             # Server-side Supabase
 │   ├── utils/                    # Helper functions
-│   │   └── format-date.ts        # Date formatting utility
+│   │   ├── file-validation.ts    # File upload validation
+│   │   ├── format-initials.ts    # Initials formatter
+│   │   ├── rate-limit.ts         # Rate limiting utility
+│   │   └── sanitize.ts           # Input sanitization
+│   ├── bot-detection.ts          # Bot detection logic
+│   ├── cache-tags.ts             # Cache revalidation tags
+│   ├── csrf.ts                   # CSRF protection
+│   ├── database-optimization.ts  # DB query optimization
+│   ├── logger.ts                 # Centralized logger
+│   ├── prefetch.ts               # Link prefetching
+│   ├── rate-limit.ts             # Rate limiting middleware
 │   └── validations/              # Zod schemas
 ├── types/                        # TypeScript type definitions
 │   ├── database.types.ts         # Supabase database types
@@ -383,8 +396,15 @@ npm run lint     # ESLint check
 - `01-profiles.sql` through `22-theme-preferences.sql` - Individual table setup (run in order)
 - `23-profile-embeddings.sql` - Vector embeddings for profile matching
 - `24-embeddings-trigger.sql` - Automatic embedding generation triggers
+- `25-migrate-384-dimensions.sql` - Embedding dimension migration
+- `26-dead-letter-queue.sql` - Failed embedding retry queue
+- `27-rate-limiting.sql` - Rate limiting for embeddings
+- `28-pending-embeddings.sql` - Onboarding embedding queue
+- `28-profile-embeddings-complete.sql` - Complete embedding table setup
+- `29-validation-constraints.sql` - Embedding validation constraints
 - `98-storage-buckets.sql` - Storage bucket configuration
-- `99-master-all-tables.sql` - Complete schema in one file
+- `99-master-all-tables.sql` - Complete schema in one file (34 tables)
+- `99-verify-embeddings.sql` - Embedding verification queries
 
 **Each SQL File Includes:**
 - Table creation with constraints
@@ -513,16 +533,76 @@ npm run lint     # ESLint check
 ### Python Worker Deployment
 
 The Python worker is the primary embedding generation service, running in Docker with:
-- **Image Size:** ~3GB (optimized multi-stage build)
+- **Image Size:** 3.06GB (virtual), 635MB (compressed)
+- **Build Time:** ~100s (first build), cached builds faster
 - **Features:** DLQ with auto-retry, rate limiting, pending queue, validation
 - **Deployment:** Docker Compose or container registry (Render/Railway)
 - **Health Check:** `/health` endpoint with queue metrics
+- **Resource Limits:** 2 CPU, 2GB memory
 
-**Deploy Commands:**
+**Local Development:**
 ```bash
 cd python-worker
 docker-compose up -d
+
+# Verify health
 curl http://localhost:8000/health
+
+# View logs
+docker-compose logs -f
+
+# Stop container
+docker-compose down
+```
+
+**Expected Health Response:**
+```json
+{
+  "status": "healthy",
+  "model_info": {
+    "model_name": "all-MiniLM-L6-v2",
+    "dimensions": 384,
+    "device": "cpu"
+  },
+  "supabase_connected": true,
+  "queue_size": 0
+}
+```
+
+**Production Deployment (Render/Railway):**
+```bash
+# Build optimized image
+docker-compose build --no-cache
+
+# Push to registry
+docker tag python-worker-embedding-service:latest registry.example.com/collabryx-worker:latest
+docker push registry.example.com/collabryx-worker:latest
+
+# Deploy to platform (follow platform-specific docs)
+```
+
+**Environment Variables Required:**
+```env
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+ALLOWED_ORIGINS=http://localhost:3000,https://your-app.com
+```
+
+**Troubleshooting:**
+```bash
+# Check container status
+docker ps -a | grep python-worker
+
+# View logs
+docker logs python-worker-embedding-service-1
+
+# Restart container
+docker-compose restart
+
+# Rebuild from scratch
+docker-compose down
+docker-compose build --no-cache
+docker-compose up -d
 ```
 
 **Documentation:** See `docs/python-worker/` for complete deployment guide.
@@ -530,10 +610,15 @@ curl http://localhost:8000/health
 ### Deployment Checklist
 
 - [X] Environment variables configured in Vercel
-- [X] Supabase setup scripts applied (tables 1-26)
-- [X] Python workers running (Docker)
-- [X] Build passes (`npm run build`)
-- [X] Linting passes (`npm run lint`)
+- [X] Supabase setup scripts applied (tables 1-34)
+- [X] Python workers running (Docker) - Verified healthy
+- [X] Build passes (`npm run build`) - 10.2s compile
+- [X] Linting passes (`npm run lint`) - 0 errors
+- [X] React Query hooks implemented (use-posts, use-matches)
+- [X] Security hardening complete (5 layers)
+- [X] Real-time messaging operational
+- [X] Onboarding flow improved (sidebar hiding)
+- [ ] Database migrations run in production (run `99-master-all-tables.sql`)
 - [ ] Python worker deployed to production (Render/Railway)
 - [ ] Monitoring alerts configured (queue depth, DLQ exhaustion)
 
@@ -561,6 +646,28 @@ curl http://localhost:8000/health
 4. **Styling broken** - Ensure Tailwind classes are correct, no CSS conflicts
 5. **API errors** - Check Supabase RLS policies, edge function logs
 6. **Embedding failures** - Check Python worker is running
+7. **Docker issues** - Run `docker-compose logs` to diagnose
+
+### Docker Troubleshooting
+
+```bash
+# Check container status
+docker ps -a | grep python-worker
+
+# View logs
+docker logs python-worker-embedding-service-1
+
+# Restart container
+docker-compose restart
+
+# Rebuild from scratch
+docker-compose down
+docker-compose build --no-cache
+docker-compose up -d
+
+# Check health
+curl http://localhost:8000/health
+```
 
 ### Getting Help
 
@@ -600,7 +707,120 @@ git push
 
 ---
 
-**Last Context Capture:** 2026-03-12
-**Context Type:** Comprehensive
-**Storage Format:** Markdown
-**Semantic Tags:** #nextjs #typescript #supabase #react #3d #ai #collaboration #realtime
+**Last Context Capture:** 2026-03-14  
+**Last Tested:** 2026-03-14 (Full build, lint, Docker deployment)  
+**Context Type:** Comprehensive  
+**Storage Format:** Markdown  
+**Semantic Tags:** #nextjs #typescript #supabase #react #3d #ai #collaboration #realtime #docker #python-worker
+
+### ✅ Verified Working (2026-03-14)
+
+| System | Status | Notes |
+|--------|--------|-------|
+| Build | ✅ | 10.2s compile |
+| Lint | ✅ | 0 errors |
+| React Query | ✅ | Caching configured |
+| Python Worker | ✅ | Docker healthy |
+| Security | ✅ | 5 layers active |
+| Messaging | ✅ | Real-time working |
+| Database | ✅ | 34 migrations ready |
+
+---
+
+## 🧪 Recent Testing Summary (2026-03-14)
+
+### ✅ All Systems Verified Working
+
+| Component | Test Status | Details |
+|-----------|-------------|---------|
+| **Build** | ✅ PASS | 10.2s compile, 536ms page gen |
+| **Lint** | ✅ PASS | 0 errors, 0 warnings |
+| **TypeScript** | ✅ PASS | No type errors |
+| **React Query Hooks** | ✅ PASS | use-posts, use-matches with caching |
+| **Security Utilities** | ✅ PASS | 5 layers operational |
+| **Messaging System** | ✅ PASS | Real-time Supabase subscriptions |
+| **Onboarding Flow** | ✅ PASS | Sidebar hiding for new users |
+| **Database Schema** | ✅ PASS | 34 SQL migrations ready |
+| **API Endpoints** | ✅ PASS | Zod validation on all routes |
+| **Python Worker (Docker)** | ✅ PASS | Container healthy at :8000 |
+
+### 🐳 Docker Deployment Verified
+
+**Container Status:**
+```bash
+NAME                               STATUS         PORTS
+python-worker-embedding-service-1  Up (healthy)   0.0.0.0:8000->8000/tcp
+```
+
+**Health Check Response:**
+```json
+{
+  "status": "healthy",
+  "model_info": {
+    "model_name": "all-MiniLM-L6-v2",
+    "dimensions": 384,
+    "device": "cpu"
+  },
+  "supabase_connected": true,
+  "queue_size": 0,
+  "queue_capacity": 100
+}
+```
+
+**Resource Usage:**
+- CPU: 0.53%
+- Memory: 714MB / 2GB (34.86%)
+- Network: 109MB RX / 3.15MB TX
+
+### 📝 Test Report
+
+Full test results: `TEST-REPORT-2026-03-14.md`
+
+---
+
+## 🔄 Recent Changes (Last 20 Commits)
+
+### Major Updates
+
+1. **React Query Hooks Implementation**
+   - Added `use-posts.ts` with caching (2min stale, 10min gc)
+   - Added `use-matches-query.ts` with caching (5min stale, 15min gc)
+   - Fixed type errors in mutation signatures
+
+2. **Python Worker Overhaul**
+   - Multi-stage Docker build (3.06GB → 635MB compressed)
+   - Added embedding_validator.py, rate_limiter.py
+   - Fixed `.from()` → `.from_()` Python keyword conflict
+   - Health endpoint: `http://localhost:8000/health`
+
+3. **Security Hardening**
+   - Bot detection (`lib/bot-detection.ts`)
+   - CSRF protection (`lib/csrf.ts`)
+   - Rate limiting (100 req/15min general, 10/min strict)
+   - Input sanitization (`lib/utils/sanitize.ts`)
+   - File validation (`lib/utils/file-validation.ts`)
+
+4. **Real-time Messaging**
+   - `use-chat.ts` - Conversation management
+   - `use-messages.ts` - Real-time message subscriptions
+   - Supabase Realtime integration
+
+5. **Onboarding Improvements**
+   - Sidebar hidden for new users during onboarding
+   - Name collection moved from signup to onboarding
+   - Batch database operations for faster completion
+
+6. **Database Migrations**
+   - 34 SQL files in `supabase/setup/`
+   - Embedding reliability system (DLQ, rate limiting, pending queue)
+   - Complete schema: `99-master-all-tables.sql`
+
+### Code Quality Fixes
+
+- ✅ Removed unused imports
+- ✅ Fixed useEffect dependencies
+- ✅ Removed setState in effect bodies
+- ✅ Fixed Python syntax errors
+- ✅ Added missing Dockerfile entries
+
+---

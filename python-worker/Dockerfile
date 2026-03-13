@@ -36,6 +36,8 @@ COPY --from=builder /app/requirements.txt /app/
 # Copy application code
 COPY main.py .
 COPY embedding_generator.py .
+COPY embedding_validator.py .
+COPY rate_limiter.py .
 
 # Create non-root user for security
 RUN useradd --create-home --shell /bin/bash appuser
