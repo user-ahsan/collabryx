@@ -31,8 +31,11 @@ locked choices.
 > ● **Backend** **/** **Database:** Supabase (PostgreSQL 15+) ●
 > **Auth:** Supabase Auth (SSR w/ PKCE flow)
 >
-> ● **AI/LLM:** OpenAI API (gpt-4o-mini for Assistant,
-> text-embedding-3-small for embeddings)
+> ● **AI/ML:** 
+>   - **Face Detection:** face-api.js (client-side face detection & recognition)
+>   - **Embeddings:** Sentence Transformers (self-hosted, 384 dimensions via all-MiniLM-L6-v2)
+>   - **Python Worker:** FastAPI + Supabase client for embedding generation
+>   - **Vector Search:** Supabase pgvector for semantic matching
 >
 > ● **Icons:** Lucide React
 >
