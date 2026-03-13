@@ -50,6 +50,34 @@ export const TOAST_MESSAGES = {
   NOTIFICATIONS: {
     ALL_READ: "All notifications marked as read",
   },
+  CONNECTIONS: {
+    REQUEST_SENT: "Connection request sent",
+    REQUEST_ACCEPTED: "Connection accepted",
+    REQUEST_DECLINED: "Connection declined",
+    REQUEST_CANCELLED: "Connection request cancelled",
+  },
+  ONBOARDING: {
+    STEP_COMPLETED: "Step completed",
+    PROFILE_COMPLETE: "Profile 100% complete!",
+    SKILLS_ADDED: "Skills added",
+    INTERESTS_ADDED: "Interests added",
+    EXPERIENCE_ADDED: "Experience added",
+    PROJECT_ADDED: "Project added",
+  },
+  ASSISTANT: {
+    GENERATING: "AI is thinking...",
+    RESPONSE_READY: "Response ready",
+    ERROR: "AI assistant encountered an error",
+    SESSION_STARTED: "AI session started",
+    SESSION_ENDED: "AI session ended",
+  },
+  UPLOAD: {
+    SUCCESS: "File uploaded successfully",
+    FAILED: "File upload failed",
+    TOO_LARGE: "File size exceeds limit",
+    INVALID_TYPE: "Invalid file type",
+    IN_PROGRESS: "Uploading...",
+  },
 } as const
 
 /**
@@ -69,4 +97,8 @@ export const TOAST_IDS = {
   MATCHES: "matches-cache",
   ACTIVITY: "match-activity-cache",
   FEED: "feed-cache-fallback",
+  CONNECTION_REQUEST: "connection-request",
+  ONBOARDING_STEP: "onboarding-step",
+  ASSISTANT_RESPONSE: "assistant-response",
+  UPLOAD_PROGRESS: "upload-progress",
 } as const

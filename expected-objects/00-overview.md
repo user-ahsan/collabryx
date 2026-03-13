@@ -1,6 +1,6 @@
 # Collabryx — Backend Object Model Overview
 
-> **Last Updated:** 2026-03-12  
+> **Last Updated:** 2026-03-14  
 > **Purpose:** Complete backend schema specification derived from the frontend codebase.
 
 ---
@@ -31,7 +31,10 @@
 | 20 | `ai_mentor_messages` | [20-ai-mentor-messages.md](./20-ai-mentor-messages.md) | Messages within AI mentor sessions |
 | 21 | `notification_preferences` | [21-notification-preferences.md](./21-notification-preferences.md) | Email/push notification toggles |
 | 22 | `theme_preferences` | [22-theme-preferences.md](./22-theme-preferences.md) | Dark/light mode setting |
-| 23 | `profile_embeddings` | [24-profile-embeddings.md](./24-profile-embeddings.md) | Vector embeddings for semantic profile matching |
+| 23 | `profile_embeddings` | [24-profile-embeddings.md](./24-profile-embeddings.md) | Vector embeddings for semantic profile matching (384-dim) |
+| 24 | `embedding_dead_letter_queue` | [25-dead-letter-queue.md](./25-dead-letter-queue.md) | Failed embedding retry queue with exponential backoff |
+| 25 | `embedding_rate_limits` | [26-rate-limiting.md](./26-rate-limiting.md) | Rate limiting (3 req/hour/user) to prevent DoS |
+| 26 | `embedding_pending_queue` | [27-pending-queue.md](./27-pending-queue.md) | Reliable onboarding embedding queue |
 
 ---
 

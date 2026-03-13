@@ -94,15 +94,14 @@ export function useCache<T>({
  * ```
  */
 export function useCacheOnly<T>(key: string): T | null {
-  const [data, setData] = useState<T | null>(null)
+  const [data, setData] = useState<T | null>(() => getCache<T>(key))
 
   useEffect(() => {
     const cached = getCache<T>(key)
-    if (cached) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (cached !== null && data === null) {
       setData(cached)
     }
-  }, [key])
+  }, [key, data])
 
   return data
 }

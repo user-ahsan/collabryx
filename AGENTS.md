@@ -356,9 +356,13 @@ npm run lint     # ESLint check
 **Contents:**
 - `00-overview.md` - Entity relationship diagram and table index
 - `01-profiles.md` through `22-theme-preferences.md` - Individual table specifications
+- `24-profile-embeddings.md` - Vector embeddings specification
+- `25-dead-letter-queue.md` - Failed embedding retry queue
+- `26-rate-limiting.md` - Rate limiting system
+- `27-pending-queue.md` - Onboarding embedding queue
 - `onboarding-flow.md` - Onboarding embedding flow documentation
 
-**22 Tables Documented:**
+**26 Tables Documented:**
 1. **User Management:** `profiles`, `user_skills`, `user_interests`, `user_experiences`, `user_projects`
 2. **Social Features:** `posts`, `post_attachments`, `post_reactions`, `comments`, `comment_likes`, `connections`
 3. **Matching System:** `match_suggestions`, `match_scores`, `match_activity`, `match_preferences`
@@ -366,6 +370,8 @@ npm run lint     # ESLint check
 5. **Notifications:** `notifications`, `notification_preferences`
 6. **AI Features:** `ai_mentor_sessions`, `ai_mentor_messages`
 7. **Preferences:** `theme_preferences`
+8. **Vector Embeddings:** `profile_embeddings`
+9. **Embedding Reliability:** `embedding_dead_letter_queue`, `embedding_rate_limits`, `embedding_pending_queue`
 
 **Usage:** Reference these specs when working with database types, API responses, or Supabase queries
 
@@ -500,18 +506,36 @@ npm run lint     # ESLint check
 ### Platform
 
 - **Hosting:** Vercel (`.vercel/` directory present)
-- **Database:** Supabase
-- **Edge Functions:** Supabase Edge Functions
-- **Background Workers:** Python workers in `python-worker/` (Docker)
+- **Database:** Supabase (PostgreSQL + pgvector)
+- **Background Workers:** Python workers in `python-worker/` (Docker) - Primary embedding generation
+- **Monitoring:** Admin dashboard for queue management
+
+### Python Worker Deployment
+
+The Python worker is the primary embedding generation service, running in Docker with:
+- **Image Size:** ~3GB (optimized multi-stage build)
+- **Features:** DLQ with auto-retry, rate limiting, pending queue, validation
+- **Deployment:** Docker Compose or container registry (Render/Railway)
+- **Health Check:** `/health` endpoint with queue metrics
+
+**Deploy Commands:**
+```bash
+cd python-worker
+docker-compose up -d
+curl http://localhost:8000/health
+```
+
+**Documentation:** See `docs/python-worker/` for complete deployment guide.
 
 ### Deployment Checklist
 
 - [X] Environment variables configured in Vercel
-- [X] Supabase setup scripts applied
-- [ ] Edge functions deployed
+- [X] Supabase setup scripts applied (tables 1-26)
 - [X] Python workers running (Docker)
 - [X] Build passes (`npm run build`)
 - [X] Linting passes (`npm run lint`)
+- [ ] Python worker deployed to production (Render/Railway)
+- [ ] Monitoring alerts configured (queue depth, DLQ exhaustion)
 
 ---
 
