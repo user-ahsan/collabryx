@@ -23,6 +23,8 @@ import { isDevelopmentMode, getDevelopmentCredentials } from "@/lib/services/dev
 
 import { toast } from "sonner"
 import Link from "next/link"
+import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 
 const loginSchema = z.object({
     email: z.string().email("Please enter a valid email address."),
@@ -73,8 +75,14 @@ export function LoginForm() {
         setProviderToShow(null)
     }
 
-    const inputClasses = "pl-10 h-12 bg-muted/30 border-muted-foreground/20 focus:border-primary focus:ring-primary/20 transition-all rounded-xl"
-    const buttonClasses = "w-full h-12 text-lg font-medium shadow-none hover:shadow-lg hover:shadow-primary/20 transition-all rounded-xl"
+    const inputClasses = cn(
+        "pl-10 h-12 transition-all rounded-xl",
+        glass("input")
+    )
+    const buttonClasses = cn(
+        "w-full h-12 text-lg font-medium shadow-none hover:shadow-lg hover:shadow-primary/20 transition-all rounded-xl",
+        glass("buttonPrimary")
+    )
 
     const getProviderName = (provider: "google" | "github" | "apple") => {
         switch (provider) {
@@ -175,25 +183,25 @@ export function LoginForm() {
 
                     <div className="relative my-6">
                         <div className="absolute inset-0 flex items-center">
-                            <span className="w-full border-t border-muted/50" />
+                            <span className={cn("w-full border-t", glass("divider"))} />
                         </div>
                         <div className="relative flex justify-center text-xs uppercase">
-                            <span className="bg-background px-2 text-muted-foreground">
+                            <span className={cn("px-2 text-muted-foreground rounded-full", glass("subtle"))}>
                                 Or continue with
                             </span>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-3 gap-3">
-                        <Button type="button" variant="outline" size="lg" className="w-full rounded-xl bg-transparent border-muted-foreground/20 hover:bg-muted/30" onClick={() => handleSocialLogin("google")}>
+                        <Button type="button" variant="outline" size="lg" className={cn("w-full rounded-xl transition-all", glass("buttonGhost"))} onClick={() => handleSocialLogin("google")}>
                             <GoogleIcon className="h-5 w-5" />
                             <span className="sr-only">Sign in with Google</span>
                         </Button>
-                        <Button type="button" variant="outline" size="lg" className="w-full rounded-xl bg-transparent border-muted-foreground/20 hover:bg-muted/30" onClick={() => handleSocialLogin("apple")}>
+                        <Button type="button" variant="outline" size="lg" className={cn("w-full rounded-xl transition-all", glass("buttonGhost"))} onClick={() => handleSocialLogin("apple")}>
                             <AppleIcon className="h-5 w-5" />
                             <span className="sr-only">Sign in with Apple</span>
                         </Button>
-                        <Button type="button" variant="outline" size="lg" className="w-full rounded-xl bg-transparent border-muted-foreground/20 hover:bg-muted/30" onClick={() => handleSocialLogin("github")}>
+                        <Button type="button" variant="outline" size="lg" className={cn("w-full rounded-xl transition-all", glass("buttonGhost"))} onClick={() => handleSocialLogin("github")}>
                             <GitHubIcon className="h-5 w-5" />
                             <span className="sr-only">Sign in with GitHub</span>
                         </Button>

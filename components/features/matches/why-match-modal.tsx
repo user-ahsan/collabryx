@@ -11,6 +11,8 @@ import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Sparkles, Brain, Users, Calendar, TrendingUp } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 
 interface WhyMatchModalProps {
     open: boolean
@@ -32,7 +34,10 @@ export function WhyMatchModal({ open, onOpenChange, match }: WhyMatchModalProps)
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[85vh] sm:max-h-[80vh] overflow-y-auto">
+            <DialogContent className={cn(
+                "max-w-[95vw] sm:max-w-2xl max-h-[85vh] sm:max-h-[80vh] overflow-y-auto sm:rounded-2xl",
+                glass("overlay")
+            )}>
                 <DialogHeader>
                     <DialogTitle className="text-xl sm:text-2xl font-bold flex items-center gap-2">
                         <Sparkles className="h-6 w-6 text-primary" />
@@ -46,11 +51,13 @@ export function WhyMatchModal({ open, onOpenChange, match }: WhyMatchModalProps)
                 <div className="space-y-6 mt-4">
                     {/* Skills Overlap */}
                     <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <div className="h-8 w-8 sm:h-10 sm:w-10 bg-blue-100 dark:bg-blue-950 rounded-lg flex items-center justify-center">
-                                    <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                                </div>
+                        <div className="flex items-center gap-2">
+                            <div className={cn(
+                                "flex items-center justify-center w-8 h-8 rounded-lg backdrop-blur-sm",
+                                glass("badge")
+                            )}>
+                                <Brain className="h-4 w-4 text-primary" />
+                            </div>
                                 <div>
                                     <h3 className="font-semibold text-foreground">Skills Overlap</h3>
                                     <p className="text-xs text-muted-foreground">Shared technical expertise</p>

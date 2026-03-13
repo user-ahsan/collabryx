@@ -7,6 +7,8 @@ import { X, Download, Copy, Check, Edit3, Save } from "lucide-react"
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 
 interface AIOutputWorkspaceProps {
     content: string
@@ -64,7 +66,10 @@ export function AIOutputWorkspace({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40"
+                        className={cn(
+                            "fixed inset-0 z-40",
+                            glass("overlay")
+                        )}
                         onClick={onClose}
                     />
 
@@ -74,10 +79,16 @@ export function AIOutputWorkspace({
                         animate={{ x: 0 }}
                         exit={{ x: "100%" }}
                         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                        className="fixed right-0 top-0 h-full w-full md:w-[600px] lg:w-[650px] bg-background border-l shadow-2xl z-50 flex flex-col"
+                        className={cn(
+                            "fixed right-0 top-0 h-full w-full md:w-[600px] lg:w-[650px] border-l shadow-2xl z-50 flex flex-col",
+                            glass("overlay")
+                        )}
                     >
                         {/* Header */}
-                        <div className="flex items-center justify-between p-3 md:p-4 border-b bg-muted/30">
+                        <div className={cn(
+                            "flex items-center justify-between p-3 md:p-4 border-b",
+                            glass("divider")
+                        )}>
                             <div className="flex-1 min-w-0 mr-2">
                                 <h2 className="text-base md:text-lg font-bold truncate">AI Output Workspace</h2>
                                 <p className="text-[10px] md:text-xs text-muted-foreground truncate">

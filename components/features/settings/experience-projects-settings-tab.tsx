@@ -11,6 +11,8 @@ import { Loader2, Plus, Trash2, Link as LinkIcon } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { validateExperienceProjectsSettings } from "@/lib/validations/settings"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 
 export function ExperienceProjectsSettingsTab({ userId }: { userId: string }) {
     const supabase = createClient()

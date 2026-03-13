@@ -9,6 +9,8 @@ import { MatchCardDropdown } from "@/components/shared/glass-dropdown-menu"
 import { MatchScore } from "@/components/shared/match-score"
 import { MatchReasonBadge } from "@/components/ui/match-reason-badge"
 import { formatInitials } from "@/lib/utils/format-initials"
+import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 
 interface MatchProfileDialogProps {
     open: boolean
@@ -40,9 +42,11 @@ const availabilityLabels: Record<string, string> = {
 export function MatchProfileDialog({ open, onOpenChange, match }: MatchProfileDialogProps) {
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            {/* Using a similar glass style to glass-card but for dialog */}
             <DialogContent
-                className="max-w-2xl bg-card/80 backdrop-blur-xl border border-border/60 shadow-xl p-0 overflow-hidden ring-1 ring-white/10 dark:ring-white/5"
+                className={cn(
+                    "max-w-2xl p-0 overflow-hidden sm:rounded-2xl",
+                    glass("overlay")
+                )}
                 showCloseButton={false}
             >
                 <DialogTitle className="sr-only">{match.name}&apos;s Profile</DialogTitle>

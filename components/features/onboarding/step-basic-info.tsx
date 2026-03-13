@@ -4,6 +4,8 @@ import React, { useEffect, useRef, useState } from "react"
 import { useFormContext } from "react-hook-form"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 
 interface StepBasicInfoProps {
     userName?: string
@@ -79,7 +81,10 @@ return () => {
                         defaultValue={userName}
                         placeholder="Enter your full name"
                         {...register("fullName")}
-                        className="h-12 bg-white/5 border-white/10 focus:border-primary/50 focus:bg-white/10 transition-all duration-300 text-base"
+                        className={cn(
+                            "h-12 text-base transition-all duration-300",
+                            glass("input")
+                        )}
                     />
                     {typeof errors.fullName?.message === "string" && (
                         <p className="text-sm text-destructive">{errors.fullName.message}</p>
@@ -92,7 +97,10 @@ return () => {
                         id="displayName"
                         placeholder="johndoe"
                         {...register("displayName")}
-                        className="h-12 bg-white/5 border-white/10 focus:border-primary/50 focus:bg-white/10 transition-all duration-300 text-base"
+                        className={cn(
+                            "h-12 text-base transition-all duration-300",
+                            glass("input")
+                        )}
                     />
                 </div>
 
@@ -102,7 +110,10 @@ return () => {
                         id="headline"
                         placeholder="e.g. Full Stack Developer @ TechStart"
                         {...register("headline")}
-                        className="h-12 bg-white/5 border-white/10 focus:border-primary/50 focus:bg-white/10 transition-all duration-300 text-base"
+                        className={cn(
+                            "h-12 text-base transition-all duration-300",
+                            glass("input")
+                        )}
                     />
                     {typeof errors.headline?.message === "string" && (
                         <p className="text-sm text-destructive">{errors.headline.message}</p>
@@ -119,7 +130,10 @@ return () => {
                             locationRegister.ref(e)
                             locationInputRef.current = e
                         }}
-                        className="h-12 bg-white/5 border-white/10 focus:border-primary/50 focus:bg-white/10 transition-all duration-300 text-base"
+                        className={cn(
+                            "h-12 text-base transition-all duration-300",
+                            glass("input")
+                        )}
                     />
                 </div>
             </div>
