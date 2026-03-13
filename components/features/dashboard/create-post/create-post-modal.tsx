@@ -1,20 +1,22 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
+import { useMutation } from "@tanstack/react-query"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
-import { ImageIcon, Calendar, FileText, Smile, Send, X } from "lucide-react"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { ImageIcon, Calendar, FileText, Smile, Send, X, Loader2 } from "lucide-react"
 import { IntentPrompt } from "./intent-prompt"
-import { completeOnboarding } from "@/lib/services/profiles"
 import { toast } from "sonner"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
+import { getFileCategory, validateImage, validateDocument } from "@/lib/utils/file-validation"
 
 const EMOJIS = [
     { char: "😀", label: "Smile" }, { char: "😂", label: "Laugh" }, { char: "❤️", label: "Love" },
