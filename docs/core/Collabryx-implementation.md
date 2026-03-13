@@ -31,8 +31,11 @@ locked choices.
 > ● **Backend** **/** **Database:** Supabase (PostgreSQL 15+) ●
 > **Auth:** Supabase Auth (SSR w/ PKCE flow)
 >
-> ● **AI/LLM:** OpenAI API (gpt-4o-mini for Assistant,
-> text-embedding-3-small for embeddings)
+> ● **AI/ML:** 
+>   - **Face Detection:** face-api.js (client-side)
+>   - **Embeddings:** Sentence Transformers (384d, self-hosted)
+>   - **Python Worker:** FastAPI for embedding generation
+>   - **Vector Search:** Supabase pgvector
 >
 > ● **Icons:** Lucide React
 >
@@ -52,13 +55,18 @@ locked choices.
 > standard CRUD (Read/Write own profile, Read messages) protected by Row
 > Level Security (RLS).
 >
-> 4\. **Supabase** **Edge** **Functions:** Serverless TypeScript
-> functions running on Deno. These handle privileged logic:
+> 4\. **Python Worker:** FastAPI service for embedding generation using
+> Sentence Transformers. Handles:
 >
-> ○ Generating Embeddings (requires OpenAI Key). ○ Semantic Matching
-> logic (Cosine Similarity).
+>   - Profile embedding generation (384 dimensions)
+>   - Semantic matching calculations
+>   - Batch processing for efficiency
 >
-> ○ AI Assistant processing.
+> 5\. **Supabase** **Edge** **Functions:** TypeScript functions for:
+>
+>   - AI Assistant processing
+>   - Embedding status tracking
+>   - Lightweight server-side logic
 >
 > 5\. **Database:** Postgres with pgvector extension enabled.
 

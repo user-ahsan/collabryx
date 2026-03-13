@@ -1,0 +1,60 @@
+
+> collabryx@0.1.0 build
+> next build
+
+▲ Next.js 16.1.5 (Turbopack)
+- Environments: .env
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 10.5s
+  Running TypeScript ...
+  Collecting page data using 15 workers ...
+✅ Environment validation passed
+✅ Environment validation passed
+✅ Environment validation passed
+✅ Environment validation passed
+✅ Environment validation passed
+✅ Environment validation passed
+⚠ Using edge runtime on a page currently disables static generation for that page
+✅ Environment validation passed
+✅ Environment validation passed
+✅ Environment validation passed
+✅ Environment validation passed
+✅ Environment validation passed
+✅ Environment validation passed
+✅ Environment validation passed
+  Generating static pages using 15 workers (0/10) ...
+  Generating static pages using 15 workers (2/10) 
+  Generating static pages using 15 workers (4/10) 
+  Generating static pages using 15 workers (7/10) 
+✓ Generating static pages using 15 workers (10/10) in 510.8ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /api/auth/callback
+├ ƒ /api/chat
+├ ƒ /api/embeddings/generate
+├ ƒ /api/embeddings/status/[userId]
+├ ○ /assistant
+├ ƒ /auth-sync
+├ ƒ /dashboard
+├ ƒ /login
+├ ƒ /matches
+├ ƒ /messages
+├ ƒ /messages/[id]
+├ ○ /my-profile
+├ ƒ /notifications
+├ ○ /onboarding
+├ ƒ /post/[id]
+├ ƒ /profile/[id]
+├ ƒ /register
+└ ○ /requests
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
