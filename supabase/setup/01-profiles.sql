@@ -1,7 +1,9 @@
--- Table: profiles
--- Core user identity table. 1:1 with auth.users. Created on signup.
+-- ============================================================================
+-- TABLE 1: profiles
+-- ============================================================================
+-- Core user profile table with completion tracking
+-- Created: 2026-03-14
 
--- Create the profiles table
 CREATE TABLE IF NOT EXISTS public.profiles (
     id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     email TEXT NOT NULL,
@@ -24,58 +26,21 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Create indexes
+-- Indexes
 CREATE INDEX IF NOT EXISTS idx_profiles_email ON public.profiles(email);
-CREATE INDEX IF NOT EXISTS idx_profiles_updated_at ON public.profiles(updated_at);
+CREATE INDEX IF NOT EXISTS idx_profiles_updated_at ON public.profiles(updated_at DESC);
 
--- Create updated_at trigger
-CREATE OR REPLACE FUNCTION public.update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-DROP TRIGGER IF EXISTS update_profiles_updated_at ON public.profiles;
-CREATE TRIGGER update_profiles_updated_at
-    BEFORE UPDATE ON public.profiles
-    FOR EACH ROW
-    EXECUTE FUNCTION public.update_updated_at_column();
-
--- Enable Realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE public.profiles;
-
--- Row Level Security
+-- RLS
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
--- Policy: Users can select their own row and any public profile
-CREATE POLICY "Users can view any profile" ON public.profiles
-    FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users can view any profile" ON public.profiles;
+CREATE POLICY "Users can view any profile" ON public.profiles FOR SELECT USING (true);
 
--- Policy: Users can update only their own row
 DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
-CREATE POLICY "Users can update own profile" ON public.profiles
-    FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
 
--- INSERT only allowed if id matches authenticated user (for edge cases where trigger hasn't run)
 DROP POLICY IF EXISTS "Users can insert own profile" ON public.profiles;
-CREATE POLICY "Users can insert own profile" ON public.profiles
-    FOR INSERT WITH CHECK (auth.uid() = id);
+CREATE POLICY "Users can insert own profile" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
 
--- Profile creation is handled via trigger on auth.users signup
--- Create trigger to auto-create profile on signup
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-    INSERT INTO public.profiles (id, email, full_name)
-    VALUES (NEW.id, NEW.email, COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email));
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-    AFTER INSERT ON auth.users
-    FOR EACH ROW
-    EXECUTE FUNCTION public.handle_new_user();
+-- Realtime
+ALTER PUBLICATION supabase_realtime ADD TABLE public.profiles;

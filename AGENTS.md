@@ -723,7 +723,25 @@ git push
 | Python Worker | ✅ | Docker healthy |
 | Security | ✅ | 5 layers active |
 | Messaging | ✅ | Real-time working |
-| Database | ✅ | 34 migrations ready |
+| Database | ✅ | Consolidated to 1 master file |
+
+---
+
+## 🗄️ Database Setup
+
+**Files:**
+- `supabase/setup/00-complete-database-wipe.sql` - Complete database reset
+- `supabase/setup/99-master-all-tables.sql` - Complete schema (26 tables)
+
+**Quick Setup:**
+```sql
+-- Fresh install or reset: Run 99-master-all-tables.sql in Supabase SQL Editor
+-- Complete wipe: Run 00-complete-database-wipe.sql first, then 99-master-all-tables.sql
+```
+
+**Schema:** 26 tables (profiles, posts, comments, connections, matches, conversations, messages, notifications, AI mentor, embeddings + 3 reliability tables)
+
+**Legacy files:** All files 01-35, 98-100 can be deleted (consolidated into master file)
 
 ---
 

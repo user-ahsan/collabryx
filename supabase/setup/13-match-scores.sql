@@ -1,7 +1,9 @@
--- Table: match_scores
--- Detailed breakdown of WHY two users match. Powers the "Why Match" modal.
+-- ============================================================================
+-- TABLE 13: match_scores
+-- ============================================================================
+-- Detailed match scoring breakdown
+-- Created: 2026-03-14
 
--- Create the match_scores table
 CREATE TABLE IF NOT EXISTS public.match_scores (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     suggestion_id UUID NOT NULL REFERENCES public.match_suggestions(id) ON DELETE CASCADE,
@@ -16,26 +18,17 @@ CREATE TABLE IF NOT EXISTS public.match_scores (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Create indexes for performance
+-- Indexes
 CREATE INDEX IF NOT EXISTS idx_match_scores_suggestion_id ON public.match_scores(suggestion_id);
 
--- Enable Realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE public.match_scores;
-
--- Row Level Security
+-- RLS
 ALTER TABLE public.match_scores ENABLE ROW LEVEL SECURITY;
 
--- Policy: Users can view match scores for their suggestions
-CREATE POLICY "Users can view match scores" ON public.match_scores
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM public.match_suggestions ms
-            WHERE ms.id = match_scores.suggestion_id
-            AND ms.user_id = auth.uid()
-        )
-    );
+DROP POLICY IF EXISTS "Service role can view match scores" ON public.match_scores;
+CREATE POLICY "Service role can view match scores" ON public.match_scores FOR SELECT USING (auth.role() = 'service_role');
 
--- Policy: System can insert/update match scores (via edge functions)
-CREATE POLICY "System can manage match scores" ON public.match_scores
-    FOR ALL USING (false)
-    WITH CHECK (false);
+DROP POLICY IF EXISTS "Service role can insert match scores" ON public.match_scores;
+CREATE POLICY "Service role can insert match scores" ON public.match_scores FOR INSERT WITH CHECK (auth.role() = 'service_role');
+
+-- Realtime
+ALTER PUBLICATION supabase_realtime ADD TABLE public.match_scores;

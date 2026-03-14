@@ -1,7 +1,9 @@
--- Table: match_activity
--- Events showing who viewed your profile, who's building something you might fit, etc.
+-- ============================================================================
+-- TABLE 14: match_activity
+-- ============================================================================
+-- Match-related activity tracking
+-- Created: 2026-03-14
 
--- Create the match_activity table
 CREATE TABLE IF NOT EXISTS public.match_activity (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     actor_user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -13,26 +15,21 @@ CREATE TABLE IF NOT EXISTS public.match_activity (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Create indexes for performance
+-- Indexes
 CREATE INDEX IF NOT EXISTS idx_match_activity_target_user ON public.match_activity(target_user_id);
-CREATE INDEX IF NOT EXISTS idx_match_activity_created_at ON public.match_activity(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_match_activity_unread ON public.match_activity(target_user_id, is_read);
+CREATE INDEX IF NOT EXISTS idx_match_activity_created ON public.match_activity(created_at DESC);
 
--- Enable Realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE public.match_activity;
-
--- Row Level Security
+-- RLS
 ALTER TABLE public.match_activity ENABLE ROW LEVEL SECURITY;
 
--- Policy: Users can view their own match activity
-CREATE POLICY "Users can view own match activity" ON public.match_activity
-    FOR SELECT USING (auth.uid() = target_user_id);
+DROP POLICY IF EXISTS "Users can view own match activity" ON public.match_activity;
+CREATE POLICY "Users can view own match activity" ON public.match_activity FOR SELECT USING (auth.uid() = target_user_id);
 
--- Policy: System can insert match activity (via edge functions)
--- Uses service role for edge function access
-CREATE POLICY "Service role can insert match activity" ON public.match_activity
-    FOR INSERT WITH CHECK (auth.role() = 'service_role');
+DROP POLICY IF EXISTS "Service role can insert match activity" ON public.match_activity;
+CREATE POLICY "Service role can insert match activity" ON public.match_activity FOR INSERT WITH CHECK (auth.role() = 'service_role');
 
--- Policy: Users can mark activity as read
-CREATE POLICY "Users can update match activity" ON public.match_activity
-    FOR UPDATE USING (auth.uid() = target_user_id);
+DROP POLICY IF EXISTS "Users can update match activity" ON public.match_activity;
+CREATE POLICY "Users can update match activity" ON public.match_activity FOR UPDATE USING (auth.uid() = target_user_id);
+
+-- Realtime
+ALTER PUBLICATION supabase_realtime ADD TABLE public.match_activity;
