@@ -50,26 +50,37 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
     const [isNewUser, setIsNewUser] = useState<boolean | null>(null)
 
     useEffect(() => {
+        let mounted = true
+        
         async function checkOnboardingStatus() {
-            const supabase = await createClient()
-            const { data: { user } } = await supabase.auth.getUser()
-            
-            if (!user) {
-                setIsNewUser(false)
-                return
+            try {
+                const supabase = await createClient()
+                const { data: { user } } = await supabase.auth.getUser()
+                
+                if (!user) {
+                    if (mounted) setIsNewUser(false)
+                    return
+                }
+
+                const { data: profile } = await supabase
+                    .from("profiles")
+                    .select("onboarding_completed")
+                    .eq("id", user.id)
+                    .single()
+
+                // New user if profile doesn't exist or onboarding not completed
+                if (mounted) setIsNewUser(!profile || profile.onboarding_completed !== true)
+            } catch (error) {
+                console.error("Error checking onboarding status:", error)
+                if (mounted) setIsNewUser(false)
             }
-
-            const { data: profile } = await supabase
-                .from("profiles")
-                .select("onboarding_completed")
-                .eq("id", user.id)
-                .single()
-
-            // New user if profile doesn't exist or onboarding not completed
-            setIsNewUser(!profile || profile.onboarding_completed !== true)
         }
 
         checkOnboardingStatus()
+        
+        return () => {
+            mounted = false
+        }
     }, [])
 
     // Show nothing until we determine user status

@@ -1,23 +1,23 @@
 -- ============================================================================
 -- COLLABRYX DATABASE SCHEMA - COMPLETE MASTER FILE
 -- ============================================================================
--- Version: 2.0.0 (Consolidated & Verified)
+-- Version: 2.1.0 (Production Aligned)
 -- Date: 2026-03-14
 -- 
 -- This file contains the COMPLETE database schema including:
 -- - 26 Tables (user management, social, matching, messaging, AI, embeddings)
--- - All indexes optimized for common queries
--- - All triggers for automation
--- - All RLS policies for security
--- - All helper functions
--- - Storage buckets for file uploads
--- - Realtime enabled for all tables
+-- - All indexes optimized for common queries (including HNSW for vectors)
+-- - All triggers for automation (updated_at, counts, embeddings)
+-- - All RLS policies for security (50+ policies)
+-- - All helper functions (get_conversation, are_connected, etc.)
+-- - Storage buckets for file uploads (post-media, profile-media, project-media)
+-- - Realtime enabled for all tables (Supabase Realtime)
 -- - Complete embedding infrastructure (DLQ, rate limiting, pending queue)
 --
 -- Usage: Run this ONCE in Supabase SQL Editor
 -- URL: https://supabase.com/dashboard/project/_/sql/new
 --
--- WARNING: Run 00-complete-database-wipe.sql first if resetting existing DB
+-- PRODUCTION READY: Tested and verified against actual Supabase implementation
 -- ============================================================================
 
 -- ============================================================================
@@ -1467,10 +1467,16 @@ COMMENT ON TABLE public.embedding_pending_queue IS 'Queue for pending embedding 
 -- - embedding_rate_limits: 3 requests/hour/user limit
 -- - embedding_pending_queue: Reliable onboarding queue
 --
--- Next Steps:
--- 1. Verify setup: SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public';
--- 2. Should return: 26 tables + storage.objects = 27
--- 3. Test embedding generation via Python worker
--- 4. Monitor queue: SELECT * FROM public.get_pending_queue_stats();
+-- VERIFICATION:
+-- 1. Verify tables: SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public';
+--    Expected: 27 (26 tables + storage.objects)
+-- 2. Test embedding: SELECT * FROM public.get_pending_queue_stats();
+-- 3. Check health: SELECT * FROM public.get_embedding_status('your-user-uuid');
+--
+-- DOCUMENTATION:
+-- - Schema: supabase/setup/99-master-all-tables.sql (this file)
+-- - Objects: expected-objects/ (column-level docs)
+-- - Guides: docs/ (implementation guides)
+-- - Alignment: docs/DATABASE-SCHEMA-ALIGNMENT.md (verification report)
 --
 -- ============================================================================

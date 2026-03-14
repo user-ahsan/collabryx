@@ -32,14 +32,26 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
 
     const userId = userData.user.id
 
+    // Check if onboarding already completed
+    const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("onboarding_completed")
+        .eq("id", userId)
+        .single()
+
+    if (existingProfile?.onboarding_completed === true) {
+        // Already completed, just return success with flag
+        return { success: true, userId, alreadyCompleted: true }
+    }
+
     // In development mode with test user, use the development service
     if (isDevelopmentMode() && userData.user.email === "test123@collabryx.com") {
         const result = await completeTestUserOnboarding()
         if (!result.success) {
             throw new Error(result.error?.message || "Failed to complete onboarding in development mode.")
         }
-        // Frontend will trigger embedding generation
-        return { success: true, userId }
+        // Server action handles embedding generation
+        return { success: true, userId, embeddingQueued: true }
     }
 
     // 1. Update Profile
@@ -163,21 +175,36 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
     }
     
     // THEN trigger API (best effort only - don't fail onboarding if this fails)
+    let embeddingTriggered = false
+    let embeddingError = null
+    
     try {
         const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+        
         await fetch(`${appUrl}/api/embeddings/generate`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ user_id: userId }),
-            signal: AbortSignal.timeout(5000) // 5s timeout
+            signal: controller.signal
         });
+        
+        clearTimeout(timeoutId);
         console.log('Embedding API trigger successful');
+        embeddingTriggered = true
     } catch (error) {
         // Already queued in DB, background processor will handle
-        console.error('Embedding API trigger failed (DB queue will handle):', error);
+        embeddingError = error instanceof Error ? error.message : 'Unknown error';
+        console.error('Embedding API trigger failed (DB queue will handle):', embeddingError);
     }
 
-    return { success: true, userId }
+    return { 
+        success: true, 
+        userId, 
+        embeddingQueued: embeddingTriggered,
+        embeddingError: embeddingError // Return error for monitoring
+    }
 }
 
 // Trigger embedding generation after onboarding

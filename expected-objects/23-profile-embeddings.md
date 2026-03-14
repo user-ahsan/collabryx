@@ -12,12 +12,12 @@ Enables semantic similarity search for matching users based on skills, interests
 |--------|------|----------|---------|-------------|
 | `id` | `uuid` | NO | `gen_random_uuid()` | Primary key |
 | `user_id` | `uuid` | NO | — | FK → `profiles(id)`, unique per user |
-| `embedding` | `vector(384)` | YES | `null` | 384-dimensional semantic embedding vector |
+| `embedding` | `vector(384)` | YES | `null` | 384-dim semantic vector (CHECK: vector_dims = 384 OR NULL) |
 | `status` | `text` | NO | `'pending'` | Generation status: `pending`, `processing`, `completed`, `failed` |
 | `error_message` | `text` | YES | `null` | Error details if generation failed |
 | `retry_count` | `integer` | NO | `0` | Number of retry attempts |
 | `last_updated` | `timestamptz` | NO | `now()` | Last update timestamp (auto-updated) |
-| `metadata` | `jsonb` | YES | `'{}'` | Additional metadata for embedding |
+| `metadata` | `jsonb` | YES | `'{}'` | Additional metadata (model version, source, etc.) |
 
 ## Indexes
 

@@ -1,7 +1,8 @@
 # Collabryx — Backend Object Model Overview
 
-> **Last Updated:** 2026-03-14  
+> **Last Updated:** 2026-03-14 (Aligned with Production)  
 > **Purpose:** Complete backend schema specification derived from the frontend codebase.
+> **Source of Truth:** `supabase/setup/99-master-all-tables.sql`
 
 ---
 
@@ -95,6 +96,9 @@ erDiagram
     profiles ||--|| notification_preferences : "1:1"
     profiles ||--|| theme_preferences : "1:1"
     profiles ||--|| profile_embeddings : "1:1"
+    profiles ||--o{ embedding_dead_letter_queue : "1:N"
+    profiles ||--o{ embedding_rate_limits : "1:N"
+    profiles ||--|| embedding_pending_queue : "1:1"
     
     profiles ||--o{ posts : "1:N"
     posts ||--o{ post_attachments : "1:N"
@@ -107,7 +111,6 @@ erDiagram
     
     profiles ||--o{ match_suggestions : "1:N"
     match_suggestions ||--|| match_scores : "1:1"
-    
     profiles ||--o{ match_activity : "1:N"
     
     profiles ||--o{ conversations_p1 : "N:N"
@@ -115,45 +118,40 @@ erDiagram
     conversations ||--o{ messages : "1:N"
     
     profiles ||--o{ notifications : "1:N"
-    
     profiles ||--o{ ai_mentor_sessions : "1:N"
     ai_mentor_sessions ||--o{ ai_mentor_messages : "1:N"
-    
-    profiles ||--o{ embedding_dead_letter_queue : "1:N"
-    profiles ||--o{ embedding_rate_limits : "1:N"
-    profiles ||--|| embedding_pending_queue : "1:1"
 ```
 
 ### Foreign Key References
 
-| Table | References | On Delete |
-|-------|-----------|-----------|
-| `profiles` | `auth.users(id)` | CASCADE |
-| `user_skills` | `profiles(id)` | CASCADE |
-| `user_interests` | `profiles(id)` | CASCADE |
-| `user_experiences` | `profiles(id)` | CASCADE |
-| `user_projects` | `profiles(id)` | CASCADE |
-| `posts` | `profiles(id)` | CASCADE |
-| `post_attachments` | `posts(id)` | CASCADE |
-| `post_reactions` | `posts(id)`, `profiles(id)` | CASCADE |
-| `comments` | `posts(id)`, `profiles(id)`, `comments(id)` (parent) | CASCADE |
-| `comment_likes` | `comments(id)`, `profiles(id)` | CASCADE |
-| `connections` | `profiles(id)` (requester & receiver) | CASCADE |
-| `match_suggestions` | `profiles(id)` (user & matched_user) | CASCADE |
-| `match_scores` | `match_suggestions(id)` | CASCADE |
-| `match_activity` | `profiles(id)` (actor & target) | CASCADE |
-| `match_preferences` | `profiles(id)` | CASCADE |
-| `conversations` | `profiles(id)` (participant_1 & participant_2) | CASCADE |
-| `messages` | `conversations(id)`, `profiles(id)` | CASCADE |
-| `notifications` | `profiles(id)`, `profiles(id)` (actor) | CASCADE / SET NULL |
-| `ai_mentor_sessions` | `profiles(id)` | CASCADE |
-| `ai_mentor_messages` | `ai_mentor_sessions(id)` | CASCADE |
-| `notification_preferences` | `profiles(id)` | CASCADE |
-| `theme_preferences` | `profiles(id)` | CASCADE |
-| `profile_embeddings` | `profiles(id)` | CASCADE |
-| `embedding_dead_letter_queue` | `profiles(id)` | CASCADE |
-| `embedding_rate_limits` | `profiles(id)` | CASCADE |
-| `embedding_pending_queue` | `profiles(id)` | CASCADE |
+| Table | References | On Delete | Constraints |
+|-------|-----------|-----------|-------------|
+| `profiles` | `auth.users(id)` | CASCADE | PK: id |
+| `user_skills` | `profiles(id)` | CASCADE | UNIQUE(user_id, skill_name) |
+| `user_interests` | `profiles(id)` | CASCADE | UNIQUE(user_id, interest) |
+| `user_experiences` | `profiles(id)` | CASCADE | UNIQUE(user_id, title) |
+| `user_projects` | `profiles(id)` | CASCADE | - |
+| `posts` | `profiles(id)` | CASCADE | - |
+| `post_attachments` | `posts(id)` | CASCADE | - |
+| `post_reactions` | `posts(id)`, `profiles(id)` | CASCADE | UNIQUE(post_id, user_id) |
+| `comments` | `posts(id)`, `profiles(id)`, `comments(id)` (parent) | CASCADE | - |
+| `comment_likes` | `comments(id)`, `profiles(id)` | CASCADE | UNIQUE(comment_id, user_id) |
+| `connections` | `profiles(id)` (requester & receiver) | CASCADE | UNIQUE(requester_id, receiver_id), CHECK(requester_id != receiver_id) |
+| `match_suggestions` | `profiles(id)` (user & matched_user) | CASCADE | UNIQUE(user_id, matched_user_id) |
+| `match_scores` | `match_suggestions(id)` | CASCADE | - |
+| `match_activity` | `profiles(id)` (actor & target) | CASCADE | - |
+| `match_preferences` | `profiles(id)` | CASCADE | UNIQUE(user_id) |
+| `conversations` | `profiles(id)` (participant_1 & participant_2) | CASCADE | UNIQUE(participant_1, participant_2), CHECK(participant_1 < participant_2) |
+| `messages` | `conversations(id)`, `profiles(id)` | CASCADE | - |
+| `notifications` | `profiles(id)`, `profiles(id)` (actor) | CASCADE / SET NULL | - |
+| `ai_mentor_sessions` | `profiles(id)` | CASCADE | - |
+| `ai_mentor_messages` | `ai_mentor_sessions(id)` | CASCADE | - |
+| `notification_preferences` | `profiles(id)` | CASCADE | UNIQUE(user_id) |
+| `theme_preferences` | `profiles(id)` | CASCADE | UNIQUE(user_id) |
+| `profile_embeddings` | `profiles(id)` | CASCADE | UNIQUE(user_id) |
+| `embedding_dead_letter_queue` | `profiles(id)` | CASCADE | - |
+| `embedding_rate_limits` | `profiles(id)` | CASCADE | - |
+| `embedding_pending_queue` | `profiles(id)` | CASCADE | UNIQUE(user_id) |
 
 ## Auth Provider
 
