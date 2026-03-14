@@ -30,12 +30,12 @@ Before you begin, ensure you have the following installed on your machine:
      node --version  # Should output v20.x.x or higher
      ```
 
-2. **npm** (v9.x or higher) or **yarn** (v1.22.x or higher)
-   - Comes with Node.js installation
-   - Verify installation:
-     ```bash
-     npm --version   # Should output 9.x.x or higher
-     ```
+2. **npm** (v9.x or higher)
+    - Comes with Node.js installation
+    - Verify installation:
+      ```bash
+      npm --version   # Should output 9.x.x or higher
+      ```
 
 3. **Git** (v2.x or higher)
    - Download from: https://git-scm.com/
@@ -94,11 +94,7 @@ cd collabryx
 Install all required npm packages:
 
 ```bash
-# Using npm
 npm install
-
-# OR using yarn
-yarn install
 ```
 
 **Expected Output:**
@@ -165,16 +161,16 @@ To enable semantic matching with embeddings:
    curl http://localhost:8000/health
    ```
    
-   Expected response:
-   ```json
-   {
-     "status": "healthy",
-     "model_info": {
-       "model_name": "all-MiniLM-L6-v2",
-       "dimensions": 768
-     }
-   }
-   ```
+    Expected response:
+    ```json
+    {
+      "status": "healthy",
+      "model_info": {
+        "model_name": "all-MiniLM-L6-v2",
+        "dimensions": 384
+      }
+    }
+    ```
 
 ---
 

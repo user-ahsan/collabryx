@@ -87,13 +87,23 @@ NEXT_PUBLIC_MAINTENANCE_MODE=false
 
 ### Embeddings System Deployment
 
-The embeddings system requires three components:
+The embeddings system requires:
 
-1. **Python Worker** - Self-hosted embedding service
-2. **Supabase Edge Function** - Orchestration layer
-3. **Database** - pgvector extension for vector storage
+1. **Python Worker** - Self-hosted embedding service (Docker)
+2. **Database** - pgvector extension for vector storage
 
-See [VECTOR_EMBEDDINGS_DEPLOYMENT.md](./VECTOR_EMBEDDINGS_DEPLOYMENT.md) for detailed instructions.
+**Quick Deploy:**
+
+```bash
+# Deploy Python Worker to Render/Railway
+cd python-worker
+docker-compose build
+docker push your-registry/collabryx-worker:latest
+
+# Deploy to platform (see platform-specific guide)
+```
+
+See [Python Worker Deployment](../04-infrastructure/python-worker/deployment.md) and [Embeddings System](../04-infrastructure/database/embeddings.md) for detailed instructions.
 
 ---
 
@@ -360,14 +370,39 @@ NEXT_PUBLIC_SENTRY_DSN=
 
 ### Python Worker Deployment
 
-The Python worker is a self-hosted embedding service for semantic matching. Deploy it before the Next.js app:
+The Python worker generates vector embeddings for semantic matching. Deploy before the Next.js app.
 
-1. **Choose a hosting platform** (Railway, Render, or VPS)
-2. **Deploy the `python-worker` directory**
-3. **Get the service URL** (e.g., `https://embedding-service.up.railway.app`)
-4. **Add to environment variables**: `PYTHON_WORKER_URL`
+**Steps:**
 
-See [VECTOR_EMBEDDINGS_DEPLOYMENT.md](./VECTOR_EMBEDDINGS_DEPLOYMENT.md) for detailed instructions.
+1. **Build Docker image:**
+   ```bash
+   cd python-worker
+   docker-compose build
+   ```
+
+2. **Deploy to platform:**
+   - **Render:** Push to container registry, deploy as web service
+   - **Railway:** Connect GitHub, deploy from `python-worker/` directory
+   - **VPS:** Run `docker-compose up -d`
+
+3. **Configure environment variables:**
+   ```env
+   SUPABASE_URL=https://your-project.supabase.co
+   SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+   ALLOWED_ORIGINS=https://your-app.com
+   ```
+
+4. **Add to Next.js environment:**
+   ```env
+   PYTHON_WORKER_URL=https://your-worker-url.com
+   ```
+
+5. **Verify health:**
+   ```bash
+   curl https://your-worker-url.com/health
+   ```
+
+See [Python Worker Deployment Guide](../04-infrastructure/python-worker/deployment.md) for complete instructions.
 
 ---
 
