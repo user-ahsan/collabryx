@@ -34,6 +34,7 @@ import {
     AlertTriangle
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 import { createClient } from "@/lib/supabase/client"
 import { getInitials } from "@/lib/utils/format-initials"
 
@@ -292,10 +293,12 @@ export function RequestReminderModal({ className }: RequestReminderModalProps) {
             </DialogTrigger>
 
             <DialogContent
-                className="sm:max-w-[550px] p-0 gap-0 overflow-hidden bg-[oklch(0.13_0.02_265)] border border-blue-400/10"
+                className={cn(
+                    "sm:max-w-[550px] p-0 gap-0 overflow-hidden sm:rounded-2xl",
+                    glass("overlay")
+                )}
             >
-                <div className="absolute inset-0 bg-gradient-to-br from-brand/[0.06] via-transparent to-indigo-500/[0.04] pointer-events-none" />
-                <DialogHeader className="px-5 py-4 border-b border-white/[0.06] relative z-10">
+                <DialogHeader className={cn("px-5 py-4 relative z-10", glass("divider"))}>
                     <div className="flex items-center gap-3">
                         <div className="h-10 w-10 bg-blue-500/10 rounded-lg flex items-center justify-center border border-blue-500/20">
                             <Handshake className="h-5 w-5 text-blue-500" />
@@ -493,7 +496,7 @@ export function RequestReminderModal({ className }: RequestReminderModalProps) {
                     )}
                 </div>
 
-                <div className="p-4 border-t border-white/[0.06] flex items-center justify-end relative z-10">
+                <div className={cn("p-4 flex items-center justify-end relative z-10", glass("divider"))}>
                     <Button
                         variant="outline"
                         className="rounded-lg"

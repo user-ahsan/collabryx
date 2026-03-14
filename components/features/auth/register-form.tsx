@@ -88,7 +88,7 @@ export function RegisterForm() {
     return (
         <div className="w-full relative min-h-[350px] sm:min-h-[400px]">
             <Dialog open={showProviderDialog} onOpenChange={setShowProviderDialog}>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className={cn("sm:max-w-md sm:rounded-2xl", glass("overlay"))}>
                     <DialogHeader>
                         <div className="flex items-center gap-3">
                             <div className="flex items-center justify-center w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-900/20">
