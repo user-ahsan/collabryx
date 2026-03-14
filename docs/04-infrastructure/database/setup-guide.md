@@ -6,68 +6,29 @@ Complete guide to setting up the Collabryx database schema in Supabase.
 
 ## Quick Start
 
-### Option 1: Complete Setup (Recommended)
+### ⚠️ IMPORTANT: Run Master File Only
 
-Run the master migration file that includes all tables:
+**DO NOT run individual SQL files (01-23).** They are reference-only.
+
+Run the master migration file that includes all 26 tables:
 
 ```sql
 -- In Supabase SQL Editor:
 -- https://supabase.com/dashboard/project/YOUR_PROJECT_ID/sql
 
--- Run this file:
+-- ✅ RUN THIS FILE ONLY:
 supabase/setup/99-master-all-tables.sql
 ```
 
-This creates all 34+ tables including:
-- User management (profiles, user_skills, user_interests, etc.)
-- Social features (posts, comments, reactions)
-- Matching system (match_suggestions, match_scores)
+This creates all 26 tables including:
+- User management (profiles, user_skills, user_interests, user_experiences, user_projects)
+- Social features (posts, post_attachments, post_reactions, comments, comment_likes, connections)
+- Matching system (match_suggestions, match_scores, match_activity, match_preferences)
 - Messaging (conversations, messages)
-- Notifications
-- AI features (ai_mentor_sessions)
-- **Vector embeddings** (profile_embeddings, DLQ, rate limits)
-
-### Option 2: Incremental Setup
-
-Run migration files in order:
-
-```bash
-# Core tables (1-22)
-01-profiles.sql
-02-user-skills.sql
-03-user-interests.sql
-04-user-experiences.sql
-05-user-projects.sql
-06-posts.sql
-07-post-attachments.sql
-08-post-reactions.sql
-09-comments.sql
-10-comment-likes.sql
-11-connections.sql
-12-match-suggestions.sql
-13-match-scores.sql
-14-match-activity.sql
-15-match-preferences.sql
-16-conversations.sql
-17-messages.sql
-18-notifications.sql
-19-ai-mentor-sessions.sql
-20-ai-mentor-messages.sql
-21-notification-preferences.sql
-22-theme-preferences.sql
-
-# Vector embeddings system (23-29)
-23-profile-embeddings.sql
-24-embeddings-trigger.sql
-25-migrate-384-dimensions.sql
-26-dead-letter-queue.sql
-27-rate-limiting.sql
-28-pending-embeddings.sql
-29-validation-constraints.sql
-
-# Storage buckets
-98-storage-buckets.sql
-```
+- Notifications (notifications, notification_preferences)
+- AI features (ai_mentor_sessions, ai_mentor_messages)
+- Preferences (theme_preferences)
+- **Vector embeddings** (profile_embeddings, embedding_dead_letter_queue, embedding_rate_limits, embedding_pending_queue)
 
 ---
 

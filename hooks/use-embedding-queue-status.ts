@@ -22,12 +22,15 @@ export function useEmbeddingQueueStatus(userId: string) {
   const [status, setStatus] = useState<EmbeddingQueueStatus | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!userId) {
+  // Early return for no userId - guard at component level
+  if (!userId) {
+    // Reset status when no userId
+    if (status !== null || loading !== false) {
       setStatus(null);
       setLoading(false);
-      return;
     }
+    return null;
+  }
 
     const supabase = createClient();
     let isMounted = true;

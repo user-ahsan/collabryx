@@ -96,12 +96,13 @@ export function useCache<T>({
 export function useCacheOnly<T>(key: string): T | null {
   const [data, setData] = useState<T | null>(() => getCache<T>(key))
 
-  useEffect(() => {
+  // Load from cache on mount if needed
+  if (data === null) {
     const cached = getCache<T>(key)
-    if (cached !== null && data === null) {
+    if (cached !== null) {
       setData(cached)
     }
-  }, [key, data])
+  }
 
   return data
 }

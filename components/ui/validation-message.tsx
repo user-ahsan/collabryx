@@ -82,11 +82,10 @@ export function ValidationMessage({
     }
   }, [autoDismiss, duration, message, onDismiss])
 
-  useEffect(() => {
-    if (message) {
-      setIsVisible(true)
-    }
-  }, [message])
+  // Set visible on mount if message exists
+  if (message && !isVisible) {
+    setIsVisible(true)
+  }
 
   if (!message) return null
 
