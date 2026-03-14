@@ -22,7 +22,11 @@ const LINK_PLATFORMS = [
     { id: "portfolio", label: "Portfolio / Website", icon: LinkIcon }
 ]
 
-export function StepExperience() {
+interface StepExperienceProps {
+    onSkip?: () => void
+}
+
+export function StepExperience({ onSkip }: StepExperienceProps) {
     const { register, control, formState: { errors } } = useFormContext()
 
     const { fields: expFields, append: appendExp, remove: removeExp } = useFieldArray({
@@ -113,18 +117,22 @@ export function StepExperience() {
                 {/* Portfolios / Links Section */}
                 <div>
                     <div className="flex items-center justify-between mb-5 border-b border-border/10 pb-3">
-                        <h3 className="font-semibold text-lg">Portfolio & Links (Optional)</h3>
+                        <div>
+                            <h3 className="font-semibold text-lg">Portfolio & Links (Optional)</h3>
+                            <p className="text-sm text-muted-foreground mt-1">
+                                Add your work experience and portfolio links.
+                            </p>
+                        </div>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button
                                     type="button"
                                     variant="ghost"
                                     size="sm"
-                                    className="gap-2 h-10 px-4 bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 hover:text-primary transition-all duration-300 relative overflow-hidden"
+                                    className="gap-2 h-10 px-4 bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 hover:text-primary transition-all duration-300"
                                 >
-                                    <div className="absolute inset-0 bg-white/5 backdrop-blur-sm pointer-events-none" />
-                                    <Plus className="w-5 h-5 relative z-10" />
-                                    <span className="relative z-10">Add Link</span>
+                                    <Plus className="w-5 h-5" />
+                                    Add Link
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-56 bg-background/80 backdrop-blur-xl border-white/10">

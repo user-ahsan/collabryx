@@ -11,6 +11,13 @@ import { Loader2, ArrowRight, ArrowLeft, User, Code2, Target, Briefcase, Sparkle
 
 import { Button } from "@/components/ui/button"
 import { Stepper } from "@/components/features/onboarding/stepper"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
 import { StepWelcome } from "@/components/features/onboarding/step-welcome"
 import { StepBasicInfo } from "@/components/features/onboarding/step-basic-info"
 import { StepSkills } from "@/components/features/onboarding/step-skills"
@@ -75,6 +82,7 @@ export default function OnboardingPage() {
     const [currentStep, setCurrentStep] = useState(0)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [userName, setUserName] = useState("")
+    const [completionPercentage, setCompletionPercentage] = useState(0)
     const router = useRouter()
 
     const methods = useForm<OnboardingFormValues>({
@@ -120,6 +128,7 @@ export default function OnboardingPage() {
             return
         }
 
+        // Only validate and move to next step for steps 1-3
         let isStepValid = false
         
         if (currentStep === 1) {
@@ -144,39 +153,98 @@ export default function OnboardingPage() {
         setCurrentStep(prev => Math.max(prev - 1, 0))
     }
 
+    const handleSkipExperience = async () => {
+        setIsSubmitting(true)
+        try {
+            const values = methods.getValues()
+            
+            // Calculate completion based on data entered so far
+            let calculatedPercentage = 25 // Base for basic info
+            
+            if (values.skills && values.skills.length > 0) {
+                calculatedPercentage += 25
+            }
+            
+            if (values.interests && values.interests.length > 0) {
+                calculatedPercentage += 40
+            }
+            // No experience/links = stays at current percentage (65-90%)
+            
+            setCompletionPercentage(calculatedPercentage)
+            
+            const result = await completeOnboarding(
+                {
+                    ...values,
+                    experiences: [],
+                    links: []
+                },
+                calculatedPercentage
+            )
+            
+            if (result.success && result.userId) {
+                if (result.alreadyCompleted) {
+                    router.push("/dashboard")
+                } else {
+                    toast.success("Profile setup complete! Your vector embedding is queued.")
+                    router.push("/dashboard")
+                }
+            }
+        } catch (error: unknown) {
+            console.error("Onboarding skip failed:", error)
+            const errorMessage = error instanceof Error ? error.message : "Something went wrong. Please try again."
+            toast.error(errorMessage)
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
     const onSubmit = async (data: OnboardingFormValues) => {
+        // Calculate completion percentage
+        let calculatedPercentage = 25
+
+        if (data.skills && data.skills.length > 0) {
+            calculatedPercentage += 25
+        }
+
+        if (data.interests && data.interests.length > 0) {
+            calculatedPercentage += 40
+        }
+
+        const hasExp = data.experiences && data.experiences.some(e => e.title || e.company)
+        const hasLinks = data.links && data.links.some(l => l.url)
+        if (hasExp || hasLinks) {
+            calculatedPercentage += 10
+        }
+
+        setCompletionPercentage(calculatedPercentage)
         setIsSubmitting(true)
 
         try {
-            let completionPercentage = 25
+            const result = await completeOnboarding(data, calculatedPercentage)
 
-            if (data.skills && data.skills.length > 0) {
-                completionPercentage += 25
-            }
-
-            if (data.interests && data.interests.length > 0) {
-                completionPercentage += 40
-            }
-
-            const hasExp = data.experiences && data.experiences.some(e => e.title || e.company)
-            const hasLinks = data.links && data.links.some(l => l.url)
-            if (hasExp || hasLinks) {
-                completionPercentage += 10
-            }
-
-            const result = await completeOnboarding(data, completionPercentage)
-
-            // Trigger embedding generation from the frontend
+            // Embedding generation is handled server-side in completeOnboarding()
+            // No need to trigger from frontend - server action already queues it in DB and calls API
             if (result.success && result.userId) {
-                fetch('/api/embeddings/generate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: result.userId })
-                }).catch(err => console.error("Embedding generation failed to start:", err));
-                
-                toast.success("Profile setup complete! Your vector embedding is queued.");
-                router.push("/dashboard");
-                router.refresh();
+                if (result.alreadyCompleted) {
+                    // Profile was already completed, just redirect
+                    router.push("/dashboard");
+                } else {
+                    // Show success toast with embedding status
+                    if (result.embeddingQueued) {
+                        toast.success("Profile setup complete! Your vector embedding is queued.");
+                    } else if (result.embeddingError) {
+                        // Embedding API failed but DB queue is reliable
+                        toast.warning(
+                            "Profile setup complete! Embedding will be generated in background.",
+                            {
+                                description: "The AI analysis is queued and will complete shortly."
+                            }
+                        );
+                    } else {
+                        toast.success("Profile setup complete!");
+                    }
+                    router.push("/dashboard");
+                }
             } else {
                 // If there's an error and we didn't get a user ID, we need to handle it
                 setIsSubmitting(false);
@@ -193,26 +261,8 @@ export default function OnboardingPage() {
 
     return (
         <div className="min-h-screen bg-background relative flex items-center justify-center overflow-hidden">
-            {/* Background - enhanced for full screen welcome */}
+            {/* Background */}
             <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:50px_50px]" />
-            
-            {/* Animated orbs - larger and more prominent for welcome screen */}
-            <motion.div
-                animate={{
-                    scale: [1, 1.2, 1],
-                    opacity: [0.3, 0.5, 0.3],
-                }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"
-            />
-            <motion.div
-                animate={{
-                    scale: [1.2, 1, 1.2],
-                    opacity: [0.2, 0.4, 0.2],
-                }}
-                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-secondary/10 rounded-full blur-3xl"
-            />
 
             {/* Main Card */}
             <motion.div
@@ -225,82 +275,215 @@ export default function OnboardingPage() {
                     hoverable 
                     className="flex flex-col bg-black/40 sm:bg-black/50 shadow-2xl shadow-primary/5 border border-white/10"
                 >
-                    {/* Header */}
-                    <div className="p-6 sm:p-8 border-b border-border/20 flex flex-col items-center">
-                        <motion.div 
-                            initial={{ scale: 0.8, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ delay: 0.2, duration: 0.4 }}
-                            className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 mb-4"
-                        >
-                            <span className="text-primary-foreground font-bold text-2xl">C</span>
-                        </motion.div>
-                        <Stepper steps={STEPS} currentStep={currentStep} />
-                    </div>
+                    {/* Header with Stepper - hidden on welcome step */}
+                    {currentStep > 0 && (
+                        <div className="p-6 sm:p-8 border-b border-border/20">
+                            <Stepper steps={STEPS} currentStep={currentStep} />
+                        </div>
+                    )}
 
-                    {/* Form */}
-                    <div className="p-6 sm:p-8 md:px-12 flex-1">
+                    {/* Form Area */}
+                    <div className="p-6 sm:p-8 md:px-12">
                         <FormProvider {...methods}>
-                            <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 flex flex-col">
-                                <div className="flex-1">
+                            <form
+                                onSubmit={handleSubmit(onSubmit)}
+                                onKeyDown={(e) => {
+                                    // Prevent Enter from submitting on non-final steps
+                                    if (e.key === "Enter" && currentStep < STEPS.length - 1) {
+                                        e.preventDefault()
+                                    }
+                                }}
+                                className="space-y-8 flex flex-col"
+                            >
                                 <AnimatePresence mode="wait">
-                                    <motion.div
-                                        key={currentStep}
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -20 }}
-                                        transition={transition}
-                                    >
-                                        {currentStep === 0 ? (
+                                    {currentStep === 0 ? (
+                                        <motion.div
+                                            key="welcome"
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            exit={{ opacity: 0 }}
+                                            transition={{ duration: 0.3 }}
+                                        >
                                             <StepWelcome onNext={handleNext} />
-                                        ) : currentStep === 1 ? (
+                                        </motion.div>
+                                    ) : currentStep === 1 ? (
+                                        <motion.div
+                                            key="step1"
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -20 }}
+                                            transition={transition}
+                                        >
                                             <StepBasicInfo userName={userName} />
-                                        ) : currentStep === 2 ? (
+                                        </motion.div>
+                                    ) : currentStep === 2 ? (
+                                        <motion.div
+                                            key="step2"
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -20 }}
+                                            transition={transition}
+                                        >
                                             <StepSkills />
-                                        ) : currentStep === 3 ? (
+                                        </motion.div>
+                                    ) : currentStep === 3 ? (
+                                        <motion.div
+                                            key="step3"
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -20 }}
+                                            transition={transition}
+                                        >
                                             <StepInterestsAndGoals />
-                                        ) : (
-                                            <StepExperience />
-                                        )}
-                                    </motion.div>
+                                        </motion.div>
+                                    ) : (
+                                        <motion.div
+                                            key="step4"
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: -20 }}
+                                            transition={transition}
+                                        >
+                                            <StepExperience onSkip={handleSkipExperience} />
+                                        </motion.div>
+                                    )}
                                 </AnimatePresence>
-                            </div>
 
-                            {/* Navigation */}
-                            {currentStep > 0 && (
-                                <div className="flex items-center justify-between pt-6 border-t border-border/20">
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        onClick={handleBack}
-                                        disabled={currentStep <= 1 || isSubmitting}
-                                        className={currentStep <= 1 ? "invisible" : ""}
-                                    >
-                                        <ArrowLeft className="w-4 h-4 mr-2" />
-                                        Back
-                                    </Button>
+                                {/* Navigation */}
+                                {currentStep > 0 && (
+                                    <div className="flex items-center justify-between pt-6 border-t border-border/20">
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            onClick={handleBack}
+                                            disabled={currentStep <= 1 || isSubmitting}
+                                            className={currentStep <= 1 ? "invisible" : ""}
+                                        >
+                                            <ArrowLeft className="w-4 h-4 mr-2" />
+                                            Back
+                                        </Button>
 
-                                    <Button
-                                        type={isLastStep ? "submit" : "button"}
-                                        onClick={!isLastStep ? handleNext : undefined}
-                                        disabled={isSubmitting}
-                                        className="min-w-[140px]"
-                                    >
-                                        {isSubmitting ? (
-                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                        ) : isLastStep ? (
-                                            "Complete Profile"
-                                        ) : (
-                                            <>
-                                                Next Step
-                                                <ArrowRight className="w-4 h-4 ml-2" />
-                                            </>
-                                        )}
-                                    </Button>
+                                        <div className="flex gap-3">
+                                            {/* Skip & Complete - Available on all steps */}
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={handleSkipExperience}
+                                                disabled={isSubmitting}
+                                                className="min-w-[120px] border-primary/20 text-primary hover:bg-primary/10"
+                                            >
+                                                {isSubmitting ? (
+                                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                ) : (
+                                                    "Skip & Complete"
+                                                )}
+                                            </Button>
+                                            
+                                            {isLastStep ? (
+                                                <Button
+                                                    type="submit"
+                                                    disabled={isSubmitting}
+                                                    className="min-w-[140px]"
+                                                >
+                                                    {isSubmitting ? (
+                                                        <>
+                                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                            Completing...
+                                                        </>
+                                                    ) : (
+                                                        "Complete Profile"
+                                                    )}
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    type="button"
+                                                    onClick={handleNext}
+                                                    disabled={isSubmitting}
+                                                    className="min-w-[140px]"
+                                                >
+                                                    {isSubmitting ? (
+                                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                    ) : (
+                                                        <>
+                                                            Next Step
+                                                            <ArrowRight className="w-4 h-4 ml-2" />
+                                                        </>
+                                                    )}
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </form>
+                            
+                        {/* Loading Dialog */}
+                        <Dialog open={isSubmitting}>
+                            <DialogContent className="sm:max-w-md">
+                                <DialogHeader>
+                                    <DialogTitle className="flex items-center gap-3">
+                                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                                        Completing Your Profile
+                                    </DialogTitle>
+                                    <DialogDescription className="pt-2">
+                                        {completionPercentage === 90 
+                                            ? "Setting up your profile with basic information..."
+                                            : "Setting up your complete profile with all details..."
+                                        }
+                                        {" Your AI embedding is being generated."}
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4 py-4">
+                                    {/* Progress Bar */}
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between text-sm">
+                                            <span className="text-muted-foreground">Overall Progress</span>
+                                            <span className="font-medium text-primary">{completionPercentage}%</span>
+                                        </div>
+                                        <div className="h-3 bg-secondary rounded-full overflow-hidden">
+                                            <div 
+                                                className="h-full bg-gradient-to-r from-primary via-primary/90 to-primary/80 transition-all duration-700 ease-in-out" 
+                                                style={{ width: `${completionPercentage}%` }} 
+                                            />
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Checklist */}
+                                    <div className="space-y-2 pt-2">
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">
+                                                <svg className="w-3 h-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            </div>
+                                            <span className="text-muted-foreground">Profile information saved</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-sm">
+                                            <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">
+                                                <svg className="w-3 h-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            </div>
+                                            <span className="text-muted-foreground">Skills & interests added</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 text-sm">
+                                            {isSubmitting ? (
+                                                <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                                            ) : (
+                                                <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center">
+                                                    <svg className="w-3 h-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                </div>
+                                            )}
+                                            <span className={isSubmitting ? "text-primary" : "text-muted-foreground"}>
+                                                {isSubmitting ? "Generating AI embedding..." : "AI embedding generated"}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
-                            )}
-                        </form>
-                    </FormProvider>
+                            </DialogContent>
+                        </Dialog>
+                        </FormProvider>
                     </div>
                 </GlassCard>
             </motion.div>

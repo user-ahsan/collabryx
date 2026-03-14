@@ -62,28 +62,27 @@ MAX_QUEUE_SIZE = 100
 request_queue = asyncio.Queue(maxsize=MAX_QUEUE_SIZE)
 processing_semaphore = asyncio.Semaphore(5)  # Max 5 concurrent generations
 
-# Initialize FastAPI app
-app = FastAPI(
-    title="Collabryx Embedding Service",
-    description="Generate semantic embeddings for user profiles using Sentence Transformers",
-    version="1.0.0",
-)
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifecycle with background tasks"""
     validate_env_vars()
-    logger.info("Embedding service starting up...")
-
-    # Start background tasks
+    logger.info("=" * 60)
+    logger.info("EMBEDDING SERVICE STARTING UP")
+    logger.info("=" * 60)
+    logger.info("Starting background queue processor...")
     processor_task = asyncio.create_task(queue_processor())
+    logger.info("Starting DLQ processor...")
     dlq_processor_task = asyncio.create_task(process_dead_letter_queue())
+    logger.info("Starting pending queue processor...")
     pending_queue_task = asyncio.create_task(process_pending_queue())
+    logger.info("✓ All background tasks started successfully")
+    logger.info("=" * 60)
 
     yield
 
     # Cleanup
+    logger.info("Shutting down embedding service...")
     processor_task.cancel()
     dlq_processor_task.cancel()
     pending_queue_task.cancel()
@@ -93,13 +92,17 @@ async def lifespan(app: FastAPI):
         await pending_queue_task
     except asyncio.CancelledError:
         pass
-
     await request_queue.join()
-    logger.info("Embedding service shutting down...")
+    logger.info("Embedding service shut down complete")
 
 
-# Add lifespan to app
-app.lifespan = lifespan
+# Initialize FastAPI app with lifespan
+app = FastAPI(
+    title="Collabryx Embedding Service",
+    description="Generate semantic embeddings for user profiles using Sentence Transformers",
+    version="1.0.0",
+    lifespan=lifespan,
+)
 
 # CORS middleware with specific origins
 app.add_middleware(
@@ -178,7 +181,7 @@ async def store_in_dead_letter_queue(
 
 
 def store_embedding(user_id: str, embedding: List[float], status: str):
-    """Store embedding in Supabase with validation metadata"""
+    """Store embedding in Supabase with validation metadata using UPSERT to avoid race conditions"""
     if not supabase:
         logger.warning(
             f"Supabase client not initialized. Cannot store embedding for {user_id}"
@@ -196,72 +199,54 @@ def store_embedding(user_id: str, embedding: List[float], status: str):
                 f"Invalid embedding cannot be stored: {validation_result.message}"
             )
 
+        # Normalize to 384 dimensions
         target_dim = 384
         if len(embedding) < target_dim:
             embedding = embedding + [0.0] * (target_dim - len(embedding))
         elif len(embedding) > target_dim:
             embedding = embedding[:target_dim]
 
-        # Check if embedding already exists
-        existing = (
-            supabase.table("profile_embeddings")
-            .select("user_id")
-            .eq("user_id", user_id)
-            .execute()
-        )
+        # UPSERT: Insert or update based on user_id constraint
+        # This eliminates the race condition from check-then-insert pattern
+        supabase.table("profile_embeddings").upsert(
+            {
+                "user_id": user_id,
+                "embedding": embedding,
+                "status": status,
+                "last_updated": datetime.utcnow().isoformat(),
+                "metadata": {
+                    "validation": validation_result.details,
+                    "model": "sentence-transformers/all-MiniLM-L6-v2",
+                    "dimensions": len(embedding),
+                    "validated_at": datetime.utcnow().isoformat(),
+                },
+            },
+            on_conflict="user_id",  # Critical: specify conflict column for UPSERT
+        ).execute()
 
-        if existing.data and len(existing.data) > 0:
-            # Update existing embedding
-            supabase.table("profile_embeddings").update(
-                {
-                    "embedding": embedding,
-                    "status": status,
-                    "last_updated": datetime.utcnow().isoformat(),
-                    "metadata": {
-                        "validation": validation_result.details,
-                        "model": "sentence-transformers/all-MiniLM-L6-v2",
-                        "dimensions": len(embedding),
-                        "validated_at": datetime.utcnow().isoformat(),
-                    },
-                }
-            ).eq("user_id", user_id).execute()
-            logger.info(
-                f"Successfully updated embedding for {user_id}",
-                extra={"user_id": user_id},
-            )
-        else:
-            # Insert new embedding
-            supabase.table("profile_embeddings").insert(
-                {
-                    "user_id": user_id,
-                    "embedding": embedding,
-                    "status": status,
-                    "last_updated": datetime.utcnow().isoformat(),
-                    "metadata": {
-                        "validation": validation_result.details,
-                        "model": "sentence-transformers/all-MiniLM-L6-v2",
-                        "dimensions": len(embedding),
-                        "validated_at": datetime.utcnow().isoformat(),
-                    },
-                }
-            ).execute()
-            logger.info(
-                f"Successfully stored new embedding for {user_id}",
-                extra={"user_id": user_id},
-            )
+        logger.info(
+            f"Successfully stored embedding for {user_id} (status={status})",
+            extra={"user_id": user_id},
+        )
         return True
+
     except Exception as e:
         logger.error(
             f"Failed to store embedding for {user_id}: {e}",
             extra={"user_id": user_id, "error": str(e)},
+            exc_info=True,
         )
+        # Try to mark as failed
+        # Try to mark as failed (with UPSERT to avoid duplicate key errors)
         try:
             supabase.table("profile_embeddings").upsert(
                 {
                     "user_id": user_id,
                     "status": "failed",
+                    "error_message": str(e),
                     "last_updated": datetime.utcnow().isoformat(),
-                }
+                },
+                on_conflict="user_id",
             ).execute()
         except Exception as inner_e:
             logger.error(f"Failed to update error status for {user_id}: {inner_e}")
@@ -352,9 +337,11 @@ async def generate_and_store_embedding(
 
 async def queue_processor():
     """Background task to process queue"""
+    logger.info("Queue processor loop started")
     while True:
         try:
             text, user_id, request_id = await request_queue.get()
+            logger.info(f"Queue processor picked up request for user {user_id}")
             await generate_and_store_embedding(text, user_id, request_id)
             request_queue.task_done()
         except Exception as e:
@@ -429,12 +416,12 @@ async def process_dead_letter_queue():
                             }
                         ).eq("id", item["id"]).execute()
 
-            # Wait before next poll
-            await asyncio.sleep(30)
+            # Wait before next poll (increased from 30s to 60s to reduce DB load)
+            await asyncio.sleep(60)
 
         except Exception as e:
             logger.error(f"DLQ processor error: {e}")
-            await asyncio.sleep(30)
+            await asyncio.sleep(60)
 
 
 async def process_pending_queue():
@@ -446,7 +433,7 @@ async def process_pending_queue():
                 supabase.table("embedding_pending_queue")
                 .select("*")
                 .eq("status", "pending")
-                .order("created_at", asc=True)
+                .order("created_at")  # Default is ascending
                 .limit(20)
                 .execute()
             )
@@ -497,23 +484,41 @@ async def process_pending_queue():
                     embedding = await generator.generate_embedding(semantic_text)
 
                     # Store embedding
-                    store_embedding(item["user_id"], embedding, "completed")
+                    success = store_embedding(item["user_id"], embedding, "completed")
 
-                    # Mark queue item as completed
-                    supabase.table("embedding_pending_queue").update(
-                        {
-                            "status": "completed",
-                            "completed_at": datetime.utcnow().isoformat(),
-                        }
-                    ).eq("id", item["id"]).execute()
+                    if success:
+                        # Mark queue item as completed
+                        supabase.table("embedding_pending_queue").update(
+                            {
+                                "status": "completed",
+                                "completed_at": datetime.utcnow().isoformat(),
+                            }
+                        ).eq("id", item["id"]).execute()
 
-                    logger.info(
-                        f"Pending queue processed successfully for {item['user_id']}"
-                    )
+                        logger.info(
+                            f"Pending queue processed successfully for {item['user_id']}"
+                        )
+                    else:
+                        # Storage failed, move to DLQ
+                        supabase.table("embedding_pending_queue").update(
+                            {
+                                "status": "failed",
+                                "last_attempt": datetime.utcnow().isoformat(),
+                                "failure_reason": "Failed to store embedding",
+                            }
+                        ).eq("id", item["id"]).execute()
+
+                        await store_in_dead_letter_queue(
+                            user_id=item["user_id"],
+                            semantic_text=semantic_text,
+                            failure_reason="Failed to store embedding in profile_embeddings",
+                            retry_count=0,
+                        )
 
                 except Exception as e:
                     logger.error(
-                        f"Pending queue processing failed for {item['user_id']}: {e}"
+                        f"Pending queue processing failed for {item['user_id']}: {e}",
+                        exc_info=True,
                     )
                     supabase.table("embedding_pending_queue").update(
                         {
@@ -523,36 +528,26 @@ async def process_pending_queue():
                         }
                     ).eq("id", item["id"]).execute()
 
-                    # Move to DLQ for retry
+                    # Move to DLQ for retry with semantic text if available
                     await store_in_dead_letter_queue(
                         user_id=item["user_id"],
-                        semantic_text="",
+                        semantic_text=semantic_text
+                        if "semantic_text" in locals()
+                        else "",
                         failure_reason=str(e),
                         retry_count=0,
                     )
 
-            # Wait before next poll
-            await asyncio.sleep(10)
+            # Wait before next poll (increased from 10s to 30s to reduce DB load)
+            await asyncio.sleep(30)
 
         except Exception as e:
             logger.error(f"Pending queue processor error: {e}")
             await asyncio.sleep(30)
 
 
-@app.on_event("startup")
-async def startup_event():
-    """Validate environment and start queue processor on startup"""
-    validate_env_vars()
-    logger.info("Embedding service starting up...")
-    asyncio.create_task(queue_processor())
-    asyncio.create_task(process_dead_letter_queue())
-
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """Wait for queue to finish processing on shutdown"""
-    await request_queue.join()
-    logger.info("Embedding service shutting down...")
+# Removed: @app.on_event decorators conflict with lifespan context manager
+# The lifespan context manager handles startup/shutdown exclusively
 
 
 @app.get("/")

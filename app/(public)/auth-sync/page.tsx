@@ -11,28 +11,28 @@ export default async function AuthSyncPage() {
     if (!user) {
         destination = "/login"
     } else {
-        // In development mode, check if this is the test user and auto-complete onboarding
-        if (isDevelopmentMode() && user.email === "test123@collabryx.com") {
-            // Auto-complete onboarding for test user
-            const result = await completeTestUserOnboarding()
-            if (result.success) {
-                destination = "/dashboard"
-            } else {
-                console.error("Failed to auto-complete test user onboarding:", result.error)
-                destination = "/onboarding"
-            }
-        } else {
-            // Check regular user profile
-            const { data: profile } = await supabase
-                .from("profiles")
-                .select("onboarding_completed")
-                .eq("id", user.id)
-                .single()
+        // Check profile first (works for all users including test user)
+        const { data: profile } = await supabase
+            .from("profiles")
+            .select("onboarding_completed")
+            .eq("id", user.id)
+            .single()
 
-            // Redirect to onboarding if:
-            // 1. Profile doesn't exist (new user), OR
-            // 2. Profile exists but onboarding is not completed
-            if (!profile || profile.onboarding_completed !== true) {
+        // If onboarding already completed, go to dashboard
+        if (profile?.onboarding_completed === true) {
+            destination = "/dashboard"
+        } else {
+            // In development mode with test user, auto-complete onboarding
+            if (isDevelopmentMode() && user.email === "test123@collabryx.com") {
+                const result = await completeTestUserOnboarding()
+                if (result.success) {
+                    destination = "/dashboard"
+                } else {
+                    console.error("Failed to auto-complete test user onboarding:", result.error)
+                    destination = "/onboarding"
+                }
+            } else {
+                // New user needs to complete onboarding
                 destination = "/onboarding"
             }
         }
