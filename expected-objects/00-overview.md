@@ -7,6 +7,8 @@
 
 ## Table Index
 
+### User Management (Tables 1-5)
+
 | # | Table | Document | Purpose |
 |---|-------|----------|---------|
 | 1 | `profiles` | [01-profiles.md](./01-profiles.md) | User identity, bio, skills, preferences, avatar, verification |
@@ -14,27 +16,69 @@
 | 3 | `user_interests` | [03-user-interests.md](./03-user-interests.md) | Interests/industries each user cares about |
 | 4 | `user_experiences` | [04-user-experiences.md](./04-user-experiences.md) | Work/education history timeline |
 | 5 | `user_projects` | [05-user-projects.md](./05-user-projects.md) | Portfolio projects shown on profile |
+
+### Social Features (Tables 6-11)
+
+| # | Table | Document | Purpose |
+|---|-------|----------|---------|
 | 6 | `posts` | [06-posts.md](./06-posts.md) | Feed posts with types, media, links |
 | 7 | `post_attachments` | [07-post-attachments.md](./07-post-attachments.md) | Media files attached to posts |
 | 8 | `post_reactions` | [08-post-reactions.md](./08-post-reactions.md) | Emoji reactions on posts |
 | 9 | `comments` | [09-comments.md](./09-comments.md) | Comments under posts |
 | 10 | `comment_likes` | [10-comment-likes.md](./10-comment-likes.md) | Likes on comments |
 | 11 | `connections` | [11-connections.md](./11-connections.md) | Connection requests between users |
+
+### Matching System (Tables 12-15)
+
+| # | Table | Document | Purpose |
+|---|-------|----------|---------|
 | 12 | `match_suggestions` | [12-match-suggestions.md](./12-match-suggestions.md) | AI-generated match recommendations |
 | 13 | `match_scores` | [13-match-scores.md](./13-match-scores.md) | Detailed match breakdown (skills overlap, complementary, interests) |
 | 14 | `match_activity` | [14-match-activity.md](./14-match-activity.md) | Profile views, building-match events |
 | 15 | `match_preferences` | [15-match-preferences.md](./15-match-preferences.md) | User's match filter preferences |
+
+### Messaging (Tables 16-17)
+
+| # | Table | Document | Purpose |
+|---|-------|----------|---------|
 | 16 | `conversations` | [16-conversations.md](./16-conversations.md) | Message threads between users |
 | 17 | `messages` | [17-messages.md](./17-messages.md) | Individual chat messages |
+
+### Notifications (Tables 18)
+
+| # | Table | Document | Purpose |
+|---|-------|----------|---------|
 | 18 | `notifications` | [18-notifications.md](./18-notifications.md) | In-app notification feed |
+
+### AI Features (Tables 19-20)
+
+| # | Table | Document | Purpose |
+|---|-------|----------|---------|
 | 19 | `ai_mentor_sessions` | [19-ai-mentor-sessions.md](./19-ai-mentor-sessions.md) | AI Mentor conversation sessions |
 | 20 | `ai_mentor_messages` | [20-ai-mentor-messages.md](./20-ai-mentor-messages.md) | Messages within AI mentor sessions |
+
+### Preferences (Tables 21-22)
+
+| # | Table | Document | Purpose |
+|---|-------|----------|---------|
 | 21 | `notification_preferences` | [21-notification-preferences.md](./21-notification-preferences.md) | Email/push notification toggles |
 | 22 | `theme_preferences` | [22-theme-preferences.md](./22-theme-preferences.md) | Dark/light mode setting |
-| 23 | `profile_embeddings` | [24-profile-embeddings.md](./24-profile-embeddings.md) | Vector embeddings for semantic profile matching (384-dim) |
+
+### Vector Embeddings (Table 23)
+
+| # | Table | Document | Purpose |
+|---|-------|----------|---------|
+| 23 | `profile_embeddings` | [23-profile-embeddings.md](./23-profile-embeddings.md) | Vector embeddings for semantic profile matching (384-dim) |
+
+### Embedding Reliability (Tables 24-26)
+
+| # | Table | Document | Purpose |
+|---|-------|----------|---------|
 | 24 | `embedding_dead_letter_queue` | [25-dead-letter-queue.md](./25-dead-letter-queue.md) | Failed embedding retry queue with exponential backoff |
 | 25 | `embedding_rate_limits` | [26-rate-limiting.md](./26-rate-limiting.md) | Rate limiting (3 req/hour/user) to prevent DoS |
 | 26 | `embedding_pending_queue` | [27-pending-queue.md](./27-pending-queue.md) | Reliable onboarding embedding queue |
+
+**Total Tables:** 26
 
 ---
 
