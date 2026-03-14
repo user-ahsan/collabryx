@@ -202,23 +202,53 @@ def store_embedding(user_id: str, embedding: List[float], status: str):
         elif len(embedding) > target_dim:
             embedding = embedding[:target_dim]
 
-        supabase.table("profile_embeddings").upsert(
-            {
-                "user_id": user_id,
-                "embedding": embedding,
-                "status": status,
-                "last_updated": datetime.utcnow().isoformat(),
-                "metadata": {
-                    "validation": validation_result.details,
-                    "model": "sentence-transformers/all-MiniLM-L6-v2",
-                    "dimensions": len(embedding),
-                    "validated_at": datetime.utcnow().isoformat(),
-                },
-            }
-        ).execute()
-        logger.info(
-            f"Successfully stored embedding for {user_id}", extra={"user_id": user_id}
+        # Check if embedding already exists
+        existing = (
+            supabase.table("profile_embeddings")
+            .select("user_id")
+            .eq("user_id", user_id)
+            .execute()
         )
+
+        if existing.data and len(existing.data) > 0:
+            # Update existing embedding
+            supabase.table("profile_embeddings").update(
+                {
+                    "embedding": embedding,
+                    "status": status,
+                    "last_updated": datetime.utcnow().isoformat(),
+                    "metadata": {
+                        "validation": validation_result.details,
+                        "model": "sentence-transformers/all-MiniLM-L6-v2",
+                        "dimensions": len(embedding),
+                        "validated_at": datetime.utcnow().isoformat(),
+                    },
+                }
+            ).eq("user_id", user_id).execute()
+            logger.info(
+                f"Successfully updated embedding for {user_id}",
+                extra={"user_id": user_id},
+            )
+        else:
+            # Insert new embedding
+            supabase.table("profile_embeddings").insert(
+                {
+                    "user_id": user_id,
+                    "embedding": embedding,
+                    "status": status,
+                    "last_updated": datetime.utcnow().isoformat(),
+                    "metadata": {
+                        "validation": validation_result.details,
+                        "model": "sentence-transformers/all-MiniLM-L6-v2",
+                        "dimensions": len(embedding),
+                        "validated_at": datetime.utcnow().isoformat(),
+                    },
+                }
+            ).execute()
+            logger.info(
+                f"Successfully stored new embedding for {user_id}",
+                extra={"user_id": user_id},
+            )
         return True
     except Exception as e:
         logger.error(
