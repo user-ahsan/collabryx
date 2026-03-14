@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
 export interface EmbeddingQueueStatus {
@@ -21,10 +21,17 @@ export interface EmbeddingQueueStatus {
 export function useEmbeddingQueueStatus(userId: string) {
   const [status, setStatus] = useState<EmbeddingQueueStatus | null>(null);
   const [loading, setLoading] = useState(true);
+  const initialized = useRef(false);
 
   useEffect(() => {
+    // Skip if already initialized
+    if (initialized.current) return;
+    initialized.current = true;
+
     if (!userId) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setStatus(null);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLoading(false);
       return;
     }
