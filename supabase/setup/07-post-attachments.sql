@@ -1,7 +1,9 @@
--- Table: post_attachments
--- Media files (images, videos) attached to posts.
+-- ============================================================================
+-- TABLE 7: post_attachments
+-- ============================================================================
+-- Media attachments for posts
+-- Created: 2026-03-14
 
--- Create the post_attachments table
 CREATE TABLE IF NOT EXISTS public.post_attachments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     post_id UUID NOT NULL REFERENCES public.posts(id) ON DELETE CASCADE,
@@ -16,63 +18,23 @@ CREATE TABLE IF NOT EXISTS public.post_attachments (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Create indexes for performance
+-- Indexes
 CREATE INDEX IF NOT EXISTS idx_post_attachments_post_id ON public.post_attachments(post_id);
-CREATE INDEX IF NOT EXISTS idx_post_attachments_order_idx ON public.post_attachments(order_index);
 
--- Enable Realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE public.post_attachments;
-
--- Row Level Security
+-- RLS
 ALTER TABLE public.post_attachments ENABLE ROW LEVEL SECURITY;
 
--- Policy: Users can view attachments of public posts
+DROP POLICY IF EXISTS "Users can view post attachments" ON public.post_attachments;
 CREATE POLICY "Users can view post attachments" ON public.post_attachments
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM public.posts p
-            WHERE p.id = post_attachments.post_id
-            AND p.is_archived = FALSE
-        )
-    );
+    FOR SELECT USING (EXISTS (SELECT 1 FROM public.posts p WHERE p.id = post_attachments.post_id AND p.is_archived = FALSE));
 
--- Policy: Users can create attachments for their own posts
+DROP POLICY IF EXISTS "Users can create post attachments" ON public.post_attachments;
 CREATE POLICY "Users can create post attachments" ON public.post_attachments
-    FOR INSERT WITH CHECK (
-        EXISTS (
-            SELECT 1 FROM public.posts p
-            WHERE p.id = post_attachments.post_id
-            AND p.author_id = auth.uid()
-        )
-    );
+    FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM public.posts p WHERE p.id = post_attachments.post_id AND p.author_id = auth.uid()));
 
--- Policy: Users can delete attachments for their own posts
+DROP POLICY IF EXISTS "Users can delete post attachments" ON public.post_attachments;
 CREATE POLICY "Users can delete post attachments" ON public.post_attachments
-    FOR DELETE USING (
-        EXISTS (
-            SELECT 1 FROM public.posts p
-            WHERE p.id = post_attachments.post_id
-            AND p.author_id = auth.uid()
-        )
-    );
+    FOR DELETE USING (EXISTS (SELECT 1 FROM public.posts p WHERE p.id = post_attachments.post_id AND p.author_id = auth.uid()));
 
--- Storage Bucket for post media
--- Note: This creates a public bucket for post media
--- Run in Supabase SQL editor or via CLI:
-/*
-insert into storage.buckets (id, name, public)
-values ('post-media', 'post-media', true);
-
--- Public read access
-create policy "Public read access to post-media"
-on storage.objects for select
-using (bucket_id = 'post-media');
-
--- Authenticated users can upload to their own posts
-create policy "Authenticated upload to post-media"
-on storage.objects for insert
-with check (
-    bucket_id = 'post-media' AND
-    auth.role() = 'authenticated'
-);
-*/
+-- Realtime
+ALTER PUBLICATION supabase_realtime ADD TABLE public.post_attachments;

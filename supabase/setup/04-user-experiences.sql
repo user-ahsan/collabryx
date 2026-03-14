@@ -1,7 +1,9 @@
--- Table: user_experiences
--- Work/education timeline entries on the profile.
+-- ============================================================================
+-- TABLE 4: user_experiences
+-- ============================================================================
+-- Work/education history
+-- Created: 2026-03-14
 
--- Create the user_experiences table
 CREATE TABLE IF NOT EXISTS public.user_experiences (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -16,20 +18,17 @@ CREATE TABLE IF NOT EXISTS public.user_experiences (
     UNIQUE(user_id, title)
 );
 
--- Create indexes for performance
+-- Indexes
 CREATE INDEX IF NOT EXISTS idx_user_experiences_user_id ON public.user_experiences(user_id);
-CREATE INDEX IF NOT EXISTS idx_user_experiences_order_idx ON public.user_experiences(order_index);
 
--- Enable Realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE public.user_experiences;
-
--- Row Level Security
+-- RLS
 ALTER TABLE public.user_experiences ENABLE ROW LEVEL SECURITY;
 
--- Policy: Users can view all experiences
-CREATE POLICY "Users can view any experiences" ON public.user_experiences
-    FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users can view any experiences" ON public.user_experiences;
+CREATE POLICY "Users can view any experiences" ON public.user_experiences FOR SELECT USING (true);
 
--- Policy: Users can manage only their own experiences
-CREATE POLICY "Users can manage own experiences" ON public.user_experiences
-    FOR ALL USING (auth.uid() = user_id);
+DROP POLICY IF EXISTS "Users can manage own experiences" ON public.user_experiences;
+CREATE POLICY "Users can manage own experiences" ON public.user_experiences FOR ALL USING (auth.uid() = user_id);
+
+-- Realtime
+ALTER PUBLICATION supabase_realtime ADD TABLE public.user_experiences;

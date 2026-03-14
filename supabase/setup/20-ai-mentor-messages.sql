@@ -1,7 +1,9 @@
--- Table: ai_mentor_messages
--- Messages within an AI Mentor session (user messages + AI responses).
+-- ============================================================================
+-- TABLE 20: ai_mentor_messages
+-- ============================================================================
+-- Individual AI mentor messages
+-- Created: 2026-03-14
 
--- Create the ai_mentor_messages table
 CREATE TABLE IF NOT EXISTS public.ai_mentor_messages (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     session_id UUID NOT NULL REFERENCES public.ai_mentor_sessions(id) ON DELETE CASCADE,
@@ -11,42 +13,20 @@ CREATE TABLE IF NOT EXISTS public.ai_mentor_messages (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Create indexes for performance
+-- Indexes
 CREATE INDEX IF NOT EXISTS idx_ai_mentor_messages_session_id ON public.ai_mentor_messages(session_id);
-CREATE INDEX IF NOT EXISTS idx_ai_mentor_messages_created_at ON public.ai_mentor_messages(created_at ASC);
+CREATE INDEX IF NOT EXISTS idx_ai_mentor_messages_created ON public.ai_mentor_messages(created_at DESC);
 
--- Enable Realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE public.ai_mentor_messages;
-
--- Row Level Security
+-- RLS
 ALTER TABLE public.ai_mentor_messages ENABLE ROW LEVEL SECURITY;
 
--- Policy: Users can view messages from their own sessions
+DROP POLICY IF EXISTS "Users can view own AI mentor messages" ON public.ai_mentor_messages;
 CREATE POLICY "Users can view own AI mentor messages" ON public.ai_mentor_messages
-    FOR SELECT USING (
-        EXISTS (
-            SELECT 1 FROM public.ai_mentor_sessions s
-            WHERE s.id = ai_mentor_messages.session_id
-            AND s.user_id = auth.uid()
-        )
-    );
+    FOR SELECT USING (EXISTS (SELECT 1 FROM public.ai_mentor_sessions s WHERE s.id = ai_mentor_messages.session_id AND s.user_id = auth.uid()));
 
--- Policy: Users can add messages to their own sessions
-CREATE POLICY "Users can add AI mentor messages" ON public.ai_mentor_messages
-    FOR INSERT WITH CHECK (
-        EXISTS (
-            SELECT 1 FROM public.ai_mentor_sessions s
-            WHERE s.id = ai_mentor_messages.session_id
-            AND s.user_id = auth.uid()
-        )
-    );
+DROP POLICY IF EXISTS "Users can create AI mentor messages" ON public.ai_mentor_messages;
+CREATE POLICY "Users can create AI mentor messages" ON public.ai_mentor_messages
+    FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM public.ai_mentor_sessions s WHERE s.id = ai_mentor_messages.session_id AND s.user_id = auth.uid()));
 
--- Policy: Users can mark their own messages as saved
-CREATE POLICY "Users can update own AI mentor messages" ON public.ai_mentor_messages
-    FOR UPDATE USING (
-        EXISTS (
-            SELECT 1 FROM public.ai_mentor_sessions s
-            WHERE s.id = ai_mentor_messages.session_id
-            AND s.user_id = auth.uid()
-        )
-    );
+-- Realtime
+ALTER PUBLICATION supabase_realtime ADD TABLE public.ai_mentor_messages;
