@@ -2,7 +2,7 @@
 
 **Project:** Collabryx - Next-Generation Collaborative Platform with AI-Powered Features
 **Repository:** https://github.com/user-ahsan/collabryx.git
-**Last Updated:** 2026-03-14
+**Last Updated:** 2026-03-14 (Phase 5 Cleanup Complete)
 **Context Fingerprint:** `collabryx-context-2026-03-14`
 
 ---
@@ -183,7 +183,7 @@ collabryx/
 ### Prerequisites
 
 - Node.js (LTS)
-- Bun (package manager - bun.lock present)
+- npm (comes with Node.js)
 - Git
 - Supabase account
 
@@ -729,17 +729,15 @@ git push
 
 ## 🗄️ Database Setup
 
-**Files:**
-- `supabase/setup/00-complete-database-wipe.sql` - Complete database reset
+**File:**
 - `supabase/setup/99-master-all-tables.sql` - Complete schema (26 tables)
 
 **Quick Setup:**
 ```sql
--- Fresh install or reset: Run 99-master-all-tables.sql in Supabase SQL Editor
--- Complete wipe: Run 00-complete-database-wipe.sql first, then 99-master-all-tables.sql
+-- Run in Supabase SQL Editor for complete setup
+-- Includes: profiles, posts, comments, connections, matches, 
+-- conversations, messages, notifications, AI mentor, embeddings + reliability tables
 ```
-
-**Schema:** 26 tables (profiles, posts, comments, connections, matches, conversations, messages, notifications, AI mentor, embeddings + 3 reliability tables)
 
 **Legacy files:** All files 01-35, 98-100 can be deleted (consolidated into master file)
 
@@ -769,6 +767,28 @@ git push
 NAME                               STATUS         PORTS
 python-worker-embedding-service-1  Up (healthy)   0.0.0.0:8000->8000/tcp
 ```
+
+---
+
+## ✅ Phase 5 Cleanup Complete (2026-03-14)
+
+**Documentation Updates:**
+- ✅ `docs/SECURITY.md` - Security features overview created
+- ✅ `docs/04-infrastructure/database/embeddings.md` - Embedding system docs created
+- ✅ `docs/01-getting-started/installation.md` - Removed bun references (npm only)
+- ✅ `docs/01-getting-started/development.md` - Verified scripts match package.json
+- ✅ `docs/05-deployment/overview.md` - Added Python worker deployment steps
+- ✅ `docs/04-infrastructure/python-worker/deployment.md` - Verified complete
+- ✅ `AGENTS.md` - Updated with cleanup notes, removed bun references
+
+**Database Setup:**
+- ✅ Consolidated to `99-master-all-tables.sql` only
+- ✅ Legacy files (01-35, 98-100) marked for deletion
+
+**Next Steps:**
+- Deploy Python worker to production (Render/Railway)
+- Run `99-master-all-tables.sql` in production Supabase
+- Configure monitoring alerts for queue depth and DLQ exhaustion
 
 **Health Check Response:**
 ```json
@@ -832,6 +852,14 @@ Full test results: `TEST-REPORT-2026-03-14.md`
    - 34 SQL files in `supabase/setup/`
    - Embedding reliability system (DLQ, rate limiting, pending queue)
    - Complete schema: `99-master-all-tables.sql`
+
+7. **Phase 5 Cleanup (2026-03-14)**
+   - Documentation consolidated
+   - Removed bun references (npm only)
+   - Created `docs/SECURITY.md` - security features overview
+   - Created `docs/04-infrastructure/database/embeddings.md` - embedding system docs
+   - Updated deployment docs with Python worker steps
+   - Database setup references master file only
 
 ### Code Quality Fixes
 

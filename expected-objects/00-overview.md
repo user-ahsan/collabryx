@@ -74,43 +74,86 @@
 
 | # | Table | Document | Purpose |
 |---|-------|----------|---------|
-| 24 | `embedding_dead_letter_queue` | [25-dead-letter-queue.md](./25-dead-letter-queue.md) | Failed embedding retry queue with exponential backoff |
-| 25 | `embedding_rate_limits` | [26-rate-limiting.md](./26-rate-limiting.md) | Rate limiting (3 req/hour/user) to prevent DoS |
-| 26 | `embedding_pending_queue` | [27-pending-queue.md](./27-pending-queue.md) | Reliable onboarding embedding queue |
+| 24 | `embedding_dead_letter_queue` | [24-dead-letter-queue.md](./24-dead-letter-queue.md) | Failed embedding retry queue with exponential backoff |
+| 25 | `embedding_rate_limits` | [25-rate-limiting.md](./25-rate-limiting.md) | Rate limiting (3 req/hour/user) to prevent DoS |
+| 26 | `embedding_pending_queue` | [26-pending-queue.md](./26-pending-queue.md) | Reliable onboarding embedding queue |
 
 **Total Tables:** 26
 
 ---
 
-## Entity Relationship Diagram (Text)
+## Entity Relationship Diagram
 
+```mermaid
+erDiagram
+    auth_users ||--|| profiles : "1:1"
+    profiles ||--o{ user_skills : "1:N"
+    profiles ||--o{ user_interests : "1:N"
+    profiles ||--o{ user_experiences : "1:N"
+    profiles ||--o{ user_projects : "1:N"
+    profiles ||--|| match_preferences : "1:1"
+    profiles ||--|| notification_preferences : "1:1"
+    profiles ||--|| theme_preferences : "1:1"
+    profiles ||--|| profile_embeddings : "1:1"
+    
+    profiles ||--o{ posts : "1:N"
+    posts ||--o{ post_attachments : "1:N"
+    posts ||--o{ post_reactions : "1:N"
+    posts ||--o{ comments : "1:N"
+    comments ||--o{ comment_likes : "1:N"
+    
+    profiles ||--o{ connections_requester : "N:N"
+    profiles ||--o{ connections_receiver : "N:N"
+    
+    profiles ||--o{ match_suggestions : "1:N"
+    match_suggestions ||--|| match_scores : "1:1"
+    
+    profiles ||--o{ match_activity : "1:N"
+    
+    profiles ||--o{ conversations_p1 : "N:N"
+    profiles ||--o{ conversations_p2 : "N:N"
+    conversations ||--o{ messages : "1:N"
+    
+    profiles ||--o{ notifications : "1:N"
+    
+    profiles ||--o{ ai_mentor_sessions : "1:N"
+    ai_mentor_sessions ||--o{ ai_mentor_messages : "1:N"
+    
+    profiles ||--o{ embedding_dead_letter_queue : "1:N"
+    profiles ||--o{ embedding_rate_limits : "1:N"
+    profiles ||--|| embedding_pending_queue : "1:1"
 ```
-auth.users (Supabase Auth)
-    │
-    └──► profiles (1:1)
-            ├──► user_skills (1:N)
-            ├──► user_interests (1:N)
-            ├──► user_experiences (1:N)
-            ├──► user_projects (1:N)
-            ├──► match_preferences (1:1)
-            ├──► notification_preferences (1:1)
-            ├──► theme_preferences (1:1)
-            ├──► profile_embeddings (1:1) [NEW]
-            ├──► posts (1:N)
-            │       ├──► post_attachments (1:N)
-            │       ├──► post_reactions (1:N)
-            │       └──► comments (1:N)
-            │               └──► comment_likes (1:N)
-            ├──► connections (N:N via requester/receiver)
-            ├──► match_suggestions (1:N target)
-            │       └──► match_scores (1:1)
-            ├──► match_activity (1:N target)
-            ├──► conversations (N:N via participants)
-            │       └──► messages (1:N)
-            ├──► notifications (1:N)
-            └──► ai_mentor_sessions (1:N)
-                    └──► ai_mentor_messages (1:N)
-```
+
+### Foreign Key References
+
+| Table | References | On Delete |
+|-------|-----------|-----------|
+| `profiles` | `auth.users(id)` | CASCADE |
+| `user_skills` | `profiles(id)` | CASCADE |
+| `user_interests` | `profiles(id)` | CASCADE |
+| `user_experiences` | `profiles(id)` | CASCADE |
+| `user_projects` | `profiles(id)` | CASCADE |
+| `posts` | `profiles(id)` | CASCADE |
+| `post_attachments` | `posts(id)` | CASCADE |
+| `post_reactions` | `posts(id)`, `profiles(id)` | CASCADE |
+| `comments` | `posts(id)`, `profiles(id)`, `comments(id)` (parent) | CASCADE |
+| `comment_likes` | `comments(id)`, `profiles(id)` | CASCADE |
+| `connections` | `profiles(id)` (requester & receiver) | CASCADE |
+| `match_suggestions` | `profiles(id)` (user & matched_user) | CASCADE |
+| `match_scores` | `match_suggestions(id)` | CASCADE |
+| `match_activity` | `profiles(id)` (actor & target) | CASCADE |
+| `match_preferences` | `profiles(id)` | CASCADE |
+| `conversations` | `profiles(id)` (participant_1 & participant_2) | CASCADE |
+| `messages` | `conversations(id)`, `profiles(id)` | CASCADE |
+| `notifications` | `profiles(id)`, `profiles(id)` (actor) | CASCADE / SET NULL |
+| `ai_mentor_sessions` | `profiles(id)` | CASCADE |
+| `ai_mentor_messages` | `ai_mentor_sessions(id)` | CASCADE |
+| `notification_preferences` | `profiles(id)` | CASCADE |
+| `theme_preferences` | `profiles(id)` | CASCADE |
+| `profile_embeddings` | `profiles(id)` | CASCADE |
+| `embedding_dead_letter_queue` | `profiles(id)` | CASCADE |
+| `embedding_rate_limits` | `profiles(id)` | CASCADE |
+| `embedding_pending_queue` | `profiles(id)` | CASCADE |
 
 ## Auth Provider
 
