@@ -55,6 +55,9 @@ supabase/.env.keys
 supabase/.env.local
 supabase/.env.*.local
 
+# supabase credentials (sensitive)
+supabase-credentials.md
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
