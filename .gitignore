@@ -37,9 +37,25 @@ yarn-error.log*
 # vercel
 .vercel
 
+# bun
+bun.lock
+
+# python worker
+python-worker/.venv/
+python-worker/__pycache__/
+python-worker/*.pyc
+python-worker/*.pyo
+python-worker/.pytest_cache/
+.ruff_cache/
+
+# supabase local dev
+supabase/.branches
+supabase/.temp
+supabase/.env.keys
+supabase/.env.local
+supabase/.env.*.local
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
-
-.vercel
 
