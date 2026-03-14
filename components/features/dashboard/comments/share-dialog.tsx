@@ -13,6 +13,7 @@ import { Separator } from "@/components/ui/separator"
 import { Copy, Link2, Twitter, Linkedin, Facebook, Mail, Check } from "lucide-react"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 
 interface ShareDialogProps {
     isOpen: boolean
@@ -42,7 +43,7 @@ export function ShareDialog({ isOpen, onClose, postUrl }: ShareDialogProps) {
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-md bg-background border-border">
+            <DialogContent className={cn("sm:max-w-md sm:rounded-2xl", glass("overlay"))}>
                 <DialogHeader>
                     <DialogTitle>Share Post</DialogTitle>
                     <DialogDescription>

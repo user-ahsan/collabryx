@@ -1,6 +1,8 @@
 "use client"
 
 import { ThumbsUp, Heart, Smile, Flame, Frown, Angry } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 
 const REACTIONS = [
     { id: "like", label: "Like", icon: ThumbsUp, color: "text-blue-500" },
@@ -20,7 +22,7 @@ export function ReactionPicker({ onSelect, isOpen }: ReactionPickerProps) {
     if (!isOpen) return null
 
     return (
-        <div className="absolute -top-12 left-0 bg-background border shadow-xl rounded-full p-1.5 flex gap-1 z-50 animate-in fade-in zoom-in-95 duration-200 origin-bottom-left">
+        <div className={cn("absolute -top-12 left-0 rounded-full p-1.5 flex gap-1 z-50 animate-in fade-in zoom-in-95 duration-200 origin-bottom-left", glass("dropdown"))}>
             {REACTIONS.map((r) => (
                 <button
                     key={r.id}

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { X, Download, ZoomIn, ZoomOut } from "lucide-react"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 
 import Image from "next/image"
 
@@ -23,7 +24,7 @@ export function MediaViewer({ isOpen, onClose, url, type }: MediaViewerProps) {
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent showCloseButton={false} className="max-w-[95vw] h-[95vh] p-0 border-none bg-black/95 text-white overflow-hidden flex flex-col items-center justify-center outline-none">
+            <DialogContent showCloseButton={false} className={cn("max-w-[95vw] h-[95vh] p-0 overflow-hidden flex flex-col items-center justify-center outline-none", glass("mediaOverlay"))}>
                 <DialogTitle className="sr-only">Media Viewer</DialogTitle>
                 <Button
                     aria-label="Close media viewer"

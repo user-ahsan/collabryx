@@ -22,6 +22,8 @@ import { Label } from "@/components/ui/label"
 import { useState } from "react"
 import { Settings2 } from "lucide-react"
 import { GlassCard } from "@/components/shared/glass-card"
+import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 
 interface UpdatePreferencesDialogProps {
     currentPreferences: {
@@ -62,7 +64,7 @@ export function UpdatePreferencesDialog({
                     </Button>
                 )}
             </DialogTrigger>
-            <DialogContent className="w-[95vw] sm:w-full sm:max-w-[425px] p-0 border-none bg-transparent shadow-none [&>button]:hidden sm:[&>button]:flex">
+            <DialogContent className={cn("w-[95vw] sm:w-full sm:max-w-[425px] sm:rounded-2xl", glass("overlay"))}>
                 <GlassCard innerClassName="p-6 pt-10 sm:pt-6 relative">
                     <DialogHeader>
                         <DialogTitle>Update Match Preferences</DialogTitle>
