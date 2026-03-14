@@ -1,6 +1,6 @@
 # Database Schema
 
-Complete reference for Collabryx database schema (22 tables).
+Complete reference for Collabryx database schema (26 tables).
 
 ---
 
@@ -11,7 +11,9 @@ Complete reference for Collabryx database schema (22 tables).
 - [Social Features](#social-features)
 - [Matching System](#matching-system)
 - [Messaging](#messaging)
+- [Notifications](#notifications)
 - [AI Features](#ai-features)
+- [Preferences](#preferences)
 - [Vector Embeddings](#vector-embeddings)
 
 ---
@@ -19,8 +21,9 @@ Complete reference for Collabryx database schema (22 tables).
 ## Overview
 
 **Database:** PostgreSQL (Supabase)  
-**Total Tables:** 22  
-**Extensions:** pgvector, uuid-ossp
+**Total Tables:** 26  
+**Extensions:** pgvector  
+**Master File:** `supabase/setup/99-master-all-tables.sql` (run this file only)
 
 ---
 

@@ -36,20 +36,18 @@ This creates all 26 tables including:
 
 The embedding system requires additional setup for the Python worker.
 
-### Step 1: Run Embedding Migrations
+### Step 1: Embedding Tables Included
 
-```sql
--- Execute in Supabase SQL Editor
--- File: supabase/setup/99-embedding-system-complete.sql
-```
-
-This creates:
+The embedding tables are **already included** in the master file (`99-master-all-tables.sql`):
 
 | Table | Purpose |
 |-------|---------|
+| `profile_embeddings` | Vector embeddings for semantic matching |
 | `embedding_dead_letter_queue` | Failed embedding retry system |
 | `embedding_rate_limits` | Rate limiting (3 requests/hour/user) |
 | `embedding_pending_queue` | Onboarding embedding queue |
+
+**No separate SQL files needed.**
 
 ### Step 2: Verify Setup
 
@@ -171,19 +169,15 @@ DROP TABLE IF EXISTS embedding_pending_queue CASCADE;
 ### Issue: Function Not Found
 
 ```sql
--- Recreate functions
-\i supabase/setup/27-rate-limiting.sql
-\i supabase/setup/28-pending-embeddings.sql
+-- Re-run the master file (functions are dropped and recreated)
+-- File: supabase/setup/99-master-all-tables.sql
 ```
 
 ### Issue: RLS Policy Conflict
 
 ```sql
--- Drop existing policies
-DROP POLICY IF EXISTS "service_role_manage_dlq" ON embedding_dead_letter_queue;
-DROP POLICY IF EXISTS "users_view_own_dlq" ON embedding_dead_letter_queue;
-
--- Re-run migration
+-- Re-run the master file (all policies are dropped first)
+-- File: supabase/setup/99-master-all-tables.sql
 ```
 
 ### Issue: pgvector Not Enabled
