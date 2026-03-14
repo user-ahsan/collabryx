@@ -5,6 +5,17 @@
 
 ---
 
+## ⚠️ IMPORTANT: RUN MASTER FILE ONLY
+
+**DO NOT run individual SQL files (01-23).** They are reference-only.
+
+```sql
+-- ✅ RUN THIS FILE ONLY in Supabase SQL Editor:
+-- File: 99-master-all-tables.sql
+```
+
+---
+
 ## 🚀 Quick Start
 
 ### Fresh Installation
@@ -35,8 +46,8 @@
 | File | Purpose | Use Case |
 |------|---------|----------|
 | `00-complete-database-wipe.sql` | ⚠️ Deletes ALL data - use for resets | Production resets |
-| `01-profiles.sql` through `23-profile-embeddings.sql` | Individual table definitions | Stepwise setup, learning |
-| `99-master-all-tables.sql` | ✅ Complete schema (bulletproof) | **Recommended for all setups** |
+| `01-profiles.sql` through `23-profile-embeddings.sql` | ❌ Reference only - DO NOT RUN | Documentation |
+| `99-master-all-tables.sql` | ✅ Complete schema (26 tables) | **RUN THIS FILE ONLY** |
 
 ---
 
@@ -149,15 +160,8 @@ SELECT proname FROM pg_proc WHERE pronamespace = 'public'::regnamespace ORDER BY
 99-master-all-tables.sql
 ```
 
-### Pattern 4: Stepwise Learning/Debugging
-```sql
--- Run individual files in order (01 → 23)
-01-profiles.sql
-02-user-skills.sql
-03-user-interests.sql
-...
-23-profile-embeddings.sql
-```
+### Pattern 4: Reference Only
+Individual files (01-23) are for **reference only**. Do not run them directly.
 
 ---
 
