@@ -62,6 +62,7 @@ export function LoginForm() {
             return
         }
 
+        toast.success("Welcome back!")
         window.location.assign("/auth-sync")
     }
 
