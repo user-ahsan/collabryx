@@ -165,6 +165,101 @@ Supported auth methods (frontend):
 
 ---
 
+## Database Helper Functions
+
+### Connection Functions
+
+| Function | Parameters | Returns | Purpose |
+|----------|-----------|---------|---------|
+| `are_connected` | `user1 UUID, user2 UUID` | `BOOLEAN` | Check if users are connected |
+| `get_connection_status` | `user1_id UUID, user2_id UUID` | `TEXT` | Get connection status (pending/accepted/declined/blocked/not_connected) |
+| `get_pending_connection_count` | `target_user_id UUID` | `INTEGER` | Count pending incoming requests |
+
+### Notification Functions
+
+| Function | Parameters | Returns | Purpose |
+|----------|-----------|---------|---------|
+| `create_notification` | `user_id, type, title, message, data?, actor_id?` | `UUID` | Create notification, returns ID |
+| `get_unread_notification_count` | `user_id UUID` | `INTEGER` | Count unread notifications |
+
+### Comment Functions
+
+| Function | Parameters | Returns | Purpose |
+|----------|-----------|---------|---------|
+| `get_comment_depth` | `comment_id UUID` | `INTEGER` | Get nesting level (0=top-level) |
+| `get_comment_replies_count` | `comment_id UUID` | `INTEGER` | Count all replies (including nested) |
+| `increment_comment_count` | `post_id UUID` | `VOID` | Increment post comment count |
+| `decrement_comment_count` | `post_id UUID` | `VOID` | Decrement post comment count |
+| `increment_like_count` | `comment_id UUID` | `VOID` | Increment comment like count |
+| `decrement_like_count` | `comment_id UUID` | `VOID` | Decrement comment like count |
+
+### Match-Making Functions
+
+| Function | Parameters | Returns | Purpose |
+|----------|-----------|---------|---------|
+| `calculate_match_percentage` | `user1_id UUID, user2_id UUID` | `INTEGER` | Calculate match % (0-100) |
+| `get_shared_skills` | `user1_id UUID, user2_id UUID` | `TEXT[]` | Array of shared skill names |
+| `get_shared_interests` | `user1_id UUID, user2_id UUID` | `TEXT[]` | Array of shared interest names |
+
+### Utility Functions
+
+| Function | Parameters | Returns | Purpose |
+|----------|-----------|---------|---------|
+| `get_conversation` | `user1 UUID, user2 UUID` | `UUID` | Get conversation ID between users |
+| `has_embedding` | `user_id UUID` | `BOOLEAN` | Check if user has completed embedding |
+| `get_embedding_status` | `user_id UUID` | `TABLE` | Get embedding status details |
+| `get_profile_completion_percentage` | `user_id UUID` | `INTEGER` | Calculate profile completion (0-100) |
+
+---
+
+## Database Triggers
+
+### Automatic Count Updates
+
+| Trigger | Table | Event | Function |
+|---------|-------|-------|----------|
+| `update_post_reaction_count` | `post_reactions` | INSERT/DELETE | `increment_post_reaction_count()` / `decrement_post_reaction_count()` |
+| `update_post_comment_count` | `comments` | INSERT/DELETE | `increment_post_comment_count()` / `decrement_post_comment_count()` |
+| `update_comment_like_count` | `comment_likes` | INSERT/DELETE | `increment_comment_like_count()` / `decrement_comment_like_count()` |
+| `update_conversation_last_message` | `messages` | INSERT | `update_conversation_last_message()` |
+| `update_profiles_updated_at` | `profiles` | UPDATE | `update_updated_at_column()` |
+
+---
+
+## Indexes
+
+### Comments Indexes
+
+```sql
+idx_comments_post_id        -- ON comments(post_id)
+idx_comments_author_id      -- ON comments(author_id)
+idx_comments_parent_id      -- ON comments(parent_id)
+idx_comments_post_created   -- ON comments(post_id, created_at DESC)
+idx_comments_author         -- ON comments(author_id, created_at DESC)
+```
+
+### Connections Indexes
+
+```sql
+idx_connections_requester_id    -- ON connections(requester_id)
+idx_connections_receiver_id     -- ON connections(receiver_id)
+idx_connections_status          -- ON connections(status)
+idx_connections_user1_status    -- ON connections(requester_id, status)
+idx_connections_user2_status    -- ON connections(receiver_id, status)
+```
+
+### Notifications Indexes
+
+```sql
+idx_notifications_user_id           -- ON notifications(user_id)
+idx_notifications_created_at        -- ON notifications(created_at DESC)
+idx_notifications_is_read           -- ON notifications(is_read)
+idx_notifications_user_read_created -- ON notifications(user_id, is_read, created_at DESC)
+idx_notifications_unread            -- ON notifications(user_id, is_read) WHERE is_read = false
+```
+
+---
+
 ## Vector Embeddings System
 
 ### Overview
