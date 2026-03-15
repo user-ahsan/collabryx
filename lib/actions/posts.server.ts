@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import type { PostReactionType } from '@/types/actions'
 
 // ===========================================
 // POSTS SERVER ACTIONS
@@ -194,7 +195,7 @@ export async function reactToPost(postId: string, reactionType: string) {
 
   if (existingReaction) {
     // Toggle off if same reaction
-    if ((existingReaction as any).reaction_type === reactionType) {
+    if ((existingReaction as { reaction_type: PostReactionType }).reaction_type === reactionType) {
       const { error } = await supabase
         .from('post_reactions')
         .delete()
