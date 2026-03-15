@@ -6,7 +6,7 @@ import { Bot, Inbox } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getInitials } from "@/lib/utils/format-initials"
 import { getCache, setCache, CACHE_KEYS } from "@/lib/dashboard-cache"
-import { sortPostsByPriority, getPostTypeBadge } from "@/lib/mock-data/dashboard"
+import { sortPostsByPriority, getPostTypeBadge } from "@/lib/utils/post-helpers"
 import { fetchPosts } from "@/lib/services/posts"
 import type { PostWithAuthor } from "@/types/database.types"
 import { toast } from "sonner"
@@ -207,7 +207,7 @@ export function Feed() {
                     </GlassCard>
                 ) : (
                     sortedPosts.map((post) => {
-                        const postTypeBadge = getPostTypeBadge(post.postType)
+                        const postTypeBadge = getPostTypeBadge(post.post_type)
 
                         return (
                             <div key={post.id} className="relative">
@@ -219,7 +219,7 @@ export function Feed() {
                                 <PostCard className="relative z-10 pointer-events-none">
                                     <div className="pointer-events-auto">
                                         <PostHeader
-                                            authorId={post.authorId}
+                                            authorId={post.author_id}
                                             author={post.author}
                                             role={post.role}
                                             time={post.time}
@@ -230,7 +230,7 @@ export function Feed() {
                                                     <span
                                                         className={cn(
                                                             "inline-flex items-center px-2 py-0.5 rounded-md text-[10px] md:text-xs font-semibold border",
-                                                            postTypeBadge.color
+                                                            postTypeBadge.className
                                                         )}
                                                     >
                                                         {postTypeBadge.label}
