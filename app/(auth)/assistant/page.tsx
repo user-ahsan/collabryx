@@ -95,7 +95,7 @@ export default function AssistantPage() {
                 </Button>
             </div>
 
-            <ChatList />
+            <ChatList sessionId={null} />
 
             <div className="p-3 md:p-4 space-y-3 md:space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 max-w-3xl mx-auto">
@@ -113,7 +113,7 @@ export default function AssistantPage() {
                 </div>
 
                 <div className="max-w-3xl mx-auto w-full">
-                    <ChatInput />
+                    <ChatInput sessionId={null} onMessageSent={() => {}} />
                     <p className="text-[10px] text-center text-muted-foreground mt-2 px-2">
                         AI can make mistakes. Consider checking important information.
                     </p>
