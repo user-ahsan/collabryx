@@ -158,10 +158,16 @@ class ProfileDataRequest(BaseModel):
 async def store_in_dead_letter_queue(
     user_id: str, semantic_text: str, failure_reason: str, retry_count: int = 0
 ):
-    """Store failed request in dead letter queue for retry"""
+    """Store failed request in dead letter queue for retry with comprehensive error recovery"""
     if not supabase:
-        logger.warning(f"Supabase not initialized, cannot store in DLQ for {user_id}")
-        return
+        logger.critical(
+            f"CRITICAL: Supabase not initialized, cannot store in DLQ for {user_id}"
+        )
+        # Fallback: Log to external monitoring if available
+        logger.error(
+            f"DLQ STORAGE FAILED - Manual intervention may be needed for {user_id}"
+        )
+        return False
 
     try:
         next_retry = datetime.utcnow() + timedelta(minutes=5 * (retry_count + 1))
@@ -175,9 +181,33 @@ async def store_in_dead_letter_queue(
                 "status": "pending" if retry_count < 3 else "exhausted",
             }
         ).execute()
-        logger.info(f"Stored in DLQ for {user_id}, retry {retry_count}/3")
+        logger.info(f"✓ Stored in DLQ for {user_id}, retry {retry_count}/3")
+        return True
     except Exception as e:
-        logger.error(f"Failed to store in DLQ for {user_id}: {e}")
+        logger.critical(
+            f"CRITICAL: Failed to store in DLQ for {user_id}: {e}", exc_info=True
+        )
+        # Fallback: Try to update profile_embeddings status to failed at minimum
+        try:
+            supabase.table("profile_embeddings").upsert(
+                {
+                    "user_id": user_id,
+                    "status": "failed",
+                    "error_message": f"DLQ storage failed: {str(e)}",
+                    "last_updated": datetime.utcnow().isoformat(),
+                },
+                on_conflict="user_id",
+            ).execute()
+            logger.warning(f"Fallback: Marked embedding as failed for {user_id}")
+        except Exception as fallback_error:
+            logger.critical(
+                f"CRITICAL: Even fallback failed for {user_id}: {fallback_error}"
+            )
+            # At this point, log to external monitoring (Sentry, etc.) if configured
+            logger.critical(
+                f"MANUAL INTERVENTION REQUIRED: User {user_id} embedding failed and DLQ storage failed"
+            )
+        return False
 
 
 def store_embedding(user_id: str, embedding: List[float], status: str):
@@ -520,16 +550,23 @@ async def process_pending_queue():
                         f"Pending queue processing failed for {item['user_id']}: {e}",
                         exc_info=True,
                     )
-                    supabase.table("embedding_pending_queue").update(
-                        {
-                            "status": "failed",
-                            "last_attempt": datetime.utcnow().isoformat(),
-                            "failure_reason": str(e),
-                        }
-                    ).eq("id", item["id"]).execute()
 
-                    # Move to DLQ for retry with semantic text if available
-                    await store_in_dead_letter_queue(
+                    # Update queue item status
+                    try:
+                        supabase.table("embedding_pending_queue").update(
+                            {
+                                "status": "failed",
+                                "last_attempt": datetime.utcnow().isoformat(),
+                                "failure_reason": str(e),
+                            }
+                        ).eq("id", item["id"]).execute()
+                    except Exception as update_error:
+                        logger.critical(
+                            f"Failed to update queue status for {item['user_id']}: {update_error}"
+                        )
+
+                    # ALWAYS move to DLQ for retry - this is critical for reliability
+                    dlq_success = await store_in_dead_letter_queue(
                         user_id=item["user_id"],
                         semantic_text=semantic_text
                         if "semantic_text" in locals()
@@ -537,6 +574,11 @@ async def process_pending_queue():
                         failure_reason=str(e),
                         retry_count=0,
                     )
+
+                    if not dlq_success:
+                        logger.critical(
+                            f"CRITICAL: DLQ storage failed for {item['user_id']}. Manual intervention required."
+                        )
 
             # Wait before next poll (increased from 10s to 30s to reduce DB load)
             await asyncio.sleep(30)
