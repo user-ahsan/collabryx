@@ -68,10 +68,10 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                 <GlassCard
                     hoverable
                     className={cn(
-                        "group relative min-h-[260px] h-full overflow-hidden transition-all duration-300",
+                        "group relative h-full overflow-hidden transition-all duration-300",
                         isLowMatch ? "opacity-60" : ""
                     )}
-                    innerClassName="h-full cursor-pointer flex flex-col"
+                    innerClassName="h-full cursor-pointer flex flex-col justify-between"
                     onClick={() => router.push(`/profile/${match.id}`)}
                 >
                     <div className="flex flex-col h-full p-4">

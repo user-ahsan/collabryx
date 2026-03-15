@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Sparkles, Settings2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { GlassCard } from "@/components/shared/glass-card"
 
 interface AIContextCardProps {
     contexts?: string[]
@@ -22,7 +23,7 @@ export function AIContextCard({
     className
 }: AIContextCardProps) {
     return (
-        <div className={cn("flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 flex-wrap px-1 py-1 sm:py-2", className)}>
+        <GlassCard className={cn("px-1 py-1 sm:py-2", className)} innerClassName="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 flex-wrap">
             <div className="flex items-center gap-1.5 text-muted-foreground">
                 <Sparkles className="h-3.5 w-3.5 text-primary" />
                 <span className="text-sm font-medium">Matching on:</span>
@@ -46,6 +47,6 @@ export function AIContextCard({
                 <Settings2 className="h-3 w-3 mr-1" />
                 Edit
             </Button>
-        </div>
+        </GlassCard>
     )
 }

@@ -1,16 +1,18 @@
 "use client"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
-import { ArrowLeft, MoreVertical, Phone, Video } from "lucide-react"
+import { ArrowLeft, CheckCircle2, MoreVertical, Phone, Video } from "lucide-react"
 import { MessageInput } from "./message-input"
 import { glass } from "@/lib/utils/glass-variants"
 
 interface ChatWindowProps {
     chatId?: string
     onBackToList?: () => void
+    isConnected?: boolean | null
 }
 
 const MESSAGES = [
@@ -34,7 +36,7 @@ const MESSAGES = [
     },
 ]
 
-export function ChatWindow({ chatId, onBackToList }: ChatWindowProps) {
+export function ChatWindow({ chatId, onBackToList, isConnected }: ChatWindowProps) {
     if (!chatId) {
         return (
             <div className="h-full flex items-center justify-center text-muted-foreground">
@@ -67,7 +69,20 @@ export function ChatWindow({ chatId, onBackToList }: ChatWindowProps) {
                         <AvatarFallback>SC</AvatarFallback>
                     </Avatar>
                     <div>
-                        <h3 className="font-semibold text-sm md:text-base">Sarah Chen</h3>
+                        <div className="flex items-center gap-2">
+                            <h3 className="font-semibold text-sm md:text-base">Sarah Chen</h3>
+                            {isConnected === true && (
+                                <Badge variant="outline" className="h-5 px-1.5 text-[10px] bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/30">
+                                    <CheckCircle2 className="h-3 w-3 mr-0.5" />
+                                    Connected
+                                </Badge>
+                            )}
+                            {isConnected === false && (
+                                <Badge variant="outline" className="h-5 px-1.5 text-[10px] bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/30">
+                                    Not Connected
+                                </Badge>
+                            )}
+                        </div>
                         <p className="text-xs text-muted-foreground">Online</p>
                     </div>
                 </div>
