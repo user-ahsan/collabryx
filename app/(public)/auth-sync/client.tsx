@@ -4,23 +4,54 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { GlassCard } from "@/components/shared/glass-card"
-import { Loader2, CheckCircle2, Sparkles } from "lucide-react"
+import { Loader2, CheckCircle2, Sparkles, AlertTriangle } from "lucide-react"
 import { motion } from "framer-motion"
+import { isDevelopmentMode } from "@/lib/services/development"
+import { Button } from "@/components/ui/button"
 
 interface AuthSyncClientProps {
     destination: string
     needsEmbeddingWait?: boolean
+    configError?: boolean
 }
 
-export function AuthSyncClient({ destination, needsEmbeddingWait = false }: AuthSyncClientProps) {
+export function AuthSyncClient({ destination, needsEmbeddingWait = false, configError = false }: AuthSyncClientProps) {
     const router = useRouter()
     const [embeddingStatus, setEmbeddingStatus] = useState<'pending' | 'processing' | 'completed' | 'failed' | 'not_found'>('not_found')
     const [isChecking, setIsChecking] = useState(true)
+    const [hasError, setHasError] = useState(false)
+    const [errorMessage, setErrorMessage] = useState("")
 
     useEffect(() => {
+        // Check if Supabase is configured
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+        
+        if (!supabaseUrl || !supabaseKey) {
+            setHasError(true)
+            setErrorMessage("Authentication service is not configured. Please contact support.")
+            setIsChecking(false)
+            return
+        }
+
+        // If destination is login (not authenticated), show error with option to go back
+        if (destination === "/login") {
+            setHasError(true)
+            setErrorMessage("Authentication failed. Please try signing in again.")
+            setIsChecking(false)
+            return
+        }
+
         // Always redirect after a delay, but show embedding status if needed
         const redirectTimer = setTimeout(() => {
-            router.push(destination)
+            try {
+                router.push(destination)
+            } catch (error) {
+                console.error('Redirect failed:', error)
+                setHasError(true)
+                setErrorMessage("Navigation failed. Please try again.")
+                setIsChecking(false)
+            }
         }, needsEmbeddingWait ? 8000 : 3000)
 
         // If we need to wait for embedding, poll the status
@@ -51,6 +82,7 @@ export function AuthSyncClient({ destination, needsEmbeddingWait = false }: Auth
                     }
                 } catch (error) {
                     console.error('Error checking embedding status:', error)
+                    // Don't fail on embedding check errors - just continue with redirect
                     setIsChecking(false)
                 }
             }
@@ -72,6 +104,78 @@ export function AuthSyncClient({ destination, needsEmbeddingWait = false }: Auth
             return () => clearTimeout(redirectTimer)
         }
     }, [router, destination, needsEmbeddingWait, embeddingStatus])
+
+    // If there's an error, show error message with action buttons
+    if (hasError) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center p-4">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="w-full max-w-md"
+                >
+                    <GlassCard hoverable className="p-8 bg-black/40 border border-white/10">
+                        <div className="flex flex-col items-center text-center space-y-6">
+                            <div className="w-12 h-12 bg-amber-500/20 rounded-full flex items-center justify-center">
+                                <AlertTriangle className="w-8 h-8 text-amber-500" />
+                            </div>
+
+                            <div className="space-y-2">
+                                <h2 className="text-2xl font-bold text-foreground">
+                                    Authentication Issue
+                                </h2>
+                                <p className="text-sm text-muted-foreground">
+                                    {errorMessage}
+                                </p>
+                            </div>
+
+                            <div className="w-full space-y-3 pt-4">
+                                {destination === "/login" ? (
+                                    <>
+                                        <Button 
+                                            onClick={() => router.push("/login")} 
+                                            className="w-full"
+                                        >
+                                            Back to Sign In
+                                        </Button>
+                                        <Button 
+                                            variant="outline" 
+                                            onClick={() => router.push("/")} 
+                                            className="w-full"
+                                        >
+                                            Go to Home
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Button 
+                                            onClick={() => router.push(destination)} 
+                                            className="w-full"
+                                        >
+                                            Try Again
+                                        </Button>
+                                        <Button 
+                                            variant="outline" 
+                                            onClick={() => router.push("/login")} 
+                                            className="w-full"
+                                        >
+                                            Sign In Again
+                                        </Button>
+                                    </>
+                                )}
+                                
+                                {isDevelopmentMode() && (
+                                    <p className="text-xs text-muted-foreground pt-2">
+                                        💡 Development mode: Make sure your Supabase environment variables are set correctly.
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </GlassCard>
+                </motion.div>
+            </div>
+        )
+    }
 
     // If not waiting for embedding, show simple loading
     if (!needsEmbeddingWait) {
