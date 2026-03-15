@@ -1,5 +1,3 @@
-"use client"
-
 import { SidebarProvider, useSidebar } from "@/components/shared/sidebar-context"
 import { SidebarNav } from "@/components/shared/sidebar-nav"
 import { MobileNav } from "@/components/shared/mobile-nav"
@@ -8,6 +6,8 @@ import { cn } from "@/lib/utils"
 import { useLoginData } from "@/hooks/use-login-data"
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect } from 'react'
+import { createClient } from '@/lib/supabase/server'
+import { redirect } from 'next/navigation'
 
 // Create query client once
 const queryClient = new QueryClient({
@@ -18,6 +18,17 @@ const queryClient = new QueryClient({
     },
   },
 })
+
+async function checkAuth() {
+  const supabase = await createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  
+  if (!session) {
+    redirect('/login')
+  }
+  
+  return session
+}
 
 function AuthLayoutContent({ children }: { children: React.ReactNode }) {
     const { isCollapsed } = useSidebar()
@@ -74,7 +85,9 @@ function AuthLayoutContent({ children }: { children: React.ReactNode }) {
     )
 }
 
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
+export default async function AuthLayout({ children }: { children: React.ReactNode }) {
+    await checkAuth()
+    
     return (
         <QueryClientProvider client={queryClient}>
             <SidebarProvider>
