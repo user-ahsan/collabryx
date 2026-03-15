@@ -8,7 +8,7 @@ interface MessagesClientProps {
     initialChatId?: string | null
 }
 
-export function MessagesClient({ initialChatId = "1" }: MessagesClientProps) {
+export function MessagesClient({ initialChatId = null }: MessagesClientProps) {
     const [selectedChatId, setSelectedChatId] = useState<string | null>(initialChatId)
     const [prevInitialChatId, setPrevInitialChatId] = useState<string | null>(initialChatId)
     const [showSidebar, setShowSidebar] = useState(true)
