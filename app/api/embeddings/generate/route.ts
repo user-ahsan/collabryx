@@ -3,6 +3,7 @@ import { createClient as createSupabaseClient, SupabaseClient } from "@supabase/
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getBackendConfig } from "@/lib/config/backend";
+import { validateCSRFRequest, requiresCSRF } from "@/lib/csrf";
 
 export const runtime = "edge"
 
@@ -106,6 +107,25 @@ async function updateEmbeddingStatus(
 }
 
 export async function POST(request: NextRequest) {
+  // Validate CSRF token for security
+  const csrfToken = request.headers.get('x-csrf-token');
+  const cookieToken = request.cookies.get('csrf_token')?.value || null;
+  
+  if (requiresCSRF(request.method)) {
+    const isValid = await validateCSRFRequest(csrfToken, cookieToken);
+    if (!isValid) {
+      console.warn('⚠️ CSRF validation failed:', {
+        hasHeaderToken: !!csrfToken,
+        hasCookieToken: !!cookieToken,
+        path: request.url,
+      });
+      return NextResponse.json(
+        { success: false, error: "Invalid CSRF token" },
+        { status: 403 }
+      );
+    }
+  }
+  
   const supabase = await createClient();
   
   const { data: { user }, error: authError } = await supabase.auth.getUser();
