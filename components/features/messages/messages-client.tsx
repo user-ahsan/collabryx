@@ -35,7 +35,7 @@ export function MessagesClient({ initialChatId = null }: MessagesClientProps) {
 
     return (
         <div className="flex h-[calc(100vh-2rem)] md:h-[calc(100vh-4rem)] border rounded-lg overflow-hidden bg-background">
-            <div className={`${showSidebar ? 'flex' : 'hidden'} md:flex w-full md:w-80 flex-col`}>
+            <div className={`${showSidebar ? 'flex' : 'hidden'} md:flex w-full sm:w-80 md:w-96 flex-col`}>
                 <ChatSidebar selectedId={selectedChatId || undefined} onSelectChat={handleSelectChat} />
             </div>
 
