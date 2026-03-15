@@ -28,7 +28,7 @@ vi.mock('next/navigation', () => ({
 
 // Mock next/image
 vi.mock('next/image', () => ({
-  default: ({ src, alt, ...props }: any) => {
+  default: ({ src, alt, ...props }: { src: string; alt: string; [key: string]: unknown }) => {
     const imgElement = document.createElement('img')
     imgElement.src = src
     imgElement.alt = alt
@@ -38,11 +38,16 @@ vi.mock('next/image', () => ({
 }))
 
 // Mock motion/framer-motion
+interface MotionComponentProps {
+  children?: React.ReactNode
+  [key: string]: unknown
+}
+
 vi.mock('motion/react', () => ({
   motion: {
-    div: ({ children, ...props }: any) => ({ type: 'div', props, children }),
-    button: ({ children, ...props }: any) => ({ type: 'button', props, children }),
-    span: ({ children, ...props }: any) => ({ type: 'span', props, children }),
+    div: ({ children, ...props }: MotionComponentProps) => ({ type: 'div', props, children }),
+    button: ({ children, ...props }: MotionComponentProps) => ({ type: 'button', props, children }),
+    span: ({ children, ...props }: MotionComponentProps) => ({ type: 'span', props, children }),
   },
-  AnimatePresence: ({ children }: any) => children,
+  AnimatePresence: ({ children }: { children?: React.ReactNode }) => children,
 }))

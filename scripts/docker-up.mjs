@@ -116,10 +116,8 @@ function startContainer() {
     exec(upCommand, { stdio: 'inherit' });
     log('✅ Container started', 'green');
     return true;
-  } catch (error) {
-    log('❌ Failed to start container', 'red');
-    log(error.message, 'yellow');
-    process.exit(1);
+  } catch (_error) {
+    log('❌ Failed to start containers', 'red');
   }
 }
 
@@ -130,8 +128,6 @@ function checkHealth() {
     const interval = setInterval(() => {
       retries++;
       log(`⏳ Waiting for health check... (${retries}/${CONFIG.maxRetries})`, 'yellow');
-      
-      const http = require('http');
       
       http.get(CONFIG.healthEndpoint, { timeout: 3000 }, (res) => {
         if (res.statusCode === 200) {

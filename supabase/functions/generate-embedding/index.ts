@@ -16,7 +16,7 @@ serve(async (req) => {
     )
 
     // Get profile from webhook payload
-    const { record, type }: WebhookPayload = await req.json()
+    const { record }: WebhookPayload = await req.json()
     
     // Validate profile completion
     const completionScore = calculateProfileCompletion(record)

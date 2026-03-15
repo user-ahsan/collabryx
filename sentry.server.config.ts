@@ -9,6 +9,9 @@ Sentry.init({
   
   beforeSend(event, hint) {
     // Filter sensitive data from error events
+    // Use hint.originalException to access the original error if needed
+    void hint // Keep hint for potential future use
+    
     if (event.request?.url?.includes('password') || 
         event.request?.url?.includes('token') ||
         event.request?.url?.includes('key')) {
