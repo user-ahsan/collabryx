@@ -10,10 +10,14 @@
  * - Continuous monitoring mode
  */
 
-const { execSync } = require('child_process');
-const path = require('path');
-const https = require('https');
-const http = require('http');
+import { execSync } from 'child_process';
+import path from 'path';
+import https from 'https';
+import http from 'http';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Configuration
 const CONFIG = {
