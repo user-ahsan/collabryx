@@ -16,7 +16,7 @@ serve(async (req) => {
     )
 
     // Get notification from webhook payload
-    const { record, type }: WebhookPayload = await req.json()
+    const { record }: WebhookPayload = await req.json()
     const notification: Notification = record
 
     console.log(`Sending notification ${notification.id} to user ${notification.user_id}`)

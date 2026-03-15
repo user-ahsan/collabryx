@@ -13,6 +13,8 @@
 import { execSync } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import net from 'net';
+import http from 'http';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -97,8 +99,6 @@ function getVolumeInfo() {
 }
 
 function checkPort() {
-  const net = require('net');
-  
   return new Promise((resolve) => {
     const socket = new net.Socket();
     
@@ -168,8 +168,8 @@ async function displayStatus() {
     } else {
       log('   No collabryx network found', 'yellow');
     }
-  } catch (error) {
-    log('   Unable to get network info', 'yellow');
+  } catch (_error) {
+    log('❌ Failed to get container status', 'red');
   }
   
   // Volumes
@@ -184,7 +184,6 @@ async function displayStatus() {
   // Health Check
   log('\n🏥 Health Endpoint:', 'blue');
   try {
-    const http = require('http');
     const response = await new Promise((resolve, reject) => {
       http.get('http://localhost:8000/health', { timeout: 2000 }, (res) => {
         let data = '';

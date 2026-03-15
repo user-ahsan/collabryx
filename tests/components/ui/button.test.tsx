@@ -1,6 +1,5 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
-import userEvent from '@testing-library/user-event'
+import { describe, it, expect, vi } from 'vitest'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { Button } from '@/components/ui/button'
 
 describe('Button', () => {
@@ -10,11 +9,11 @@ describe('Button', () => {
     expect(screen.getByText('Click me')).toBeDefined()
   })
 
-  it('should handle click events', async () => {
+  it('should handle click events', () => {
     const handleClick = vi.fn()
     render(<Button onClick={handleClick}>Click me</Button>)
 
-    await userEvent.click(screen.getByText('Click me'))
+    fireEvent.click(screen.getByText('Click me'))
     expect(handleClick).toHaveBeenCalled()
   })
 

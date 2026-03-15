@@ -1,3 +1,21 @@
+export interface Experience {
+  id?: string
+  title: string
+  company?: string
+  description?: string
+  start_date?: string
+  end_date?: string
+  is_current?: boolean
+}
+
+export interface Project {
+  id?: string
+  title: string
+  description?: string
+  url?: string
+  is_public?: boolean
+}
+
 export interface Profile {
   id: string
   full_name: string | null
@@ -5,8 +23,8 @@ export interface Profile {
   bio: string | null
   skills: string[] | null
   interests: string[] | null
-  experiences: any[] | null
-  projects: any[] | null
+  experiences: Experience[] | null
+  projects: Project[] | null
   avatar_url: string | null
   banner_url: string | null
   location: string | null
@@ -51,6 +69,6 @@ export interface MatchSuggestion {
 export interface WebhookPayload {
   type: 'INSERT' | 'UPDATE' | 'DELETE'
   table: string
-  record: any
-  old_record?: any
+  record: Record<string, unknown>
+  old_record?: Record<string, unknown>
 }

@@ -21,7 +21,7 @@ serve(async (req) => {
     )
 
     // Validate authentication (admin only)
-    const user = await validateAuth(req, supabase)
+    await validateAuth(req, supabase)
     
     const body: CleanupConfig = await req.json().catch(() => ({}))
     const dryRun = body.dry_run ?? false
@@ -33,7 +33,7 @@ serve(async (req) => {
     cutoffDate.setDate(cutoffDate.getDate() - daysOld)
     const cutoffISOString = cutoffDate.toISOString()
 
-    const results: any = {
+    const results: Record<string, number | boolean> = {
       deleted_notifications: 0,
       archived_sessions: 0,
       cleaned_logs: 0,

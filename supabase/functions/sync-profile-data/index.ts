@@ -21,7 +21,7 @@ serve(async (req) => {
     )
 
     // Validate authentication (admin only for this operation)
-    const user = await validateAuth(req, supabase)
+    await validateAuth(req, supabase)
     
     const body: SyncRequest = await req.json()
     const userId = body.user_id
@@ -128,13 +128,13 @@ serve(async (req) => {
   }
 })
 
-function calculateProfileCompletion(data: any): number {
+function calculateProfileCompletion(data: Record<string, unknown>): number {
   let score = 0
   if (data.full_name) score += 15
   if (data.headline) score += 10
   if (data.bio) score += 15
-  if (data.skills_count > 0) score += 25
-  if (data.interests_count > 0) score += 15
-  if (data.experiences_count > 0) score += 20
+  if ((data.skills_count as number) > 0) score += 25
+  if ((data.interests_count as number) > 0) score += 15
+  if ((data.experiences_count as number) > 0) score += 20
   return Math.min(score, 100)
 }

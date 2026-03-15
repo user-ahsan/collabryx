@@ -29,9 +29,10 @@ export function useEmbeddingQueueStatus(userId: string) {
     initialized.current = true;
 
     if (!userId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setStatus(null);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+      // Initialize with null status when no userId
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Initialization pattern
+      setStatus({ pending: false, processing: false, completed: false, failed: false });
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Initialization pattern
       setLoading(false);
       return;
     }

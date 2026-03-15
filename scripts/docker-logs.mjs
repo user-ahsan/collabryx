@@ -114,7 +114,6 @@ function showRecentLogs() {
   log('='.repeat(60) + '\n', 'cyan');
   
   try {
-    const { execSync } = require('child_process');
     const logs = execSync(
       `cd "${CONFIG.workerDir}" && docker-compose logs --tail=50`,
       { encoding: 'utf-8' }

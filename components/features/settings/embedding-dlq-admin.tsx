@@ -37,7 +37,8 @@ export function EmbeddingDeadLetterQueueAdmin() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [supabase])
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- supabase client is stable, loadDLQItems is internal
+  }, [])
 
   const loadDLQItems = async () => {
     try {
