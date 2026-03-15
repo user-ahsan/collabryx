@@ -5,7 +5,11 @@
     "types": ["@supabase/functions-js"]
   },
   "imports": {
-    "https://deno.land/std@0.168.0/": "https://deno.land/std@0.168.0/",
+    "https://deno.land/std@0.208.0/": "https://deno.land/std@0.208.0/",
     "https://esm.sh/@supabase/supabase-js@2.45.1": "https://esm.sh/@supabase/supabase-js@2.45.1"
+  },
+  "tasks": {
+    "serve": "deno run --allow-all --watch main.ts",
+    "test": "deno test --allow-all"
   }
 }
