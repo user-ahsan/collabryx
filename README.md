@@ -178,15 +178,29 @@ collabryx/
 
 ## 🛠️ Available Scripts
 
+### Core Commands
+
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Start development server at `localhost:3000` |
 | `npm run build` | Build production-ready application |
-| `npm run start` | Start production server |
+| `npm run start` | Run production server |
 | `npm run lint` | Run ESLint for code quality |
-| `npm run test` | Run Vitest test suite |
-| `npm run test:watch` | Run tests in watch mode |
-| `npm run test:coverage` | Run tests with coverage report |
+
+### Docker Commands (Python Worker)
+
+| Command | Description |
+|---------|-------------|
+| `npm run docker:up` | Start Python worker (auto-builds + health check) |
+| `npm run docker:down` | Stop Python worker gracefully |
+| `npm run docker:down:clean` | Stop + cleanup orphaned containers/networks |
+| `npm run docker:logs` | Stream real-time logs |
+| `npm run docker:logs:recent` | Show last 50 log lines |
+| `npm run docker:health` | Check service health |
+| `npm run docker:health:monitor` | Continuous health monitoring |
+| `npm run docker:status` | Comprehensive status report |
+| `npm run docker:restart` | Restart service |
+| `npm run docker:rebuild` | Force rebuild + restart |
 
 ---
 
@@ -231,8 +245,8 @@ npm run test:coverage
 | **Getting Started** | [Installation](./docs/01-getting-started/installation.md) • [Development](./docs/01-getting-started/development.md) |
 | **Architecture** | [Overview](./docs/02-architecture/overview.md) |
 | **Core Features** | [Vector Embeddings](./docs/03-core-features/vector-embeddings/overview.md) • [AI Assistant](./docs/03-core-features/ai-assistant/overview.md) |
-| **Infrastructure** | [Python Worker](./docs/04-infrastructure/python-worker/overview.md) |
-| **Deployment** | [Overview](./docs/05-deployment/overview.md) |
+| **Infrastructure** | [Python Worker](./docs/04-infrastructure/python-worker/overview.md) • [Database](./docs/04-infrastructure/database/overview.md) |
+| **Deployment** | [Overview](./docs/05-deployment/overview.md) • [Docker Scripts](./docs/05-deployment/docker-scripts.md) |
 | **Contributing** | [Guide](./docs/06-contributing/guide.md) |
 | **Reference** | [Environment Variables](./docs/07-reference/environment-variables.md) • [Commands](./docs/07-reference/commands.md) |
 
@@ -324,6 +338,31 @@ Collabryx uses **22 tables** in Supabase (PostgreSQL) with:
 | `profile_embeddings` | Vector embeddings (768 dim) |
 
 📖 **Complete schema:** [expected-objects/](./expected-objects/) • [Database Setup](./supabase/setup/)
+
+---
+
+## 🔧 Docker Management
+
+The Python worker embedding service is managed through automated Docker scripts:
+
+```bash
+# Start service (auto-builds + health check)
+npm run docker:up
+
+# View logs
+npm run docker:logs
+
+# Check health
+npm run docker:health
+
+# Full status
+npm run docker:status
+
+# Stop service
+npm run docker:down
+```
+
+📖 **Complete guide:** [Docker Scripts Documentation](./docs/05-deployment/docker-scripts.md)
 
 ---
 

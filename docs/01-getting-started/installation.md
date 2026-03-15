@@ -143,34 +143,48 @@ PYTHON_WORKER_URL=http://localhost:8000
 
 ### Step 4: Setup Python Worker (Optional, for embeddings)
 
-To enable semantic matching with embeddings:
+The Python worker runs in Docker with automated management scripts:
 
-1. **Install Python dependencies:**
+1. **Start the embedding service:**
    ```bash
-   cd python-worker
-   pip install -r requirements.txt
-   ```
-
-2. **Start the embedding service:**
-   ```bash
-   uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-   ```
-
-3. **Verify the service:**
-   ```bash
-   curl http://localhost:8000/health
+   npm run docker:up
    ```
    
-    Expected response:
-    ```json
-    {
-      "status": "healthy",
-      "model_info": {
-        "model_name": "all-MiniLM-L6-v2",
-        "dimensions": 384
-      }
-    }
-    ```
+   This will:
+   - Build the Docker image (first time only)
+   - Start the container
+   - Run health checks automatically
+
+2. **Verify the service:**
+   ```bash
+   npm run docker:health
+   ```
+    
+   Expected response:
+   ```json
+   {
+     "status": "healthy",
+     "model_info": {
+       "model_name": "all-MiniLM-L6-v2",
+       "dimensions": 384,
+       "device": "cpu"
+     },
+     "supabase_connected": true,
+     "queue_size": 0
+   }
+   ```
+
+3. **View logs:**
+   ```bash
+   npm run docker:logs
+   ```
+
+4. **Stop the service:**
+   ```bash
+   npm run docker:down
+   ```
+
+📖 **Complete guide:** [Docker Scripts Documentation](./05-deployment/docker-scripts.md)
 
 ---
 

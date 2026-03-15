@@ -44,20 +44,27 @@ The application will be available at:
 
 ### Python Worker (Embeddings)
 
-For full embedding functionality, run the Python worker service:
+For full embedding functionality, run the Python worker service using Docker:
 
 ```bash
-# Install dependencies
-cd python-worker
-pip install -r requirements.txt
+# Start the service (auto-builds + health check)
+npm run docker:up
 
-# Run the service
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+# View real-time logs
+npm run docker:logs
+
+# Check service health
+npm run docker:health
+
+# Stop the service
+npm run docker:down
 ```
 
 The service will be available at: http://localhost:8000
 
 **Note:** Without the Python worker, embedding generation will fail, but the application will still work with basic matching disabled.
+
+📖 **Complete guide:** [Docker Scripts Documentation](./05-deployment/docker-scripts.md)
 
 ---
 
@@ -107,6 +114,21 @@ git push origin feature/your-feature-name
 | `npm run build` | Create production build | Before deployment |
 | `npm run start` | Run production build locally | Test production build |
 | `npm run lint` | Run ESLint | Code quality check |
+
+### Docker Commands (Python Worker)
+
+| Command | Description | Usage |
+|---------|-------------|-------|
+| `npm run docker:up` | Start Python worker | Start embedding service |
+| `npm run docker:down` | Stop Python worker | Stop embedding service |
+| `npm run docker:down:clean` | Stop + deep cleanup | Remove orphaned containers |
+| `npm run docker:logs` | Stream logs | Debug issues |
+| `npm run docker:logs:recent` | Show last 50 lines | Quick log check |
+| `npm run docker:health` | Health check | Verify service status |
+| `npm run docker:health:monitor` | Continuous monitoring | Development monitoring |
+| `npm run docker:status` | Full status report | Check resource usage |
+| `npm run docker:restart` | Restart service | Apply changes |
+| `npm run docker:rebuild` | Force rebuild | Fix container issues |
 
 ### Development Commands
 
