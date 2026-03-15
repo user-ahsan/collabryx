@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { message, session_id, context } = validationResult.data
+    const { message, session_id } = validationResult.data
 
     // Get or create session
     let sessionId = session_id
@@ -179,7 +179,7 @@ Be concise, encouraging, and practical. Focus on actionable advice.`
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   

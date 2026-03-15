@@ -26,11 +26,7 @@ interface StepExperienceProps {
     onSkip?: () => void
 }
 
-export function StepExperience({ onSkip }: StepExperienceProps) {
-    // Skip functionality - can be implemented later if needed
-    const handleSkip = () => {
-        if (onSkip) onSkip()
-    }
+export function StepExperience({}: StepExperienceProps) {
     const { register, control, formState: { errors } } = useFormContext()
 
     const { fields: expFields, append: appendExp, remove: removeExp } = useFieldArray({

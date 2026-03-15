@@ -10,7 +10,7 @@ import {
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Sparkles, Brain, Users, Calendar, TrendingUp } from "lucide-react"
+import { Sparkles, Brain, Users, Calendar } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
 

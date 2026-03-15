@@ -7,7 +7,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { fetchPosts, createPost, deletePost, addReaction, removeReaction } from '@/lib/services/posts'
 import type { PostsQueryOptions } from '@/lib/services/posts'
-import type { PostWithAuthor } from '@/types/database.types'
 
 export const POST_QUERY_KEYS = {
   all: ['posts'] as const,

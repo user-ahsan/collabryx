@@ -3,7 +3,6 @@
 import { createClient } from '@/lib/supabase/server'
 import OpenAI from 'openai'
 import Anthropic from '@anthropic-ai/sdk'
-import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 
 // Initialize AI clients

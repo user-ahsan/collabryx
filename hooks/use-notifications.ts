@@ -66,8 +66,6 @@ export function useNotifications(options?: FetchNotificationsOptions) {
  * ```
  */
 export function useUnreadCount() {
-  const queryClient = useQueryClient()
-
   return useQuery({
     queryKey: NOTIFICATION_QUERY_KEYS.unread(),
     queryFn: async () => {
@@ -179,7 +177,7 @@ export function useRealtimeNotifications() {
           schema: 'public',
           table: 'notifications',
         },
-        (payload) => {
+        () => {
           // Invalidate queries to refetch
           queryClient.invalidateQueries({ queryKey: NOTIFICATION_QUERY_KEYS.all })
         }

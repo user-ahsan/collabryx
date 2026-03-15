@@ -1,20 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
-
-interface DLQItem {
-  id: string;
-  user_id: string;
-  semantic_text: string;
-  failure_reason?: string;
-  retry_count: number;
-  max_retries: number;
-  status: string;
-  last_attempt?: string;
-  next_retry?: string;
-  created_at: string;
-  resolved_at?: string;
-}
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();

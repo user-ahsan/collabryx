@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Send, Smile, ThumbsUp, Heart, Flame, Frown, Angry } from "lucide-react"
+import { Send, Smile, ThumbsUp } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { RichTextDisplay } from "../posts/rich-text-display"
 import { GlassBubble, GlassBubbleBadge } from "@/components/shared/glass-bubble"
@@ -12,14 +12,7 @@ import { cn } from "@/lib/utils"
 import { useComments, useCreateComment, useToggleLikeComment } from "@/hooks/use-comments"
 import { Skeleton } from "@/components/ui/skeleton"
 
-const COMMENT_REACTIONS = [
-    { id: "like", icon: ThumbsUp },
-    { id: "love", icon: Heart },
-    { id: "haha", icon: Smile },
-    { id: "wow", icon: Flame },
-    { id: "sad", icon: Frown },
-    { id: "angry", icon: Angry }
-]
+
 
 export interface CommentType {
     id: string
