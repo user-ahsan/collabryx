@@ -1,3 +1,5 @@
+"use client"
+
 import { SidebarProvider, useSidebar } from "@/components/shared/sidebar-context"
 import { SidebarNav } from "@/components/shared/sidebar-nav"
 import { MobileNav } from "@/components/shared/mobile-nav"
@@ -5,9 +7,9 @@ import { SettingsDialog } from "@/components/features/settings/settings-dialog"
 import { cn } from "@/lib/utils"
 import { useLoginData } from "@/hooks/use-login-data"
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useEffect } from 'react'
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 
 // Create query client once
 const queryClient = new QueryClient({
@@ -19,20 +21,27 @@ const queryClient = new QueryClient({
   },
 })
 
-async function checkAuth() {
-  const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  
-  if (!session) {
-    redirect('/login')
-  }
-  
-  return session
-}
-
 function AuthLayoutContent({ children }: { children: React.ReactNode }) {
     const { isCollapsed } = useSidebar()
     const { isReady, isLoading, error } = useLoginData()
+    const router = useRouter()
+    const [isChecking, setIsChecking] = useState(true)
+
+    useEffect(() => {
+        async function checkAuth() {
+            const supabase = createClient()
+            const { data: { session } } = await supabase.auth.getSession()
+            
+            if (!session) {
+                router.push('/login')
+                return
+            }
+            
+            setIsChecking(false)
+        }
+        
+        checkAuth()
+    }, [router])
 
     useEffect(() => {
         if (isReady) {
@@ -44,6 +53,17 @@ function AuthLayoutContent({ children }: { children: React.ReactNode }) {
             })
         }
     }, [isReady])
+
+    if (isChecking) {
+        return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
+                <div className="text-center">
+                    <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+                    <p className="text-muted-foreground">Checking authentication...</p>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <>
@@ -85,9 +105,7 @@ function AuthLayoutContent({ children }: { children: React.ReactNode }) {
     )
 }
 
-export default async function AuthLayout({ children }: { children: React.ReactNode }) {
-    await checkAuth()
-    
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
     return (
         <QueryClientProvider client={queryClient}>
             <SidebarProvider>
