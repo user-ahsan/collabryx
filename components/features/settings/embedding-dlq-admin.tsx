@@ -37,7 +37,7 @@ export function EmbeddingDeadLetterQueueAdmin() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [])
+  }, [supabase])
 
   const loadDLQItems = async () => {
     try {
@@ -191,17 +191,9 @@ export function EmbeddingDeadLetterQueueAdmin() {
                   >
                     <div className="col-span-3">
                       <div className="flex items-center gap-3">
-                        {item.profiles?.avatar_url ? (
-                          <img
-                            src={item.profiles.avatar_url}
-                            alt={item.profiles.display_name || "User"}
-                            className="w-8 h-8 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium">
-                            {(item.profiles?.display_name?.[0] || item.user_id.slice(0, 2)).toUpperCase()}
-                          </div>
-                        )}
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium">
+                          {(item.profiles?.display_name?.[0] || item.user_id.slice(0, 2)).toUpperCase()}
+                        </div>
                         <div className="overflow-hidden">
                           <div className="font-medium truncate">
                             {item.profiles?.display_name || "Unknown User"}

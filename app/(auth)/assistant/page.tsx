@@ -5,10 +5,10 @@ import { ChatList } from "@/components/features/assistant/chat-list"
 import { AIOutputWorkspace } from "@/components/features/assistant/ai-output-workspace"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Sparkles, Target, Zap, FileText, Loader2, AlertCircle } from "lucide-react"
+import { Sparkles, Target, Zap, FileText, Loader2 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
-import { getOrCreateActiveSession, type AISession } from "@/lib/actions/ai-mentor"
+import { getOrCreateActiveSession } from "@/lib/actions/ai-mentor"
 
 const STARTERS = [
     {

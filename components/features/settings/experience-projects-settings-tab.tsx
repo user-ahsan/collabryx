@@ -11,8 +11,6 @@ import { Loader2, Plus, Trash2, Link as LinkIcon } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { validateExperienceProjectsSettings } from "@/lib/validations/settings"
 import { toast } from "sonner"
-import { cn } from "@/lib/utils"
-import { glass } from "@/lib/utils/glass-variants"
 
 export function ExperienceProjectsSettingsTab({ userId }: { userId: string }) {
     const supabase = createClient()
@@ -153,42 +151,24 @@ const [experiences, setExperiences] = useState<Experience[]>([])
             // For Experiences: Delete all then insert
             const expsToInsert = experiences
                 .filter(e => e.title || e.company)
-                .map(e => {
-                    const { id, ...rest } = e
-                    return { user_id: userId, ...rest }
-                })
+                .map(({ id, ...rest }) => ({ user_id: userId, ...rest }))
 
             const { error: delExpErr } = await supabase.from('user_experiences').delete().eq('user_id', userId)
             if (delExpErr) throw delExpErr
             if (expsToInsert.length > 0) {
-                const { error: insExpErr } = await supabase.from('user_experiences').insert(
-                    expsToInsert.map(e => { 
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        delete (e as any).id; 
-                        return e 
-                    })
-                )
+                const { error: insExpErr } = await supabase.from('user_experiences').insert(expsToInsert)
                 if (insExpErr) throw insExpErr
             }
 
             // For Projects: Delete all then insert
             const projsToInsert = projects
                 .filter(p => p.title)
-                .map(p => {
-                    const { id, ...rest } = p
-                    return { user_id: userId, ...rest }
-                })
+                .map(({ id, ...rest }) => ({ user_id: userId, ...rest }))
 
             const { error: delProjErr } = await supabase.from('user_projects').delete().eq('user_id', userId)
             if (delProjErr) throw delProjErr
             if (projsToInsert.length > 0) {
-                const { error: insProjErr } = await supabase.from('user_projects').insert(
-                    projsToInsert.map(p => { 
-                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        delete (p as any).id; 
-                        return p 
-                    })
-                )
+                const { error: insProjErr } = await supabase.from('user_projects').insert(projsToInsert)
                 if (insProjErr) throw insProjErr
             }
 

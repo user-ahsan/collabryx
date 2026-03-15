@@ -14,11 +14,10 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 
 interface NotificationDropdownProps {
-  open?: boolean
   onOpenChange?: (open: boolean) => void
 }
 
-export function NotificationDropdown({ open, onOpenChange }: NotificationDropdownProps) {
+export function NotificationDropdown({ onOpenChange }: NotificationDropdownProps) {
   const router = useRouter()
   const { data: notifications, isLoading } = useNotifications({ limit: 10 })
   const markAllAsRead = useMarkAllNotificationsAsRead()
