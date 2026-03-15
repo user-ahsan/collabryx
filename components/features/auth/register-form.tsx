@@ -30,10 +30,30 @@ const signupSchema = z.object({
     password: z.string().min(8, "Password must be at least 8 characters."),
 })
 
+const passwordRequirements = [
+    { label: "At least 8 characters", regex: /.{8,}/ },
+    { label: "Contains uppercase letter", regex: /[A-Z]/ },
+    { label: "Contains lowercase letter", regex: /[a-z]/ },
+    { label: "Contains number", regex: /[0-9]/ },
+    { label: "Contains special character", regex: /[^A-Za-z0-9]/ },
+]
+
+const calculatePasswordStrength = (password: string): number => {
+    let strength = 0
+    if (password.length >= 8) strength += 20
+    if (password.length >= 12) strength += 10
+    if (/[A-Z]/.test(password)) strength += 20
+    if (/[a-z]/.test(password)) strength += 20
+    if (/[0-9]/.test(password)) strength += 15
+    if (/[^A-Za-z0-9]/.test(password)) strength += 15
+    return Math.min(strength, 100)
+}
+
 export function RegisterForm() {
     const [isLoading, setIsLoading] = React.useState(false)
     const [showProviderDialog, setShowProviderDialog] = React.useState(false)
     const [providerToShow, setProviderToShow] = React.useState<"google" | "github" | "apple" | null>(null)
+    const [passwordValue, setPasswordValue] = React.useState("")
     const supabase = createClient()
 
     const form = useForm<z.infer<typeof signupSchema>>({
@@ -149,11 +169,48 @@ export function RegisterForm() {
                                     placeholder="Create a password"
                                     className={cn(inputClasses, "pl-10")}
                                     {...form.register("password")}
+                                    onChange={(e) => {
+                                        form.register("password").onChange(e)
+                                        setPasswordValue(e.target.value)
+                                    }}
                                     disabled={isLoading}
                                 />
                             </div>
                             {form.formState.errors.password && (
                                 <p className="text-sm text-destructive px-1">{form.formState.errors.password.message}</p>
+                            )}
+                            
+                            {passwordValue && (
+                                <div className="space-y-2 pt-2">
+                                    <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
+                                        <div 
+                                            className={cn(
+                                                "h-full transition-all duration-300",
+                                                calculatePasswordStrength(passwordValue) < 50 ? "bg-destructive" :
+                                                calculatePasswordStrength(passwordValue) < 80 ? "bg-yellow-500" :
+                                                "bg-green-500"
+                                            )}
+                                            style={{ width: `${calculatePasswordStrength(passwordValue)}%` }}
+                                        />
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-1">
+                                        {passwordRequirements.map((req) => (
+                                            <div 
+                                                key={req.label}
+                                                className={cn(
+                                                    "text-xs flex items-center gap-1",
+                                                    req.regex.test(passwordValue) ? "text-green-600 dark:text-green-400" : "text-muted-foreground"
+                                                )}
+                                            >
+                                                <div className={cn(
+                                                    "w-1.5 h-1.5 rounded-full",
+                                                    req.regex.test(passwordValue) ? "bg-green-600 dark:bg-green-400" : "bg-muted-foreground"
+                                                )} />
+                                                {req.label}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
                             )}
                         </div>
 
