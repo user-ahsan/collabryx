@@ -8,7 +8,6 @@ import { Search, UserX } from "lucide-react"
 import { GlassBubble } from "@/components/shared/glass-bubble"
 import { useConnections, useRemoveConnection } from "@/hooks/use-connections"
 import { useState } from "react"
-import { cn } from "@/lib/utils"
 
 export function ConnectionList() {
   const { data: connections, isLoading } = useConnections()

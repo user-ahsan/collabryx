@@ -6,8 +6,12 @@
  */
 
 import { createClient } from "@/lib/supabase/client"
+import { logger } from "@/lib/logger"
 import { z } from "zod"
 import type { Comment, CommentLike } from "@/types/database.types"
+
+// Module-specific logger
+const log = logger.app
 
 // ===========================================
 // VALIDATION SCHEMAS
@@ -172,7 +176,7 @@ export async function fetchComments(
 
     return { data: mappedComments, error: null }
   } catch (error) {
-    console.error("Error fetching comments:", error)
+    log.error("Error fetching comments:", error)
     return { 
       data: [], 
       error: error instanceof Error ? error : new Error("Unknown error fetching comments") 
@@ -227,7 +231,7 @@ export async function fetchCommentById(commentId: string): Promise<{
 
     return { data: mappedComment, error: null }
   } catch (error) {
-    console.error("Error fetching comment:", error)
+    log.error("Error fetching comment:", error)
     return { 
       data: null, 
       error: error instanceof Error ? error : new Error("Unknown error fetching comment") 
@@ -252,7 +256,7 @@ export async function createComment(
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError) {
-      console.error("Auth error:", authError)
+      log.error("Auth error:", authError)
       return { data: null, error: new Error("Authentication failed. Please log in again.") }
     }
 
@@ -285,7 +289,7 @@ export async function createComment(
 
     return { data, error: null }
   } catch (error) {
-    console.error("Error creating comment:", error)
+    log.error("Error creating comment:", error)
     return { 
       data: null, 
       error: error instanceof Error ? error : new Error("Unknown error creating comment") 
@@ -354,7 +358,7 @@ export async function updateComment(
 
     return { data, error: null }
   } catch (error) {
-    console.error("Error updating comment:", error)
+    log.error("Error updating comment:", error)
     return { 
       data: null, 
       error: error instanceof Error ? error : new Error("Unknown error updating comment") 
@@ -407,7 +411,7 @@ export async function deleteComment(commentId: string): Promise<{ error: Error |
 
     return { error: null }
   } catch (error) {
-    console.error("Error deleting comment:", error)
+    log.error("Error deleting comment:", error)
     return { error: error instanceof Error ? error : new Error("Unknown error deleting comment") }
   }
 }
@@ -451,7 +455,7 @@ export async function likeComment(commentId: string): Promise<{
 
     return { data, error: null }
   } catch (error) {
-    console.error("Error liking comment:", error)
+    log.error("Error liking comment:", error)
     return { 
       data: null, 
       error: error instanceof Error ? error : new Error("Unknown error liking comment") 
@@ -488,7 +492,7 @@ export async function unlikeComment(commentId: string): Promise<{ error: Error |
 
     return { error: null }
   } catch (error) {
-    console.error("Error unliking comment:", error)
+    log.error("Error unliking comment:", error)
     return { error: error instanceof Error ? error : new Error("Unknown error unliking comment") }
   }
 }

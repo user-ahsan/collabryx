@@ -6,8 +6,12 @@
  */
 
 import { createClient } from "@/lib/supabase/client"
+import { logger } from "@/lib/logger"
 import { z } from "zod"
 import type { Notification } from "@/types/database.types"
+
+// Module-specific logger
+const log = logger.app
 
 // ===========================================
 // VALIDATION SCHEMAS
@@ -112,7 +116,7 @@ export async function fetchNotifications(
 
     return { data: mappedNotifications, error: null }
   } catch (error) {
-    console.error("Error fetching notifications:", error)
+    log.error("Error fetching notifications:", error)
     return { 
       data: [], 
       error: error instanceof Error ? error : new Error("Unknown error fetching notifications") 
@@ -158,7 +162,7 @@ export async function markNotificationAsRead(
 
     return { data, error: null }
   } catch (error) {
-    console.error("Error marking notification as read:", error)
+    log.error("Error marking notification as read:", error)
     return { 
       data: null, 
       error: error instanceof Error ? error : new Error("Unknown error marking notification as read") 
@@ -196,7 +200,7 @@ export async function markAllNotificationsAsRead(): Promise<{ error: Error | nul
 
     return { error: null }
   } catch (error) {
-    console.error("Error marking all notifications as read:", error)
+    log.error("Error marking all notifications as read:", error)
     return { error: error instanceof Error ? error : new Error("Unknown error marking all notifications as read") }
   }
 }
@@ -232,7 +236,7 @@ export async function deleteNotification(
 
     return { error: null }
   } catch (error) {
-    console.error("Error deleting notification:", error)
+    log.error("Error deleting notification:", error)
     return { error: error instanceof Error ? error : new Error("Unknown error deleting notification") }
   }
 }
@@ -264,7 +268,7 @@ export async function deleteAllNotifications(): Promise<{ error: Error | null }>
 
     return { error: null }
   } catch (error) {
-    console.error("Error deleting all notifications:", error)
+    log.error("Error deleting all notifications:", error)
     return { error: error instanceof Error ? error : new Error("Unknown error deleting all notifications") }
   }
 }
@@ -300,7 +304,7 @@ export async function getUnreadCount(): Promise<{
 
     return { count: count || 0, error: null }
   } catch (error) {
-    console.error("Error getting unread count:", error)
+    log.error("Error getting unread count:", error)
     return { count: 0, error: error instanceof Error ? error : new Error("Unknown error getting unread count") }
   }
 }
@@ -346,7 +350,7 @@ export async function createNotification(
 
     return { data, error: null }
   } catch (error) {
-    console.error("Error creating notification:", error)
+    log.error("Error creating notification:", error)
     return { 
       data: null, 
       error: error instanceof Error ? error : new Error("Unknown error creating notification") 

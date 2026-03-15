@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Check, Trash2, Bell } from "lucide-react"
 import {
@@ -12,7 +11,6 @@ import {
 } from "@/hooks/use-notifications"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { GlassBubble } from "./glass-bubble"
 import { cn } from "@/lib/utils"
 
 interface NotificationDropdownProps {

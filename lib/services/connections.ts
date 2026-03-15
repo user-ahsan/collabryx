@@ -6,8 +6,12 @@
  */
 
 import { createClient } from "@/lib/supabase/client"
+import { logger } from "@/lib/logger"
 import { z } from "zod"
 import type { Connection } from "@/types/database.types"
+
+// Module-specific logger
+const log = logger.app
 
 // ===========================================
 // VALIDATION SCHEMAS
@@ -97,7 +101,7 @@ export async function fetchConnectionRequests(): Promise<{
 
     return { data: mappedConnections, error: null }
   } catch (error) {
-    console.error("Error fetching connection requests:", error)
+    log.error("Error fetching connection requests:", error)
     return { 
       data: [], 
       error: error instanceof Error ? error : new Error("Unknown error fetching connection requests") 
@@ -177,7 +181,7 @@ export async function fetchConnections(
 
     return { data: mappedConnections, error: null }
   } catch (error) {
-    console.error("Error fetching connections:", error)
+    log.error("Error fetching connections:", error)
     return { 
       data: [], 
       error: error instanceof Error ? error : new Error("Unknown error fetching connections") 
@@ -253,7 +257,7 @@ export async function sendConnectionRequest(
 
     return { data, error: null }
   } catch (error) {
-    console.error("Error sending connection request:", error)
+    log.error("Error sending connection request:", error)
     return { 
       data: null, 
       error: error instanceof Error ? error : new Error("Unknown error sending connection request") 
@@ -319,7 +323,7 @@ export async function acceptConnectionRequest(
 
     return { data, error: null }
   } catch (error) {
-    console.error("Error accepting connection request:", error)
+    log.error("Error accepting connection request:", error)
     return { 
       data: null, 
       error: error instanceof Error ? error : new Error("Unknown error accepting connection request") 
@@ -373,7 +377,7 @@ export async function declineConnectionRequest(
 
     return { error: null }
   } catch (error) {
-    console.error("Error declining connection request:", error)
+    log.error("Error declining connection request:", error)
     return { error: error instanceof Error ? error : new Error("Unknown error declining connection request") }
   }
 }
@@ -428,7 +432,7 @@ export async function cancelConnectionRequest(
 
     return { error: null }
   } catch (error) {
-    console.error("Error canceling connection request:", error)
+    log.error("Error canceling connection request:", error)
     return { error: error instanceof Error ? error : new Error("Unknown error canceling connection request") }
   }
 }
@@ -483,7 +487,7 @@ export async function removeConnection(
 
     return { error: null }
   } catch (error) {
-    console.error("Error removing connection:", error)
+    log.error("Error removing connection:", error)
     return { error: error instanceof Error ? error : new Error("Unknown error removing connection") }
   }
 }
@@ -549,7 +553,7 @@ export async function blockUser(
 
     return { error: null }
   } catch (error) {
-    console.error("Error blocking user:", error)
+    log.error("Error blocking user:", error)
     return { error: error instanceof Error ? error : new Error("Unknown error blocking user") }
   }
 }
@@ -601,7 +605,7 @@ export async function checkConnectionStatus(
 
     return { status: data?.status || "not_connected", error: null }
   } catch (error) {
-    console.error("Error checking connection status:", error)
+    log.error("Error checking connection status:", error)
     return { 
       status: "not_connected", 
       error: error instanceof Error ? error : new Error("Unknown error checking connection status") 

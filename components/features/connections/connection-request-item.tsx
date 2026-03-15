@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Check, X } from "lucide-react"
 import { GlassBubble } from "@/components/shared/glass-bubble"
-import { cn } from "@/lib/utils"
 import {
   useAcceptConnectionRequest,
   useDeclineConnectionRequest,
