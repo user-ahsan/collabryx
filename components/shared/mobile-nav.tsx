@@ -75,12 +75,12 @@ export function MobileNav() {
 
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <button className="rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                            <Button variant="ghost" className="h-8 w-8 rounded-full p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                                 <Avatar className="h-8 w-8 cursor-pointer ring-1 ring-border">
                                     <AvatarImage src="/avatars/05.png" />
                                     <AvatarFallback className="text-xs">MR</AvatarFallback>
                                 </Avatar>
-                            </button>
+                            </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="w-48" align="end" sideOffset={8}>
                             <DropdownMenuLabel className="font-normal">
