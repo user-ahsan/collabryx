@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { NotificationItem } from "@/components/shared/notification-item"
 import {
   useNotifications,
@@ -82,7 +81,7 @@ export default function NotificationsPage() {
               <Bell className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
               <h3 className="text-lg font-semibold mb-2">No notifications yet</h3>
               <p className="text-muted-foreground">
-                When you get notifications, they'll appear here
+                When you get notifications, they&apos;ll appear here
               </p>
             </div>
           ) : (

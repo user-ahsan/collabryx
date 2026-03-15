@@ -63,7 +63,7 @@ export function PostDetailDialog({
 
     if (!post) return null
 
-    const postTypeBadge = getPostTypeBadge(post.post_type as any)
+    const postTypeBadge = getPostTypeBadge(post.post_type)
     const hasMedia = post.media_urls && post.media_urls.length > 0
 
     const handleScroll = () => {
