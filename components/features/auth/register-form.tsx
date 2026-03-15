@@ -63,19 +63,40 @@ export function RegisterForm() {
 
     const onSignupSubmit = async (data: z.infer<typeof signupSchema>) => {
         setIsLoading(true)
-        const { error } = await supabase.auth.signUp({
-            email: data.email,
-            password: data.password,
-        })
-        setIsLoading(false)
-
-        if (error) {
-            toast.error(error.message)
+        
+        // Check if Supabase is configured
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+        
+        if (!supabaseUrl || !supabaseKey) {
+            toast.error("Authentication service is not configured. Please contact support.")
+            setIsLoading(false)
+            // Redirect to home page with error
+            setTimeout(() => {
+                window.location.assign("/")
+            }, 2000)
             return
         }
+        
+        try {
+            const { error } = await supabase.auth.signUp({
+                email: data.email,
+                password: data.password,
+            })
+            setIsLoading(false)
 
-        toast.success("Account created! Redirecting...")
-        window.location.assign("/auth-sync")
+            if (error) {
+                toast.error(error.message)
+                return
+            }
+
+            toast.success("Account created! Redirecting...")
+            window.location.assign("/auth-sync")
+        } catch (err) {
+            console.error('Signup error:', err)
+            toast.error("An unexpected error occurred. Please try again.")
+            setIsLoading(false)
+        }
     }
 
     const handleSocialLogin = async (provider: "google" | "github" | "apple") => {

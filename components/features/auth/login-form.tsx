@@ -51,19 +51,40 @@ export function LoginForm() {
 
     const onLoginSubmit = async (data: z.infer<typeof loginSchema>) => {
         setIsLoading(true)
-        const { error } = await supabase.auth.signInWithPassword({
-            email: data.email,
-            password: data.password,
-        })
-        setIsLoading(false)
-
-        if (error) {
-            toast.error(error.message)
+        
+        // Check if Supabase is configured
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+        
+        if (!supabaseUrl || !supabaseKey) {
+            toast.error("Authentication service is not configured. Please contact support.")
+            setIsLoading(false)
+            // Redirect to home page with error
+            setTimeout(() => {
+                window.location.assign("/")
+            }, 2000)
             return
         }
+        
+        try {
+            const { error } = await supabase.auth.signInWithPassword({
+                email: data.email,
+                password: data.password,
+            })
+            setIsLoading(false)
 
-        toast.success("Welcome back!")
-        window.location.assign("/auth-sync")
+            if (error) {
+                toast.error(error.message)
+                return
+            }
+
+            toast.success("Welcome back!")
+            window.location.assign("/auth-sync")
+        } catch (err) {
+            console.error('Login error:', err)
+            toast.error("An unexpected error occurred. Please try again.")
+            setIsLoading(false)
+        }
     }
 
     const handleSocialLogin = async (provider: "google" | "github" | "apple") => {
