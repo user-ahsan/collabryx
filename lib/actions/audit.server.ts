@@ -1,17 +1,11 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import type { AuditLogInput } from '@/types/actions'
 
 // ===========================================
 // AUDIT LOGGING SERVER ACTIONS
 // ===========================================
-
-export interface AuditLogInput {
-  action: string
-  resource_type?: string
-  resource_id?: string
-  details?: Record<string, any>
-}
 
 /**
  * Log an audit event
@@ -61,7 +55,7 @@ export async function logDataModification(
   resourceType: string,
   resourceId: string,
   action: 'create' | 'update' | 'delete',
-  details?: Record<string, any>
+  details?: Record<string, unknown>
 ) {
   return logAuditEvent({
     action: `data_${action}`,

@@ -15,9 +15,9 @@ export const PROFILE_QUERY_KEYS = {
 }
 
 interface ProfileWithRelations extends Profile {
-  user_skills?: any[]
-  user_interests?: any[]
-  user_experiences?: any[]
+  user_skills?: Array<{ id: string; skill: string; created_at?: string }>
+  user_interests?: Array<{ id: string; interest: string; created_at?: string }>
+  user_experiences?: Array<{ id: string; title: string; company?: string; description?: string; start_date?: string; end_date?: string; created_at?: string }>
 }
 
 export function useProfile(userId?: string) {

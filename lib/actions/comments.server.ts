@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import type { CommentReactionType } from '@/types/actions'
 
 // ===========================================
 // COMMENTS SERVER ACTIONS
@@ -177,7 +178,7 @@ export async function reactToComment(commentId: string, reactionType: string) {
     .single()
 
   if (existingReaction) {
-    if ((existingReaction as any).reaction_type === reactionType) {
+    if ((existingReaction as { reaction_type: CommentReactionType }).reaction_type === reactionType) {
       const { error } = await supabase
         .from('comment_likes')
         .delete()
