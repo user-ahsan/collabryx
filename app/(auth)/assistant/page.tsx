@@ -5,9 +5,10 @@ import { ChatList } from "@/components/features/assistant/chat-list"
 import { AIOutputWorkspace } from "@/components/features/assistant/ai-output-workspace"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Sparkles, Target, Zap, FileText } from "lucide-react"
-import { useState } from "react"
+import { Sparkles, Target, Zap, FileText, Loader2, AlertCircle } from "lucide-react"
+import { useState, useEffect } from "react"
 import { toast } from "sonner"
+import { getOrCreateActiveSession, getUserSessions, type AISession } from "@/lib/actions/ai-mentor"
 
 const STARTERS = [
     {
@@ -63,6 +64,44 @@ Based on your profile, you should find:
 export default function AssistantPage() {
     const [workspaceOpen, setWorkspaceOpen] = useState(false)
     const [workspaceContent, setWorkspaceContent] = useState("")
+    const [sessionId, setSessionId] = useState<string | null>(null)
+    const [sessions, setSessions] = useState<AISession[]>([])
+    const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+
+    // Load or create session on mount
+    useEffect(() => {
+        const loadSession = async () => {
+            try {
+                setIsLoading(true)
+                
+                // Get or create active session
+                const result = await getOrCreateActiveSession()
+                
+                if (result.error) {
+                    setError(result.error.message)
+                    toast.error("Failed to load AI Mentor session")
+                    return
+                }
+                
+                setSessionId(result.data.id)
+                
+                // Load all sessions for session switching (future feature)
+                const sessionsResult = await getUserSessions()
+                if (sessionsResult.data) {
+                    setSessions(sessionsResult.data)
+                }
+            } catch (err) {
+                console.error("Error loading session:", err)
+                setError("Failed to connect to AI Mentor")
+                toast.error("Failed to load AI Mentor")
+            } finally {
+                setIsLoading(false)
+            }
+        }
+
+        loadSession()
+    }, [])
 
     const handleOpenWorkspace = (content: string) => {
         setWorkspaceContent(content)
@@ -70,8 +109,31 @@ export default function AssistantPage() {
     }
 
     const handleSaveToProfile = () => {
-        // In a real app, this would save to the user's profile
         toast.success("Content saved to your Projects section!")
+    }
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-[calc(100vh-2rem)]">
+                <div className="text-center">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-4" />
+                    <p className="text-muted-foreground">Loading AI Mentor...</p>
+                </div>
+            </div>
+        )
+    }
+
+    if (error) {
+        return (
+            <div className="flex items-center justify-center h-[calc(100vh-2rem)]">
+                <div className="text-center max-w-md p-6">
+                    <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
+                    <h2 className="text-lg font-semibold mb-2">AI Mentor Unavailable</h2>
+                    <p className="text-muted-foreground mb-4">{error}</p>
+                    <Button onClick={() => window.location.reload()}>Try Again</Button>
+                </div>
+            </div>
+        )
     }
 
     return (
@@ -95,7 +157,7 @@ export default function AssistantPage() {
                 </Button>
             </div>
 
-            <ChatList sessionId={null} />
+            <ChatList sessionId={sessionId} />
 
             <div className="p-3 md:p-4 space-y-3 md:space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 md:gap-3 max-w-3xl mx-auto">
@@ -113,7 +175,7 @@ export default function AssistantPage() {
                 </div>
 
                 <div className="max-w-3xl mx-auto w-full">
-                    <ChatInput sessionId={null} onMessageSent={() => {}} />
+                    <ChatInput sessionId={sessionId} onMessageSent={() => {}} />
                     <p className="text-[10px] text-center text-muted-foreground mt-2 px-2">
                         AI can make mistakes. Consider checking important information.
                     </p>

@@ -20,18 +20,57 @@ export interface LoginData {
   notifications: { id: string; [key: string]: unknown }[]
 }
 
+interface RetryConfig {
+  attempts: number
+  delay: number
+  backoff: number
+}
+
+const DEFAULT_RETRY_CONFIG: RetryConfig = {
+  attempts: 3,
+  delay: 1000,
+  backoff: 2,
+}
+
+/**
+ * Retry a function with exponential backoff
+ */
+async function retry<T>(
+  fn: () => Promise<T>,
+  config: RetryConfig = DEFAULT_RETRY_CONFIG
+): Promise<T> {
+  let lastError: Error | null = null
+  
+  for (let attempt = 0; attempt < config.attempts; attempt++) {
+    try {
+      return await fn()
+    } catch (error) {
+      lastError = error as Error
+      if (attempt < config.attempts - 1) {
+        const delay = config.delay * Math.pow(config.backoff, attempt)
+        await new Promise(resolve => setTimeout(resolve, delay))
+      }
+    }
+  }
+  
+  throw lastError || new Error('Unknown error')
+}
+
 export function useLoginData() {
   const [isReady, setIsReady] = useState(false)
+  const [retryCount, setRetryCount] = useState(0)
 
   // Fetch posts
   const postsQuery = useQuery({
     queryKey: ['feed-initial'],
     queryFn: async () => {
-      const result = await fetchPosts({ limit: 20 })
+      const result = await retry(() => fetchPosts({ limit: 20 }))
       return result.data || []
     },
     staleTime: 1000 * 60 * 2, // 2 minutes
     gcTime: 1000 * 60 * 10,   // 10 minutes
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * Math.pow(2, attempt), 5000),
     enabled: false, // Manually trigger
   })
 
@@ -39,11 +78,13 @@ export function useLoginData() {
   const matchesQuery = useQuery({
     queryKey: ['matches-initial'],
     queryFn: async () => {
-      const result = await fetchMatches({ limit: 20 })
+      const result = await retry(() => fetchMatches({ limit: 20 }))
       return result.data || []
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15,   // 15 minutes
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * Math.pow(2, attempt), 5000),
     enabled: false, // Manually trigger
   })
 
@@ -65,6 +106,8 @@ export function useLoginData() {
       return data
     },
     staleTime: 1000 * 60 * 5,
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * Math.pow(2, attempt), 5000),
     enabled: false,
   })
 
@@ -88,10 +131,12 @@ export function useLoginData() {
       return data || []
     },
     staleTime: 1000 * 60 * 1, // 1 minute
+    retry: 2,
+    retryDelay: (attempt) => Math.min(1000 * Math.pow(2, attempt), 5000),
     enabled: false,
   })
 
-  // Trigger all queries on mount
+  // Trigger all queries on mount with retry logic
   useEffect(() => {
     const fetchAllData = async () => {
       try {
@@ -102,13 +147,20 @@ export function useLoginData() {
           notificationsQuery.refetch(),
         ])
         setIsReady(true)
+        setRetryCount(0)
       } catch (error) {
         console.error('Error fetching login data:', error)
+        // Retry once after 2 seconds
+        if (retryCount < 1) {
+          setTimeout(() => {
+            setRetryCount(prev => prev + 1)
+          }, 2000)
+        }
       }
     }
 
     fetchAllData()
-  }, [])
+  }, [postsQuery, matchesQuery, profileQuery, notificationsQuery, retryCount])
 
   return {
     isReady,
@@ -118,5 +170,15 @@ export function useLoginData() {
     notifications: notificationsQuery.data || [],
     isLoading: postsQuery.isLoading || matchesQuery.isLoading || profileQuery.isLoading,
     error: postsQuery.error || matchesQuery.error || profileQuery.error,
+    refetch: async () => {
+      setIsReady(false)
+      await Promise.all([
+        postsQuery.refetch(),
+        matchesQuery.refetch(),
+        profileQuery.refetch(),
+        notificationsQuery.refetch(),
+      ])
+      setIsReady(true)
+    },
   }
 }
