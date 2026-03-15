@@ -154,7 +154,7 @@ Be concise, encouraging, and practical. Focus on actionable advice.`
       // OpenAI implementation
       const response = await openai.chat.completions.create({
         model: 'gpt-4-turbo-preview',
-        messages: llmMessages as any,
+        messages: llmMessages as OpenAI.Chat.Completions.ChatCompletionMessageParam[],
         max_tokens: 500,
         temperature: 0.7,
       })
