@@ -1,5 +1,4 @@
-import { NotificationsClient } from "@/components/features/notifications/notifications-client"
-import type { Metadata } from "next"
+"use client"
 
 import { NotificationItem } from "@/components/shared/notification-item"
 import {

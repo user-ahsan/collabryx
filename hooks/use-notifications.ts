@@ -5,6 +5,8 @@
  * @module hooks/use-notifications
  */
 
+"use client"
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
