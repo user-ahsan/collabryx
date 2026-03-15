@@ -5,8 +5,24 @@ import Image from "next/image"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import type { Post } from "@/types/database.types"
+import type { PostWithAuthor } from "@/types/database.types"
 import { getPostTypeBadge } from "@/lib/utils/post-helpers"
+
+// Same type as used in feed.tsx
+interface PostUI extends PostWithAuthor {
+    author: string
+    role: string
+    time: string
+    avatar: string
+    initials: string
+    hasMedia: boolean
+    mediaType?: "image" | "video"
+    mediaUrls?: string[]
+    hasLink: boolean
+    linkUrl?: string
+    myReaction: string | null
+}
+
 import { PostHeader } from "./post-header"
 import { PostContent } from "./post-content"
 import { PostActions } from "./post-actions"
@@ -19,7 +35,7 @@ import { glass } from "@/lib/utils/glass-variants"
 interface PostDetailDialogProps {
     isOpen: boolean
     onClose: () => void
-    post: Post | null
+    post: PostUI | null
     onLike?: (postId: string) => void
     onReaction?: (postId: string, emoji: string) => void
     onShare?: () => void
@@ -48,7 +64,7 @@ export function PostDetailDialog({
     if (!post) return null
 
     const postTypeBadge = getPostTypeBadge(post.post_type as any)
-    const hasMedia = post.hasMedia && post.mediaUrls && post.mediaUrls.length > 0
+    const hasMedia = post.media_urls && post.media_urls.length > 0
 
     const handleScroll = () => {
         if (!scrollContainerRef.current) return
@@ -61,7 +77,7 @@ export function PostDetailDialog({
     }
 
     const scrollToIndex = (index: number) => {
-        if (!scrollContainerRef.current || !post.mediaUrls) return
+        if (!scrollContainerRef.current || !post.media_urls) return
         const width = scrollContainerRef.current.offsetWidth
         scrollContainerRef.current.scrollTo({
             left: width * index,
@@ -98,7 +114,7 @@ export function PostDetailDialog({
                                 className="w-full h-full flex overflow-x-auto snap-x snap-mandatory scroll-smooth"
                                 style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                             >
-                                {post.mediaUrls?.map((url, i) => (
+                                {post.media_urls?.map((url, i) => (
                                     <div key={url} className="min-w-full h-full flex items-center justify-center snap-center shrink-0 relative p-4">
                                         {post.mediaType === "video" ? (
                                             <video
@@ -120,7 +136,7 @@ export function PostDetailDialog({
                             </div>
 
                             {/* Navigation Arrows */}
-                            {post.mediaUrls && post.mediaUrls.length > 1 && (
+                            {post.media_urls && post.media_urls.length > 1 && (
                                 <>
                                     {currentIndex > 0 && (
                                             <Button
@@ -139,7 +155,7 @@ export function PostDetailDialog({
                                             <ChevronLeft className="h-6 w-6" />
                                         </Button>
                                     )}
-                                    {currentIndex < post.mediaUrls.length - 1 && (
+                                    {currentIndex < post.media_urls.length - 1 && (
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
@@ -161,7 +177,7 @@ export function PostDetailDialog({
                                         "absolute top-4 left-1/2 -translate-x-1/2 md:left-auto md:translate-x-0 md:right-4 text-white px-3 py-1 rounded-full text-xs font-medium z-10 pointer-events-none",
                                         glass("mediaCounter")
                                     )}>
-                                        {currentIndex + 1} / {post.mediaUrls.length}
+                                        {currentIndex + 1} / {post.media_urls.length}
                                     </div>
                                 </>
                             )}
@@ -181,7 +197,7 @@ export function PostDetailDialog({
                                             <span
                                                 className={cn(
                                                     "inline-flex items-center px-2 py-0.5 rounded-md text-[10px] md:text-xs font-semibold border",
-                                                    postTypeBadge.color
+                                                    postTypeBadge.className
                                                 )}
                                             >
                                                 {postTypeBadge.label}
@@ -233,14 +249,14 @@ export function PostDetailDialog({
                                 initials={post.initials}
                                 postTypeBadge={
                                     postTypeBadge ? (
-                                        <span
-                                            className={cn(
-                                                "inline-flex items-center px-2 py-0.5 rounded-md text-[10px] md:text-xs font-semibold border",
-                                                postTypeBadge.color
-                                            )}
-                                        >
-                                            {postTypeBadge.label}
-                                        </span>
+                                    <span
+                                        className={cn(
+                                            "inline-flex items-center px-2 py-0.5 rounded-md text-[10px] md:text-xs font-semibold border",
+                                            postTypeBadge.className
+                                        )}
+                                    >
+                                        {postTypeBadge.label}
+                                    </span>
                                     ) : null
                                 }
                                 isOwner={false}
