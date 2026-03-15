@@ -1,10 +1,10 @@
 import { z } from 'zod'
 
 const EnvSchema = z.object({
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(20),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(20),
-  NEXT_PUBLIC_APP_URL: z.string().url(),
+  NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(20).optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(20).optional(),
+  NEXT_PUBLIC_APP_URL: z.string().url().optional(),
   OPENAI_API_KEY: z.string().optional(),
   ANTHROPIC_API_KEY: z.string().optional(),
 })
@@ -22,7 +22,9 @@ export function validateEnv() {
   return result.data
 }
 
-// Auto-validate in production
-if (process.env.NODE_ENV === 'production') {
+// Only validate at runtime, not during build
+// Vercel sets environment variables at runtime, not build time
+if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
+  // Client-side validation in production
   validateEnv()
 }
