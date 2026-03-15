@@ -78,3 +78,17 @@ export const SAFE_METHODS = ['GET', 'HEAD', 'OPTIONS']
 export function requiresCSRF(method: string): boolean {
   return !SAFE_METHODS.includes(method.toUpperCase())
 }
+
+// Runtime validation for client-side
+export function validateCSRFTokenClient(token: string | null): boolean {
+  if (!token) {
+    return false
+  }
+  
+  if (token.length !== TOKEN_LENGTH * 2) {
+    return false
+  }
+  
+  const tokenPattern = /^[a-f0-9]{64}$/i
+  return tokenPattern.test(token)
+}
