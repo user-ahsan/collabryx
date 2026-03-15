@@ -26,9 +26,9 @@ class CircuitBreaker {
   private readonly halfOpenMaxRequests: number
   private halfOpenRequests = 0
 
-  constructor(threshold = 3, timeout = 30000, halfOpenMaxRequests = 1) {
+  constructor(threshold = 3, timeout = 15000, halfOpenMaxRequests = 1) {
     this.threshold = threshold
-    this.timeout = timeout
+    this.timeout = timeout  // 15s (reduced from 30s for faster recovery)
     this.halfOpenMaxRequests = halfOpenMaxRequests
   }
 
@@ -100,9 +100,9 @@ class CircuitBreaker {
 // Global circuit breaker instance
 const backendCircuitBreaker = new CircuitBreaker(3, 30000, 1)
 
-// Cache health checks for 30 seconds to avoid excessive polling
+// Cache health checks for 10 seconds to detect failures quickly
 const healthCache = new Map<string, { healthy: boolean; timestamp: number }>()
-const CACHE_TTL = 30000 // 30 seconds
+const CACHE_TTL = 10000 // 10 seconds (reduced from 30s for faster failure detection)
 
 /**
  * Check backend health with timeout
