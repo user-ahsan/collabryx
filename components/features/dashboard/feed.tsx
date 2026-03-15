@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
-import { Bot, Inbox } from "lucide-react"
+import { Bot, Inbox, Sparkles, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getInitials } from "@/lib/utils/format-initials"
 import { getCache, setCache, CACHE_KEYS } from "@/lib/dashboard-cache"
@@ -10,6 +10,7 @@ import { sortPostsByPriority, getPostTypeBadge } from "@/lib/utils/post-helpers"
 import { fetchPosts } from "@/lib/services/posts"
 import type { PostWithAuthor } from "@/types/database.types"
 import { toast } from "sonner"
+import { createClient } from "@/lib/supabase/client"
 
 import { PostCard } from "./posts/post-card"
 import { PostHeader } from "./posts/post-header"
@@ -44,6 +45,7 @@ interface PostUI extends PostWithAuthor {
 export function Feed() {
     const [posts, setPosts] = useState<PostUI[]>([])
     const [isFetching, setIsFetching] = useState(false)
+    const [hasEmbedding, setHasEmbedding] = useState<boolean | null>(null) // null = checking
 
     // Map raw API data to UI format
     const mapPostToUI = useCallback((post: PostWithAuthor): PostUI => ({
@@ -61,11 +63,39 @@ export function Feed() {
         myReaction: null,
     }), [])
 
+    // Check if user has completed embedding
+    const checkEmbeddingStatus = useCallback(async () => {
+        try {
+            const supabase = createClient()
+            const { data: { user } } = await supabase.auth.getUser()
+            
+            if (!user) {
+                setHasEmbedding(false)
+                return
+            }
+
+            const { data: embedding } = await supabase
+                .from("profile_embeddings")
+                .select("status")
+                .eq("user_id", user.id)
+                .single()
+
+            setHasEmbedding(embedding?.status === 'completed')
+        } catch (error) {
+            console.error('Error checking embedding status:', error)
+            setHasEmbedding(false)
+        }
+    }, [])
+
     // ── API → Cache → Hardcoded Fallback ──
     const fetchPostsData = useCallback(async () => {
         setIsFetching(true)
         try {
-            const { data, error } = await fetchPosts({ limit: 20 })
+            // Fetch random posts if no embedding, otherwise fetch personalized
+            const { data, error } = await fetchPosts({ 
+                limit: 20,
+                random: hasEmbedding === false  // Use random for new users
+            })
 
             if (error) throw error
 
@@ -85,11 +115,19 @@ export function Feed() {
         } finally {
             setIsFetching(false)
         }
-    }, [mapPostToUI])
+    }, [mapPostToUI, hasEmbedding])
 
+    // Check embedding status on mount
     useEffect(() => {
-        fetchPostsData()
-    }, [fetchPostsData])
+        checkEmbeddingStatus()
+    }, [checkEmbeddingStatus])
+
+    // Fetch posts once we know embedding status
+    useEffect(() => {
+        if (hasEmbedding !== null) {
+            fetchPostsData()
+        }
+    }, [hasEmbedding, fetchPostsData])
 
     // ── Memoized sort ──
     const sortedPosts = useMemo(() => sortPostsByPriority(posts), [posts])
@@ -145,6 +183,25 @@ export function Feed() {
             />
 
             <CreatePostModal />
+
+            {/* Embedding Status Banner */}
+            {hasEmbedding === false && (
+                <GlassCard innerClassName="p-4 bg-blue-500/10 border border-blue-500/20">
+                    <div className="flex items-start gap-3">
+                        <Sparkles className="w-5 h-5 text-blue-400 mt-0.5" />
+                        <div className="flex-1">
+                            <h3 className="text-sm font-semibold text-foreground">
+                                Personalizing your feed
+                            </h3>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                We're analyzing your profile to show you relevant content. 
+                                Meanwhile, here are some popular posts from the community!
+                            </p>
+                        </div>
+                        <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
+                    </div>
+                </GlassCard>
+            )}
 
             {/* AI Context Card */}
             <AIContextCard />
