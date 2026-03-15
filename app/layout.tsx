@@ -5,6 +5,8 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { SmoothScrollProvider } from "@/components/providers/smooth-scroll-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
+import { PostHogProvider } from "@/components/providers/posthog-provider";
+import { VercelAnalytics } from "@/components/providers/vercel-analytics";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -34,25 +36,28 @@ export default function RootLayout({
         className={`${inter.variable} ${spaceGrotesk.variable} antialiased`}
         suppressHydrationWarning
       >
-        <SmoothScrollProvider>
-          <QueryProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="system"
-              enableSystem
-              disableTransitionOnChange={false}
-            >
-              <a
-                href="#main-content"
-                className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-background focus:text-foreground focus:border focus:rounded-md focus:shadow-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        <PostHogProvider>
+          <SmoothScrollProvider>
+            <QueryProvider>
+              <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+                disableTransitionOnChange={false}
               >
-                Skip to main content
-              </a>
-              {children}
-              <Toaster richColors position="top-right" />
-            </ThemeProvider>
-          </QueryProvider>
-        </SmoothScrollProvider>
+                <a
+                  href="#main-content"
+                  className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-background focus:text-foreground focus:border focus:rounded-md focus:shadow-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  Skip to main content
+                </a>
+                {children}
+                <Toaster richColors position="top-right" />
+                <VercelAnalytics />
+              </ThemeProvider>
+            </QueryProvider>
+          </SmoothScrollProvider>
+        </PostHogProvider>
       </body>
     </html>
   );

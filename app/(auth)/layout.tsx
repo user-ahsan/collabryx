@@ -23,7 +23,7 @@ const queryClient = new QueryClient({
 
 function AuthLayoutContent({ children }: { children: React.ReactNode }) {
     const { isCollapsed } = useSidebar()
-    const { isReady, isLoading, error } = useLoginData()
+    const { isReady } = useLoginData()
     const router = useRouter()
     const [isChecking, setIsChecking] = useState(true)
 

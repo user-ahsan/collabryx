@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Sparkles, Target, Zap, FileText, Loader2, AlertCircle } from "lucide-react"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
-import { getOrCreateActiveSession, getUserSessions, type AISession } from "@/lib/actions/ai-mentor"
+import { getOrCreateActiveSession, type AISession } from "@/lib/actions/ai-mentor"
 
 const STARTERS = [
     {
@@ -65,9 +65,7 @@ export default function AssistantPage() {
     const [workspaceOpen, setWorkspaceOpen] = useState(false)
     const [workspaceContent, setWorkspaceContent] = useState("")
     const [sessionId, setSessionId] = useState<string | null>(null)
-    const [sessions, setSessions] = useState<AISession[]>([])
     const [isLoading, setIsLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
 
     // Load or create session on mount
     useEffect(() => {
@@ -79,21 +77,13 @@ export default function AssistantPage() {
                 const result = await getOrCreateActiveSession()
                 
                 if (result.error) {
-                    setError(result.error.message)
                     toast.error("Failed to load AI Mentor session")
                     return
                 }
                 
                 setSessionId(result.data.id)
-                
-                // Load all sessions for session switching (future feature)
-                const sessionsResult = await getUserSessions()
-                if (sessionsResult.data) {
-                    setSessions(sessionsResult.data)
-                }
             } catch (err) {
                 console.error("Error loading session:", err)
-                setError("Failed to connect to AI Mentor")
                 toast.error("Failed to load AI Mentor")
             } finally {
                 setIsLoading(false)
@@ -123,18 +113,7 @@ export default function AssistantPage() {
         )
     }
 
-    if (error) {
-        return (
-            <div className="flex items-center justify-center h-[calc(100vh-2rem)]">
-                <div className="text-center max-w-md p-6">
-                    <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-                    <h2 className="text-lg font-semibold mb-2">AI Mentor Unavailable</h2>
-                    <p className="text-muted-foreground mb-4">{error}</p>
-                    <Button onClick={() => window.location.reload()}>Try Again</Button>
-                </div>
-            </div>
-        )
-    }
+    // Error handling removed - errors shown via toast
 
     return (
         <div className="flex flex-col h-[calc(100vh-2rem)] md:h-[calc(100vh-2rem)] max-w-5xl mx-auto w-full">
