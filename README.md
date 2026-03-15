@@ -16,18 +16,18 @@
 
 ## 📖 Overview
 
-**Collabryx** is a cutting-edge collaborative platform built with modern web technologies. It combines powerful real-time collaboration features with AI integration, stunning 3D visualizations, and a premium user experience.
+**Collabryx** is a production-ready collaborative platform built with modern web technologies. It combines real-time collaboration features with AI-powered matching, 3D visualizations, and enterprise-grade security.
 
 ### ✨ Key Features
 
-- 🤖 **AI-Powered Collaboration** - Intelligent assistance and semantic matching with vector embeddings
-- 🌍 **Interactive 3D Visualizations** - Powered by Three.js and React Three Fiber
-- 🔐 **Secure Authentication** - Supabase Auth with Row Level Security
-- ⚡ **Real-time Updates** - Live collaboration and data synchronization
-- 🎨 **Premium UI/UX** - Modern design with smooth animations and micro-interactions
-- 📱 **Responsive Design** - Seamless experience across all devices
-- 🌙 **Dark Mode Support** - Eye-friendly theme switching
-- ✅ **Test Coverage** - Comprehensive test suite with Vitest and React Testing Library
+- 🤖 **AI-Powered Matching** - Vector embeddings for semantic profile matching (384 dimensions)
+- 🌍 **Interactive 3D Visualizations** - Three.js, React Three Fiber, GSAP animations
+- 🔐 **Enterprise Security** - 5-layer security (RLS, CSRF, rate limiting, bot detection, input sanitization)
+- ⚡ **Real-time Updates** - Supabase Realtime for live notifications and messaging
+- 🎨 **Premium UI/UX** - Radix UI, shadcn/ui, Tailwind CSS v4, Framer Motion
+- 📱 **Responsive Design** - Mobile-first, accessible across all devices
+- 🌙 **Dark Mode** - next-themes for seamless theme switching
+- 🧪 **Testing** - Vitest (unit), Playwright (E2E), React Testing Library (components)
 
 ---
 
@@ -43,9 +43,12 @@
 - **[pgvector](https://github.com/pgvector/pgvector)** - Vector similarity search
 - **[React Query 5](https://tanstack.com/query/latest)** - Server state management
 
-### Testing
-- **[Vitest](https://vitest.dev/)** - Fast unit test framework
+### Testing & Quality
+- **[Vitest](https://vitest.dev/)** - Unit testing
+- **[Playwright](https://playwright.dev/)** - E2E testing
 - **[React Testing Library](https://testing-library.com/react)** - Component testing
+- **ESLint** - Code quality (0 errors, 26 intentional warnings)
+- **TypeScript** - Strict mode, 100% type safety
 
 ### UI & Styling
 - **[Tailwind CSS 4](https://tailwindcss.com/)** - Utility-first CSS framework
@@ -63,9 +66,10 @@
 - **[Lenis](https://lenis.darkroom.engineering/)** - Smooth scroll
 - **[Cobe](https://github.com/shuding/cobe)** - Lightweight WebGL globe
 
-### AI & Analysis
-- **Sentence Transformers** - Semantic embeddings (Python worker)
-- **[face-api.js](https://github.com/justadudewhohacks/face-api.js/)** - Face detection/recognition
+### AI & Backend Services
+- **Python Worker** - Embedding generation (Sentence Transformers, all-MiniLM-L6-v2)
+- **Edge Functions** - 5 Deno functions (generate-embedding, send-notification, calculate-matches, sync-profile-data, cleanup-expired-data)
+- **OpenAI/Anthropic** - AI mentor chat integration
 
 ### State & Forms
 - **[Zustand 5](https://zustand-demo.pmnd.rs/)** - Lightweight state management
@@ -79,9 +83,10 @@
 ### Prerequisites
 
 - **Node.js 20+** (LTS)
-- **npm 10+** (required, yarn/bun not supported)
+- **npm 10+** (yarn/bun not supported)
 - **Git**
-- **Python 3.9+** (optional, for embedding worker)
+- **Docker** (for Python worker - optional for development)
+- **Supabase account** (free tier works)
 
 ### Installation
 
@@ -215,22 +220,13 @@ collabryx/
 
 ## 🧪 Testing
 
-Collabryx includes a comprehensive test suite:
+Collabryx includes a comprehensive test suite with unit, component, and E2E tests.
 
-### Test Structure
+### Test Coverage
 
-```
-tests/
-├── components/
-│   └── shared/
-│       └── glass-card.test.tsx
-├── hooks/
-│   ├── use-chat.test.ts
-│   ├── use-messages.test.ts
-│   └── use-settings.test.ts
-└── services/
-    └── embeddings.test.ts
-```
+- **Unit Tests**: Hooks, services, utilities (Vitest)
+- **Component Tests**: UI components, feature components (React Testing Library)
+- **E2E Tests**: Critical user flows (Playwright)
 
 ### Running Tests
 
@@ -238,12 +234,18 @@ tests/
 # Run all tests
 npm run test
 
-# Run specific test file
-npm run test tests/components/shared/glass-card.test.tsx
+# Run with UI
+npm run test:ui
 
 # Run with coverage
 npm run test:coverage
+
+# E2E tests
+npm run test:e2e
+npm run test:e2e:ui
 ```
+
+📖 **Testing Guide**: [docs/06-contributing/guide.md](./docs/06-contributing/guide.md)
 
 ---
 
@@ -253,13 +255,14 @@ npm run test:coverage
 |----------|-----------|
 | **Getting Started** | [Installation](./docs/01-getting-started/installation.md) • [Development](./docs/01-getting-started/development.md) |
 | **Architecture** | [Overview](./docs/ARCHITECTURE.md) • [Diagrams](./docs/02-architecture/diagrams.md) |
-| **Core Features** | [Vector Embeddings](./docs/03-core-features/vector-embeddings/overview.md) • [AI Assistant](./docs/03-core-features/ai-assistant/overview.md) |
-| **Infrastructure** | [Python Worker](./docs/04-infrastructure/python-worker/overview.md) • [Database](./docs/04-infrastructure/database/overview.md) |
-| **Deployment** | [Guide](./docs/DEPLOYMENT.md) • [Overview](./docs/05-deployment/overview.md) • [Docker Scripts](./docs/05-deployment/docker-scripts.md) |
+| **Core Features** | [Vector Embeddings](./docs/03-core-features/vector-embeddings/overview.md) • [AI Assistant](./docs/03-core-features/ai-assistant/overview.md) • [Matching](./docs/03-core-features/matching-system.md) • [Messaging](./docs/03-core-features/messaging.md) |
+| **Infrastructure** | [Python Worker](./docs/04-infrastructure/python-worker/overview.md) • [Database](./docs/04-infrastructure/database/schema.md) • [Security](./docs/04-infrastructure/security-status.md) • [Monitoring](./docs/04-infrastructure/monitoring.md) |
+| **Deployment** | [Complete Guide](./docs/DEPLOYMENT.md) • [Overview](./docs/05-deployment/overview.md) • [Docker Scripts](./docs/05-deployment/docker-scripts.md) • [Checklist](./docs/05-deployment/checklist.md) |
 | **API Reference** | [Complete API Docs](./docs/API-REFERENCE.md) |
-| **Contributing** | [Guide](./docs/06-contributing/guide.md) |
-| **Reference** | [Environment Variables](./docs/07-reference/environment-variables.md) • [Commands](./docs/07-reference/commands.md) |
+| **Contributing** | [Guide](./docs/06-contributing/guide.md) • [Git Workflow](./docs/06-contributing/git-workflow.md) |
+| **Reference** | [Environment Variables](./docs/07-reference/environment-variables.md) • [Commands](./docs/07-reference/commands.md) • [Troubleshooting](./docs/07-reference/troubleshooting.md) |
 | **Security** | [Security Features](./docs/SECURITY.md) |
+| **Monitoring** | [Observability Guide](./docs/MONITORING.md) |
 
 ---
 
