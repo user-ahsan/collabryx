@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { withAudit } from './audit.server'
 
 // ===========================================
 // CONNECTIONS SERVER ACTIONS
@@ -33,31 +34,41 @@ export async function sendConnectionRequest(targetUserId: string) {
     return { error: 'Connection already exists or request pending' }
   }
 
-  const { data: request, error } = await supabase
-    .from('connections')
-    .insert({
-      user_id: user.id,
-      connected_to: targetUserId,
-      status: 'pending',
-    })
-    .select()
-    .single()
+  const { data: request, error } = await withAudit(
+    async () => {
+      const { data, error } = await supabase
+        .from('connections')
+        .insert({
+          user_id: user.id,
+          connected_to: targetUserId,
+          status: 'pending',
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      // Create notification for the recipient
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: targetUserId,
+          type: 'connection_request',
+          title: 'New Connection Request',
+          content: `${user.id} wants to connect with you`,
+          action_url: `/requests`,
+        })
+      
+      return data
+    },
+    'connection_request_send',
+    user.id
+  )
 
   if (error) {
     console.error('Failed to send connection request:', error)
     return { error: 'Failed to send connection request' }
   }
-
-  // Create notification for the recipient
-  await supabase
-    .from('notifications')
-    .insert({
-      user_id: targetUserId,
-      type: 'connection_request',
-      title: 'New Connection Request',
-      content: `${user.id} wants to connect with you`,
-      action_url: `/requests`,
-    })
 
   revalidatePath('/requests')
   revalidatePath(`/profile/${targetUserId}`)
@@ -87,25 +98,31 @@ export async function acceptConnectionRequest(requestId: string) {
     return { error: 'Request not found' }
   }
 
-  const { error } = await supabase
-    .from('connections')
-    .update({ status: 'accepted' })
-    .eq('id', requestId)
+  await withAudit(
+    async () => {
+      const { error } = await supabase
+        .from('connections')
+        .update({ status: 'accepted' })
+        .eq('id', requestId)
 
-  if (error) {
-    return { error: 'Failed to accept request' }
-  }
+      if (error) throw error
 
-  // Create notification for the sender
-  await supabase
-    .from('notifications')
-    .insert({
-      user_id: request.user_id,
-      type: 'connection_accepted',
-      title: 'Connection Accepted',
-      content: `${user.id} accepted your connection request`,
-      action_url: `/profile/${user.id}`,
-    })
+      // Create notification for the sender
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: request.user_id,
+          type: 'connection_accepted',
+          title: 'Connection Accepted',
+          content: `${user.id} accepted your connection request`,
+          action_url: `/profile/${user.id}`,
+        })
+      
+      return { success: true }
+    },
+    'connection_request_accept',
+    user.id
+  )
 
   revalidatePath('/requests')
   revalidatePath('/dashboard')

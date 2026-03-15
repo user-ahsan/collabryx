@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { withAudit } from './audit.server'
 
 // ===========================================
 // MATCHES SERVER ACTIONS
@@ -30,44 +31,50 @@ export async function acceptMatch(matchId: string) {
     return { error: 'Match not found' }
   }
 
-  // Update match status
-  const { error } = await supabase
-    .from('match_suggestions')
-    .update({ status: 'connected' })
-    .eq('id', matchId)
+  await withAudit(
+    async () => {
+      // Update match status
+      const { error } = await supabase
+        .from('match_suggestions')
+        .update({ status: 'connected' })
+        .eq('id', matchId)
 
-  if (error) {
-    return { error: 'Failed to accept match' }
-  }
+      if (error) throw error
 
-  // Create connection
-  await supabase
-    .from('connections')
-    .insert({
-      user_id: user.id,
-      connected_to: match.matched_user_id,
-      status: 'accepted',
-    })
+      // Create connection
+      await supabase
+        .from('connections')
+        .insert({
+          user_id: user.id,
+          connected_to: match.matched_user_id,
+          status: 'accepted',
+        })
 
-  // Create notification for the matched user
-  await supabase
-    .from('notifications')
-    .insert({
-      user_id: match.matched_user_id,
-      type: 'match_accepted',
-      title: 'Match Accepted!',
-      content: `${user.id} accepted your match suggestion`,
-      action_url: `/profile/${user.id}`,
-    })
+      // Create notification for the matched user
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: match.matched_user_id,
+          type: 'match_accepted',
+          title: 'Match Accepted!',
+          content: `${user.id} accepted your match suggestion`,
+          action_url: `/profile/${user.id}`,
+        })
 
-  // Record match activity
-  await supabase
-    .from('match_activity')
-    .insert({
-      user_id: user.id,
-      matched_user_id: match.matched_user_id,
-      activity_type: 'accepted',
-    })
+      // Record match activity
+      await supabase
+        .from('match_activity')
+        .insert({
+          user_id: user.id,
+          matched_user_id: match.matched_user_id,
+          activity_type: 'accepted',
+        })
+      
+      return { success: true }
+    },
+    'match_accept',
+    user.id
+  )
 
   revalidatePath('/matches')
   revalidatePath('/dashboard')

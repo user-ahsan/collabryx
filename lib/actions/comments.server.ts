@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import type { CommentReactionType } from '@/types/actions'
+import { withAudit } from './audit.server'
 
 // ===========================================
 // COMMENTS SERVER ACTIONS
@@ -36,32 +37,42 @@ export async function createComment(formData: FormData) {
     return { error: 'Invalid input', details: validated.error.issues }
   }
 
-  const { data: comment, error } = await supabase
-    .from('comments')
-    .insert({
-      post_id: validated.data.post_id,
-      author_id: user.id,
-      content: validated.data.content,
-      parent_id: validated.data.parent_id,
-    })
-    .select()
-    .single()
+  const { data: comment, error } = await withAudit(
+    async () => {
+      const { data, error } = await supabase
+        .from('comments')
+        .insert({
+          post_id: validated.data.post_id,
+          author_id: user.id,
+          content: validated.data.content,
+          parent_id: validated.data.parent_id,
+        })
+        .select()
+        .single()
+      
+      if (error) throw error
+      
+      // Update comment count on post
+      const { count } = await supabase
+        .from('comments')
+        .select('*', { count: 'exact', head: true })
+        .eq('post_id', validated.data.post_id)
+
+      await supabase
+        .from('posts')
+        .update({ comment_count: count || 0 })
+        .eq('id', validated.data.post_id)
+      
+      return data
+    },
+    'comment_create',
+    user.id
+  )
 
   if (error) {
     console.error('Failed to create comment:', error)
     return { error: 'Failed to create comment' }
   }
-
-  // Update comment count on post
-  const { count } = await supabase
-    .from('comments')
-    .select('*', { count: 'exact', head: true })
-    .eq('post_id', validated.data.post_id)
-
-  await supabase
-    .from('posts')
-    .update({ comment_count: count || 0 })
-    .eq('id', validated.data.post_id)
 
   revalidatePath(`/post/${validated.data.post_id}`)
   
@@ -129,25 +140,31 @@ export async function deleteComment(commentId: string) {
     return { error: 'Comment not found or unauthorized' }
   }
 
-  const { error } = await supabase
-    .from('comments')
-    .delete()
-    .eq('id', commentId)
+  await withAudit(
+    async () => {
+      const { error } = await supabase
+        .from('comments')
+        .delete()
+        .eq('id', commentId)
 
-  if (error) {
-    return { error: 'Failed to delete comment' }
-  }
+      if (error) throw error
 
-  // Update comment count
-  const { count } = await supabase
-    .from('comments')
-    .select('*', { count: 'exact', head: true })
-    .eq('post_id', existingComment.post_id)
+      // Update comment count
+      const { count } = await supabase
+        .from('comments')
+        .select('*', { count: 'exact', head: true })
+        .eq('post_id', existingComment.post_id)
 
-  await supabase
-    .from('posts')
-    .update({ comment_count: count || 0 })
-    .eq('id', existingComment.post_id)
+      await supabase
+        .from('posts')
+        .update({ comment_count: count || 0 })
+        .eq('id', existingComment.post_id)
+      
+      return { success: true }
+    },
+    'comment_delete',
+    user.id
+  )
 
   revalidatePath(`/post/${existingComment.post_id}`)
   
