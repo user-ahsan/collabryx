@@ -28,14 +28,19 @@ export function useEmbeddingQueueStatus(userId: string) {
     if (initialized.current) return;
     initialized.current = true;
 
-    if (!userId) {
-      // Initialize with null status when no userId
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- Initialization pattern
-      setStatus({ pending: false, processing: false, completed: false, failed: false });
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- Initialization pattern
-      setLoading(false);
-      return;
-    }
+    // Initialize status when userId changes
+    const initializeStatus = () => {
+      if (!userId) {
+        setStatus({ pending: false, processing: false, completed: false, failed: false });
+        setLoading(false);
+        return;
+      }
+      
+      // Load actual status for valid userId
+      loadStatus();
+    };
+    
+    initializeStatus();
 
     const supabase = createClient();
     let isMounted = true;

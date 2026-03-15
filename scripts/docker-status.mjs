@@ -48,7 +48,7 @@ function exec(command, options = {}) {
       stdio: 'pipe',
       ...options
     });
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }
@@ -57,7 +57,7 @@ function getContainerStatus() {
   try {
     const status = exec(`cd "${CONFIG.workerDir}" && docker-compose ps`);
     return status.trim();
-  } catch (error) {
+  } catch (_error) {
     return '';
   }
 }
@@ -66,7 +66,7 @@ function getImageInfo() {
   try {
     const info = exec(`docker images ${CONFIG.imageName} --format "{{.Repository}}:{{.Tag}} - Created: {{.CreatedAt}} - Size: {{.Size}}"`);
     return info.trim();
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }
@@ -75,7 +75,7 @@ function getContainerStats() {
   try {
     const stats = exec(`docker stats ${CONFIG.serviceName} --no-stream --format "CPU: {{.CPUPerc}}, Memory: {{.MemUsage}}, Network I/O: {{.NetIO}}"`);
     return stats.trim();
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }
@@ -84,7 +84,7 @@ function getNetworkInfo() {
   try {
     const networks = exec(`cd "${CONFIG.workerDir}" && docker-compose ps --format json`);
     return networks.trim();
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }
@@ -93,7 +93,7 @@ function getVolumeInfo() {
   try {
     const volumes = exec('docker volume ls --format "{{.Name}}"');
     return volumes.trim().split('\n').filter(v => v.includes('collabryx') || v.includes('python-worker'));
-  } catch (error) {
+  } catch (_error) {
     return [];
   }
 }
@@ -185,31 +185,56 @@ async function displayStatus() {
   log('\n🏥 Health Endpoint:', 'blue');
   try {
     const response = await new Promise((resolve, reject) => {
-      http.get('http://localhost:8000/health', { timeout: 2000 }, (res) => {
+      http.get(CONFIG.healthEndpoint, { timeout: 2000 }, (res) => {
         let data = '';
-        res.on('data', chunk => data += chunk);
-        res.on('end', () => resolve({ statusCode: res.statusCode, data }));
-      }).on('error', reject);
+        res.on('data', (chunk) => data += chunk);
+        res.on('end', () => {
+          try {
+            const jsonData = JSON.parse(data);
+            resolve({
+              statusCode: res.statusCode,
+              data: jsonData
+            });
+          } catch {
+            resolve({
+              statusCode: res.statusCode,
+              data: data
+            });
+          }
+        });
+      }).on('error', (err) => reject(err));
     });
     
-    if (response.statusCode === 200) {
-      const health = JSON.parse(response.data);
-      log(`   Status: ${health.status || 'unknown'}`, 'green');
-      if (health.model_info) {
-        log(`   Model: ${health.model_info.model_name}`, 'cyan');
-      }
+    if (response.statusCode === 200 && response.data.status === 'healthy') {
+      log('✅ Worker is healthy', 'green');
+      log(JSON.stringify(response.data, null, 2), 'dim');
     } else {
-      log(`   HTTP ${response.statusCode}`, 'yellow');
+      log('⚠️  Worker responded but may not be healthy', 'yellow');
+      log(JSON.stringify(response, null, 2), 'dim');
     }
-  } catch (error) {
-    log('   Unreachable', 'red');
+  } catch {
+    log('❌ Health check failed', 'red');
   }
   
-  log('\n' + '='.repeat(60) + '\n', 'cyan');
+  log(''); // Empty line
+  log('='.repeat(60), 'cyan');
 }
 
 function main() {
-  displayStatus();
+  log('\n' + '='.repeat(60), 'cyan');
+  log('🐳 Docker Status - Python Worker Embedding Service', 'cyan');
+  log('='.repeat(60) + '\n', 'cyan');
+  
+  // Container Status
+  log('📦 Container Status:', 'blue');
+  const containerStatus = getContainerStatus();
+  if (containerStatus) {
+    log(containerStatus, 'green');
+  } else {
+    log('   No containers running', 'yellow');
+  }
+  
+  log('\n' + '='.repeat(60) + '\n', 'cyan');
 }
 
 // Handle errors

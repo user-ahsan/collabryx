@@ -11,9 +11,8 @@
  * - Provides clear status messages
  */
 
-import { execSync, spawn } from 'child_process';
+import { execSync } from 'child_process';
 import path from 'path';
-import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -63,7 +62,7 @@ function checkDocker() {
     exec('docker --version');
     log('✅ Docker is installed', 'green');
     return true;
-  } catch (error) {
+  } catch (_error) {
     log('❌ Docker is not installed or not running', 'red');
     log('Please install Docker Desktop: https://www.docker.com/products/docker-desktop', 'yellow');
     process.exit(1);
@@ -74,7 +73,7 @@ function checkDockerRunning() {
   try {
     exec('docker ps');
     return true;
-  } catch (error) {
+  } catch (_error) {
     log('❌ Docker daemon is not running', 'red');
     log('Please start Docker Desktop', 'yellow');
     process.exit(1);
@@ -85,7 +84,7 @@ function imageExists() {
   try {
     const output = exec(`docker images -q ${CONFIG.imageName}`);
     return output.trim().length > 0;
-  } catch (error) {
+  } catch (_error) {
     return false;
   }
 }
@@ -101,9 +100,8 @@ function buildImage() {
     const result = exec(buildCommand, { stdio: 'inherit' });
     log('✅ Image built successfully', 'green');
     return true;
-  } catch (error) {
+  } catch (_error) {
     log('❌ Failed to build Docker image', 'red');
-    log(error.message, 'yellow');
     process.exit(1);
   }
 }
@@ -146,79 +144,36 @@ function checkHealth() {
   });
 }
 
-function getContainerStatus() {
-  try {
-    const status = exec(`cd "${CONFIG.workerDir}" && docker-compose ps`);
-    return status;
-  } catch (error) {
-    return 'Container not running';
-  }
-}
-
-async function waitForHealth() {
-  log('🏥 Checking service health...', 'cyan');
-  
-  try {
-    await checkHealth();
-    log('✅ Service is healthy and ready!', 'green');
-    return true;
-  } catch (error) {
-    log('❌ Service health check failed', 'red');
-    log('Container status:', 'yellow');
-    log(getContainerStatus(), 'yellow');
-    log('\nTo view logs, run: npm run docker:logs', 'yellow');
-    process.exit(1);
-  }
-}
-
-function showSuccess() {
-  log('\n' + '='.repeat(60), 'green');
-  log('🎉 Docker container is up and running!', 'green');
-  log('='.repeat(60), 'green');
-  log(`\n📊 Service: ${CONFIG.serviceName}`, 'cyan');
-  log(`🌐 Health: ${CONFIG.healthEndpoint}`, 'cyan');
-  log(`📝 Logs: npm run docker:logs`, 'cyan');
-  log(`🛑 Stop: npm run docker:down`, 'cyan');
-  log(`\n${getContainerStatus()}`, 'blue');
-  log('='.repeat(60) + '\n', 'green');
-}
-
 async function main() {
+  const args = process.argv.slice(2);
+  const rebuild = args.includes('--rebuild') || args.includes('-r');
+  
   log('\n' + '='.repeat(60), 'cyan');
   log('🐳 Docker Up - Python Worker Embedding Service', 'cyan');
   log('='.repeat(60) + '\n', 'cyan');
   
-  // Step 1: Check Docker
+  // Check Docker
   checkDocker();
   checkDockerRunning();
   
-  // Step 2: Check if image exists, build if not
-  if (!imageExists()) {
-    log('📦 Image not found, building...', 'yellow');
+  // Build image if not exists or --rebuild flag
+  if (rebuild || !imageExists()) {
     buildImage();
-  } else {
-    log('✅ Docker image found', 'green');
   }
   
-  // Step 3: Start container
+  // Start container
   startContainer();
   
-  // Step 4: Wait for health check
-  await waitForHealth();
-  
-  // Step 5: Show success message
-  showSuccess();
+  // Wait for health check
+  try {
+    await checkHealth();
+    log('\n✅ Service is up and running!', 'green');
+    log(`🌐 Health endpoint: ${CONFIG.healthEndpoint}`, 'blue');
+  } catch (_error) {
+    log('\n❌ Service failed to start properly', 'red');
+    log('Check logs with: npm run docker:logs', 'yellow');
+    process.exit(1);
+  }
 }
-
-// Handle errors
-process.on('uncaughtException', (error) => {
-  log(`\n❌ Fatal error: ${error.message}`, 'red');
-  process.exit(1);
-});
-
-process.on('SIGINT', () => {
-  log('\n\n⚠️  Process interrupted by user', 'yellow');
-  process.exit(0);
-});
 
 main();
