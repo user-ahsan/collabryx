@@ -187,20 +187,7 @@ collabryx/
 | `npm run start` | Run production server |
 | `npm run lint` | Run ESLint for code quality |
 
-### Docker Commands (Python Worker)
-
-| Command | Description |
-|---------|-------------|
-| `npm run docker:up` | Start Python worker (auto-builds + health check) |
-| `npm run docker:down` | Stop Python worker gracefully |
-| `npm run docker:down:clean` | Stop + cleanup orphaned containers/networks |
-| `npm run docker:logs` | Stream real-time logs |
-| `npm run docker:logs:recent` | Show last 50 log lines |
-| `npm run docker:health` | Check service health |
-| `npm run docker:health:monitor` | Continuous health monitoring |
-| `npm run docker:status` | Comprehensive status report |
-| `npm run docker:restart` | Restart service |
-| `npm run docker:rebuild` | Force rebuild + restart |
+📖 **Docker commands:** [Docker Scripts](./docs/05-deployment/docker-scripts.md)
 
 ---
 
@@ -338,31 +325,6 @@ Collabryx uses **22 tables** in Supabase (PostgreSQL) with:
 | `profile_embeddings` | Vector embeddings (768 dim) |
 
 📖 **Complete schema:** [expected-objects/](./expected-objects/) • [Database Setup](./supabase/setup/)
-
----
-
-## 🔧 Docker Management
-
-The Python worker embedding service is managed through automated Docker scripts:
-
-```bash
-# Start service (auto-builds + health check)
-npm run docker:up
-
-# View logs
-npm run docker:logs
-
-# Check health
-npm run docker:health
-
-# Full status
-npm run docker:status
-
-# Stop service
-npm run docker:down
-```
-
-📖 **Complete guide:** [Docker Scripts Documentation](./docs/05-deployment/docker-scripts.md)
 
 ---
 
