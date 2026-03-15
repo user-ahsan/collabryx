@@ -5,7 +5,8 @@ import Image from "next/image"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, ChevronRight } from "lucide-react"
-import { Post, getPostTypeBadge } from "@/lib/mock-data/dashboard"
+import type { Post } from "@/types/database.types"
+import { getPostTypeBadge } from "@/lib/utils/post-helpers"
 import { PostHeader } from "./post-header"
 import { PostContent } from "./post-content"
 import { PostActions } from "./post-actions"
@@ -46,7 +47,7 @@ export function PostDetailDialog({
 
     if (!post) return null
 
-    const postTypeBadge = getPostTypeBadge(post.postType)
+    const postTypeBadge = getPostTypeBadge(post.post_type as any)
     const hasMedia = post.hasMedia && post.mediaUrls && post.mediaUrls.length > 0
 
     const handleScroll = () => {
