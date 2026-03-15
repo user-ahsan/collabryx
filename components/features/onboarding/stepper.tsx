@@ -63,7 +63,7 @@ export function Stepper({ steps, currentStep }: StepperProps) {
                 <div
                     className={cn(
                         "absolute left-0 top-0 h-1 rounded-full transition-all duration-500 ease-in-out",
-                        glass("buttonPrimary")
+                        "bg-primary/20 dark:bg-primary/30"
                     )}
                     style={{ width: `${(currentStep / (steps.length - 1)) * 100}%` }}
                 />
