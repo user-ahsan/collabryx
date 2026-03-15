@@ -322,6 +322,64 @@ COMMENT ON FUNCTION public.get_shared_interests(UUID, UUID) IS
 GRANT EXECUTE ON FUNCTION public.get_shared_interests(UUID, UUID) TO authenticated;
 
 -- ============================================================================
+-- SECTION 4B: EMBEDDING QUEUE HELPERS
+-- ============================================================================
+
+-- --------------------------------------------
+-- FUNCTION: queue_embedding_request
+-- --------------------------------------------
+-- Queues an embedding request for a user (called from onboarding)
+CREATE OR REPLACE FUNCTION public.queue_embedding_request(
+    p_user_id UUID,
+    p_trigger_source TEXT DEFAULT 'manual'
+)
+RETURNS JSON AS $$
+DECLARE
+    v_queue_id UUID;
+    v_already_exists BOOLEAN;
+BEGIN
+    -- Check if already queued or completed
+    SELECT EXISTS (
+        SELECT 1 FROM public.profile_embeddings 
+        WHERE user_id = p_user_id 
+        AND status IN ('pending', 'processing', 'completed')
+    ) INTO v_already_exists;
+    
+    IF v_already_exists THEN
+        RETURN json_build_object(
+            'success', true,
+            'already_queued', true,
+            'message', 'Embedding already exists or is being processed'
+        );
+    END IF;
+    
+    -- Insert into pending queue
+    INSERT INTO public.embedding_pending_queue (user_id, trigger_source)
+    VALUES (p_user_id, p_trigger_source)
+    RETURNING id INTO v_queue_id;
+    
+    -- Also create placeholder in profile_embeddings
+    INSERT INTO public.profile_embeddings (user_id, status)
+    VALUES (p_user_id, 'pending')
+    ON CONFLICT (user_id) DO UPDATE SET
+        status = 'pending',
+        last_updated = NOW();
+    
+    RETURN json_build_object(
+        'success', true,
+        'queued', true,
+        'queue_id', v_queue_id,
+        'message', 'Embedding request queued successfully'
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+COMMENT ON FUNCTION public.queue_embedding_request(UUID, TEXT) IS 
+'Queue an embedding request for a user. Returns success status and queue ID.';
+
+GRANT EXECUTE ON FUNCTION public.queue_embedding_request(UUID, TEXT) TO authenticated;
+
+-- ============================================================================
 -- SECTION 5: UTILITY FUNCTIONS
 -- ============================================================================
 
@@ -397,7 +455,8 @@ GRANT EXECUTE ON FUNCTION public.get_profile_completion_percentage(UUID) TO auth
 -- SETUP COMPLETE
 -- ============================================================================
 --
--- ✅ 10 helper functions added:
+-- ✅ 11 helper functions added:
+--    - queue_embedding_request() [NEW]
 --    - get_pending_connection_count()
 --    - get_connection_status()
 --    - create_notification()
@@ -415,9 +474,13 @@ GRANT EXECUTE ON FUNCTION public.get_profile_completion_percentage(UUID) TO auth
 -- - Edge Functions
 -- - Python worker
 -- - RLS policies
+-- - Server actions
 --
 -- EXAMPLES:
 -- 
+-- -- Queue embedding request (onboarding)
+-- SELECT queue_embedding_request(auth.uid(), 'onboarding');
+--
 -- -- Get pending connection requests
 -- SELECT get_pending_connection_count(auth.uid());
 --
