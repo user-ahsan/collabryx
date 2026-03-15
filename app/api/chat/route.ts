@@ -16,14 +16,18 @@ const ChatRequestSchema = z.object({
   }).optional(),
 })
 
-// Initialize AI clients
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+// Lazy initialization - only create clients when route is called
+function getOpenAI() {
+  const apiKey = process.env.OPENAI_API_KEY
+  if (!apiKey) throw new Error('OPENAI_API_KEY is not configured')
+  return new OpenAI({ apiKey })
+}
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
+function getAnthropic() {
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  if (!apiKey) throw new Error('ANTHROPIC_API_KEY is not configured')
+  return new Anthropic({ apiKey })
+}
 
 function getProvider(): 'openai' | 'anthropic' {
   if (process.env.ANTHROPIC_API_KEY) return 'anthropic'
@@ -118,7 +122,8 @@ Be concise, encouraging, and practical. Focus on actionable advice.`
         content: m.content,
       })) || []
       
-      const response = await anthropic.messages.create({
+      const anthropicClient = getAnthropic()
+      const response = await anthropicClient.messages.create({
         model: 'claude-3-haiku-20240307',
         max_tokens: 1000,
         messages: anthropicMessages,
@@ -137,7 +142,8 @@ Be concise, encouraging, and practical. Focus on actionable advice.`
         })) || []
       ]
       
-      const response = await openai.chat.completions.create({
+      const openaiClient = getOpenAI()
+      const response = await openaiClient.chat.completions.create({
         model: 'gpt-4-turbo-preview',
         messages: openaiMessages,
         max_tokens: 1000,
