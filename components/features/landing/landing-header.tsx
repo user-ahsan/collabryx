@@ -70,14 +70,12 @@ export const LandingHeader: React.FC = () => {
 
                 {/* Mobile menu button */}
                 <div className="flex lg:hidden">
-                    <button
-                        type="button"
-                        className="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-foreground"
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="-m-2.5 h-10 w-10"
                         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                     >
-                        <span className="sr-only">
-                            {mobileMenuOpen ? "Close menu" : "Open menu"}
-                        </span>
                         {mobileMenuOpen ? (
                             <svg
                                 className="h-6 w-6"
@@ -107,7 +105,10 @@ export const LandingHeader: React.FC = () => {
                                 />
                             </svg>
                         )}
-                    </button>
+                        <span className="sr-only">
+                            {mobileMenuOpen ? "Close menu" : "Open menu"}
+                        </span>
+                    </Button>
                 </div>
 
                 {/* Desktop navigation */}
