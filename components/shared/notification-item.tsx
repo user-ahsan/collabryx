@@ -40,7 +40,9 @@ export function NotificationItem({ notification }: NotificationItemProps) {
 
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation()
-    await deleteNotification.mutateAsync(notification.id)
+    if (confirm("Are you sure you want to delete this notification?")) {
+      await deleteNotification.mutateAsync(notification.id)
+    }
   }
 
   const getNotificationIcon = (type: string) => {

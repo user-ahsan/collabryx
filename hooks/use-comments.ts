@@ -84,6 +84,8 @@ export function useCreateComment(postId: string) {
     onSuccess: () => {
       // Invalidate comments query to refetch
       queryClient.invalidateQueries({ queryKey: COMMENT_QUERY_KEYS.byPost(postId) })
+      // Also invalidate posts feed to update comment counts
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
     },
   })
 }
@@ -137,6 +139,8 @@ export function useLikeComment(postId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: COMMENT_QUERY_KEYS.byPost(postId) })
+      // Also invalidate posts feed to update comment counts
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
     },
   })
 }
@@ -163,6 +167,8 @@ export function useUnlikeComment(postId: string) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: COMMENT_QUERY_KEYS.byPost(postId) })
+      // Also invalidate posts feed to update comment counts
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
     },
   })
 }
@@ -229,8 +235,10 @@ export function useToggleLikeComment(postId: string) {
       }
     },
     onSettled: () => {
-      // Always refetch after mutation to ensure sync
+      // Always refetch after mutation
       queryClient.invalidateQueries({ queryKey: COMMENT_QUERY_KEYS.byPost(postId) })
+      // Also invalidate posts feed to update comment counts
+      queryClient.invalidateQueries({ queryKey: ['posts'] })
     },
   })
 }
