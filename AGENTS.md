@@ -540,18 +540,35 @@ The Python worker is the primary embedding generation service, running in Docker
 - **Health Check:** `/health` endpoint with queue metrics
 - **Resource Limits:** 2 CPU, 2GB memory
 
-**Local Development:**
+**Local Development (Automated Scripts):**
+```bash
+# Start with auto-build + health check
+npm run docker:up
+
+# Stop gracefully
+npm run docker:down
+
+# View logs (real-time)
+npm run docker:logs
+
+# Check health
+npm run docker:health
+
+# Full status report
+npm run docker:status
+
+# Restart service
+npm run docker:restart
+
+# Force rebuild
+npm run docker:rebuild
+```
+
+**Manual Docker Commands (Legacy):**
 ```bash
 cd python-worker
 docker-compose up -d
-
-# Verify health
-curl http://localhost:8000/health
-
-# View logs
 docker-compose logs -f
-
-# Stop container
 docker-compose down
 ```
 
