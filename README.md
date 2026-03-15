@@ -79,7 +79,7 @@
 ### Prerequisites
 
 - **Node.js 20+** (LTS)
-- **npm** or **yarn** or **bun**
+- **npm 10+** (required, yarn/bun not supported)
 - **Git**
 - **Python 3.9+** (optional, for embedding worker)
 
@@ -168,7 +168,7 @@ collabryx/
 ├── python-worker/             # Python embedding service
 ├── supabase/
 │   ├── functions/             # Edge Functions (Deno)
-│   └── setup/                 # Database schema (22 tables)
+│   └── setup/                 # Database schema (26+ tables)
 ├── public/                    # Static assets
 ├── types/                     # TypeScript types
 └── expected-objects/          # Backend schema specs
@@ -186,8 +186,30 @@ collabryx/
 | `npm run build` | Build production-ready application |
 | `npm run start` | Run production server |
 | `npm run lint` | Run ESLint for code quality |
+| `npm run typecheck` | Run TypeScript type checking |
+
+### Docker Commands (Python Worker)
+
+| Command | Description |
+|---------|-------------|
+| `npm run docker:up` | Start Python worker with auto-build |
+| `npm run docker:down` | Stop Python worker |
+| `npm run docker:logs` | View worker logs (real-time) |
+| `npm run docker:health` | Check worker health status |
+| `npm run docker:status` | Full status report |
+| `npm run docker:rebuild` | Force rebuild worker |
 
 📖 **Docker commands:** [Docker Scripts](./docs/05-deployment/docker-scripts.md)
+
+### Edge Functions
+
+| Command | Description |
+|---------|-------------|
+| `npx supabase functions serve` | Run Edge Functions locally |
+| `npx supabase functions deploy <name>` | Deploy Edge Function |
+| `npx supabase functions list` | List all Edge Functions |
+
+📖 **Edge Functions:** [supabase/functions/](./supabase/functions/)
 
 ---
 
@@ -230,12 +252,14 @@ npm run test:coverage
 | Category | Documents |
 |----------|-----------|
 | **Getting Started** | [Installation](./docs/01-getting-started/installation.md) • [Development](./docs/01-getting-started/development.md) |
-| **Architecture** | [Overview](./docs/02-architecture/overview.md) |
+| **Architecture** | [Overview](./docs/ARCHITECTURE.md) • [Diagrams](./docs/02-architecture/diagrams.md) |
 | **Core Features** | [Vector Embeddings](./docs/03-core-features/vector-embeddings/overview.md) • [AI Assistant](./docs/03-core-features/ai-assistant/overview.md) |
 | **Infrastructure** | [Python Worker](./docs/04-infrastructure/python-worker/overview.md) • [Database](./docs/04-infrastructure/database/overview.md) |
-| **Deployment** | [Overview](./docs/05-deployment/overview.md) • [Docker Scripts](./docs/05-deployment/docker-scripts.md) |
+| **Deployment** | [Guide](./docs/DEPLOYMENT.md) • [Overview](./docs/05-deployment/overview.md) • [Docker Scripts](./docs/05-deployment/docker-scripts.md) |
+| **API Reference** | [Complete API Docs](./docs/API-REFERENCE.md) |
 | **Contributing** | [Guide](./docs/06-contributing/guide.md) |
 | **Reference** | [Environment Variables](./docs/07-reference/environment-variables.md) • [Commands](./docs/07-reference/commands.md) |
+| **Security** | [Security Features](./docs/SECURITY.md) |
 
 ---
 
@@ -298,12 +322,13 @@ NODE_ENV=development
 
 ## 📊 Database
 
-Collabryx uses **22 tables** in Supabase (PostgreSQL) with:
+Collabryx uses **26+ tables** in Supabase (PostgreSQL) with:
 
 - Row Level Security (RLS) on all tables
 - Realtime subscriptions enabled
 - Automatic embedding generation triggers
 - Optimized indexes for performance
+- pgvector for vector similarity search
 
 ### Core Tables
 
@@ -322,9 +347,11 @@ Collabryx uses **22 tables** in Supabase (PostgreSQL) with:
 | `conversations` | Chat conversations |
 | `messages` | Chat messages |
 | `notifications` | User notifications |
-| `profile_embeddings` | Vector embeddings (768 dim) |
+| `profile_embeddings` | Vector embeddings (384 dim) |
+| `embedding_dead_letter_queue` | Failed embedding retries |
+| `embedding_pending_queue` | Onboarding embedding queue |
 
-📖 **Complete schema:** [expected-objects/](./expected-objects/) • [Database Setup](./supabase/setup/)
+📖 **Complete schema:** [expected-objects/](./expected-objects/) • [Database Setup](./supabase/setup/) • [Architecture](./docs/ARCHITECTURE.md)
 
 ---
 
