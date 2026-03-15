@@ -55,7 +55,7 @@ function checkDocker() {
   try {
     execSync('docker --version', { stdio: 'pipe' });
     return true;
-  } catch (error) {
+  } catch (_error) {
     log('❌ Docker is not installed or not running', 'red');
     process.exit(1);
   }
@@ -65,7 +65,7 @@ function getContainerStatus() {
   try {
     const status = exec(`cd "${CONFIG.workerDir}" && docker-compose ps`);
     return status.trim();
-  } catch (error) {
+  } catch (_error) {
     return '';
   }
 }
@@ -78,9 +78,8 @@ function stopContainers() {
     exec(downCommand, { stdio: 'inherit' });
     log('✅ Containers stopped', 'green');
     return true;
-  } catch (error) {
-    log('⚠️  Warning: Failed to stop containers cleanly', 'yellow');
-    log(error.message, 'yellow');
+  } catch (_error) {
+    log('❌ Failed to stop containers', 'red');
     return false;
   }
 }
@@ -92,7 +91,7 @@ function removeOrphanedContainers() {
     // Remove stopped containers
     exec('docker container prune -f', { stdio: 'pipe' });
     log('✅ Orphaned containers removed', 'green');
-  } catch (error) {
+  } catch (_error) {
     log('⚠️  Warning: Failed to remove orphaned containers', 'yellow');
   }
 }
@@ -103,7 +102,7 @@ function removeUnusedNetworks() {
   try {
     exec('docker network prune -f', { stdio: 'pipe' });
     log('✅ Unused networks removed', 'green');
-  } catch (error) {
+  } catch (_error) {
     log('⚠️  Warning: Failed to remove unused networks', 'yellow');
   }
 }
@@ -114,7 +113,7 @@ function showDiskUsage() {
   try {
     const usage = exec('docker system df');
     log(usage, 'blue');
-  } catch (error) {
+  } catch (_error) {
     log('Unable to get disk usage', 'yellow');
   }
 }

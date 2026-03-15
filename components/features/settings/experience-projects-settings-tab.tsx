@@ -152,8 +152,8 @@ const [experiences, setExperiences] = useState<Experience[]>([])
             const expsToInsert = experiences
                 .filter(e => e.title || e.company)
                 .map(e => {
-                    const { id: _unusedId, ...rest } = e
-                    return { user_id: userId, ...rest }
+                    const { id: _id, ...rest } = e;
+                    return { user_id: userId, ...rest };
                 })
 
             const { error: delExpErr } = await supabase.from('user_experiences').delete().eq('user_id', userId)
@@ -167,8 +167,8 @@ const [experiences, setExperiences] = useState<Experience[]>([])
             const projsToInsert = projects
                 .filter(p => p.title)
                 .map(p => {
-                    const { id: _unusedId, ...rest } = p
-                    return { user_id: userId, ...rest }
+                    const { id: _id, ...rest } = p;
+                    return { user_id: userId, ...rest };
                 })
 
             const { error: delProjErr } = await supabase.from('user_projects').delete().eq('user_id', userId)
