@@ -11,6 +11,7 @@ export interface PostsQueryOptions {
   authorId?: string
   postType?: Post["post_type"]
   includeAttachments?: boolean
+  random?: boolean  // Fetch random posts (for new users without embeddings)
 }
 
 export interface CreatePostInput {
@@ -85,22 +86,34 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
         )
       `)
       .eq("is_archived", false)
-      .order("created_at", { ascending: false })
 
-    if (options.limit) {
-      query = query.limit(options.limit)
-    }
+    // Random posts for new users (before embeddings are generated)
+    if (options.random) {
+      // Use ORDER BY RANDOM() for random sampling
+      query = query.order("random()", { ascending: true })
+      
+      if (options.limit) {
+        query = query.limit(options.limit)
+      }
+    } else {
+      // Default: ordered by creation date
+      query = query.order("created_at", { ascending: false })
 
-    if (options.offset) {
-      query = query.range(options.offset, options.offset + (options.limit || 20) - 1)
-    }
+      if (options.limit) {
+        query = query.limit(options.limit)
+      }
 
-    if (options.authorId) {
-      query = query.eq("author_id", options.authorId)
-    }
+      if (options.offset) {
+        query = query.range(options.offset, options.offset + (options.limit || 20) - 1)
+      }
 
-    if (options.postType) {
-      query = query.eq("post_type", options.postType)
+      if (options.authorId) {
+        query = query.eq("author_id", options.authorId)
+      }
+
+      if (options.postType) {
+        query = query.eq("post_type", options.postType)
+      }
     }
 
     const { data, error } = await query
