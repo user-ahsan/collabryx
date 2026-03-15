@@ -270,12 +270,12 @@ export function Feed() {
                                             }
                                         />
 
-                                        {/* Collapsible Comments */}
-                                        {expandedComments.has(post.id) && (
-                                            <div className="animate-in slide-in-from-top-2 duration-200 px-2 sm:px-4">
-                                                <CommentSection />
-                                            </div>
-                                        )}
+{/* Collapsible Comments */}
+{expandedComments.has(post.id) && (
+    <div className="animate-in slide-in-from-top-2 duration-200 px-2 sm:px-4">
+        <CommentSection postId={post.id} />
+    </div>
+)}
                                     </div>
                                 </PostCard>
                             </div>

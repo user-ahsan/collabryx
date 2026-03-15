@@ -63,7 +63,7 @@ export function PostDetailDialog({
 
     if (!post) return null
 
-    const postTypeBadge = getPostTypeBadge(post.post_type as any)
+    const postTypeBadge = getPostTypeBadge(post.post_type)
     const hasMedia = post.media_urls && post.media_urls.length > 0
 
     const handleScroll = () => {
@@ -228,12 +228,12 @@ export function PostDetailDialog({
 
                             <div className="h-px bg-border w-full shrink-0" />
 
-                            <ScrollArea className="flex-1 w-full px-4 sm:px-6 pt-4 pb-4 min-h-0">
-                                <div tabIndex={-1} autoFocus className="focus:outline-none w-full h-full">
-                                    <h4 className="text-sm font-semibold mb-4 text-foreground/80">Comments</h4>
-                                    <CommentSection />
-                                </div>
-                            </ScrollArea>
+<ScrollArea className="flex-1 w-full px-4 sm:px-6 pt-4 pb-4 min-h-0">
+    <div tabIndex={-1} autoFocus className="focus:outline-none w-full h-full">
+        <h4 className="text-sm font-semibold mb-4 text-foreground/80">Comments</h4>
+        <CommentSection postId={String(post.id)} />
+    </div>
+</ScrollArea>
                         </div>
                     </GlassCard>
                 ) : (
@@ -291,11 +291,11 @@ export function PostDetailDialog({
                         {/* Comments Flowing Downwards */}
                         <ScrollArea className="flex-1 min-h-0 w-full px-4 sm:px-6 md:px-8 pb-4">
                             <div className="ml-12 md:ml-14 focus:outline-none" tabIndex={-1} autoFocus>
-                                <h4 className="text-sm font-semibold mb-6 flex items-center gap-2 text-foreground/80">
-                                    Comments
-                                    <span className="bg-muted px-2 py-0.5 rounded-full text-xs text-muted-foreground font-medium">1.2k</span>
-                                </h4>
-                                <CommentSection />
+<h4 className="text-sm font-semibold mb-6 flex items-center gap-2 text-foreground/80">
+    Comments
+    <span className="bg-muted px-2 py-0.5 rounded-full text-xs text-muted-foreground font-medium">1.2k</span>
+</h4>
+<CommentSection postId={String(post.id)} />
                             </div>
                         </ScrollArea>
                     </GlassCard>

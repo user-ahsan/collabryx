@@ -1,0 +1,118 @@
+
+> collabryx@0.1.0 lint
+> eslint
+
+
+D:\Projects\collabryx\app\(auth)\assistant\page.tsx
+  68:12  warning  'sessions' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\app\(auth)\layout.tsx
+  26:22  warning  'isLoading' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  26:33  warning  'error' is assigned a value but never used      @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\app\(auth)\notifications\page.tsx
+   3:10  warning  'useState' is defined but never used                             @typescript-eslint/no-unused-vars
+  85:49  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+D:\Projects\collabryx\app\api\embeddings\retry-dlq\route.ts
+  2:26  warning  'createSupabaseClient' is defined but never used  @typescript-eslint/no-unused-vars
+  5:11  warning  'DLQItem' is defined but never used               @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\components\features\dashboard\comments\comment-section.tsx
+  15:7  warning  'COMMENT_REACTIONS' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\components\features\dashboard\create-post\create-post-modal.tsx
+  13:48  warning  'Send' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\components\features\dashboard\posts\post-detail-dialog.tsx
+  66:62  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Projects\collabryx\components\features\matches\why-match-modal.tsx
+  13:44  warning  'TrendingUp' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\components\features\onboarding\step-basic-info.tsx
+  3:36  warning  'useState' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\components\features\onboarding\step-experience.tsx
+  29:34  warning  'onSkip' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\components\features\settings\embedding-dlq-admin.tsx
+   40:6   warning  React Hook useEffect has missing dependencies: 'loadDLQItems' and 'supabase'. Either include them or remove the dependency array                                                                                                                                                         react-hooks/exhaustive-deps
+  195:27  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Projects\collabryx\components\features\settings\experience-projects-settings-tab.tsx
+   14:10  warning  'cn' is defined but never used           @typescript-eslint/no-unused-vars
+   15:10  warning  'glass' is defined but never used        @typescript-eslint/no-unused-vars
+  157:29  warning  'id' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  178:29  warning  'id' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\components\shared\notification-dropdown.tsx
+  21:40  warning  'open' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\hooks\use-embedding-queue-status.ts
+  34:7  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/set-state-in-effect')
+
+D:\Projects\collabryx\hooks\use-notifications.ts
+   67:9   warning  'queryClient' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  180:10  warning  'payload' is defined but never used               @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\hooks\use-posts.ts
+  10:15  warning  'PostWithAuthor' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\lib\actions\ai-mentor.ts
+  6:10  warning  'z' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\scripts\docker-down.js
+   13:22  error    A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+   14:14  error    A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+   54:12  warning  'error' is defined but never used        @typescript-eslint/no-unused-vars
+   64:12  warning  'error' is defined but never used        @typescript-eslint/no-unused-vars
+   91:12  warning  'error' is defined but never used        @typescript-eslint/no-unused-vars
+  102:12  warning  'error' is defined but never used        @typescript-eslint/no-unused-vars
+  113:12  warning  'error' is defined but never used        @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\scripts\docker-health.js
+  13:22  error    A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  14:14  error    A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  15:15  error    A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  16:14  error    A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  71:18  warning  'error' is defined but never used        @typescript-eslint/no-unused-vars
+  96:12  warning  'error' is defined but never used        @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\scripts\docker-logs.js
+   13:19  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+   14:14  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+  113:26  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+D:\Projects\collabryx\scripts\docker-status.js
+   13:22  error    A `require()` style import is forbidden     @typescript-eslint/no-require-imports
+   14:14  error    A `require()` style import is forbidden     @typescript-eslint/no-require-imports
+   45:12  warning  'error' is defined but never used           @typescript-eslint/no-unused-vars
+   54:12  warning  'error' is defined but never used           @typescript-eslint/no-unused-vars
+   63:12  warning  'error' is defined but never used           @typescript-eslint/no-unused-vars
+   72:12  warning  'error' is defined but never used           @typescript-eslint/no-unused-vars
+   77:10  warning  'getNetworkInfo' is defined but never used  @typescript-eslint/no-unused-vars
+   81:12  warning  'error' is defined but never used           @typescript-eslint/no-unused-vars
+   90:12  warning  'error' is defined but never used           @typescript-eslint/no-unused-vars
+   96:15  error    A `require()` style import is forbidden     @typescript-eslint/no-require-imports
+  167:12  warning  'error' is defined but never used           @typescript-eslint/no-unused-vars
+  183:18  error    A `require()` style import is forbidden     @typescript-eslint/no-require-imports
+  201:12  warning  'error' is defined but never used           @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\scripts\docker-up.js
+   14:19  warning  'spawn' is assigned a value but never used   @typescript-eslint/no-unused-vars
+   14:29  error    A `require()` style import is forbidden      @typescript-eslint/no-require-imports
+   15:14  error    A `require()` style import is forbidden      @typescript-eslint/no-require-imports
+   16:7   warning  'fs' is assigned a value but never used      @typescript-eslint/no-unused-vars
+   16:12  error    A `require()` style import is forbidden      @typescript-eslint/no-require-imports
+   62:12  warning  'error' is defined but never used            @typescript-eslint/no-unused-vars
+   73:12  warning  'error' is defined but never used            @typescript-eslint/no-unused-vars
+   84:12  warning  'error' is defined but never used            @typescript-eslint/no-unused-vars
+   97:11  warning  'result' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  130:20  error    A `require()` style import is forbidden      @typescript-eslint/no-require-imports
+  153:12  warning  'error' is defined but never used            @typescript-eslint/no-unused-vars
+  165:12  warning  'error' is defined but never used            @typescript-eslint/no-unused-vars
+
+✖ 66 problems (19 errors, 47 warnings)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+
