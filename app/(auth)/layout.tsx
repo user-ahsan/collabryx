@@ -6,7 +6,7 @@ import { MobileNav } from "@/components/shared/mobile-nav"
 import { SettingsDialog } from "@/components/features/settings/settings-dialog"
 import { cn } from "@/lib/utils"
 import { useLoginData } from "@/hooks/use-login-data"
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -26,6 +26,7 @@ function AuthLayoutContent({ children }: { children: React.ReactNode }) {
     const { isReady } = useLoginData()
     const router = useRouter()
     const [isChecking, setIsChecking] = useState(true)
+    const queryClient = useQueryClient()
 
     useEffect(() => {
         async function checkAuth() {
@@ -33,6 +34,8 @@ function AuthLayoutContent({ children }: { children: React.ReactNode }) {
             const { data: { session } } = await supabase.auth.getSession()
             
             if (!session) {
+                // Clear cache before redirecting to prevent data leakage
+                queryClient.clear()
                 router.push('/login')
                 return
             }
@@ -41,7 +44,7 @@ function AuthLayoutContent({ children }: { children: React.ReactNode }) {
         }
         
         checkAuth()
-    }, [router])
+    }, [router, queryClient])
 
     useEffect(() => {
         if (isReady) {

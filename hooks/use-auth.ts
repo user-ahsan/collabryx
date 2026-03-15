@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
 import type { User, Session } from "@supabase/supabase-js"
 import { useRouter } from "next/navigation"
+import { useQueryClient } from "@tanstack/react-query"
 
 interface UseAuthReturn {
     user: User | null
@@ -18,6 +19,7 @@ export function useAuth(): UseAuthReturn {
     const [isLoading, setIsLoading] = useState(true)
     const router = useRouter()
     const supabase = createClient()
+    const queryClient = useQueryClient()
 
     useEffect(() => {
         // Get initial session
@@ -48,9 +50,13 @@ export function useAuth(): UseAuthReturn {
 
     const signOut = useCallback(async () => {
         await supabase.auth.signOut()
+        
+        // CRITICAL: Clear React Query cache to prevent data leakage between users
+        queryClient.clear()
+        
         router.push("/login")
         router.refresh()
-    }, [supabase.auth, router])
+    }, [supabase.auth, router, queryClient])
 
     return { user, session, isLoading, signOut }
 }
