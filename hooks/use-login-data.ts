@@ -16,8 +16,8 @@ import { fetchMatches } from '@/lib/services/matches'
 export interface LoginData {
   posts: ReturnType<typeof fetchPosts>
   matches: ReturnType<typeof fetchMatches>
-  profile: any
-  notifications: any[]
+  profile: { id: string; [key: string]: unknown } | null
+  notifications: { id: string; [key: string]: unknown }[]
 }
 
 export function useLoginData() {
