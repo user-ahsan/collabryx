@@ -12,6 +12,54 @@ export interface BackendConfig {
   healthCheck?: () => Promise<boolean>
 }
 
+// Cache health checks for 30 seconds to avoid excessive polling
+const healthCache = new Map<string, { healthy: boolean; timestamp: number }>()
+const CACHE_TTL = 30000 // 30 seconds
+
+/**
+ * Check backend health with timeout
+ */
+async function checkHealth(url: string, timeoutMs = 5000): Promise<boolean> {
+  // Check cache first
+  const cached = healthCache.get(url)
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.healthy
+  }
+
+  try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+    
+    const response = await fetch(`${url}/health`, {
+      signal: controller.signal,
+      method: 'GET',
+    })
+    
+    clearTimeout(timeoutId)
+    
+    if (!response.ok) return false
+    
+    const data = await response.json()
+    const healthy = data.status === 'healthy'
+    
+    // Cache the result
+    healthCache.set(url, { healthy, timestamp: Date.now() })
+    
+    return healthy
+  } catch {
+    // Cache the failure
+    healthCache.set(url, { healthy: false, timestamp: Date.now() })
+    return false
+  }
+}
+
+/**
+ * Clear health cache (useful for testing or manual refresh)
+ */
+export function clearHealthCache(): void {
+  healthCache.clear()
+}
+
 /**
  * Get backend configuration
  * 
@@ -107,7 +155,7 @@ export async function getBackendConfig(): Promise<BackendConfig> {
       isHealthy,
       healthCheck: () => checkHealth(dockerUrl),
     }
-  } catch (error) {
+  } catch {
     console.log('⚠️ Docker backend not available, using Edge Function fallback')
     console.log('💡 Tip: Run "npm run docker:up" to start local backend')
     
@@ -116,30 +164,6 @@ export async function getBackendConfig(): Promise<BackendConfig> {
       mode: 'edge-only',
       isHealthy: false,
     }
-  }
-}
-
-/**
- * Check backend health with timeout
- */
-async function checkHealth(url: string, timeoutMs = 5000): Promise<boolean> {
-  try {
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
-    
-    const response = await fetch(`${url}/health`, {
-      signal: controller.signal,
-      method: 'GET',
-    })
-    
-    clearTimeout(timeoutId)
-    
-    if (!response.ok) return false
-    
-    const data = await response.json()
-    return data.status === 'healthy'
-  } catch (error) {
-    return false
   }
 }
 
