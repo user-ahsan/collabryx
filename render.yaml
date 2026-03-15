@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: collabryx-backend
+    env: docker
+    region: oregon
+    plan: starter
+    dockerfilePath: ./python-worker/Dockerfile
+    rootDir: .
+    healthCheckPath: /health
+    healthCheckTimeout: 10s
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: 1
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: https://collabryx.vercel.app,http://localhost:3000
+    disk:
+      name: model-cache
+      mountPath: /app/model-cache
+      sizeGB: 2

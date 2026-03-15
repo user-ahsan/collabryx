@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient, SupabaseClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { getBackendConfig } from "@/lib/config/backend";
 
 export const runtime = "edge"
 
@@ -199,65 +200,71 @@ export async function POST(request: NextRequest) {
       interests || []
     );
 
-    // Try Python worker first
-    const PYTHON_WORKER_URL = process.env.PYTHON_WORKER_URL || "http://localhost:8000";
-    let usedFallback = false;
-
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
-
-      const workerResponse = await fetch(`${PYTHON_WORKER_URL}/generate-embedding`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          text: semanticText,
-          user_id: userId,
-          request_id: crypto.randomUUID(),
-        }),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      // Handle rate limit response
-      if (workerResponse.status === 429) {
-        const rateLimitData = await workerResponse.json();
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Rate limit exceeded",
-            message: rateLimitData.detail?.message || "Maximum 3 embedding requests per hour",
-            retry_after: rateLimitData.detail?.retry_after,
-            reset_at: rateLimitData.detail?.reset_at,
-            remaining: rateLimitData.detail?.remaining
+    // Try backend (Docker or Render) first
+    let usedFallback = false
+    const backendConfig = await getBackendConfig()
+    
+    if (backendConfig.endpoint) {
+      try {
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 10000) // 10s timeout
+        
+        const workerResponse = await fetch(`${backendConfig.endpoint}/generate-embedding`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
           },
-          {
-            status: 429,
-            headers: {
-              'Retry-After': rateLimitData.detail?.retry_after?.toString() || '3600',
-              'X-RateLimit-Remaining': rateLimitData.detail?.remaining?.toString() || '0',
-              'X-RateLimit-Reset': rateLimitData.detail?.reset_at || ''
+          body: JSON.stringify({
+            text: semanticText,
+            user_id: userId,
+            request_id: crypto.randomUUID(),
+          }),
+          signal: controller.signal,
+        })
+        
+        clearTimeout(timeoutId)
+        
+        // Handle rate limit response
+        if (workerResponse.status === 429) {
+          const rateLimitData = await workerResponse.json()
+          return NextResponse.json(
+            {
+              success: false,
+              error: "Rate limit exceeded",
+              message: rateLimitData.detail?.message || "Maximum 3 embedding requests per hour",
+              retry_after: rateLimitData.detail?.retry_after,
+              reset_at: rateLimitData.detail?.reset_at,
+              remaining: rateLimitData.detail?.remaining
+            },
+            {
+              status: 429,
+              headers: {
+                'Retry-After': rateLimitData.detail?.retry_after?.toString() || '3600',
+                'X-RateLimit-Remaining': rateLimitData.detail?.remaining?.toString() || '0',
+                'X-RateLimit-Reset': rateLimitData.detail?.reset_at || ''
+              }
             }
-          }
-        );
+          )
+        }
+        
+        if (!workerResponse.ok) {
+          throw new Error(`Backend error: ${workerResponse.status}`)
+        }
+        
+        // Return queued response immediately!
+        return NextResponse.json({
+          success: true,
+          message: "Your profile is being analyzed. Vector embedding is queued!",
+          data: { user_id: userId, status: "queued", backend: backendConfig.mode },
+        })
+        
+      } catch (workerError) {
+        console.log("Backend unavailable, using Edge Function fallback:", workerError)
+        usedFallback = true
       }
-
-      if (!workerResponse.ok) {
-        throw new Error(`Python worker error: ${workerResponse.status}`);
-      }
-
-      // Return queued response immediately!
-      return NextResponse.json({
-        success: true,
-        message: "Your profile is being analyzed. Vector embedding is queued!",
-        data: { user_id: userId, status: "queued" },
-      });
-    } catch (workerError) {
-      console.log("Python worker unavailable, using Edge Function fallback:", workerError);
-      usedFallback = true;
+    } else {
+      console.log("Using Edge Function (backend mode: edge-only)")
+      usedFallback = true
     }
 
     // Fallback: Call Supabase Edge Function
