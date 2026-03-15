@@ -31,9 +31,19 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Validate environment in development
+  // Validate environment in development and production
   if (process.env.NODE_ENV === 'development') {
     validateEnv()
+  }
+  
+  // In production, validate critical env vars at runtime
+  if (process.env.NODE_ENV === 'production') {
+    try {
+      validateEnv()
+    } catch (error) {
+      console.error('❌ Production environment validation failed:', error)
+      // Don't throw in production - let app continue with degraded functionality
+    }
   }
   
   return (
