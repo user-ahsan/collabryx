@@ -56,7 +56,8 @@ export function ProfileHeader({
     return (
         <GlassCard className="mb-4 md:mb-6 overflow-visible border border-border/60 shadow-xl" innerClassName="p-0">
             {/* Banner */}
-            <div className="relative h-32 sm:h-40 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent w-full border-b border-border/30 rounded-t-xl overflow-hidden">
+            <div className="relative h-32 sm:h-40 w-full border-b border-border/30 rounded-t-xl overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent object-cover" />
                 {/* Subtle top-right dropdown menu for interactions */}
                 <div className="absolute top-4 right-4 z-10">
                     <MatchCardDropdown onViewProfile={() => { }} />

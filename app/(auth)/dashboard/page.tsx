@@ -18,11 +18,11 @@ export const metadata: Metadata = {
 export default function DashboardPage() {
     return (
         <div className="container max-w-7xl mx-auto py-2 md:py-6 px-2 md:px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-                <div className="lg:col-span-8 max-w-2xl mx-auto lg:mx-0 lg:max-w-none w-full">
+            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 xl:gap-8 items-start">
+                <div className="xl:col-span-8 max-w-2xl mx-auto xl:mx-0 xl:max-w-none w-full">
                     <Feed />
                 </div>
-                <div className="hidden lg:block lg:col-span-4 sticky top-6">
+                <div className="hidden 2xl:block 2xl:col-span-4 sticky top-6">
                     <SuggestionsSidebar />
                 </div>
             </div>
