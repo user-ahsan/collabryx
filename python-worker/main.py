@@ -62,10 +62,14 @@ MAX_QUEUE_SIZE = 100
 request_queue = asyncio.Queue(maxsize=MAX_QUEUE_SIZE)
 processing_semaphore = asyncio.Semaphore(5)  # Max 5 concurrent generations
 
+# Graceful shutdown flag
+SHUTDOWN_FLAG = False
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Manage application lifecycle with background tasks"""
+    """Manage application lifecycle with graceful shutdown"""
+    global SHUTDOWN_FLAG
     validate_env_vars()
     logger.info("=" * 60)
     logger.info("EMBEDDING SERVICE STARTING UP")
@@ -81,19 +85,37 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    # Cleanup
-    logger.info("Shutting down embedding service...")
-    processor_task.cancel()
-    dlq_processor_task.cancel()
-    pending_queue_task.cancel()
+    # Graceful shutdown
+    logger.info("=" * 60)
+    logger.info("SHUTTING DOWN EMBEDDING SERVICE")
+    logger.info("=" * 60)
+    SHUTDOWN_FLAG = True
+
+    # Wait for queue to drain (with timeout)
+    logger.info("Waiting for queue to drain (max 30s)...")
     try:
-        await processor_task
-        await dlq_processor_task
-        await pending_queue_task
-    except asyncio.CancelledError:
-        pass
-    await request_queue.join()
-    logger.info("Embedding service shut down complete")
+        await asyncio.wait_for(request_queue.join(), timeout=30.0)
+        logger.info("✓ Queue drained successfully")
+    except asyncio.TimeoutError:
+        logger.warning("⚠️ Queue drain timeout - some items may be lost")
+
+    # Cancel background tasks gracefully
+    logger.info("Cancelling background tasks...")
+    for task_name, task in [
+        ("processor", processor_task),
+        ("dlq", dlq_processor_task),
+        ("pending", pending_queue_task),
+    ]:
+        task.cancel()
+        try:
+            await asyncio.wait_for(task, timeout=5.0)
+            logger.info(f"✓ {task_name} task cancelled gracefully")
+        except (asyncio.CancelledError, asyncio.TimeoutError):
+            logger.warning(f"⚠️ {task_name} task forced to stop")
+
+    logger.info("=" * 60)
+    logger.info("EMBEDDING SERVICE SHUTDOWN COMPLETE")
+    logger.info("=" * 60)
 
 
 # Initialize FastAPI app with lifespan
@@ -366,15 +388,26 @@ async def generate_and_store_embedding(
 
 
 async def queue_processor():
-    """Background task to process queue"""
+    """Background task to process queue with graceful shutdown support"""
+    global SHUTDOWN_FLAG
     logger.info("Queue processor loop started")
-    while True:
+    while not SHUTDOWN_FLAG:
         try:
-            text, user_id, request_id = await request_queue.get()
+            # Use timeout to check shutdown flag periodically
+            try:
+                text, user_id, request_id = await asyncio.wait_for(
+                    request_queue.get(), timeout=1.0
+                )
+            except asyncio.TimeoutError:
+                continue  # Check SHUTDOWN_FLAG
+
             logger.info(f"Queue processor picked up request for user {user_id}")
             await generate_and_store_embedding(text, user_id, request_id)
             request_queue.task_done()
         except Exception as e:
+            if SHUTDOWN_FLAG:
+                logger.info("Queue processor stopping due to shutdown")
+                break
             logger.error(f"Queue processor error: {e}")
 
 
