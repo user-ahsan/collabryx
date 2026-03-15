@@ -188,10 +188,10 @@ export function PostDetailView({ post }: PostDetailViewProps) {
                     </Button>
                 </div>
 
-                <Separator className="mb-4" />
+<Separator className="mb-4" />
 
-                {/* Comments */}
-                <CommentSection />
+{/* Comments */}
+<CommentSection postId={String(post.id)} />
             </GlassCard>
 
             <ShareDialog

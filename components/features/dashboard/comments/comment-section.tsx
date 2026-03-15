@@ -7,8 +7,10 @@ import { Input } from "@/components/ui/input"
 import { Send, Smile, ThumbsUp, Heart, Flame, Frown, Angry } from "lucide-react"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { RichTextDisplay } from "../posts/rich-text-display"
-import { GlassBubble, GlassBubbleBadge, GlassReactionPicker } from "@/components/shared/glass-bubble"
+import { GlassBubble, GlassBubbleBadge } from "@/components/shared/glass-bubble"
 import { cn } from "@/lib/utils"
+import { useComments, useCreateComment, useToggleLikeComment } from "@/hooks/use-comments"
+import { Skeleton } from "@/components/ui/skeleton"
 
 const COMMENT_REACTIONS = [
     { id: "like", icon: ThumbsUp },
@@ -34,48 +36,8 @@ export interface CommentType {
 }
 
 interface CommentSectionProps {
-    comments?: CommentType[]
-    onAddComment?: (text: string, parentId?: string) => void
+    postId: string
 }
-
-const DUMMY_COMMENTS: CommentType[] = [
-    {
-        id: "c1",
-        author: {
-            name: "Sarah Miller",
-            avatar: "/avatars/02.png",
-            initials: "SM"
-        },
-        content: "This looks amazing! Can't wait to try it out.",
-        timestamp: "1h ago",
-        likes: 4,
-        liked: true,
-        replies: [
-            {
-                id: "c1-1",
-                author: {
-                    name: "Alex Johnson",
-                    avatar: "/avatars/04.png",
-                    initials: "AJ"
-                },
-                content: "I totally agree! The design feels very cohesive and the interactions are exactly what we've been looking for. I think this will greatly improve user engagement across the board.",
-                timestamp: "45m ago",
-                likes: 1
-            }
-        ]
-    },
-    {
-        id: "c2",
-        author: {
-            name: "David Chen",
-            avatar: "/avatars/03.png",
-            initials: "DC"
-        },
-        content: "Great work team! 🚀 The UI is silky smooth. I spent some time really clicking through all of the edge cases and I must say I haven't found a single glitch yet. Very impressive for a day 1 release candidate! Keep up the brilliant momentum.",
-        timestamp: "45m ago",
-        likes: 2
-    }
-]
 
 function CommentItem({
     comment,
@@ -145,29 +107,6 @@ function CommentItem({
                         >
                             Like
                         </button>
-
-                        {/* Hover Reaction Menu with Bridge */}
-                        <div className="absolute bottom-full left-0 mb-0 hidden group-hover/likes:flex flex-col items-start animate-in slide-in-from-bottom-1 fade-in duration-200 z-50">
-                            <div className="h-2 w-full bg-transparent" />
-                            <div className={cn(
-                                "rounded-full p-1 gap-1 flex items-center -ml-2",
-                                "bg-card/80 backdrop-blur-xl border-border/60 shadow-lg"
-                            )}>
-                                {COMMENT_REACTIONS.map((reaction) => (
-                                    <button
-                                        key={reaction.id}
-                                        aria-label={`React with ${reaction.id}`}
-                                        className="h-8 w-8 flex items-center justify-center hover:bg-white/[0.08] rounded-full hover:scale-125 transition-transform text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1"
-                                        onClick={(e) => {
-                                            e.stopPropagation()
-                                            onToggleLike(comment.id)
-                                        }}
-                                    >
-                                        <reaction.icon className="h-4 w-4" />
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
                     </div>
                     <button
                         onClick={() => setIsReplying(!isReplying)}
@@ -262,8 +201,10 @@ function CommentItem({
     )
 }
 
-export function CommentSection({ comments: initialComments = DUMMY_COMMENTS, onAddComment }: CommentSectionProps) {
-    const [comments, setComments] = useState(initialComments)
+export function CommentSection({ postId }: CommentSectionProps) {
+    const { data: comments, isLoading, error } = useComments(postId, { includeReplies: true })
+    const createComment = useCreateComment(postId)
+    const toggleLike = useToggleLikeComment(postId)
     const [text, setText] = useState("")
     const [visibleCount, setVisibleCount] = useState(3)
 
@@ -271,66 +212,56 @@ export function CommentSection({ comments: initialComments = DUMMY_COMMENTS, onA
         e.preventDefault()
         if (!text.trim()) return
 
-        // Optimistic update
-        const newComment: CommentType = {
-            id: Date.now().toString(),
-            author: {
-                name: "Me",
-                avatar: "/avatars/01.png",
-                initials: "ME"
-            },
-            content: text,
-            timestamp: "Just now",
-            likes: 0
-        }
-
-        setComments(prev => [newComment, ...prev])
-        onAddComment?.(text)
-        setText("")
+        createComment.mutate(text, {
+            onSuccess: () => {
+                setText("")
+            }
+        })
     }
 
     const handleReply = (parentId: string, replyText: string) => {
-        const newReply: CommentType = {
-            id: Date.now().toString(),
-            author: {
-                name: "Me",
-                avatar: "/avatars/01.png",
-                initials: "ME"
-            },
-            content: replyText,
-            timestamp: "Just now",
-            likes: 0
-        }
-
-        // Deep update helper
-        const addReplyToTree = (items: CommentType[]): CommentType[] => {
-            return items.map(item => {
-                if (item.id === parentId) {
-                    return { ...item, replies: [...(item.replies || []), newReply] }
-                }
-                if (item.replies) {
-                    return { ...item, replies: addReplyToTree(item.replies) }
-                }
-                return item
-            })
-        }
-
-        setComments(prev => addReplyToTree(prev))
+        createComment.mutate(replyText)
     }
 
-    const toggleLike = (id: string) => {
-        const toggleLikeInTree = (items: CommentType[]): CommentType[] => {
-            return items.map(item => {
-                if (item.id === id) {
-                    return { ...item, liked: !item.liked, likes: item.liked ? item.likes - 1 : item.likes + 1 }
-                }
-                if (item.replies) {
-                    return { ...item, replies: toggleLikeInTree(item.replies) }
-                }
-                return item
-            })
-        }
-        setComments(prev => toggleLikeInTree(prev))
+    const handleToggleLike = (commentId: string) => {
+        const comment = comments?.find(c => c.id === commentId)
+        toggleLike.mutate({ commentId, isLiked: comment?.user_has_liked || false })
+    }
+
+    if (isLoading) {
+        return (
+            <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                    <div key={i} className="flex gap-3">
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                        <div className="flex-1 space-y-2">
+                            <Skeleton className="h-4 w-1/4" />
+                            <Skeleton className="h-16 w-full" />
+                        </div>
+                    </div>
+                ))}
+            </div>
+        )
+    }
+
+    if (error) {
+        return (
+            <div className="text-center py-8">
+                <p className="text-muted-foreground mb-2">Failed to load comments</p>
+                <Button variant="outline" onClick={() => window.location.reload()}>
+                    Retry
+                </Button>
+            </div>
+        )
+    }
+
+    if (!comments || comments.length === 0) {
+        return (
+            <div className="text-center py-8">
+                <p className="text-muted-foreground mb-4">No comments yet</p>
+                <p className="text-sm text-muted-foreground">Be the first to comment!</p>
+            </div>
+        )
     }
 
     return (
@@ -340,9 +271,31 @@ export function CommentSection({ comments: initialComments = DUMMY_COMMENTS, onA
                 {comments.slice(0, visibleCount).map((comment) => (
                     <CommentItem
                         key={comment.id}
-                        comment={comment}
+                        comment={{
+                            id: comment.id,
+                            author: {
+                                name: comment.author_name,
+                                avatar: comment.author_avatar,
+                                initials: formatInitials(comment.author_name)
+                            },
+                            content: comment.content,
+                            timestamp: comment.time_ago,
+                            likes: comment.like_count || 0,
+                            liked: comment.user_has_liked,
+                            replies: comment.replies?.map(r => ({
+                                id: r.id,
+                                author: {
+                                    name: r.author_name,
+                                    avatar: r.author_avatar,
+                                    initials: formatInitials(r.author_name)
+                                },
+                                content: r.content,
+                                timestamp: r.time_ago,
+                                likes: r.like_count || 0,
+                            }))
+                        }}
                         onReply={handleReply}
-                        onToggleLike={toggleLike}
+                        onToggleLike={handleToggleLike}
                     />
                 ))}
 
@@ -416,4 +369,13 @@ export function CommentSection({ comments: initialComments = DUMMY_COMMENTS, onA
             </div>
         </div>
     )
+}
+
+function formatInitials(name: string): string {
+    return name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
 }
