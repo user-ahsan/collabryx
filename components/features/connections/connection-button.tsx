@@ -41,7 +41,7 @@ export function ConnectionButton({
 
   if (isLoading) {
     return (
-      <Button variant={variant} size={size} disabled>
+      <Button variant={variant} size={size} disabled aria-label="Loading connection status">
         Loading...
       </Button>
     )

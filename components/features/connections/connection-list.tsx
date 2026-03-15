@@ -7,15 +7,17 @@ import { Input } from "@/components/ui/input"
 import { Search, UserX } from "lucide-react"
 import { GlassBubble } from "@/components/shared/glass-bubble"
 import { useConnections, useRemoveConnection } from "@/hooks/use-connections"
+import { useDebounce } from "@/hooks/use-debounce"
 import { useState } from "react"
 
 export function ConnectionList() {
   const { data: connections, isLoading } = useConnections()
   const removeConnection = useRemoveConnection()
   const [searchTerm, setSearchTerm] = useState("")
+  const debouncedSearchTerm = useDebounce(searchTerm, 300)
 
   const filteredConnections = connections?.filter(conn =>
-    conn.other_user_name.toLowerCase().includes(searchTerm.toLowerCase())
+    conn.other_user_name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
   )
 
   const handleRemove = async (connectionId: string) => {

@@ -12,6 +12,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
     "docker:up": "node scripts/docker-up.js",
     "docker:down": "node scripts/docker-down.js",
     "docker:down:clean": "node scripts/docker-down.js --clean",

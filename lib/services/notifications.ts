@@ -119,7 +119,7 @@ export async function fetchNotifications(
     log.error("Error fetching notifications:", error)
     return { 
       data: [], 
-      error: error instanceof Error ? error : new Error("Unknown error fetching notifications") 
+      error: error instanceof Error ? error : new Error("[Notifications] Failed to fetch notifications") 
     }
   }
 }
@@ -165,7 +165,7 @@ export async function markNotificationAsRead(
     log.error("Error marking notification as read:", error)
     return { 
       data: null, 
-      error: error instanceof Error ? error : new Error("Unknown error marking notification as read") 
+      error: error instanceof Error ? error : new Error("[Notifications] Failed to mark notification as read") 
     }
   }
 }
@@ -201,7 +201,7 @@ export async function markAllNotificationsAsRead(): Promise<{ error: Error | nul
     return { error: null }
   } catch (error) {
     log.error("Error marking all notifications as read:", error)
-    return { error: error instanceof Error ? error : new Error("Unknown error marking all notifications as read") }
+    return { error: error instanceof Error ? error : new Error("[Notifications] Failed to mark all notifications as read") }
   }
 }
 
@@ -237,7 +237,7 @@ export async function deleteNotification(
     return { error: null }
   } catch (error) {
     log.error("Error deleting notification:", error)
-    return { error: error instanceof Error ? error : new Error("Unknown error deleting notification") }
+    return { error: error instanceof Error ? error : new Error("[Notifications] Failed to delete notification") }
   }
 }
 
@@ -269,7 +269,7 @@ export async function deleteAllNotifications(): Promise<{ error: Error | null }>
     return { error: null }
   } catch (error) {
     log.error("Error deleting all notifications:", error)
-    return { error: error instanceof Error ? error : new Error("Unknown error deleting all notifications") }
+    return { error: error instanceof Error ? error : new Error("[Notifications] Failed to delete all notifications") }
   }
 }
 
@@ -305,7 +305,7 @@ export async function getUnreadCount(): Promise<{
     return { count: count || 0, error: null }
   } catch (error) {
     log.error("Error getting unread count:", error)
-    return { count: 0, error: error instanceof Error ? error : new Error("Unknown error getting unread count") }
+    return { count: 0, error: error instanceof Error ? error : new Error("[Notifications] Failed to get unread count") }
   }
 }
 
@@ -353,7 +353,7 @@ export async function createNotification(
     log.error("Error creating notification:", error)
     return { 
       data: null, 
-      error: error instanceof Error ? error : new Error("Unknown error creating notification") 
+      error: error instanceof Error ? error : new Error("[Notifications] Failed to create notification") 
     }
   }
 }
@@ -485,6 +485,9 @@ export async function sendMatchNotification(
 
 /**
  * Format timestamp to relative time string
+ * 
+ * @param dateString - ISO date string
+ * @returns Formatted time ago string (e.g., "2h ago", "Just now")
  */
 function formatTimeAgo(dateString: string): string {
   const date = new Date(dateString)

@@ -64,7 +64,11 @@ export function NotificationItem({ notification }: NotificationItemProps) {
 
   return (
     <div
+      role="button"
+      tabIndex={0}
       onClick={handleClick}
+      onKeyPress={(e) => e.key === 'Enter' && handleClick()}
+      aria-label={`Notification: ${notification.content}`}
       className={cn(
         "flex items-start gap-4 p-4 rounded-lg cursor-pointer transition-colors",
         "hover:bg-muted/50",

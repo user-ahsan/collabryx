@@ -179,7 +179,7 @@ export async function fetchComments(
     log.error("Error fetching comments:", error)
     return { 
       data: [], 
-      error: error instanceof Error ? error : new Error("Unknown error fetching comments") 
+      error: error instanceof Error ? error : new Error("[Comments] Failed to fetch comments") 
     }
   }
 }
@@ -234,7 +234,7 @@ export async function fetchCommentById(commentId: string): Promise<{
     log.error("Error fetching comment:", error)
     return { 
       data: null, 
-      error: error instanceof Error ? error : new Error("Unknown error fetching comment") 
+      error: error instanceof Error ? error : new Error("[Comments] Failed to fetch comment") 
     }
   }
 }
@@ -292,7 +292,7 @@ export async function createComment(
     log.error("Error creating comment:", error)
     return { 
       data: null, 
-      error: error instanceof Error ? error : new Error("Unknown error creating comment") 
+      error: error instanceof Error ? error : new Error("[Comments] Failed to create comment") 
     }
   }
 }
@@ -361,7 +361,7 @@ export async function updateComment(
     log.error("Error updating comment:", error)
     return { 
       data: null, 
-      error: error instanceof Error ? error : new Error("Unknown error updating comment") 
+      error: error instanceof Error ? error : new Error("[Comments] Failed to update comment") 
     }
   }
 }
@@ -412,7 +412,7 @@ export async function deleteComment(commentId: string): Promise<{ error: Error |
     return { error: null }
   } catch (error) {
     log.error("Error deleting comment:", error)
-    return { error: error instanceof Error ? error : new Error("Unknown error deleting comment") }
+    return { error: error instanceof Error ? error : new Error("[Comments] Failed to delete comment") }
   }
 }
 
@@ -458,7 +458,7 @@ export async function likeComment(commentId: string): Promise<{
     log.error("Error liking comment:", error)
     return { 
       data: null, 
-      error: error instanceof Error ? error : new Error("Unknown error liking comment") 
+      error: error instanceof Error ? error : new Error("[Comments] Failed to like comment") 
     }
   }
 }
@@ -493,7 +493,7 @@ export async function unlikeComment(commentId: string): Promise<{ error: Error |
     return { error: null }
   } catch (error) {
     log.error("Error unliking comment:", error)
-    return { error: error instanceof Error ? error : new Error("Unknown error unliking comment") }
+    return { error: error instanceof Error ? error : new Error("[Comments] Failed to unlike comment") }
   }
 }
 

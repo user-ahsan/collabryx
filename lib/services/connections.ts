@@ -104,7 +104,7 @@ export async function fetchConnectionRequests(): Promise<{
     log.error("Error fetching connection requests:", error)
     return { 
       data: [], 
-      error: error instanceof Error ? error : new Error("Unknown error fetching connection requests") 
+      error: error instanceof Error ? error : new Error("[Connections] Failed to fetch connection requests") 
     }
   }
 }
@@ -184,7 +184,7 @@ export async function fetchConnections(
     log.error("Error fetching connections:", error)
     return { 
       data: [], 
-      error: error instanceof Error ? error : new Error("Unknown error fetching connections") 
+      error: error instanceof Error ? error : new Error("[Connections] Failed to fetch connections") 
     }
   }
 }
@@ -260,7 +260,7 @@ export async function sendConnectionRequest(
     log.error("Error sending connection request:", error)
     return { 
       data: null, 
-      error: error instanceof Error ? error : new Error("Unknown error sending connection request") 
+      error: error instanceof Error ? error : new Error("[Connections] Failed to send connection request") 
     }
   }
 }
@@ -326,7 +326,7 @@ export async function acceptConnectionRequest(
     log.error("Error accepting connection request:", error)
     return { 
       data: null, 
-      error: error instanceof Error ? error : new Error("Unknown error accepting connection request") 
+      error: error instanceof Error ? error : new Error("[Connections] Failed to accept connection request") 
     }
   }
 }
@@ -378,7 +378,7 @@ export async function declineConnectionRequest(
     return { error: null }
   } catch (error) {
     log.error("Error declining connection request:", error)
-    return { error: error instanceof Error ? error : new Error("Unknown error declining connection request") }
+    return { error: error instanceof Error ? error : new Error("[Connections] Failed to decline connection request") }
   }
 }
 
@@ -433,7 +433,7 @@ export async function cancelConnectionRequest(
     return { error: null }
   } catch (error) {
     log.error("Error canceling connection request:", error)
-    return { error: error instanceof Error ? error : new Error("Unknown error canceling connection request") }
+    return { error: error instanceof Error ? error : new Error("[Connections] Failed to cancel connection request") }
   }
 }
 
@@ -488,7 +488,7 @@ export async function removeConnection(
     return { error: null }
   } catch (error) {
     log.error("Error removing connection:", error)
-    return { error: error instanceof Error ? error : new Error("Unknown error removing connection") }
+    return { error: error instanceof Error ? error : new Error("[Connections] Failed to remove connection") }
   }
 }
 
@@ -554,7 +554,7 @@ export async function blockUser(
     return { error: null }
   } catch (error) {
     log.error("Error blocking user:", error)
-    return { error: error instanceof Error ? error : new Error("Unknown error blocking user") }
+    return { error: error instanceof Error ? error : new Error("[Connections] Failed to block user") }
   }
 }
 
@@ -608,7 +608,7 @@ export async function checkConnectionStatus(
     log.error("Error checking connection status:", error)
     return { 
       status: "not_connected", 
-      error: error instanceof Error ? error : new Error("Unknown error checking connection status") 
+      error: error instanceof Error ? error : new Error("[Connections] Failed to check connection status") 
     }
   }
 }
@@ -619,6 +619,9 @@ export async function checkConnectionStatus(
 
 /**
  * Format initials from name
+ * 
+ * @param name - Full name to format
+ * @returns First two characters of initials (e.g., "John Doe" → "JD")
  */
 function formatInitials(name: string): string {
   return name

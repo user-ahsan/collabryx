@@ -208,6 +208,8 @@ export function CommentSection({ postId }: CommentSectionProps) {
     const [text, setText] = useState("")
     const [visibleCount, setVisibleCount] = useState(3)
 
+    // aria-live region for real-time comment updates
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()
         if (!text.trim()) return
@@ -266,8 +268,13 @@ export function CommentSection({ postId }: CommentSectionProps) {
 
     return (
         <div className="pt-2 flex flex-col h-full max-h-full">
+            {/* aria-live region for announcing new comments */}
+            <div aria-live="polite" aria-atomic="true" className="sr-only">
+                {comments?.length || 0} comments loaded
+            </div>
+
             {/* Comment List */}
-            <div className="space-y-4 pb-4">
+            <div className="space-y-4 pb-4" role="feed" aria-label="Comments">
                 {comments.slice(0, visibleCount).map((comment) => (
                     <CommentItem
                         key={comment.id}
