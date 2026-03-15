@@ -7,6 +7,18 @@ export async function proxy(request: NextRequest) {
         return NextResponse.next()
     }
 
+    // Limit request body size for API routes (max 10MB)
+    if (request.nextUrl.pathname.startsWith('/api')) {
+        const contentLength = request.headers.get('content-length')
+        
+        if (contentLength && parseInt(contentLength) > 10 * 1024 * 1024) {
+            return NextResponse.json(
+                { error: 'Request body too large (max 10MB)' },
+                { status: 413 }
+            )
+        }
+    }
+
     let supabaseResponse = NextResponse.next({
         request,
     })

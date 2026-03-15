@@ -39,6 +39,32 @@ export async function logAuditEvent(input: AuditLogInput) {
 }
 
 /**
+ * With Audit wrapper - automatically logs success/failure of actions
+ */
+export async function withAudit<T>(
+  action: () => Promise<T>,
+  eventType: string,
+  userId: string
+): Promise<T> {
+  try {
+    const result = await action()
+    await logAuditEvent({
+      action: eventType,
+      resource_type: 'user_action',
+      details: { success: true, user_id: userId },
+    })
+    return result
+  } catch (error) {
+    await logAuditEvent({
+      action: `${eventType}_failed`,
+      resource_type: 'user_action',
+      details: { error: error instanceof Error ? error.message : 'Unknown', user_id: userId },
+    })
+    throw error
+  }
+}
+
+/**
  * Log authentication event
  */
 export async function logAuthEvent(eventType: 'login' | 'logout' | 'password_reset' | 'signup') {

@@ -7,6 +7,7 @@ import { SmoothScrollProvider } from "@/components/providers/smooth-scroll-provi
 import { QueryProvider } from "@/components/providers/query-provider";
 import { PostHogProvider } from "@/components/providers/posthog-provider";
 import { VercelAnalytics } from "@/components/providers/vercel-analytics";
+import { validateEnv } from "@/lib/validate-env";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -30,6 +31,11 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Validate environment in development
+  if (process.env.NODE_ENV === 'development') {
+    validateEnv()
+  }
+  
   return (
     <html lang="en" suppressHydrationWarning>
       <body

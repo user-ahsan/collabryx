@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import type { PostReactionType } from '@/types/actions'
+import { withAudit } from './audit.server'
 
 // ===========================================
 // POSTS SERVER ACTIONS
@@ -54,15 +55,21 @@ export async function createPost(formData: FormData) {
     }
   }
 
-  // Create post
-  const { data: post, error } = await supabase
-    .from('posts')
-    .insert({
-      author_id: user.id,
-      ...validated.data,
-    })
-    .select()
-    .single()
+  // Create post with audit logging
+  const { data: post, error } = await withAudit(
+    async () => {
+      return await supabase
+        .from('posts')
+        .insert({
+          author_id: user.id,
+          ...validated.data,
+        })
+        .select()
+        .single()
+    },
+    'post_create',
+    user.id
+  )
 
   if (error) {
     console.error('Failed to create post:', error)
@@ -151,16 +158,20 @@ export async function deletePost(postId: string) {
     return { error: 'Post not found or unauthorized' }
   }
 
-  // Soft delete by setting is_archived to true
-  const { error } = await supabase
-    .from('posts')
-    .update({ is_archived: true })
-    .eq('id', postId)
-
-  if (error) {
-    console.error('Failed to delete post:', error)
-    return { error: 'Failed to delete post' }
-  }
+  // Soft delete with audit logging
+  await withAudit(
+    async () => {
+      const { error } = await supabase
+        .from('posts')
+        .update({ is_archived: true })
+        .eq('id', postId)
+      
+      if (error) throw error
+      return { success: true }
+    },
+    'post_delete',
+    user.id
+  )
 
   revalidatePath('/dashboard')
   
