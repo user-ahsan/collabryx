@@ -252,9 +252,17 @@ def main():
         mentor_seeder = MentorSeeder(http_client)
         mentor_seeder.seed_sessions(user_ids)
 
-    # ========== STEP 7: Generate Embeddings ==========
+    # ========== STEP 7: Queue Profiles for Embeddings ==========
     if not args.skip_embeddings and config.ENABLE_EMBEDDINGS:
         embeddings_seeder = EmbeddingsSeeder(http_client, config.PYTHON_WORKER_URL)
+
+        # First, queue all created profiles
+        embeddings_seeder.queue_profiles_for_embeddings(user_ids)
+
+        # Then, process the queue by calling Python worker
+        print(
+            f"\n{Fore.CYAN}Starting embedding generation from queue...{Style.RESET_ALL}"
+        )
         embeddings_seeder.seed_embeddings()
 
     # ========== Verify Data ==========
