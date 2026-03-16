@@ -1,20 +1,14 @@
 # Collabryx Database Seed Scripts
 # Python dependencies for generating dummy data
 
-# Supabase client for database operations
-supabase>=2.0.0
+# HTTP client for REST API calls (replaces supabase package)
+httpx>=0.24.0
 
 # Environment variable management
 python-dotenv>=1.0.0
 
 # Fake data generation (names, emails, etc.)
 Faker>=20.0.0
-
-# HTTP requests for calling embedding worker
-httpx>=0.25.0
-
-# Async support for batch operations
-anyio>=4.0.0
 
 # Progress bars for long-running seeds
 tqdm>=4.66.0
