@@ -115,6 +115,45 @@ class PostsSeeder(BaseSeeder):
             return 0
 
         try:
+            # Don't request return representation - just check status code
+            # This is faster and avoids parsing large responses
+            batch_headers = {
+                **config.API_HEADERS,
+                "Prefer": "resolution=merge-duplicates",
+            }
+
+            response = self.http.post(
+                f"{config.SUPABASE_REST_URL}/post_reactions",
+                json=reactions,
+                headers=batch_headers,
+            )
+
+            # Status 200, 201, 204, 409 all indicate success (created or already exists)
+            if response.status_code in [200, 201, 204, 409]:
+                return len(reactions)
+            else:
+                # If batch fails, fall back to creating individually
+                print(
+                    f"{Fore.YELLOW}  ⚠️  Batch failed, falling back to individual creation{Style.RESET_ALL}"
+                )
+                created = 0
+                for reaction in reactions:
+                    if self.create_single("post_reactions", reaction, track=True):
+                        created += 1
+                return created
+
+        except Exception as e:
+            print(
+                f"{Fore.YELLOW}  ⚠️  Batch error, creating individually: {e}{Style.RESET_ALL}"
+            )
+            # Fall back to individual creation
+            created = 0
+            for reaction in reactions:
+                if self.create_single("post_reactions", reaction, track=True):
+                    created += 1
+            return created
+
+        try:
             # Use Prefer: resolution=merge-duplicates to handle conflicts
             batch_headers = {
                 **config.API_HEADERS,
