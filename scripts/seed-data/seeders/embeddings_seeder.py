@@ -1,6 +1,6 @@
 """
 Embeddings Seeder
-Triggers embedding generation via Python worker
+Triggers embedding generation via local Python worker using Supabase REST API
 """
 
 import time
@@ -12,75 +12,60 @@ from config import config
 
 
 class EmbeddingsSeeder:
-    """Seeder for profile embeddings using Python worker"""
+    """Seeder for profile embeddings using Python worker and REST API"""
 
-    def __init__(self, supabase_client, worker_url: str = None):
-        self.supabase = supabase_client
+    def __init__(self, http_client: httpx.Client, worker_url: str = None):
+        self.http = http_client
         self.worker_url = worker_url or config.PYTHON_WORKER_URL
         self.successful = 0
         self.failed = 0
 
     def get_profiles_without_embeddings(self) -> List[Dict[str, Any]]:
-        """Get profiles that don't have embeddings yet"""
+        """Get profiles that don't have embeddings yet via REST API"""
         try:
-            # Get profiles without completed embeddings
-            result = (
-                self.supabase.table("profiles")
-                .select("id, display_name, headline, bio, location, looking_for")
-                .limit(100)
-                .execute()
+            # Get all profiles
+            profiles_response = self.http.get(
+                f"{config.SUPABASE_REST_URL}/profiles?select=id,display_name,headline,bio,location,looking_for",
+                headers=config.API_HEADERS,
             )
+            profiles_response.raise_for_status()
+            profiles = profiles_response.json()
 
-            if not result.data:
+            if not profiles:
                 return []
 
             # Get existing embeddings
-            embeddings_result = (
-                self.supabase.table("profile_embeddings")
-                .select("user_id, status")
-                .execute()
+            embeddings_response = self.http.get(
+                f"{config.SUPABASE_REST_URL}/profile_embeddings?select=user_id,status",
+                headers=config.API_HEADERS,
             )
-            embedded_users = set()
+            embeddings_response.raise_for_status()
+            embeddings = embeddings_response.json()
 
-            if embeddings_result.data:
+            embedded_users = set()
+            if embeddings:
                 embedded_users = {
-                    e["user_id"]
-                    for e in embeddings_result.data
-                    if e["status"] == "completed"
+                    e["user_id"] for e in embeddings if e["status"] == "completed"
                 }
 
             # Filter to profiles without embeddings
-            profiles = [p for p in result.data if p["id"] not in embedded_users]
+            result = [p for p in profiles if p["id"] not in embedded_users]
 
-            return profiles
+            return result
 
         except Exception as e:
             print(f"{Fore.RED}✗ Failed to get profiles: {e}{Style.RESET_ALL}")
             return []
 
-    def get_user_skills(self, user_id: str) -> List[Dict]:
-        """Get skills for a user"""
+    def get_user_data(self, user_id: str, table: str) -> List[Dict]:
+        """Get related data for a user via REST API"""
         try:
-            result = (
-                self.supabase.table("user_skills")
-                .select("skill_name")
-                .eq("user_id", user_id)
-                .execute()
+            response = self.http.get(
+                f"{config.SUPABASE_REST_URL}/{table}?user_id=eq.{user_id}",
+                headers=config.API_HEADERS,
             )
-            return result.data or []
-        except:
-            return []
-
-    def get_user_interests(self, user_id: str) -> List[Dict]:
-        """Get interests for a user"""
-        try:
-            result = (
-                self.supabase.table("user_interests")
-                .select("interest")
-                .eq("user_id", user_id)
-                .execute()
-            )
-            return result.data or []
+            response.raise_for_status()
+            return response.json() or []
         except:
             return []
 
@@ -174,8 +159,8 @@ class EmbeddingsSeeder:
         )
 
         for i, profile in enumerate(profiles, 1):
-            skills = self.get_user_skills(profile["id"])
-            interests = self.get_user_interests(profile["id"])
+            skills = self.get_user_data(profile["id"], "user_skills")
+            interests = self.get_user_data(profile["id"], "user_interests")
 
             semantic_text = self.construct_semantic_text(profile, skills, interests)
 
