@@ -35,9 +35,9 @@ class ProfilesSeeder:
             if full_name:
                 user_data["user_metadata"] = {"full_name": full_name}
 
-            # Use Supabase Admin API v1
+            # Use Supabase Admin API (Gotrue) - correct endpoint
             response = self.http.post(
-                f"{config.SUPABASE_URL}/admin/v1/users",
+                f"{config.SUPABASE_AUTH_URL}/admin/users",
                 json=user_data,
                 headers={
                     "apikey": config.SUPABASE_SERVICE_ROLE_KEY,
