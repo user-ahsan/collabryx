@@ -1,0 +1,112 @@
+{
+  "greetings": [
+    "Hey! How's it going?",
+    "Hi there! Great to connect with you.",
+    "Hello! Thanks for connecting.",
+    "Hey, nice to meet you here!",
+    "Hi! I saw your profile and wanted to reach out."
+  ],
+  "follow_ups": [
+    "How's your day going?",
+    "What are you working on these days?",
+    "How did that project turn out?",
+    "Any updates on {topic}?",
+    "Did you get a chance to try {thing}?"
+  ],
+  "professional": [
+    "I'd love to learn more about your work at {company}.",
+    "Your experience with {skill} is impressive!",
+    "I noticed we both work in {industry}. Would love to exchange ideas.",
+    "Are you open to discussing potential opportunities?",
+    "Your profile caught my attention. Would you be open to a quick chat?"
+  ],
+  "collaboration": [
+    "I'm working on something that might interest you.",
+    "Would you be interested in collaborating on a project?",
+    "I think our skills could complement each other.",
+    "Have you thought about building {idea}?",
+    "I'm looking for someone with your expertise."
+  ],
+  "feedback": [
+    "Would love your feedback on something I'm building.",
+    "Can I get your thoughts on this?",
+    "What do you think about {topic}?",
+    "Have you tried {product/service}? Any thoughts?",
+    "I'd value your opinion on this."
+  ],
+  "meeting_request": [
+    "Would you be open to a quick call sometime?",
+    "Are you free for a virtual coffee chat?",
+    "I'd love to pick your brain for 15 minutes.",
+    "Do you have time for a quick intro call this week?",
+    "Want to hop on a quick Zoom?"
+  ],
+  "casual": [
+    "Haha, that's funny!",
+    "Totally agree with you!",
+    "That's interesting, never thought about it that way.",
+    "Same here!",
+    "Oh nice, that's cool!"
+  ],
+  "closing": [
+    "Great chatting with you!",
+    "Let's keep in touch!",
+    "Talk to you soon!",
+    "Thanks for the conversation!",
+    "Looking forward to hearing from you!"
+  ],
+  "thanks": [
+    "Thanks for the help!",
+    "Really appreciate your time!",
+    "Thank you so much for this!",
+    "This is super helpful, thanks!",
+    "Grateful for your insights!"
+  ],
+  "topics": [
+    "the startup scene",
+    "machine learning",
+    "product development",
+    "career growth",
+    "the industry",
+    "recent tech news",
+    "your company",
+    "your projects",
+    "the job market"
+  ],
+  "things": [
+    "that new framework",
+    "the productivity app",
+    "the online course",
+    "the conference",
+    "the book",
+    "the tool"
+  ],
+  "companies": [
+    "Google",
+    "Meta",
+    "a startup",
+    "your company",
+    "a tech company"
+  ],
+  "skills": [
+    "Python",
+    "React",
+    "machine learning",
+    "product design",
+    "leadership"
+  ],
+  "industries": [
+    "fintech",
+    "edtech",
+    "healthtech",
+    "AI/ML",
+    "SaaS"
+  ],
+  "ideas": [
+    "a marketplace for freelancers",
+    "an AI-powered tool",
+    "a learning platform",
+    "a productivity app",
+    "a social network for professionals"
+  ]
+}
