@@ -1,16 +1,20 @@
 services:
+  # Python Embedding Worker - FastAPI service for generating semantic embeddings
   - type: web
-    name: collabryx-backend
+    name: collabryx-embedding-worker
     env: docker
     region: oregon
-    plan: starter
+    plan: standard
     dockerfilePath: ./python-worker/Dockerfile
     rootDir: .
+    branch: main
     healthCheckPath: /health
-    healthCheckTimeout: 10s
+    healthCheckTimeout: 30s
+    healthCheckInterval: 30s
+    autoDeploy: true
     envVars:
       - key: PYTHONUNBUFFERED
-        value: 1
+        value: "1"
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
@@ -19,5 +23,5 @@ services:
         value: https://collabryx.vercel.app,http://localhost:3000
     disk:
       name: model-cache
-      mountPath: /app/model-cache
+      mountPath: /root/.cache
       sizeGB: 2
