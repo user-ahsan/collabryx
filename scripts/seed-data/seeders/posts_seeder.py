@@ -53,36 +53,44 @@ class PostsSeeder(BaseSeeder):
         self, post_id: str, author_id: str, content: str, parent_id: str = None
     ) -> Optional[str]:
         """Create a comment on a post"""
-        comment = {
-            "post_id": post_id,
-            "author_id": author_id,
-            "content": content,
-            "parent_id": parent_id,
-            "like_count": 0,
-        }
+        try:
+            comment = {
+                "post_id": post_id,
+                "author_id": author_id,
+                "content": content,
+                "parent_id": parent_id,
+                "like_count": 0,
+            }
 
-        comment_id = self.create_single("comments", comment)
+            comment_id = self.create_single("comments", comment)
 
-        if comment_id:
-            # Increment post comment count
-            self._increment_count("posts", post_id, "comment_count")
+            # Don't increment count - let database triggers handle it
+            # This avoids extra HTTP requests that can hang
 
-        return comment_id
+            return comment_id
+
+        except Exception as e:
+            print(f"\n{Fore.RED}✗ Error creating comment: {e}{Style.RESET_ALL}")
+            return None
 
     def create_reaction(self, post_id: str, user_id: str, emoji: str = None) -> bool:
         """Create a reaction on a post"""
-        if emoji is None:
-            emoji = generate_reaction()
+        try:
+            if emoji is None:
+                emoji = generate_reaction()
 
-        reaction = {"post_id": post_id, "user_id": user_id, "emoji": emoji}
+            reaction = {"post_id": post_id, "user_id": user_id, "emoji": emoji}
 
-        result = self.create_single("post_reactions", reaction)
+            result = self.create_single("post_reactions", reaction)
 
-        if result:
-            self._increment_count("posts", post_id, "reaction_count")
-            return True
+            # Don't increment count - let database triggers handle it
+            # This avoids extra HTTP requests that can hang
 
-        return False
+            return result is not None
+
+        except Exception as e:
+            print(f"\n{Fore.RED}✗ Error creating reaction: {e}{Style.RESET_ALL}")
+            return False
 
     def _increment_count(self, table: str, record_id: str, field: str):
         """Increment a count field via REST API"""
