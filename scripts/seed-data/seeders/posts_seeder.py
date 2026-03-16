@@ -22,20 +22,32 @@ class PostsSeeder(BaseSeeder):
 
     def create_post(self, author_id: str, post_data: Dict[str, Any]) -> Optional[str]:
         """Create a single post"""
-        post = {
-            "author_id": author_id,
-            "content": post_data["content"],
-            "post_type": post_data["post_type"],
-            "intent": post_data.get("intent"),
-            "link_url": post_data.get("link_url"),
-            "is_pinned": False,
-            "is_archived": False,
-            "reaction_count": 0,
-            "comment_count": 0,
-            "share_count": 0,
-        }
+        try:
+            post = {
+                "author_id": author_id,
+                "content": post_data["content"],
+                "post_type": post_data["post_type"],
+                "intent": post_data.get("intent"),
+                "link_url": post_data.get("link_url"),
+                "is_pinned": False,
+                "is_archived": False,
+                "reaction_count": 0,
+                "comment_count": 0,
+                "share_count": 0,
+            }
 
-        return self.create_single("posts", post)
+            result = self.create_single("posts", post)
+
+            if not result:
+                print(
+                    f"\n{Fore.RED}✗ Failed to create post (no ID returned){Style.RESET_ALL}"
+                )
+
+            return result
+
+        except Exception as e:
+            print(f"\n{Fore.RED}✗ Error creating post: {e}{Style.RESET_ALL}")
+            return None
 
     def create_comment(
         self, post_id: str, author_id: str, content: str, parent_id: str = None
@@ -127,7 +139,9 @@ class PostsSeeder(BaseSeeder):
         print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}\n")
 
         # Fetch user IDs for authors
+        print(f"{Fore.YELLOW}⏳ Fetching user IDs from database...{Style.RESET_ALL}")
         user_ids = self.fetch_user_ids()
+        print(f"{Fore.GREEN}✓ Found {len(user_ids)} users{Style.RESET_ALL}\n")
 
         if not user_ids:
             print(f"{Fore.RED}✗ No users found. Seed profiles first.{Style.RESET_ALL}")
@@ -141,10 +155,21 @@ class PostsSeeder(BaseSeeder):
 
             # Generate post
             post_data = generate_post()
+
+            print(
+                f"\r{Fore.CYAN}[{i + 1}/{limit}] Creating post...{Style.RESET_ALL}",
+                end="",
+                flush=True,
+            )
             post_id = self.create_post(author_id, post_data)
 
             if post_id:
                 stats["created"] += 1
+                print(
+                    f"\r{Fore.CYAN}[{i + 1}/{limit}] ✓ Post created{Style.RESET_ALL}    ",
+                    end="",
+                    flush=True,
+                )
 
                 # Add comments
                 num_comments = random.randint(*comments_range)

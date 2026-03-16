@@ -33,15 +33,23 @@ class BaseSeeder:
             if limit:
                 url += f"&limit={limit}"
 
+            print(f"{Fore.YELLOW}  → Fetching from: {url}{Style.RESET_ALL}")
             response = self.http.get(url, headers=config.API_HEADERS)
+            print(
+                f"{Fore.YELLOW}  → Response status: {response.status_code}{Style.RESET_ALL}"
+            )
             response.raise_for_status()
             profiles = response.json() or []
+            print(f"{Fore.YELLOW}  → Found {len(profiles)} profiles{Style.RESET_ALL}")
 
             self._user_ids_cache = [p["id"] for p in profiles]
             return self._user_ids_cache
 
         except Exception as e:
             print(f"{Fore.RED}✗ Failed to fetch user IDs: {e}{Style.RESET_ALL}")
+            import traceback
+
+            traceback.print_exc()
             return []
 
     def fetch_random_user_ids(self, count: int, exclude: List[str] = None) -> List[str]:
