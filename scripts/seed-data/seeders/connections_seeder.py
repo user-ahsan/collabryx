@@ -56,12 +56,28 @@ class ConnectionsSeeder(BaseSeeder):
                 else 500
             )
 
+        # Show current database status
+        existing_connections = self.get_table_count("connections")
+
         print(f"\n{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}CURRENT DATABASE STATUS{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
+        print(
+            f"  🔗 Existing Connections: {Fore.GREEN}{existing_connections:,}{Style.RESET_ALL}"
+        )
+        print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
+        print(
+            f"\n{Fore.YELLOW}➕ Adding {limit:,} new connections...{Style.RESET_ALL}\n"
+        )
+
+        print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
         print(f"{Fore.CYAN}SEEDING {limit} CONNECTIONS{Style.RESET_ALL}")
         print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}\n")
 
         # Fetch user IDs
+        print(f"{Fore.YELLOW}⏳ Fetching user IDs from database...{Style.RESET_ALL}")
         user_ids = self.fetch_user_ids()
+        print(f"{Fore.GREEN}✓ Found {len(user_ids)} users{Style.RESET_ALL}\n")
 
         if len(user_ids) < 2:
             print(
@@ -95,8 +111,19 @@ class ConnectionsSeeder(BaseSeeder):
                 ["accepted", "pending", "declined"], weights=[70, 20, 10]
             )[0]
 
+            print(
+                f"\r{Fore.CYAN}[{stats['created'] + 1}/{limit}] Creating connection...{Style.RESET_ALL}",
+                end="",
+                flush=True,
+            )
+
             if self.create_connection(requester, receiver, status):
                 stats["created"] += 1
+                print(
+                    f"\r{Fore.CYAN}[{stats['created']}/{limit}] ✓ Connection created{Style.RESET_ALL}    ",
+                    end="",
+                    flush=True,
+                )
 
                 # Create reverse connection for accepted
                 if status == "accepted":
@@ -104,9 +131,11 @@ class ConnectionsSeeder(BaseSeeder):
                     existing.add((receiver, requester))
             else:
                 stats["failed"] += 1
-
-            # Progress logging
-            self.log_progress(stats["created"], limit, "Connections")
+                print(
+                    f"\r{Fore.RED}[{stats['created'] + 1}/{limit}] ✗ Failed{Style.RESET_ALL}    ",
+                    end="",
+                    flush=True,
+                )
 
             # Rate limiting
             if stats["created"] % config.BATCH_SIZE == 0:
