@@ -121,14 +121,58 @@ class EmbeddingsSeeder:
             self.failed += 1
             return False
 
+    def queue_profiles_for_embeddings(self, user_ids: List[str]) -> int:
+        """Add profiles to the pending queue for embedding generation"""
+        print(f"\n{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
+        print(
+            f"{Fore.CYAN}QUEUING {len(user_ids)} PROFILES FOR EMBEDDINGS{Style.RESET_ALL}"
+        )
+        print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}\n")
+
+        queued = 0
+
+        for user_id in user_ids:
+            try:
+                # Insert into pending queue (upsert - replace if exists)
+                queue_data = {
+                    "user_id": user_id,
+                    "status": "pending",
+                    "trigger_source": "manual",
+                    "metadata": {"seeded": True},
+                }
+
+                response = self.http.post(
+                    f"{config.SUPABASE_REST_URL}/embedding_pending_queue",
+                    json=queue_data,
+                    headers=config.API_HEADERS,
+                )
+
+                if response.status_code in [200, 201, 409]:
+                    queued += 1
+                else:
+                    print(
+                        f"{Fore.RED}✗ Failed to queue {user_id}: {response.status_code}{Style.RESET_ALL}"
+                    )
+
+            except Exception as e:
+                print(f"{Fore.RED}✗ Error queuing {user_id}: {e}{Style.RESET_ALL}")
+
+        print(f"\n{Fore.GREEN}{'=' * 60}{Style.RESET_ALL}")
+        print(
+            f"{Fore.GREEN}✓ Queued {queued}/{len(user_ids)} profiles for embedding generation{Style.RESET_ALL}"
+        )
+        print(f"{Fore.GREEN}{'=' * 60}{Style.RESET_ALL}\n")
+
+        return queued
+
     def seed_embeddings(self, batch_size: int = None) -> Dict[str, int]:
-        """Seed embeddings for profiles"""
+        """Seed embeddings for profiles by calling Python worker"""
 
         if batch_size is None:
             batch_size = config.BATCH_SIZE
 
         print(f"\n{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}SEEDING EMBEDDINGS (via Python Worker){Style.RESET_ALL}")
+        print(f"{Fore.CYAN}GENERATING EMBEDDINGS (via Python Worker){Style.RESET_ALL}")
         print(f"{Fore.CYAN}Worker URL: {self.worker_url}{Style.RESET_ALL}")
         print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}\n")
 
@@ -137,54 +181,87 @@ class EmbeddingsSeeder:
             health_response = httpx.get(f"{self.worker_url}/health", timeout=5.0)
             if health_response.status_code != 200:
                 print(
-                    f"{Fore.YELLOW}⚠️  Python worker not available. Skipping embeddings.{Style.RESET_ALL}"
+                    f"{Fore.YELLOW}⚠️  Python worker not available at {self.worker_url}{Style.RESET_ALL}"
+                )
+                print(
+                    f"{Fore.YELLOW}   Make sure Docker container is running: docker-compose up -d{Style.RESET_ALL}"
                 )
                 return {"successful": 0, "failed": 0, "skipped": 0}
-        except:
+            print(f"{Fore.GREEN}✓ Python worker is healthy{Style.RESET_ALL}")
+        except Exception as e:
             print(
-                f"{Fore.YELLOW}⚠️  Cannot connect to Python worker. Skipping embeddings.{Style.RESET_ALL}"
+                f"{Fore.YELLOW}⚠️  Cannot connect to Python worker at {self.worker_url}{Style.RESET_ALL}"
+            )
+            print(f"{Fore.YELLOW}   Error: {e}{Style.RESET_ALL}")
+            print(
+                f"{Fore.YELLOW}   Make sure Docker container is running: cd ../../python-worker && docker-compose up -d{Style.RESET_ALL}"
             )
             return {"successful": 0, "failed": 0, "skipped": 0}
 
-        profiles = self.get_profiles_without_embeddings()
-
-        if not profiles:
-            print(
-                f"{Fore.GREEN}✓ All profiles already have embeddings{Style.RESET_ALL}"
+        # Get profiles from pending queue
+        try:
+            queue_response = self.http.get(
+                f"{config.SUPABASE_REST_URL}/embedding_pending_queue?select=user_id&status=eq.pending",
+                headers=config.API_HEADERS,
             )
-            return {"successful": 0, "failed": 0, "skipped": len(profiles)}
+            queue_response.raise_for_status()
+            queue = queue_response.json() or []
 
-        print(
-            f"{Fore.YELLOW}Found {len(profiles)} profiles without embeddings{Style.RESET_ALL}\n"
-        )
-
-        for i, profile in enumerate(profiles, 1):
-            skills = self.get_user_data(profile["id"], "user_skills")
-            interests = self.get_user_data(profile["id"], "user_interests")
-
-            semantic_text = self.construct_semantic_text(profile, skills, interests)
-
-            if len(semantic_text.strip()) < 10:
-                print(
-                    f"{Fore.YELLOW}⊘ Skipping {profile['display_name']} (insufficient data){Style.RESET_ALL}"
-                )
-                continue
+            if not queue:
+                print(f"{Fore.GREEN}✓ No profiles in pending queue{Style.RESET_ALL}")
+                return {"successful": 0, "failed": 0, "skipped": 0}
 
             print(
-                f"[{i}/{len(profiles)}] Requesting embedding for {profile['display_name']}..."
+                f"{Fore.YELLOW}Found {len(queue)} profiles in pending queue{Style.RESET_ALL}\n"
             )
 
-            if self.request_embedding(profile["id"], semantic_text):
-                print(f"{Fore.GREEN}  ✓ Queued{Style.RESET_ALL}")
-            else:
-                print(f"{Fore.RED}  ✗ Failed or rate limited{Style.RESET_ALL}")
+            # Process each profile in queue
+            for i, item in enumerate(queue, 1):
+                user_id = item.get("user_id")
+                if not user_id:
+                    continue
 
-            # Rate limiting - respect worker limits
-            if i % batch_size == 0:
-                print(
-                    f"\n{Fore.YELLOW}⏳ Pausing for {config.DELAY_BETWEEN_BATCHES}s...{Style.RESET_ALL}"
+                # Get profile data
+                profile_response = self.http.get(
+                    f"{config.SUPABASE_REST_URL}/profiles?id=eq.{user_id}&select=id,display_name,headline,bio,location,looking_for",
+                    headers=config.API_HEADERS,
                 )
-                time.sleep(config.DELAY_BETWEEN_BATCHES)
+                profiles = profile_response.json() or []
+
+                if not profiles:
+                    print(f"[{i}/{len(queue)}] Profile {user_id} not found")
+                    continue
+
+                profile = profiles[0]
+                skills = self.get_user_data(user_id, "user_skills")
+                interests = self.get_user_data(user_id, "user_interests")
+
+                semantic_text = self.construct_semantic_text(profile, skills, interests)
+
+                if len(semantic_text.strip()) < 10:
+                    print(
+                        f"[{i}/{len(queue)}] Skipping {profile.get('display_name', user_id)} (insufficient data)"
+                    )
+                    continue
+
+                print(
+                    f"[{i}/{len(queue)}] Generating embedding for {profile.get('display_name', user_id)}..."
+                )
+
+                if self.request_embedding(user_id, semantic_text):
+                    print(f"{Fore.GREEN}  ✓ Sent to worker{Style.RESET_ALL}")
+                else:
+                    print(f"{Fore.RED}  ✗ Failed or rate limited{Style.RESET_ALL}")
+
+                # Rate limiting
+                if i % batch_size == 0:
+                    print(
+                        f"\n{Fore.YELLOW}⏳ Pausing for {config.DELAY_BETWEEN_BATCHES}s...{Style.RESET_ALL}"
+                    )
+                    time.sleep(config.DELAY_BETWEEN_BATCHES)
+
+        except Exception as e:
+            print(f"{Fore.RED}✗ Error processing queue: {e}{Style.RESET_ALL}")
 
         print(f"\n{Fore.GREEN}{'=' * 60}{Style.RESET_ALL}")
         print(f"{Fore.GREEN}✓ Successful: {self.successful}{Style.RESET_ALL}")
@@ -194,7 +271,7 @@ class EmbeddingsSeeder:
         return {
             "successful": self.successful,
             "failed": self.failed,
-            "skipped": len(profiles) - self.successful - self.failed,
+            "skipped": len(queue) - self.successful - self.failed,
         }
 
 

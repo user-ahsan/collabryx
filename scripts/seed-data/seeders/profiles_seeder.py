@@ -262,20 +262,34 @@ class ProfilesSeeder:
             )
             return None
 
-        # Step 3: Create skills
+        # Step 3: Create skills (upsert - delete existing first)
+        self._delete_user_data(user_id, "user_skills")
         self.create_skills(user_id, profile_data["skills"])
 
-        # Step 4: Create interests
+        # Step 4: Create interests (upsert)
+        self._delete_user_data(user_id, "user_interests")
         self.create_interests(user_id, profile_data["interests"])
 
-        # Step 5: Create experiences
+        # Step 5: Create experiences (upsert)
+        self._delete_user_data(user_id, "user_experiences")
         self.create_experiences(user_id, profile_data["experiences"])
 
-        # Step 6: Create projects
+        # Step 6: Create projects (upsert)
+        self._delete_user_data(user_id, "user_projects")
         self.create_projects(user_id, profile_data["projects"])
 
         self.created_user_ids.append(user_id)
         return user_id
+
+    def _delete_user_data(self, user_id: str, table: str):
+        """Delete existing user data for upsert"""
+        try:
+            self.http.delete(
+                f"{config.SUPABASE_REST_URL}/{table}?user_id=eq.{user_id}",
+                headers=config.API_HEADERS,
+            )
+        except:
+            pass  # Ignore if table doesn't exist or no data
 
     def seed_profiles(self, count: int = None, batch_size: int = None) -> List[str]:
         """Seed multiple profiles"""
