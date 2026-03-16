@@ -1,10 +1,11 @@
 """
 Messaging Seeder
-Creates conversations and messages
+Creates conversations and messages using Supabase REST API
 """
 
 import random
 import time
+import httpx
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 from colorama import Fore, Style
@@ -14,30 +15,33 @@ from data_generators.conversations import generate_conversation
 
 
 class MessagingSeeder:
-    """Seeder for conversations and messages"""
+    """Seeder for conversations and messages using REST API"""
 
-    def __init__(self, supabase_client):
-        self.supabase = supabase_client
+    def __init__(self, http_client: httpx.Client):
+        self.http = http_client
         self.created_conversation_ids = []
 
     def create_conversation(self, participant_1: str, participant_2: str) -> str:
-        """Create a conversation between two users"""
+        """Create a conversation between two users via REST API"""
         try:
             # Check if conversation already exists
-            existing = (
-                self.supabase.table("conversations")
-                .select("id")
-                .eq("participant_1", min(participant_1, participant_2))
-                .eq("participant_2", max(participant_1, participant_2))
-                .execute()
+            p1, p2 = (
+                min(participant_1, participant_2),
+                max(participant_1, participant_2),
             )
+            response = self.http.get(
+                f"{config.SUPABASE_REST_URL}/conversations?participant_1=eq.{p1}&participant_2=eq.{p2}",
+                headers=config.API_HEADERS,
+            )
+            response.raise_for_status()
+            existing = response.json()
 
-            if existing.data and len(existing.data) > 0:
-                return existing.data[0]["id"]
+            if existing and len(existing) > 0:
+                return existing[0]["id"]
 
             conversation = {
-                "participant_1": min(participant_1, participant_2),
-                "participant_2": max(participant_1, participant_2),
+                "participant_1": p1,
+                "participant_2": p2,
                 "last_message_text": None,
                 "last_message_at": None,
                 "unread_count_1": 0,
@@ -45,10 +49,16 @@ class MessagingSeeder:
                 "is_archived": False,
             }
 
-            result = self.supabase.table("conversations").insert(conversation).execute()
+            response = self.http.post(
+                f"{config.SUPABASE_REST_URL}/conversations",
+                json=conversation,
+                headers=config.API_HEADERS,
+            )
+            response.raise_for_status()
+            result = response.json()
 
-            if result.data and len(result.data) > 0:
-                conv_id = result.data[0]["id"]
+            if result and len(result) > 0:
+                conv_id = result[0]["id"]
                 self.created_conversation_ids.append(conv_id)
                 return conv_id
 
@@ -65,7 +75,7 @@ class MessagingSeeder:
         content: str,
         created_at: datetime = None,
     ) -> bool:
-        """Create a message in a conversation"""
+        """Create a message in a conversation via REST API"""
         try:
             message = {
                 "conversation_id": conversation_id,
@@ -77,32 +87,38 @@ class MessagingSeeder:
                 else datetime.utcnow().isoformat(),
             }
 
-            result = self.supabase.table("messages").insert(message).execute()
+            response = self.http.post(
+                f"{config.SUPABASE_REST_URL}/messages",
+                json=message,
+                headers=config.API_HEADERS,
+            )
+            response.raise_for_status()
+            result = response.json()
 
-            if result.data:
+            if result:
                 # Update conversation last message
-                conv = (
-                    self.supabase.table("conversations")
-                    .select("participant_1, participant_2")
-                    .eq("id", conversation_id)
-                    .single()
-                    .execute()
+                self._update_conversation_last_message(
+                    conversation_id, content, message["created_at"]
                 )
-
-                if conv.data:
-                    self.supabase.table("conversations").update(
-                        {
-                            "last_message_text": content[:100],
-                            "last_message_at": message["created_at"],
-                        }
-                    ).eq("id", conversation_id).execute()
-
                 return True
 
             return False
 
         except Exception as e:
             return False
+
+    def _update_conversation_last_message(
+        self, conversation_id: str, text: str, timestamp: str
+    ):
+        """Update conversation's last message info"""
+        try:
+            self.http.patch(
+                f"{config.SUPABASE_REST_URL}/conversations?id=eq.{conversation_id}",
+                json={"last_message_text": text[:100], "last_message_at": timestamp},
+                headers=config.API_HEADERS,
+            )
+        except:
+            pass
 
     def seed_conversations(self, user_ids: List[str], count: int = None) -> int:
         """Seed conversations with messages"""
