@@ -8,6 +8,26 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 
 
+def generate_tech_stack(industry: str) -> str:
+    """Generate a tech stack string, handling missing industries gracefully"""
+    default_tech = [
+        "React",
+        "Node.js",
+        "Python",
+        "AWS",
+        "PostgreSQL",
+        "TypeScript",
+        "Docker",
+    ]
+    tech_list = INDUSTRY_CONTEXT.get(industry, {}).get("tech", default_tech)
+
+    # Ensure we have at least 3 items
+    if len(tech_list) < 3:
+        tech_list = tech_list + default_tech[: 3 - len(tech_list)]
+
+    return ", ".join(random.sample(tech_list, min(3, len(tech_list))))
+
+
 # Post content templates by type and industry
 POST_TEMPLATES = {
     "project-launch": {
@@ -265,14 +285,7 @@ def generate_post(industry: str = None, post_type: str = None) -> Dict[str, Any]
             "{achieve_goal}": random.choice(type_templates["goals"]),
             "{task}": random.choice(["development", "deployment", "testing"]),
             "{improvement}": str(random.randint(2, 10)),
-            "{tech_stack}": ", ".join(
-                random.sample(
-                    INDUSTRY_CONTEXT.get(industry, {}).get(
-                        "tech", ["React", "Node.js"]
-                    ),
-                    3,
-                )
-            ),
+            "{tech_stack}": generate_tech_stack(industry),
         }
     elif post_type == "teammate-request":
         replacements = {
