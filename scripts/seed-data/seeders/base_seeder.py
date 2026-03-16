@@ -506,7 +506,8 @@ class BaseSeeder:
                 f"{config.SUPABASE_REST_URL}/{table}?select=id&limit=1",
                 headers=count_headers,
             )
-            if response.status_code != 200:
+            # Status 206 (Partial Content) is expected with limit=1 + Count=exact
+            if response.status_code not in [200, 206]:
                 print(
                     f"{Fore.YELLOW}  ⚠️  Warning: Could not fetch {table} count (status {response.status_code}){Style.RESET_ALL}"
                 )
