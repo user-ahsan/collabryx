@@ -1,10 +1,11 @@
 """
 Notifications Seeder
-Creates notifications for users
+Creates notifications for users using Supabase REST API
 """
 
 import random
 import time
+import httpx
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 from colorama import Fore, Style
@@ -13,10 +14,10 @@ from config import config
 
 
 class NotificationsSeeder:
-    """Seeder for notifications"""
+    """Seeder for notifications using REST API"""
 
-    def __init__(self, supabase_client):
-        self.supabase = supabase_client
+    def __init__(self, http_client: httpx.Client):
+        self.http = http_client
 
     NOTIFICATION_TYPES = [
         "connection_request",
@@ -47,7 +48,7 @@ class NotificationsSeeder:
         actor_id: str = None,
         is_read: bool = False,
     ) -> bool:
-        """Create a notification"""
+        """Create a notification via REST API"""
         try:
             if title is None:
                 title = self.TITLES.get(notification_type, "Notification")
@@ -65,8 +66,12 @@ class NotificationsSeeder:
                 "data": {},
             }
 
-            result = self.supabase.table("notifications").insert(notification).execute()
-            return bool(result.data)
+            response = self.http.post(
+                f"{config.SUPABASE_REST_URL}/notifications",
+                json=notification,
+                headers=config.API_HEADERS,
+            )
+            return response.status_code == 201
 
         except Exception as e:
             return False
