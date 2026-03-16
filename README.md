@@ -206,6 +206,31 @@ collabryx/
 
 📖 **Docker commands:** [Docker Scripts](./docs/05-deployment/docker-scripts.md)
 
+### Database Seeding Commands
+
+| Command | Description |
+|---------|-------------|
+| `cd scripts/seed-data` | Navigate to seeder directory |
+| `python main.py --all` | Seed all data (profiles, posts, connections, etc.) |
+| `python main.py --profiles` | Seed user profiles only |
+| `python main.py --posts` | Seed posts with comments/reactions |
+| `python main.py --connections` | Seed user connections |
+| `python main.py --matches` | Seed match suggestions |
+| `python main.py --conversations` | Seed conversations |
+| `python main.py --messages` | Seed messages in conversations |
+| `python main.py --notifications` | Seed notifications |
+| `python main.py --mentor` | Seed AI mentor sessions |
+| `python main.py --embeddings` | Generate vector embeddings |
+| `python main.py --list` | Show configuration |
+
+**Override limits:**
+```bash
+python main.py --profiles --limit-profiles 500
+python main.py --posts --limit-posts 1000
+```
+
+📖 **Complete guide:** [Database Seeding Documentation](./docs/08-database-seeding/README.md)
+
 ### Edge Functions
 
 | Command | Description |
@@ -258,6 +283,7 @@ npm run test:e2e:ui
 | **Core Features** | [Vector Embeddings](./docs/03-core-features/vector-embeddings/overview.md) • [AI Assistant](./docs/03-core-features/ai-assistant/overview.md) • [Matching](./docs/03-core-features/matching-system.md) • [Messaging](./docs/03-core-features/messaging.md) |
 | **Infrastructure** | [Python Worker](./docs/04-infrastructure/python-worker/overview.md) • [Database](./docs/04-infrastructure/database/schema.md) • [Security](./docs/04-infrastructure/security-status.md) • [Monitoring](./docs/04-infrastructure/monitoring.md) |
 | **Deployment** | [Complete Guide](./docs/DEPLOYMENT.md) • [Overview](./docs/05-deployment/overview.md) • [Docker Scripts](./docs/05-deployment/docker-scripts.md) • [Checklist](./docs/05-deployment/checklist.md) |
+| **Database Seeding** | [Complete Guide](./docs/08-database-seeding/README.md) • [Quick Reference](./docs/08-database-seeding/QUICK_REFERENCE.md) |
 | **API Reference** | [Complete API Docs](./docs/API-REFERENCE.md) |
 | **Contributing** | [Guide](./docs/06-contributing/guide.md) • [Git Workflow](./docs/06-contributing/git-workflow.md) |
 | **Reference** | [Environment Variables](./docs/07-reference/environment-variables.md) • [Commands](./docs/07-reference/commands.md) • [Troubleshooting](./docs/07-reference/troubleshooting.md) |
