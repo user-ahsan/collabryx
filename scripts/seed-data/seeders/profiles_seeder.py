@@ -1,10 +1,11 @@
 """
 Profiles Seeder
-Creates auth users and their associated profile data
+Creates auth users and their associated profile data using Supabase REST API
 """
 
 import time
 import random
+import httpx
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 from colorama import Fore, Style
@@ -14,34 +15,40 @@ from data_generators.profiles import generate_profiles
 
 
 class ProfilesSeeder:
-    """Seeder for user profiles and related data"""
+    """Seeder for user profiles and related data using REST API"""
 
-    def __init__(self, supabase_client):
-        self.supabase = supabase_client
+    def __init__(self, http_client: httpx.Client):
+        self.http = http_client
         self.created_user_ids = []
 
     def create_auth_user(
         self, email: str, password: str, full_name: str = None
     ) -> Optional[str]:
-        """Create a Supabase auth user"""
+        """Create a Supabase auth user via REST API"""
         try:
-            # Use admin API to create user without email confirmation
             user_data = {
                 "email": email,
                 "password": password,
-                "email_confirm": True,  # Skip email verification
+                "email_confirm": True,
             }
 
             if full_name:
                 user_data["data"] = {"full_name": full_name}
 
-            response = self.supabase.auth.admin.create_user(user_data)
+            response = self.http.post(
+                f"{config.SUPABASE_AUTH_URL}/admin/users",
+                json=user_data,
+                headers=config.API_HEADERS,
+            )
+            response.raise_for_status()
+            user = response.json()
+            return user.get("user", {}).get("id")
 
-            if response and response.user:
-                return response.user.id
-
+        except httpx.HTTPStatusError as e:
+            print(
+                f"{Fore.RED}✗ Failed to create auth user {email}: {e.response.status_code}{Style.RESET_ALL}"
+            )
             return None
-
         except Exception as e:
             print(
                 f"{Fore.RED}✗ Failed to create auth user {email}: {e}{Style.RESET_ALL}"
@@ -49,7 +56,7 @@ class ProfilesSeeder:
             return None
 
     def create_profile(self, user_id: str, profile_data: Dict[str, Any]) -> bool:
-        """Create profile record for user"""
+        """Create profile record via REST API"""
         try:
             profile = {
                 "id": user_id,
@@ -69,22 +76,23 @@ class ProfilesSeeder:
                 "onboarding_completed": profile_data["onboarding_completed"],
             }
 
-            result = self.supabase.table("profiles").insert(profile).execute()
-
-            if result.data:
-                print(
-                    f"{Fore.GREEN}✓ Created profile for {profile_data['display_name']}{Style.RESET_ALL}"
-                )
-                return True
-
-            return False
+            response = self.http.post(
+                f"{config.SUPABASE_REST_URL}/profiles",
+                json=profile,
+                headers=config.API_HEADERS,
+            )
+            response.raise_for_status()
+            print(
+                f"{Fore.GREEN}✓ Created profile for {profile_data['display_name']}{Style.RESET_ALL}"
+            )
+            return True
 
         except Exception as e:
             print(f"{Fore.RED}✗ Failed to create profile: {e}{Style.RESET_ALL}")
             return False
 
     def create_skills(self, user_id: str, skills: List[Dict[str, Any]]) -> bool:
-        """Create user skills"""
+        """Create user skills via REST API"""
         try:
             skills_data = [
                 {
@@ -96,24 +104,32 @@ class ProfilesSeeder:
                 for skill in skills
             ]
 
-            result = self.supabase.table("user_skills").insert(skills_data).execute()
-            return bool(result.data)
+            response = self.http.post(
+                f"{config.SUPABASE_REST_URL}/user_skills",
+                json=skills_data,
+                headers=config.API_HEADERS,
+            )
+            response.raise_for_status()
+            return True
 
         except Exception as e:
             print(f"{Fore.RED}✗ Failed to create skills: {e}{Style.RESET_ALL}")
             return False
 
     def create_interests(self, user_id: str, interests: List[str]) -> bool:
-        """Create user interests"""
+        """Create user interests via REST API"""
         try:
             interests_data = [
                 {"user_id": user_id, "interest": interest} for interest in interests
             ]
 
-            result = (
-                self.supabase.table("user_interests").insert(interests_data).execute()
+            response = self.http.post(
+                f"{config.SUPABASE_REST_URL}/user_interests",
+                json=interests_data,
+                headers=config.API_HEADERS,
             )
-            return bool(result.data)
+            response.raise_for_status()
+            return True
 
         except Exception as e:
             print(f"{Fore.RED}✗ Failed to create interests: {e}{Style.RESET_ALL}")
@@ -122,7 +138,7 @@ class ProfilesSeeder:
     def create_experiences(
         self, user_id: str, experiences: List[Dict[str, Any]]
     ) -> bool:
-        """Create user experiences"""
+        """Create user experiences via REST API"""
         try:
             experiences_data = [
                 {
@@ -138,19 +154,20 @@ class ProfilesSeeder:
                 for exp in experiences
             ]
 
-            result = (
-                self.supabase.table("user_experiences")
-                .insert(experiences_data)
-                .execute()
+            response = self.http.post(
+                f"{config.SUPABASE_REST_URL}/user_experiences",
+                json=experiences_data,
+                headers=config.API_HEADERS,
             )
-            return bool(result.data)
+            response.raise_for_status()
+            return True
 
         except Exception as e:
             print(f"{Fore.RED}✗ Failed to create experiences: {e}{Style.RESET_ALL}")
             return False
 
     def create_projects(self, user_id: str, projects: List[Dict[str, Any]]) -> bool:
-        """Create user projects"""
+        """Create user projects via REST API"""
         try:
             projects_data = [
                 {
@@ -165,10 +182,13 @@ class ProfilesSeeder:
                 for proj in projects
             ]
 
-            result = (
-                self.supabase.table("user_projects").insert(projects_data).execute()
+            response = self.http.post(
+                f"{config.SUPABASE_REST_URL}/user_projects",
+                json=projects_data,
+                headers=config.API_HEADERS,
             )
-            return bool(result.data)
+            response.raise_for_status()
+            return True
 
         except Exception as e:
             print(f"{Fore.RED}✗ Failed to create projects: {e}{Style.RESET_ALL}")
@@ -261,7 +281,6 @@ class ProfilesSeeder:
 if __name__ == "__main__":
     import os
     from dotenv import load_dotenv
-    from supabase import create_client
 
     load_dotenv()
 
@@ -269,12 +288,16 @@ if __name__ == "__main__":
     supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
     if supabase_url and supabase_key:
-        supabase = create_client(supabase_url, supabase_key)
-        seeder = ProfilesSeeder(supabase)
+        config.SUPABASE_URL = supabase_url
+        config.SUPABASE_SERVICE_ROLE_KEY = supabase_key
+        config.initialize()
 
-        # Test with 3 profiles
-        user_ids = seeder.seed_profiles(count=3)
-        print(f"\nCreated {len(user_ids)} users")
+        with httpx.Client() as http:
+            seeder = ProfilesSeeder(http)
+
+            # Test with 3 profiles
+            user_ids = seeder.seed_profiles(count=3)
+            print(f"\nCreated {len(user_ids)} users")
     else:
         print(
             "Missing Supabase credentials. Copy .env.example to .env and fill in your values."
