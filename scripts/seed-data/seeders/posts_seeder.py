@@ -50,7 +50,11 @@ class PostsSeeder(BaseSeeder):
             return None
 
     def create_comment(
-        self, post_id: str, author_id: str, content: str, parent_id: str = None
+        self,
+        post_id: str,
+        author_id: str,
+        content: str,
+        parent_id: Optional[str] = None,
     ) -> Optional[str]:
         """Create a comment on a post"""
         try:
@@ -73,9 +77,15 @@ class PostsSeeder(BaseSeeder):
             print(f"\n{Fore.RED}✗ Error creating comment: {e}{Style.RESET_ALL}")
             return None
 
-    def create_reaction(self, post_id: str, user_id: str, emoji: str = None) -> bool:
-        """Create a reaction on a post"""
+    def create_reaction(
+        self, post_id: str, user_id: str, emoji: Optional[str] = None
+    ) -> bool:
+        """Create a reaction on a post (with duplicate prevention)"""
         try:
+            # Check if reaction already exists (incremental seeding)
+            if self.reaction_exists(post_id, user_id):
+                return False  # Already exists, skip
+
             if emoji is None:
                 emoji = generate_reaction()
 
@@ -115,7 +125,7 @@ class PostsSeeder(BaseSeeder):
         except:
             pass  # Ignore errors for count updates
 
-    def seed(self, limit: int = None) -> Dict[str, int]:
+    def seed(self, limit: Optional[int] = None) -> Dict[str, int]:
         """Seed posts with comments and reactions"""
 
         if limit is None:
