@@ -94,6 +94,34 @@ class ProfilesSeeder:
                 json=profile,
                 headers=config.API_HEADERS,
             )
+
+            if response.status_code == 409:
+                # Profile already exists (possibly auto-created by trigger), update it instead
+                print(
+                    f"{Fore.YELLOW}⚠ Profile exists, updating {profile_data['display_name']}{Style.RESET_ALL}"
+                )
+                update_response = self.http.patch(
+                    f"{config.SUPABASE_REST_URL}/profiles?id=eq.{user_id}",
+                    json=profile,
+                    headers=config.API_HEADERS,
+                )
+                if update_response.status_code in [200, 204]:
+                    print(
+                        f"{Fore.GREEN}✓ Updated profile for {profile_data['display_name']}{Style.RESET_ALL}"
+                    )
+                    return True
+                else:
+                    print(
+                        f"{Fore.RED}✗ Failed to update profile: {update_response.text[:200]}{Style.RESET_ALL}"
+                    )
+                    return False
+
+            if response.status_code == 400:
+                print(
+                    f"{Fore.RED}✗ Bad request for {profile_data['display_name']}: {response.text[:200]}{Style.RESET_ALL}"
+                )
+                return False
+
             response.raise_for_status()
             print(
                 f"{Fore.GREEN}✓ Created profile for {profile_data['display_name']}{Style.RESET_ALL}"
@@ -101,7 +129,9 @@ class ProfilesSeeder:
             return True
 
         except Exception as e:
-            print(f"{Fore.RED}✗ Failed to create profile: {e}{Style.RESET_ALL}")
+            print(
+                f"{Fore.RED}✗ Failed to create profile: {type(e).__name__}: {e}{Style.RESET_ALL}"
+            )
             return False
 
     def create_skills(self, user_id: str, skills: List[Dict[str, Any]]) -> bool:
@@ -222,8 +252,14 @@ class ProfilesSeeder:
         if not user_id:
             return None
 
-        # Step 2: Create profile
-        if not self.create_profile(user_id, profile_data):
+        # Step 2: Create or update profile (returns True if created or updated)
+        profile_ok = self.create_profile(user_id, profile_data)
+
+        # Continue even if profile already existed (409 -> updated)
+        if not profile_ok:
+            print(
+                f"{Fore.RED}✗ Skipping {profile_data['display_name']} due to profile error{Style.RESET_ALL}"
+            )
             return None
 
         # Step 3: Create skills
