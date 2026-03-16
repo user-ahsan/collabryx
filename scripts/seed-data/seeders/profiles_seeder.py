@@ -33,25 +33,36 @@ class ProfilesSeeder:
             }
 
             if full_name:
-                user_data["data"] = {"full_name": full_name}
+                user_data["user_metadata"] = {"full_name": full_name}
 
+            # Use Supabase Admin API v1
             response = self.http.post(
-                f"{config.SUPABASE_AUTH_URL}/admin/users",
+                f"{config.SUPABASE_URL}/admin/v1/users",
                 json=user_data,
-                headers=config.API_HEADERS,
+                headers={
+                    "apikey": config.SUPABASE_SERVICE_ROLE_KEY,
+                    "Authorization": f"Bearer {config.SUPABASE_SERVICE_ROLE_KEY}",
+                    "Content-Type": "application/json",
+                },
             )
-            response.raise_for_status()
+
+            if response.status_code != 200:
+                print(
+                    f"{Fore.RED}✗ Auth API Error {response.status_code}: {response.text[:200]}{Style.RESET_ALL}"
+                )
+                return None
+
             user = response.json()
-            return user.get("user", {}).get("id")
+            return user.get("id")
 
         except httpx.HTTPStatusError as e:
             print(
-                f"{Fore.RED}✗ Failed to create auth user {email}: {e.response.status_code}{Style.RESET_ALL}"
+                f"{Fore.RED}✗ Failed to create auth user {email}: HTTP {e.response.status_code} - {e.response.text[:200]}{Style.RESET_ALL}"
             )
             return None
         except Exception as e:
             print(
-                f"{Fore.RED}✗ Failed to create auth user {email}: {e}{Style.RESET_ALL}"
+                f"{Fore.RED}✗ Failed to create auth user {email}: {type(e).__name__}: {e}{Style.RESET_ALL}"
             )
             return None
 
