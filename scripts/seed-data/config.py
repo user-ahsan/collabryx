@@ -33,26 +33,33 @@ class SeedConfig:
     PYTHON_WORKER_URL: str = os.getenv("PYTHON_WORKER_URL", "http://localhost:8000")
 
     # =========================================================================
-    # SEED COUNTS
+    # SEEDING TOGGLES
     # =========================================================================
-    SEED_COUNT_PROFILES: int = int(os.getenv("SEED_COUNT_PROFILES", "100"))
-    SEED_COUNT_POSTS: int = int(os.getenv("SEED_COUNT_POSTS", "300"))
-    SEED_COUNT_CONNECTIONS: int = int(os.getenv("SEED_COUNT_CONNECTIONS", "500"))
-    SEED_COUNT_CONVERSATIONS: int = int(os.getenv("SEED_COUNT_CONVERSATIONS", "150"))
-    SEED_COUNT_MESSAGES: int = int(os.getenv("SEED_COUNT_MESSAGES", "1000"))
-    SEED_COUNT_NOTIFICATIONS: int = int(os.getenv("SEED_COUNT_NOTIFICATIONS", "500"))
-    SEED_COUNT_MENTOR_SESSIONS: int = int(os.getenv("SEED_COUNT_MENTOR_SESSIONS", "50"))
+    SEED_PROFILES: bool = os.getenv("SEED_PROFILES", "true").lower() == "true"
+    SEED_POSTS: bool = os.getenv("SEED_POSTS", "true").lower() == "true"
+    SEED_CONNECTIONS: bool = os.getenv("SEED_CONNECTIONS", "true").lower() == "true"
+    SEED_MATCHES: bool = os.getenv("SEED_MATCHES", "true").lower() == "true"
+    SEED_CONVERSATIONS: bool = os.getenv("SEED_CONVERSATIONS", "true").lower() == "true"
+    SEED_MESSAGES: bool = os.getenv("SEED_MESSAGES", "true").lower() == "true"
+    SEED_NOTIFICATIONS: bool = os.getenv("SEED_NOTIFICATIONS", "true").lower() == "true"
+    SEED_MENTOR_SESSIONS: bool = (
+        os.getenv("SEED_MENTOR_SESSIONS", "true").lower() == "true"
+    )
+    SEED_EMBEDDINGS: bool = os.getenv("SEED_EMBEDDINGS", "true").lower() == "true"
 
     # =========================================================================
-    # FEATURE FLAGS
+    # SEED LIMITS (as strings to support "-1" and ranges)
     # =========================================================================
-    ENABLE_EMBEDDINGS: bool = os.getenv("ENABLE_EMBEDDINGS", "true").lower() == "true"
-    ENABLE_MENTOR_SESSIONS: bool = (
-        os.getenv("ENABLE_MENTOR_SESSIONS", "true").lower() == "true"
+    LIMIT_PROFILES: str = os.getenv("LIMIT_PROFILES", "100")
+    LIMIT_POSTS: str = os.getenv("LIMIT_POSTS", "300")
+    LIMIT_CONNECTIONS: str = os.getenv("LIMIT_CONNECTIONS", "500")
+    LIMIT_MATCHES_PER_USER: str = os.getenv("LIMIT_MATCHES_PER_USER", "5")
+    LIMIT_CONVERSATIONS: str = os.getenv("LIMIT_CONVERSATIONS", "150")
+    LIMIT_MESSAGES_PER_CONVERSATION: str = os.getenv(
+        "LIMIT_MESSAGES_PER_CONVERSATION", "5,20"
     )
-    ENABLE_NOTIFICATIONS: bool = (
-        os.getenv("ENABLE_NOTIFICATIONS", "true").lower() == "true"
-    )
+    LIMIT_NOTIFICATIONS_PER_USER: str = os.getenv("LIMIT_NOTIFICATIONS_PER_USER", "5")
+    LIMIT_MENTOR_SESSIONS: str = os.getenv("LIMIT_MENTOR_SESSIONS", "50")
 
     # =========================================================================
     # BATCH PROCESSING
@@ -302,25 +309,16 @@ class SeedConfig:
     def print_summary(cls):
         """Print configuration summary"""
         print("\n" + "=" * 60)
-        print("SEED DATA CONFIGURATION")
+        print("SEEDING CONFIGURATION")
         print("=" * 60)
-        print(f"Profiles:           {cls.SEED_COUNT_PROFILES}")
-        print(f"Posts:              {cls.SEED_COUNT_POSTS}")
-        print(f"Connections:        {cls.SEED_COUNT_CONNECTIONS}")
-        print(f"Conversations:      {cls.SEED_COUNT_CONVERSATIONS}")
-        print(f"Messages:           {cls.SEED_COUNT_MESSAGES}")
-        print(f"Notifications:      {cls.SEED_COUNT_NOTIFICATIONS}")
-        print(f"Mentor Sessions:    {cls.SEED_COUNT_MENTOR_SESSIONS}")
-        print("-" * 60)
-        print(
-            f"Embeddings:         {'✓ Enabled' if cls.ENABLE_EMBEDDINGS else '✗ Disabled'}"
-        )
-        print(
-            f"Mentor Sessions:    {'✓ Enabled' if cls.ENABLE_MENTOR_SESSIONS else '✗ Disabled'}"
-        )
-        print(
-            f"Notifications:      {'✓ Enabled' if cls.ENABLE_NOTIFICATIONS else '✗ Disabled'}"
-        )
+        print(f"Profiles:           {cls.LIMIT_PROFILES}")
+        print(f"Posts:              {cls.LIMIT_POSTS}")
+        print(f"Connections:        {cls.LIMIT_CONNECTIONS}")
+        print(f"Matches/user:       {cls.LIMIT_MATCHES_PER_USER}")
+        print(f"Conversations:      {cls.LIMIT_CONVERSATIONS}")
+        print(f"Messages/conv:      {cls.LIMIT_MESSAGES_PER_CONVERSATION}")
+        print(f"Notifications:      {cls.LIMIT_NOTIFICATIONS_PER_USER}")
+        print(f"Mentor Sessions:    {cls.LIMIT_MENTOR_SESSIONS}")
         print("-" * 60)
         print(f"Industries:         {len(cls.INDUSTRIES)}")
         print(f"Technical Skills:   {len(cls.TECHNICAL_SKILLS)}")
