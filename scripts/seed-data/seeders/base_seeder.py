@@ -257,3 +257,46 @@ class BaseSeeder:
         """Clear all caches to fetch fresh data"""
         self._user_ids_cache = None
         self._existing_data_cache = {}
+
+    def get_table_count(self, table: str) -> int:
+        """Get row count for a single table"""
+        try:
+            response = self.http.get(
+                f"{config.SUPABASE_REST_URL}/{table}?select=id&limit=1",
+                headers=config.API_HEADERS,
+            )
+            content_range = response.headers.get("Content-Range", "")
+            if "/" in content_range:
+                return int(content_range.split("/")[-1])
+            return 0
+        except:
+            return -1
+
+    def print_database_status(self):
+        """Print current database status"""
+        print(f"\n{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}DATABASE STATUS{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
+
+        tables = [
+            ("profiles", "👤 Profiles"),
+            ("posts", "📝 Posts"),
+            ("comments", "💬 Comments"),
+            ("post_reactions", "👍 Reactions"),
+            ("connections", "🔗 Connections"),
+            ("match_suggestions", "🎯 Matches"),
+            ("conversations", "💭 Conversations"),
+            ("messages", "📩 Messages"),
+            ("notifications", "🔔 Notifications"),
+            ("ai_mentor_sessions", "🤖 Mentor Sessions"),
+            ("profile_embeddings", "🧠 Embeddings"),
+        ]
+
+        for table, label in tables:
+            count = self.get_table_count(table)
+            if count >= 0:
+                print(f"  {label}: {Fore.GREEN}{count:,}{Style.RESET_ALL}")
+            else:
+                print(f"  {label}: {Fore.RED}Error{Style.RESET_ALL}")
+
+        print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}\n")

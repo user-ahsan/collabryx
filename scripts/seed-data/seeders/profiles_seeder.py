@@ -292,12 +292,24 @@ class ProfilesSeeder:
         """Seed multiple profiles"""
 
         if count is None:
-            count = config.SEED_COUNT_PROFILES
+            count = int(config.LIMIT_PROFILES) if config.LIMIT_PROFILES != "-1" else 100
 
         if batch_size is None:
             batch_size = config.BATCH_SIZE
 
+        # Show current database status
+        existing_profiles = self.get_table_count("profiles")
+
         print(f"\n{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}CURRENT DATABASE STATUS{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
+        print(
+            f"  👤 Existing Profiles: {Fore.GREEN}{existing_profiles:,}{Style.RESET_ALL}"
+        )
+        print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
+        print(f"\n{Fore.YELLOW}➕ Adding {count:,} new profiles...{Style.RESET_ALL}\n")
+
+        print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
         print(f"{Fore.CYAN}SEEDING {count} PROFILES{Style.RESET_ALL}")
         print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}\n")
 

@@ -6,7 +6,7 @@ Inherits from BaseSeeder for common utilities
 
 import random
 import time
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from colorama import Fore, Style
 
 from config import config
@@ -104,7 +104,25 @@ class PostsSeeder(BaseSeeder):
         comments_range = self.parse_limit_range(config.LIMIT_COMMENTS_PER_POST)
         reactions_range = self.parse_limit_range(config.LIMIT_REACTIONS_PER_POST)
 
+        # Show current database status
+        existing_posts = self.get_table_count("posts")
+        existing_comments = self.get_table_count("comments")
+        existing_reactions = self.get_table_count("post_reactions")
+
         print(f"\n{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}CURRENT DATABASE STATUS{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
+        print(f"  📝 Existing Posts: {Fore.GREEN}{existing_posts:,}{Style.RESET_ALL}")
+        print(
+            f"  💬 Existing Comments: {Fore.GREEN}{existing_comments:,}{Style.RESET_ALL}"
+        )
+        print(
+            f"  👍 Existing Reactions: {Fore.GREEN}{existing_reactions:,}{Style.RESET_ALL}"
+        )
+        print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
+        print(f"\n{Fore.YELLOW}➕ Adding {limit:,} new posts...{Style.RESET_ALL}\n")
+
+        print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
         print(f"{Fore.CYAN}SEEDING {limit} POSTS{Style.RESET_ALL}")
         print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}\n")
 
