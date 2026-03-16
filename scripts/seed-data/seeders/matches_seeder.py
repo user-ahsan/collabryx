@@ -58,14 +58,30 @@ class MatchesSeeder(BaseSeeder):
                 else 5
             )
 
+        # Show current database status
+        existing_matches = self.get_table_count("match_suggestions")
+
         print(f"\n{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}CURRENT DATABASE STATUS{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
+        print(
+            f"  🎯 Existing Matches: {Fore.GREEN}{existing_matches:,}{Style.RESET_ALL}"
+        )
+        print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
+        print(
+            f"\n{Fore.YELLOW}➕ Adding {limit_per_user} matches per user...{Style.RESET_ALL}\n"
+        )
+
+        print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
         print(
             f"{Fore.CYAN}SEEDING MATCH SUGGESTIONS ({limit_per_user} per user){Style.RESET_ALL}"
         )
         print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}\n")
 
         # Fetch user IDs
+        print(f"{Fore.YELLOW}⏳ Fetching user IDs from database...{Style.RESET_ALL}")
         user_ids = self.fetch_user_ids()
+        print(f"{Fore.GREEN}✓ Found {len(user_ids)} users{Style.RESET_ALL}\n")
 
         if len(user_ids) < 2:
             print(
@@ -76,10 +92,17 @@ class MatchesSeeder(BaseSeeder):
         created = 0
 
         # Limit to first 50 users to avoid too many suggestions
-        for user_id in user_ids[:50]:
+        total_expected = min(50, len(user_ids)) * limit_per_user
+        for i, user_id in enumerate(user_ids[:50]):
             potential_matches = [u for u in user_ids if u != user_id]
             matches = random.sample(
                 potential_matches, min(limit_per_user, len(potential_matches))
+            )
+
+            print(
+                f"\r{Fore.CYAN}[{i + 1}/{min(50, len(user_ids))}] Seeding matches for user...{Style.RESET_ALL}",
+                end="",
+                flush=True,
             )
 
             for matched_user in matches:
@@ -89,7 +112,11 @@ class MatchesSeeder(BaseSeeder):
                 ):
                     created += 1
 
-            self.log_progress(created, 50 * limit_per_user, "Match suggestions")
+            print(
+                f"\r{Fore.CYAN}[{i + 1}/{min(50, len(user_ids))}] ✓ {created} matches created{Style.RESET_ALL}    ",
+                end="",
+                flush=True,
+            )
 
             if created % config.BATCH_SIZE == 0:
                 time.sleep(config.DELAY_BETWEEN_BATCHES)
