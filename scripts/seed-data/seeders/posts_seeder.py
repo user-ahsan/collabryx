@@ -292,7 +292,24 @@ class PostsSeeder(BaseSeeder):
             if (i + 1) % config.BATCH_SIZE == 0:
                 time.sleep(config.DELAY_BETWEEN_BATCHES)
 
-        self.log_stats(stats, "Posts")
+        # Print detailed summary
+        print(f"\n{Fore.GREEN}{'=' * 60}{Style.RESET_ALL}")
+        print(f"{Fore.GREEN}✓ POSTS SEEDING COMPLETE{Style.RESET_ALL}")
+        print(f"{Fore.GREEN}{'=' * 60}{Style.RESET_ALL}")
+        print(f"  Posts created:     {Fore.CYAN}{stats['created']:,}{Style.RESET_ALL}")
+        print(f"  Comments created:  {Fore.CYAN}{stats['comments']:,}{Style.RESET_ALL}")
+        print(
+            f"  Reactions created: {Fore.CYAN}{stats['reactions']:,}{Style.RESET_ALL}"
+        )
+        print(
+            f"  Failed:            {Fore.RED if stats['failed'] > 0 else Fore.GREEN}{stats['failed']:,}{Style.RESET_ALL}"
+        )
+
+        # Calculate rate
+        total_ops = stats["created"] + stats["comments"] + stats["reactions"]
+        print(f"  Total operations:  {Fore.YELLOW}{total_ops:,}{Style.RESET_ALL}")
+        print(f"{Fore.GREEN}{'=' * 60}{Style.RESET_ALL}\n")
+
         return stats
 
 
