@@ -33,19 +33,37 @@ class SeedConfig:
     PYTHON_WORKER_URL: str = os.getenv("PYTHON_WORKER_URL", "http://localhost:8000")
 
     # =========================================================================
-    # SEEDING TOGGLES
+    # SEEDING TOGGLES (with backward compatibility for old env vars)
     # =========================================================================
+    # New variables take precedence, fall back to old variables
     SEED_PROFILES: bool = os.getenv("SEED_PROFILES", "true").lower() == "true"
     SEED_POSTS: bool = os.getenv("SEED_POSTS", "true").lower() == "true"
     SEED_CONNECTIONS: bool = os.getenv("SEED_CONNECTIONS", "true").lower() == "true"
     SEED_MATCHES: bool = os.getenv("SEED_MATCHES", "true").lower() == "true"
     SEED_CONVERSATIONS: bool = os.getenv("SEED_CONVERSATIONS", "true").lower() == "true"
     SEED_MESSAGES: bool = os.getenv("SEED_MESSAGES", "true").lower() == "true"
-    SEED_NOTIFICATIONS: bool = os.getenv("SEED_NOTIFICATIONS", "true").lower() == "true"
-    SEED_MENTOR_SESSIONS: bool = (
-        os.getenv("SEED_MENTOR_SESSIONS", "true").lower() == "true"
+
+    # Backward compatibility: ENABLE_NOTIFICATIONS -> SEED_NOTIFICATIONS
+    SEED_NOTIFICATIONS: bool = (
+        os.getenv(
+            "SEED_NOTIFICATIONS", os.getenv("ENABLE_NOTIFICATIONS", "true")
+        ).lower()
+        == "true"
     )
-    SEED_EMBEDDINGS: bool = os.getenv("SEED_EMBEDDINGS", "true").lower() == "true"
+
+    # Backward compatibility: ENABLE_MENTOR_SESSIONS -> SEED_MENTOR_SESSIONS
+    SEED_MENTOR_SESSIONS: bool = (
+        os.getenv(
+            "SEED_MENTOR_SESSIONS", os.getenv("ENABLE_MENTOR_SESSIONS", "true")
+        ).lower()
+        == "true"
+    )
+
+    # Backward compatibility: ENABLE_EMBEDDINGS -> SEED_EMBEDDINGS
+    SEED_EMBEDDINGS: bool = (
+        os.getenv("SEED_EMBEDDINGS", os.getenv("ENABLE_EMBEDDINGS", "true")).lower()
+        == "true"
+    )
 
     # =========================================================================
     # SEED LIMITS (as strings to support "-1" and ranges)
@@ -58,8 +76,22 @@ class SeedConfig:
     LIMIT_MESSAGES_PER_CONVERSATION: str = os.getenv(
         "LIMIT_MESSAGES_PER_CONVERSATION", "5,20"
     )
+    LIMIT_COMMENTS_PER_POST: str = os.getenv("LIMIT_COMMENTS_PER_POST", "3,8")
+    LIMIT_REACTIONS_PER_POST: str = os.getenv("LIMIT_REACTIONS_PER_POST", "5,15")
     LIMIT_NOTIFICATIONS_PER_USER: str = os.getenv("LIMIT_NOTIFICATIONS_PER_USER", "5")
     LIMIT_MENTOR_SESSIONS: str = os.getenv("LIMIT_MENTOR_SESSIONS", "50")
+
+    # Backward compatibility for old SEED_COUNT_* variables
+    if LIMIT_PROFILES == "100" and os.getenv("SEED_COUNT_PROFILES"):
+        LIMIT_PROFILES = os.getenv("SEED_COUNT_PROFILES", "100")
+    if LIMIT_POSTS == "300" and os.getenv("SEED_COUNT_POSTS"):
+        LIMIT_POSTS = os.getenv("SEED_COUNT_POSTS", "300")
+    if LIMIT_CONNECTIONS == "500" and os.getenv("SEED_COUNT_CONNECTIONS"):
+        LIMIT_CONNECTIONS = os.getenv("SEED_COUNT_CONNECTIONS", "500")
+    if LIMIT_CONVERSATIONS == "150" and os.getenv("SEED_COUNT_CONVERSATIONS"):
+        LIMIT_CONVERSATIONS = os.getenv("SEED_COUNT_CONVERSATIONS", "150")
+    if LIMIT_MENTOR_SESSIONS == "50" and os.getenv("SEED_COUNT_MENTOR_SESSIONS"):
+        LIMIT_MENTOR_SESSIONS = os.getenv("SEED_COUNT_MENTOR_SESSIONS", "50")
 
     # =========================================================================
     # BATCH PROCESSING
