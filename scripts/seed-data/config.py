@@ -20,6 +20,13 @@ class SeedConfig:
     SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
     SUPABASE_SERVICE_ROLE_KEY: str = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
 
+    # REST API endpoints (constructed from base URL)
+    SUPABASE_REST_URL: str = ""
+    SUPABASE_AUTH_URL: str = ""
+
+    # Default HTTP headers for REST API calls
+    API_HEADERS: dict = {}
+
     # =========================================================================
     # PYTHON WORKER CONFIGURATION
     # =========================================================================
@@ -257,6 +264,22 @@ class SeedConfig:
     ]
 
     # =========================================================================
+    # INITIALIZATION
+    # =========================================================================
+    @classmethod
+    def initialize(cls):
+        """Initialize REST API URLs and headers"""
+        if cls.SUPABASE_URL:
+            cls.SUPABASE_REST_URL = f"{cls.SUPABASE_URL}/rest/v1"
+            cls.SUPABASE_AUTH_URL = f"{cls.SUPABASE_URL}/auth/v1"
+            cls.API_HEADERS = {
+                "apikey": cls.SUPABASE_SERVICE_ROLE_KEY,
+                "Authorization": f"Bearer {cls.SUPABASE_SERVICE_ROLE_KEY}",
+                "Content-Type": "application/json",
+                "Prefer": "return=representation",
+            }
+
+    # =========================================================================
     # VERIFICATION
     # =========================================================================
     @classmethod
@@ -269,6 +292,9 @@ class SeedConfig:
             print(f"❌ Missing required configuration: {missing}")
             print("   Copy .env.example to .env and fill in your values")
             return False
+
+        # Initialize REST API configuration
+        cls.initialize()
 
         return True
 
