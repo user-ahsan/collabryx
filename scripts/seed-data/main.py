@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
 """
-Collabryx Database Seed Script
-Main entry point for seeding dummy data using Supabase REST API
+Collabryx Modular Database Seeder
+Environment-driven seeding with individual module control
 
 Usage:
-    python main.py                          # Run with default settings
-    python main.py --profiles 50            # Seed 50 profiles
-    python main.py --clear-existing         # Clear existing data first
-    python main.py --skip-embeddings        # Skip embedding generation
+    python main.py --all                     # Run all enabled seeders
+    python main.py --profiles                # Seed profiles only
+    python main.py --posts                   # Seed posts only
+    python main.py --connections             # Seed connections only
+    python main.py --matches                 # Seed matches only
+    python main.py --conversations           # Seed conversations only
+    python main.py --messages                # Seed messages only
+    python main.py --notifications           # Seed notifications only
+    python main.py --mentor                  # Seed mentor sessions only
+    python main.py --embeddings              # Generate embeddings only
 """
 
 import argparse
@@ -24,156 +30,208 @@ init()
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from config import config
-from seeders.profiles_seeder import ProfilesSeeder
-from seeders.content_seeder import ContentSeeder
-from seeders.social_seeder import SocialSeeder
-from seeders.messaging_seeder import MessagingSeeder
-from seeders.notifications_seeder import NotificationsSeeder
-from seeders.mentor_seeder import MentorSeeder
-from seeders.embeddings_seeder import EmbeddingsSeeder
 
 
 def print_banner():
     """Print application banner"""
     print(f"\n{Fore.CYAN}")
     print("=" * 60)
-    print("  COLLABRYX DATABASE SEEDER")
-    print("  Generate realistic dummy data for development/testing")
+    print("  COLLABRYX MODULAR DATABASE SEEDER")
+    print("  Environment-driven seeding with real UUIDs")
     print("=" * 60)
     print(f"{Style.RESET_ALL}\n")
 
 
-def clear_database(http_client: httpx.Client):
-    """Clear existing data from database using REST API"""
-    print(f"\n{Fore.RED}{'=' * 60}{Style.RESET_ALL}")
-    print(f"{Fore.RED}CLEARING EXISTING DATA{Style.RESET_ALL}")
-    print(f"{Fore.RED}{'=' * 60}{Style.RESET_ALL}\n")
-
-    confirm = input(
-        f"{Fore.YELLOW}⚠️  This will DELETE all data. Type 'DELETE' to confirm: {Style.RESET_ALL}"
-    )
-
-    if confirm != "DELETE":
-        print(f"{Fore.RED}✗ Operation cancelled{Style.RESET_ALL}")
-        return False
-
-    tables = [
-        "ai_mentor_messages",
-        "ai_mentor_sessions",
-        "messages",
-        "conversations",
-        "notifications",
-        "match_suggestions",
-        "match_scores",
-        "connections",
-        "comment_likes",
-        "comments",
-        "post_reactions",
-        "post_attachments",
-        "posts",
-        "user_projects",
-        "user_experiences",
-        "user_interests",
-        "user_skills",
-        "profile_embeddings",
-        "profiles",
-    ]
-
-    for table in tables:
-        try:
-            # Delete all rows (PostgREST way)
-            response = http_client.delete(
-                f"{config.SUPABASE_REST_URL}/{table}", headers=config.API_HEADERS
-            )
-            print(f"{Fore.GREEN}✓ Cleared {table}{Style.RESET_ALL}")
-        except Exception as e:
-            print(f"{Fore.YELLOW}⚠️  Could not clear {table}: {e}{Style.RESET_ALL}")
-
-    print(f"\n{Fore.GREEN}{'=' * 60}{Style.RESET_ALL}")
-    print(f"{Fore.GREEN}✓ Database cleared{Style.RESET_ALL}")
-    print(f"{Fore.GREEN}{'=' * 60}{Style.RESET_ALL}\n")
-
-    return True
-
-
-def verify_data(http_client: httpx.Client):
-    """Verify seeded data with counts using REST API"""
+def print_config():
+    """Print current configuration"""
     print(f"\n{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
-    print(f"{Fore.CYAN}VERIFYING DATA{Style.RESET_ALL}")
-    print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}\n")
+    print(f"{Fore.CYAN}SEEDING CONFIGURATION{Style.RESET_ALL}")
+    print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
 
-    tables = [
-        ("profiles", "Profiles"),
-        ("user_skills", "Skills"),
-        ("user_interests", "Interests"),
-        ("user_experiences", "Experiences"),
-        ("user_projects", "Projects"),
-        ("posts", "Posts"),
-        ("comments", "Comments"),
-        ("post_reactions", "Reactions"),
-        ("connections", "Connections"),
-        ("match_suggestions", "Match Suggestions"),
-        ("conversations", "Conversations"),
-        ("messages", "Messages"),
-        ("notifications", "Notifications"),
-        ("ai_mentor_sessions", "Mentor Sessions"),
-        ("profile_embeddings", "Embeddings"),
+    # Toggles
+    toggles = [
+        ("Profiles", config.SEED_PROFILES),
+        ("Posts", config.SEED_POSTS),
+        ("Connections", config.SEED_CONNECTIONS),
+        ("Matches", config.SEED_MATCHES),
+        ("Conversations", config.SEED_CONVERSATIONS),
+        ("Messages", config.SEED_MESSAGES),
+        ("Notifications", config.SEED_NOTIFICATIONS),
+        ("Mentor Sessions", config.SEED_MENTOR_SESSIONS),
+        ("Embeddings", config.SEED_EMBEDDINGS),
     ]
 
-    for table, label in tables:
-        try:
-            response = http_client.get(
-                f"{config.SUPABASE_REST_URL}/{table}?select=id",
-                headers={**config.API_HEADERS, "Prefer": "count=exact"},
-            )
-            response.raise_for_status()
-            # Get count from Content-Range header
-            content_range = response.headers.get("Content-Range", "")
-            count = content_range.split("/")[-1] if "/" in content_range else "0"
-            print(f"{Fore.GREEN}✓ {label}: {count}{Style.RESET_ALL}")
-        except Exception as e:
-            print(f"{Fore.RED}✗ {label}: Error - {e}{Style.RESET_ALL}")
+    print("\nEnabled Seeders:")
+    for name, enabled in toggles:
+        status = (
+            f"{Fore.GREEN}✓{Style.RESET_ALL}"
+            if enabled
+            else f"{Fore.RED}✗{Style.RESET_ALL}"
+        )
+        print(f"  {status} {name}")
+
+    # Limits
+    print(f"\nLimits:")
+    print(f"  Profiles:      {config.LIMIT_PROFILES}")
+    print(f"  Posts:         {config.LIMIT_POSTS}")
+    print(f"  Connections:   {config.LIMIT_CONNECTIONS}")
+    print(f"  Matches/user:  {config.LIMIT_MATCHES_PER_USER}")
+    print(f"  Conversations: {config.LIMIT_CONVERSATIONS}")
+    print(f"  Messages/conv: {config.LIMIT_MESSAGES_PER_CONVERSATION}")
+    print(f"  Notifications: {config.LIMIT_NOTIFICATIONS_PER_USER}")
+    print(f"  Mentor:        {config.LIMIT_MENTOR_SESSIONS}")
 
     print(f"\n{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}\n")
+
+
+def run_seeders(http_client, args):
+    """Run seeders based on arguments and configuration"""
+
+    start_time = datetime.now()
+    results = {}
+
+    # Import seeders lazily to avoid circular imports
+    if args.profiles or (args.all and config.SEED_PROFILES):
+        from seeders.profiles_seeder import ProfilesSeeder
+
+        seeder = ProfilesSeeder(http_client)
+        results["profiles"] = seeder.seed()
+        http_client.clear_cache()  # Refresh user IDs cache
+
+    if args.posts or (args.all and config.SEED_POSTS):
+        from seeders.posts_seeder import PostsSeeder
+
+        seeder = PostsSeeder(http_client)
+        results["posts"] = seeder.seed()
+
+    if args.connections or (args.all and config.SEED_CONNECTIONS):
+        from seeders.connections_seeder import ConnectionsSeeder
+
+        seeder = ConnectionsSeeder(http_client)
+        results["connections"] = seeder.seed()
+
+    if args.matches or (args.all and config.SEED_MATCHES):
+        from seeders.matches_seeder import MatchesSeeder
+
+        seeder = MatchesSeeder(http_client)
+        results["matches"] = seeder.seed()
+
+    if args.conversations or (args.all and config.SEED_CONVERSATIONS):
+        from seeders.conversations_seeder import ConversationsSeeder
+
+        seeder = ConversationsSeeder(http_client)
+        results["conversations"] = seeder.seed()
+
+    if args.messages or (args.all and config.SEED_MESSAGES):
+        from seeders.messages_seeder import MessagesSeeder
+
+        seeder = MessagesSeeder(http_client)
+        results["messages"] = seeder.seed()
+
+    if args.notifications or (args.all and config.SEED_NOTIFICATIONS):
+        from seeders.notifications_seeder import NotificationsSeeder
+
+        seeder = NotificationsSeeder(http_client)
+        user_ids = (
+            http_client.fetch_user_ids()
+            if hasattr(http_client, "fetch_user_ids")
+            else []
+        )
+        results["notifications"] = seeder.seed(user_ids)
+
+    if args.mentor or (args.all and config.SEED_MENTOR_SESSIONS):
+        from seeders.mentor_seeder import MentorSeeder
+
+        seeder = MentorSeeder(http_client)
+        user_ids = (
+            http_client.fetch_user_ids()
+            if hasattr(http_client, "fetch_user_ids")
+            else []
+        )
+        results["mentor"] = seeder.seed(user_ids)
+
+    if args.embeddings or (args.all and config.SEED_EMBEDDINGS):
+        from seeders.embeddings_seeder import EmbeddingsSeeder
+
+        seeder = EmbeddingsSeeder(http_client, config.PYTHON_WORKER_URL)
+
+        # Queue profiles for embeddings
+        user_ids = (
+            http_client.fetch_user_ids()
+            if hasattr(http_client, "fetch_user_ids")
+            else []
+        )
+        if user_ids:
+            seeder.queue_profiles_for_embeddings(user_ids)
+            seeder.seed_embeddings()
+
+    # Print summary
+    elapsed = datetime.now() - start_time
+    print(f"\n{Fore.GREEN}{'=' * 60}{Style.RESET_ALL}")
+    print(f"{Fore.GREEN}✓ SEEDING COMPLETE{Style.RESET_ALL}")
+    print(
+        f"{Fore.GREEN}  Total time: {elapsed.total_seconds():.1f} seconds{Style.RESET_ALL}"
+    )
+    print(f"{Fore.GREEN}{'=' * 60}{Style.RESET_ALL}\n")
+
+    print(
+        f"{Fore.YELLOW}💡 Tip: All users have password '{config.DEFAULT_PASSWORD}' for testing{Style.RESET_ALL}\n"
+    )
+
+    return results
 
 
 def main():
     """Main entry point"""
     parser = argparse.ArgumentParser(
-        description="Seed Collabryx database with dummy data"
+        description="Collabryx Modular Database Seeder",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  python main.py --all                     Run all enabled seeders
+  python main.py --profiles                Seed profiles only
+  python main.py --posts --connections     Seed posts and connections
+  python main.py --all --limit-profiles 50 Override profile limit
+        """,
     )
 
+    # Individual seeders
+    parser.add_argument("--profiles", action="store_true", help="Seed profiles only")
+    parser.add_argument("--posts", action="store_true", help="Seed posts only")
     parser.add_argument(
-        "--profiles",
-        type=int,
-        default=None,
-        help=f"Number of profiles to create (default: {config.SEED_COUNT_PROFILES})",
+        "--connections", action="store_true", help="Seed connections only"
+    )
+    parser.add_argument("--matches", action="store_true", help="Seed matches only")
+    parser.add_argument(
+        "--conversations", action="store_true", help="Seed conversations only"
+    )
+    parser.add_argument("--messages", action="store_true", help="Seed messages only")
+    parser.add_argument(
+        "--notifications", action="store_true", help="Seed notifications only"
     )
     parser.add_argument(
-        "--posts",
-        type=int,
-        default=None,
-        help=f"Number of posts to create (default: {config.SEED_COUNT_POSTS})",
+        "--mentor", action="store_true", help="Seed mentor sessions only"
     )
     parser.add_argument(
-        "--clear-existing",
-        action="store_true",
-        help="Clear existing data before seeding",
+        "--embeddings", action="store_true", help="Generate embeddings only"
+    )
+
+    # Control flags
+    parser.add_argument(
+        "--all", action="store_true", help="Run all enabled seeders (based on .env)"
     )
     parser.add_argument(
-        "--skip-embeddings", action="store_true", help="Skip embedding generation"
+        "--list", action="store_true", help="Show configuration and exit"
+    )
+
+    # Override limits
+    parser.add_argument("--limit-profiles", type=int, help="Override LIMIT_PROFILES")
+    parser.add_argument("--limit-posts", type=int, help="Override LIMIT_POSTS")
+    parser.add_argument(
+        "--limit-connections", type=int, help="Override LIMIT_CONNECTIONS"
     )
     parser.add_argument(
-        "--skip-mentor", action="store_true", help="Skip AI mentor sessions"
-    )
-    parser.add_argument(
-        "--skip-notifications", action="store_true", help="Skip notifications"
-    )
-    parser.add_argument(
-        "--batch-size",
-        type=int,
-        default=None,
-        help=f"Batch size for rate limiting (default: {config.BATCH_SIZE})",
+        "--limit-conversations", type=int, help="Override LIMIT_CONVERSATIONS"
     )
 
     args = parser.parse_args()
@@ -185,8 +243,23 @@ def main():
     if not config.validate():
         sys.exit(1)
 
-    # Print configuration summary
-    config.print_summary()
+    # Show configuration if requested
+    if args.list:
+        print_config()
+        return
+
+    # Print configuration
+    print_config()
+
+    # Apply limit overrides
+    if args.limit_profiles:
+        config.LIMIT_PROFILES = str(args.limit_profiles)
+    if args.limit_posts:
+        config.LIMIT_POSTS = str(args.limit_posts)
+    if args.limit_connections:
+        config.LIMIT_CONNECTIONS = str(args.limit_connections)
+    if args.limit_conversations:
+        config.LIMIT_CONVERSATIONS = str(args.limit_conversations)
 
     # Initialize HTTP client with service role key
     try:
@@ -198,6 +271,15 @@ def main():
                 "Content-Type": "application/json",
             },
         )
+
+        # Add helper methods to http_client
+        from seeders.base_seeder import BaseSeeder
+
+        base = BaseSeeder(http_client)
+        http_client.fetch_user_ids = base.fetch_user_ids
+        http_client.fetch_existing_conversations = base.fetch_existing_conversations
+        http_client.clear_cache = base.clear_cache
+
         print(f"{Fore.GREEN}✓ Connected to Supabase{Style.RESET_ALL}\n")
     except Exception as e:
         print(f"{Fore.RED}✗ Failed to connect to Supabase: {e}{Style.RESET_ALL}")
@@ -206,84 +288,29 @@ def main():
         )
         sys.exit(1)
 
-    # Clear existing data if requested
-    if args.clear_existing:
-        if not clear_database(http_client):
-            sys.exit(1)
+    # Determine what to run
+    run_any = any(
+        [
+            args.profiles,
+            args.posts,
+            args.connections,
+            args.matches,
+            args.conversations,
+            args.messages,
+            args.notifications,
+            args.mentor,
+            args.embeddings,
+        ]
+    )
 
-    # Update config with CLI args
-    if args.profiles:
-        config.SEED_COUNT_PROFILES = args.profiles
-    if args.posts:
-        config.SEED_COUNT_POSTS = args.posts
-    if args.batch_size:
-        config.BATCH_SIZE = args.batch_size
+    if not run_any and not args.all:
+        args.all = True  # Default to --all if no specific seeder specified
 
-    start_time = datetime.now()
-
-    # ========== STEP 1: Seed Profiles ==========
-    profiles_seeder = ProfilesSeeder(http_client)
-    user_ids = profiles_seeder.seed_profiles(count=config.SEED_COUNT_PROFILES)
-
-    if not user_ids:
-        print(f"{Fore.RED}✗ No profiles created. Exiting.{Style.RESET_ALL}")
+    # Run seeders
+    try:
+        run_seeders(http_client, args)
+    finally:
         http_client.close()
-        sys.exit(1)
-
-    # ========== STEP 2: Seed Content ==========
-    content_seeder = ContentSeeder(http_client)
-    content_seeder.seed_posts(user_ids, count=config.SEED_COUNT_POSTS)
-
-    # ========== STEP 3: Seed Social Data ==========
-    social_seeder = SocialSeeder(http_client)
-    social_seeder.seed_all(user_ids)
-
-    # ========== STEP 4: Seed Messaging ==========
-    messaging_seeder = MessagingSeeder(http_client)
-    messaging_seeder.seed_conversations(user_ids)
-
-    # ========== STEP 5: Seed Notifications ==========
-    if not args.skip_notifications and config.ENABLE_NOTIFICATIONS:
-        notifications_seeder = NotificationsSeeder(http_client)
-        notifications_seeder.seed_notifications(user_ids)
-
-    # ========== STEP 6: Seed Mentor Sessions ==========
-    if not args.skip_mentor and config.ENABLE_MENTOR_SESSIONS:
-        mentor_seeder = MentorSeeder(http_client)
-        mentor_seeder.seed_sessions(user_ids)
-
-    # ========== STEP 7: Queue Profiles for Embeddings ==========
-    if not args.skip_embeddings and config.ENABLE_EMBEDDINGS:
-        embeddings_seeder = EmbeddingsSeeder(http_client, config.PYTHON_WORKER_URL)
-
-        # First, queue all created profiles
-        embeddings_seeder.queue_profiles_for_embeddings(user_ids)
-
-        # Then, process the queue by calling Python worker
-        print(
-            f"\n{Fore.CYAN}Starting embedding generation from queue...{Style.RESET_ALL}"
-        )
-        embeddings_seeder.seed_embeddings()
-
-    # ========== Verify Data ==========
-    verify_data(http_client)
-
-    # Close HTTP client
-    http_client.close()
-
-    # Print summary
-    elapsed = datetime.now() - start_time
-    print(f"\n{Fore.GREEN}{'=' * 60}{Style.RESET_ALL}")
-    print(f"{Fore.GREEN}✓ SEEDING COMPLETE{Style.RESET_ALL}")
-    print(
-        f"{Fore.GREEN}  Total time: {elapsed.total_seconds():.1f} seconds{Style.RESET_ALL}"
-    )
-    print(f"{Fore.GREEN}  Profiles created: {len(user_ids)}{Style.RESET_ALL}")
-    print(f"{Fore.GREEN}{'=' * 60}{Style.RESET_ALL}\n")
-
-    print(
-        f"{Fore.YELLOW}💡 Tip: All users have password 'DemoPass123!' for testing{Style.RESET_ALL}\n"
-    )
 
 
 if __name__ == "__main__":
