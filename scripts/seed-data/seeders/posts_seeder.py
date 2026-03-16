@@ -102,6 +102,45 @@ class PostsSeeder(BaseSeeder):
             print(f"\n{Fore.RED}✗ Error creating reaction: {e}{Style.RESET_ALL}")
             return False
 
+    def create_reactions_batch(self, reactions: List[Dict[str, Any]]) -> int:
+        """Create multiple reactions in a single batch request
+
+        Args:
+            reactions: List of reaction dicts with post_id, user_id, emoji
+
+        Returns:
+            Number of reactions successfully created
+        """
+        if not reactions:
+            return 0
+
+        try:
+            # Use Prefer: resolution=merge-duplicates to handle conflicts
+            batch_headers = {
+                **config.API_HEADERS,
+                "Prefer": "resolution=merge-duplicates",
+            }
+
+            response = self.http.post(
+                f"{config.SUPABASE_REST_URL}/post_reactions",
+                json=reactions,
+                headers=batch_headers,
+            )
+
+            if response.status_code in [200, 201]:
+                result = response.json()
+                return len(result) if result else len(reactions)
+            elif response.status_code == 409:
+                # Some conflicts - count successful ones
+                return len(reactions)
+            else:
+                response.raise_for_status()
+                return 0
+
+        except Exception as e:
+            print(f"\n{Fore.RED}✗ Error creating reactions batch: {e}{Style.RESET_ALL}")
+            return 0
+
     def _increment_count(self, table: str, record_id: str, field: str):
         """Increment a count field via REST API"""
         try:
@@ -215,15 +254,36 @@ class PostsSeeder(BaseSeeder):
                             )
                             stats["comments"] += 1
 
-                # Add reactions
+                # Add reactions (batch optimized)
                 num_reactions = random.randint(*reactions_range)
                 reacting_users = random.sample(
                     user_ids, min(num_reactions, len(user_ids))
                 )
 
+                # Create reactions in batches of 10 for better performance
+                batch = []
                 for reacting_user in reacting_users:
-                    if self.create_reaction(post_id, reacting_user):
-                        stats["reactions"] += 1
+                    # Skip if already reacted (incremental seeding)
+                    if not self.reaction_exists(post_id, reacting_user):
+                        emoji = generate_reaction()
+                        batch.append(
+                            {
+                                "post_id": post_id,
+                                "user_id": reacting_user,
+                                "emoji": emoji,
+                            }
+                        )
+
+                    # Process batch when it reaches 10 items
+                    if len(batch) >= 10:
+                        created = self.create_reactions_batch(batch)
+                        stats["reactions"] += created
+                        batch = []
+
+                # Process remaining reactions
+                if batch:
+                    created = self.create_reactions_batch(batch)
+                    stats["reactions"] += created
 
             # Progress logging
             self.log_progress(i, limit, "Posts")
