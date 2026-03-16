@@ -47,17 +47,15 @@ def print_menu():
     print("  6. 💭 Seed Messages (in conversations)")
     print("  7. 🔔 Seed Notifications (activity feed)")
     print("  8. 🤖 Seed Mentor Sessions (AI mentoring)")
-    print("  9. 🧠 Generate Embeddings (vector embeddings via worker)")
+    print("  9. 🧠 Generate Embeddings (vector embeddings)")
 
-    print(f"\n{Fore.GREEN}BATCH OPERATIONS:{Style.RESET_ALL}")
+    print(f"\n{Fore.CYAN}QUICK ACTIONS:{Style.RESET_ALL}")
     print("  10. ⚡ Seed Everything (all modules in sequence)")
-    print("  11. 🎯 Seed Social Graph (connections + matches)")
-    print("  12. 💬 Seed Messaging (conversations + messages)")
 
-    print(f"\n{Fore.GREEN}CONFIGURATION:{Style.RESET_ALL}")
-    print("  13. ⚙️  View/Modify Configuration")
-    print("  14. 📊 Check Database Status")
-    print("  15. 🐍 Check Python Worker Status")
+    print(f"\n{Fore.YELLOW}UTILITIES:{Style.RESET_ALL}")
+    print("  11. ⚙️  View/Modify Configuration")
+    print("  12. 📊 Check Database Status")
+    print("  13. 🐍 Check Python Worker Status")
 
     print(f"\n{Fore.RED}0. Exit{Style.RESET_ALL}")
     print(f"\n{Fore.YELLOW}{'=' * 70}{Style.RESET_ALL}")
@@ -588,42 +586,6 @@ def seed_everything_menu(http_client):
     print(f"{Fore.GREEN}{'=' * 70}{Style.RESET_ALL}\n")
 
 
-def seed_social_graph_menu(http_client):
-    """Seed connections and matches"""
-    if not confirm_action("Seed connections and matches?"):
-        return
-
-    print(f"\n{Fore.CYAN}[1/2] Seeding Connections...{Style.RESET_ALL}")
-    from seeders.connections_seeder import ConnectionsSeeder
-
-    seeder = ConnectionsSeeder(http_client)
-    seeder.seed(limit=500)
-
-    print(f"\n{Fore.CYAN}[2/2] Seeding Matches...{Style.RESET_ALL}")
-    from seeders.matches_seeder import MatchesSeeder
-
-    seeder = MatchesSeeder(http_client)
-    seeder.seed(limit_per_user=5)
-
-
-def seed_messaging_menu(http_client):
-    """Seed conversations and messages"""
-    if not confirm_action("Seed conversations and messages?"):
-        return
-
-    print(f"\n{Fore.CYAN}[1/2] Seeding Conversations...{Style.RESET_ALL}")
-    from seeders.conversations_seeder import ConversationsSeeder
-
-    seeder = ConversationsSeeder(http_client)
-    seeder.seed(limit=150)
-
-    print(f"\n{Fore.CYAN}[2/2] Seeding Messages...{Style.RESET_ALL}")
-    from seeders.messages_seeder import MessagesSeeder
-
-    seeder = MessagesSeeder(http_client)
-    seeder.seed()
-
-
 def view_configuration_menu(http_client):
     """View and modify configuration"""
     while True:
@@ -845,14 +807,10 @@ def main():
         elif choice == 10:
             seed_everything_menu(http_client)
         elif choice == 11:
-            seed_social_graph_menu(http_client)
-        elif choice == 12:
-            seed_messaging_menu(http_client)
-        elif choice == 13:
             view_configuration_menu(http_client)
-        elif choice == 14:
+        elif choice == 12:
             check_database_status(http_client)
-        elif choice == 15:
+        elif choice == 13:
             check_worker_status(http_client)
         else:
             print(f"{Fore.RED}✗ Invalid option. Please try again.{Style.RESET_ALL}")
