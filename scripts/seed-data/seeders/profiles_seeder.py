@@ -35,11 +35,11 @@ class ProfilesSeeder:
             if full_name:
                 user_data["user_metadata"] = {"full_name": full_name}
 
-            # For self-hosted Supabase, use Gotrue directly
-            # Endpoint: POST /admin/users with service role key
-            gotrue_url = config.SUPABASE_URL.rstrip("/") + "/gotrue/v1/admin/users"
+            # For self-hosted Supabase with Kong gateway
+            # Use /auth/v1/admin/users endpoint via Kong
+            auth_admin_url = config.SUPABASE_URL.rstrip("/") + "/auth/v1/admin/users"
             response = self.http.post(
-                gotrue_url,
+                auth_admin_url,
                 json=user_data,
                 headers={
                     "apikey": config.SUPABASE_SERVICE_ROLE_KEY,
