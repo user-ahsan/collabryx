@@ -5,25 +5,126 @@ Common utilities for all seeders using Supabase REST API
 
 import random
 import time
+import httpx
 from typing import List, Dict, Any, Optional, Set, Tuple
 from colorama import Fore, Style
 
 from config import config
 
 
+class ResilientHTTPClient:
+    """HTTP client with retry logic, timeouts, and connection pooling"""
+
+    def __init__(self):
+        self.timeout = httpx.Timeout(30.0, connect=10.0, read=60.0)
+        self.limits = httpx.Limits(max_connections=100, max_keepalive_connections=20)
+        self.max_retries = 3
+        self.base_delay = 1.0
+        self._client: Optional[httpx.Client] = None
+        self._default_headers: Dict[str, str] = {}
+
+    def __enter__(self):
+        self._client = httpx.Client(timeout=self.timeout, limits=self.limits)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self._client:
+            self._client.close()
+
+    def set_headers(self, headers: Dict[str, str]):
+        """Set default headers for all requests"""
+        self._default_headers = headers
+
+    def _should_retry(self, status_code: int) -> bool:
+        """Determine if request should be retried"""
+        return status_code in [429, 500, 502, 503, 504]
+
+    def _calculate_delay(self, attempt: int) -> float:
+        """Calculate exponential backoff delay"""
+        import random
+
+        base_delay = self.base_delay * (2**attempt)
+        jitter = random.uniform(0, base_delay * 0.1)
+        return base_delay + jitter
+
+    def request(self, method: str, url: str, **kwargs) -> httpx.Response:
+        """Make HTTP request with retry logic"""
+        headers = {**self._default_headers, **kwargs.pop("headers", {})}
+
+        if not self._client:
+            raise RuntimeError(
+                "Client not initialized. Use context manager: with ResilientHTTPClient()"
+            )
+
+        last_exception: Optional[Exception] = None
+
+        for attempt in range(self.max_retries):
+            try:
+                response = self._client.request(method, url, headers=headers, **kwargs)
+                status_code = response.status_code
+
+                if self._should_retry(status_code):
+                    if attempt < self.max_retries - 1:
+                        delay = self._calculate_delay(attempt)
+                        print(
+                            f"{Fore.YELLOW}  ⚠️  Retry {attempt + 1}/{self.max_retries} after {delay:.1f}s (status: {status_code}){Style.RESET_ALL}"
+                        )
+                        time.sleep(delay)
+                        continue
+                    else:
+                        response.raise_for_status()
+
+                return response
+
+            except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.ConnectError) as e:
+                last_exception = e
+                if attempt < self.max_retries - 1:
+                    delay = self._calculate_delay(attempt)
+                    print(
+                        f"{Fore.YELLOW}  ⚠️  Retry {attempt + 1}/{self.max_retries} after {delay:.1f}s (connection error){Style.RESET_ALL}"
+                    )
+                    time.sleep(delay)
+                else:
+                    raise
+
+        if last_exception:
+            raise last_exception
+        raise RuntimeError("Request failed without exception")
+
+    def get(self, url: str, **kwargs) -> httpx.Response:
+        """HTTP GET with retry"""
+        return self.request("GET", url, **kwargs)
+
+    def post(self, url: str, **kwargs) -> httpx.Response:
+        """HTTP POST with retry"""
+        return self.request("POST", url, **kwargs)
+
+    def patch(self, url: str, **kwargs) -> httpx.Response:
+        """HTTP PATCH with retry"""
+        return self.request("PATCH", url, **kwargs)
+
+    def delete(self, url: str, **kwargs) -> httpx.Response:
+        """HTTP DELETE with retry"""
+        return self.request("DELETE", url, **kwargs)
+
+
 class BaseSeeder:
     """Base class with common Supabase REST API utilities for all seeders"""
 
     def __init__(self, http_client):
-        self.http = http_client
+        if isinstance(http_client, ResilientHTTPClient):
+            self.http = http_client
+        else:
+            self.http = http_client
         self._user_ids_cache = None
         self._existing_data_cache = {}
+        self._creation_log = []
 
     # =========================================================================
     # DATA FETCHING - Get real UUIDs from Supabase
     # =========================================================================
 
-    def fetch_user_ids(self, limit: int = None) -> List[str]:
+    def fetch_user_ids(self, limit: Optional[int] = None) -> List[str]:
         """Fetch actual user UUIDs from profiles table"""
         try:
             if self._user_ids_cache is not None:
@@ -52,7 +153,9 @@ class BaseSeeder:
             traceback.print_exc()
             return []
 
-    def fetch_random_user_ids(self, count: int, exclude: List[str] = None) -> List[str]:
+    def fetch_random_user_ids(
+        self, count: int, exclude: Optional[List[str]] = None
+    ) -> List[str]:
         """Fetch random user UUIDs for relationships"""
         try:
             all_ids = self.fetch_user_ids()
@@ -97,7 +200,7 @@ class BaseSeeder:
         except Exception as e:
             return set()
 
-    def fetch_existing_posts(self, limit: int = None) -> List[Dict[str, Any]]:
+    def fetch_existing_posts(self, limit: Optional[int] = None) -> List[Dict[str, Any]]:
         """Fetch existing posts for comments/reactions"""
         try:
             cache_key = "posts"
@@ -165,7 +268,7 @@ class BaseSeeder:
     # =========================================================================
 
     def upsert_batch(
-        self, table: str, data: List[Dict], unique_fields: List[str] = None
+        self, table: str, data: List[Dict], unique_fields: Optional[List[str]] = None
     ) -> Tuple[int, int]:
         """
         Upsert data with conflict handling
@@ -194,8 +297,16 @@ class BaseSeeder:
 
         return created, skipped
 
-    def create_single(self, table: str, data: Dict[str, Any]) -> Optional[str]:
-        """Create a single record, return ID if successful"""
+    def create_single(
+        self, table: str, data: Dict[str, Any], track: bool = True
+    ) -> Optional[str]:
+        """Create a single record, return ID if successful
+
+        Args:
+            table: Table name
+            data: Record data
+            track: Whether to track this creation for rollback
+        """
         try:
             response = self.http.post(
                 f"{config.SUPABASE_REST_URL}/{table}",
@@ -203,17 +314,64 @@ class BaseSeeder:
                 headers=config.API_HEADERS,
             )
 
-            if response.status_code in [200, 201, 409]:
+            if response.status_code in [200, 201]:
                 result = response.json()
                 if result and len(result) > 0:
-                    return result[0].get("id")
+                    record_id = result[0].get("id")
+                    if track:
+                        self._creation_log.append((table, record_id, data))
+                    return record_id
+                return None
+            elif response.status_code == 409:
+                # Conflict - record already exists
                 return None
 
             response.raise_for_status()
             return None
 
         except Exception as e:
+            print(f"{Fore.RED}  ✗ Error creating {table}: {e}{Style.RESET_ALL}")
             return None
+
+    def rollback_last(self):
+        """Delete the last created record"""
+        if not self._creation_log:
+            return
+
+        table, record_id, _ = self._creation_log.pop()
+        try:
+            self.http.delete(
+                f"{config.SUPABASE_REST_URL}/{table}?id=eq.{record_id}",
+                headers=config.API_HEADERS,
+            )
+            print(f"{Fore.YELLOW}  ↩ Rolled back {table}.{record_id}{Style.RESET_ALL}")
+        except Exception as e:
+            print(
+                f"{Fore.RED}  ✗ Failed to rollback {table}.{record_id}: {e}{Style.RESET_ALL}"
+            )
+
+    def rollback_all(self):
+        """Delete all records created in this session (LIFO order)"""
+        if not self._creation_log:
+            print(f"{Fore.YELLOW}  No records to rollback{Style.RESET_ALL}")
+            return
+
+        print(
+            f"{Fore.YELLOW}  Rolling back {len(self._creation_log)} records...{Style.RESET_ALL}"
+        )
+        count = 0
+        for table, record_id, _ in reversed(self._creation_log):
+            try:
+                self.http.delete(
+                    f"{config.SUPABASE_REST_URL}/{table}?id=eq.{record_id}",
+                    headers=config.API_HEADERS,
+                )
+                count += 1
+            except Exception:
+                pass
+
+        self._creation_log = []
+        print(f"{Fore.GREEN}  ✓ Rolled back {count} records{Style.RESET_ALL}")
 
     # =========================================================================
     # LOGGING & PROGRESS
@@ -266,22 +424,107 @@ class BaseSeeder:
         self._user_ids_cache = None
         self._existing_data_cache = {}
 
-    def get_table_count(self, table: str) -> int:
-        """Get row count for a single table"""
+    def reaction_exists(self, post_id: str, user_id: str) -> bool:
+        """Check if a user has already reacted to a post"""
         try:
             response = self.http.get(
-                f"{config.SUPABASE_REST_URL}/{table}?select=id&limit=1",
+                f"{config.SUPABASE_REST_URL}/post_reactions",
+                params={"post_id": f"eq.{post_id}", "user_id": f"eq.{user_id}"},
                 headers=config.API_HEADERS,
-                timeout=5.0,  # Add timeout
+            )
+            if response.status_code == 200:
+                data = response.json()
+                return len(data) > 0
+            return False
+        except Exception:
+            return False
+
+    def comment_exists(self, post_id: str, author_id: str, content: str) -> bool:
+        """Check if a comment already exists (basic duplicate check)"""
+        try:
+            response = self.http.get(
+                f"{config.SUPABASE_REST_URL}/comments",
+                params={"post_id": f"eq.{post_id}", "author_id": f"eq.{author_id}"},
+                headers=config.API_HEADERS,
+            )
+            if response.status_code == 200:
+                data = response.json()
+                # Check if any comment has same content
+                for comment in data:
+                    if comment.get("content") == content:
+                        return True
+            return False
+        except Exception:
+            return False
+
+    def connection_exists(self, requester_id: str, receiver_id: str) -> bool:
+        """Check if a connection already exists between two users"""
+        try:
+            response = self.http.get(
+                f"{config.SUPABASE_REST_URL}/connections",
+                params={
+                    "requester_id": f"eq.{requester_id}",
+                    "receiver_id": f"eq.{receiver_id}",
+                },
+                headers=config.API_HEADERS,
+            )
+            if response.status_code == 200:
+                data = response.json()
+                return len(data) > 0
+            return False
+        except Exception:
+            return False
+
+    def conversation_exists(self, participant_1: str, participant_2: str) -> bool:
+        """Check if a conversation already exists between two users"""
+        try:
+            # Check both directions since conversations are bidirectional
+            response = self.http.get(
+                f"{config.SUPABASE_REST_URL}/conversations",
+                params={
+                    "or": f"(and(participant_1.eq.{participant_1},participant_2.eq.{participant_2}),and(participant_1.eq.{participant_2},participant_2.eq.{participant_1}))",
+                },
+                headers=config.API_HEADERS,
+            )
+            if response.status_code == 200:
+                data = response.json()
+                return len(data) > 0
+            return False
+        except Exception:
+            return False
+
+    def get_table_count(self, table: str) -> int:
+        """Get row count for a single table using Content-Range header"""
+        try:
+            # Use Count=exact to get total count in Content-Range header
+            count_headers = {
+                **config.API_HEADERS,
+                "Count": "exact",
+                "Prefer": "count=exact",
+            }
+            response = self.http.get(
+                f"{config.SUPABASE_REST_URL}/{table}?select=id&limit=1",
+                headers=count_headers,
             )
             if response.status_code != 200:
                 print(
                     f"{Fore.YELLOW}  ⚠️  Warning: Could not fetch {table} count (status {response.status_code}){Style.RESET_ALL}"
                 )
                 return 0
+
+            # Content-Range format: "bytes 0-0/1234" or "bytes */1234"
+            # We need the total count after the "/"
             content_range = response.headers.get("Content-Range", "")
-            if "/" in content_range:
-                return int(content_range.split("/")[-1])
+            if not content_range:
+                return 0
+
+            # Parse "bytes 0-0/1234" → extract "1234"
+            parts = content_range.split("/")
+            if len(parts) >= 2:
+                total = parts[-1].strip()
+                if total.isdigit():
+                    return int(total)
+
             return 0
         except Exception as e:
             print(
