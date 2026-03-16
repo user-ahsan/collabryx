@@ -1,10 +1,11 @@
 """
 AI Mentor Seeder
-Creates AI mentor sessions and messages
+Creates AI mentor sessions and messages using Supabase REST API
 """
 
 import random
 import time
+import httpx
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 from colorama import Fore, Style
@@ -13,10 +14,10 @@ from config import config
 
 
 class MentorSeeder:
-    """Seeder for AI mentor sessions"""
+    """Seeder for AI mentor sessions using REST API"""
 
-    def __init__(self, supabase_client):
-        self.supabase = supabase_client
+    def __init__(self, http_client: httpx.Client):
+        self.http = http_client
 
     SESSION_TOPICS = [
         "Career advice in tech",
@@ -45,7 +46,7 @@ class MentorSeeder:
     ]
 
     def create_session(self, user_id: str, topic: str = None) -> str:
-        """Create an AI mentor session"""
+        """Create an AI mentor session via REST API"""
         try:
             if topic is None:
                 topic = random.choice(self.SESSION_TOPICS)
@@ -57,10 +58,16 @@ class MentorSeeder:
                 "message_count": 0,
             }
 
-            result = self.supabase.table("ai_mentor_sessions").insert(session).execute()
+            response = self.http.post(
+                f"{config.SUPABASE_REST_URL}/ai_mentor_sessions",
+                json=session,
+                headers=config.API_HEADERS,
+            )
+            response.raise_for_status()
+            result = response.json()
 
-            if result.data and len(result.data) > 0:
-                return result.data[0]["id"]
+            if result and len(result) > 0:
+                return result[0]["id"]
 
             return None
 
@@ -70,7 +77,7 @@ class MentorSeeder:
     def create_message(
         self, session_id: str, is_user: bool, content: str, order_index: int
     ) -> bool:
-        """Create a message in a mentor session"""
+        """Create a message in a mentor session via REST API"""
         try:
             message = {
                 "session_id": session_id,
@@ -79,20 +86,30 @@ class MentorSeeder:
                 "order_index": order_index,
             }
 
-            result = self.supabase.table("ai_mentor_messages").insert(message).execute()
+            response = self.http.post(
+                f"{config.SUPABASE_REST_URL}/ai_mentor_messages",
+                json=message,
+                headers=config.API_HEADERS,
+            )
+            response.raise_for_status()
 
-            if result.data:
-                # Update session message count
-                self.supabase.table("ai_mentor_sessions").update(
-                    {"message_count": order_index + 1}
-                ).eq("id", session_id).execute()
-
-                return True
-
-            return False
+            # Update session message count
+            self._update_session_message_count(session_id, order_index + 1)
+            return True
 
         except Exception as e:
             return False
+
+    def _update_session_message_count(self, session_id: str, count: int):
+        """Update session message count"""
+        try:
+            self.http.patch(
+                f"{config.SUPABASE_REST_URL}/ai_mentor_sessions?id=eq.{session_id}",
+                json={"message_count": count},
+                headers=config.API_HEADERS,
+            )
+        except:
+            pass
 
     def seed_sessions(self, user_ids: List[str], count: int = None) -> int:
         """Seed AI mentor sessions"""
