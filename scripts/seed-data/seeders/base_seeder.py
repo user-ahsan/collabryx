@@ -272,13 +272,22 @@ class BaseSeeder:
             response = self.http.get(
                 f"{config.SUPABASE_REST_URL}/{table}?select=id&limit=1",
                 headers=config.API_HEADERS,
+                timeout=5.0,  # Add timeout
             )
+            if response.status_code != 200:
+                print(
+                    f"{Fore.YELLOW}  ⚠️  Warning: Could not fetch {table} count (status {response.status_code}){Style.RESET_ALL}"
+                )
+                return 0
             content_range = response.headers.get("Content-Range", "")
             if "/" in content_range:
                 return int(content_range.split("/")[-1])
             return 0
-        except:
-            return -1
+        except Exception as e:
+            print(
+                f"{Fore.YELLOW}  ⚠️  Warning: Could not fetch {table} count ({type(e).__name__}){Style.RESET_ALL}"
+            )
+            return 0
 
     def print_database_status(self):
         """Print current database status"""

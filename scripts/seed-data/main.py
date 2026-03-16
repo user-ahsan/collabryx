@@ -754,8 +754,11 @@ def main():
         return
 
     try:
+        import httpcore
+
         http_client = httpx.Client(
             timeout=30.0,
+            limits=httpx.Limits(max_connections=100, max_keepalive_connections=20),
             headers={
                 "apikey": config.SUPABASE_SERVICE_ROLE_KEY,
                 "Authorization": f"Bearer {config.SUPABASE_SERVICE_ROLE_KEY}",
