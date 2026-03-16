@@ -1,10 +1,11 @@
 """
 Content Seeder
-Creates posts, comments, and reactions
+Creates posts, comments, and reactions using Supabase REST API
 """
 
 import random
 import time
+import httpx
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 from colorama import Fore, Style
@@ -14,15 +15,15 @@ from data_generators.posts import generate_post, generate_comment, generate_reac
 
 
 class ContentSeeder:
-    """Seeder for posts, comments, and reactions"""
+    """Seeder for posts, comments, and reactions using REST API"""
 
-    def __init__(self, supabase_client):
-        self.supabase = supabase_client
+    def __init__(self, http_client: httpx.Client):
+        self.http = http_client
         self.created_post_ids = []
         self.created_comment_ids = []
 
     def create_post(self, author_id: str, post_data: Dict[str, Any]) -> str:
-        """Create a single post"""
+        """Create a single post via REST API"""
         try:
             post = {
                 "author_id": author_id,
@@ -37,10 +38,16 @@ class ContentSeeder:
                 "share_count": 0,
             }
 
-            result = self.supabase.table("posts").insert(post).execute()
+            response = self.http.post(
+                f"{config.SUPABASE_REST_URL}/posts",
+                json=post,
+                headers=config.API_HEADERS,
+            )
+            response.raise_for_status()
+            result = response.json()
 
-            if result.data and len(result.data) > 0:
-                post_id = result.data[0]["id"]
+            if result and len(result) > 0:
+                post_id = result[0]["id"]
                 self.created_post_ids.append(post_id)
                 return post_id
 
@@ -53,7 +60,7 @@ class ContentSeeder:
     def create_comment(
         self, post_id: str, author_id: str, content: str, parent_id: str = None
     ) -> str:
-        """Create a comment on a post"""
+        """Create a comment on a post via REST API"""
         try:
             comment = {
                 "post_id": post_id,
@@ -63,14 +70,20 @@ class ContentSeeder:
                 "like_count": 0,
             }
 
-            result = self.supabase.table("comments").insert(comment).execute()
+            response = self.http.post(
+                f"{config.SUPABASE_REST_URL}/comments",
+                json=comment,
+                headers=config.API_HEADERS,
+            )
+            response.raise_for_status()
+            result = response.json()
 
-            if result.data and len(result.data) > 0:
-                comment_id = result.data[0]["id"]
+            if result and len(result) > 0:
+                comment_id = result[0]["id"]
                 self.created_comment_ids.append(comment_id)
 
                 # Update post comment count
-                self._increment_comment_count(post_id)
+                self._increment_count("posts", post_id, "comment_count")
 
                 return comment_id
 
@@ -81,52 +94,62 @@ class ContentSeeder:
             return None
 
     def create_reaction(self, post_id: str, user_id: str, emoji: str = None) -> bool:
-        """Create a reaction on a post"""
+        """Create a reaction on a post via REST API"""
         try:
             if emoji is None:
                 emoji = generate_reaction()
 
             reaction = {"post_id": post_id, "user_id": user_id, "emoji": emoji}
 
-            result = self.supabase.table("post_reactions").insert(reaction).execute()
+            response = self.http.post(
+                f"{config.SUPABASE_REST_URL}/post_reactions",
+                json=reaction,
+                headers=config.API_HEADERS,
+            )
+            response.raise_for_status()
 
-            if result.data:
-                # Update post reaction count
-                self._increment_reaction_count(post_id)
-                return True
+            # Update post reaction count
+            self._increment_count("posts", post_id, "reaction_count")
+            return True
 
-            return False
-
-        except Exception as e:
+        except httpx.HTTPStatusError as e:
             # Ignore duplicate reactions (unique constraint)
+            if e.response.status_code == 409:
+                return False
+            raise
+        except Exception as e:
             return False
 
-    def _increment_comment_count(self, post_id: str):
-        """Increment post comment count"""
+    def _increment_count(self, table: str, record_id: str, field: str):
+        """Increment a count field via REST API"""
         try:
-            self.supabase.rpc(
-                "increment_post_comment_count", {"p_post_id": post_id}
-            ).execute()
-        except:
-            # Fallback: manual update
-            pass
+            # Get current count
+            get_response = self.http.get(
+                f"{config.SUPABASE_REST_URL}/{table}?id=eq.{record_id}&select={field}",
+                headers=config.API_HEADERS,
+            )
+            get_response.raise_for_status()
+            result = get_response.json()
 
-    def _increment_reaction_count(self, post_id: str):
-        """Increment post reaction count"""
-        try:
-            self.supabase.rpc(
-                "increment_post_reaction_count", {"p_post_id": post_id}
-            ).execute()
+            if result and len(result) > 0:
+                current_count = result[0].get(field, 0)
+
+                # Update with incremented count
+                self.http.patch(
+                    f"{config.SUPABASE_REST_URL}/{table}?id=eq.{record_id}",
+                    json={field: current_count + 1},
+                    headers=config.API_HEADERS,
+                )
         except:
-            # Fallback: manual update
+            # Fallback: ignore errors for count updates
             pass
 
     def seed_posts(
         self,
         user_ids: List[str],
         count: int = None,
-        comments_per_post: int = None,
-        reactions_per_post: int = None,
+        comments_per_post: tuple = None,
+        reactions_per_post: tuple = None,
     ) -> Dict[str, Any]:
         """Seed posts with comments and reactions"""
 
