@@ -135,7 +135,7 @@ class ProfilesSeeder:
             return False
 
     def create_skills(self, user_id: str, skills: List[Dict[str, Any]]) -> bool:
-        """Create user skills via REST API"""
+        """Create user skills via REST API (skip if exists)"""
         try:
             skills_data = [
                 {
@@ -152,15 +152,20 @@ class ProfilesSeeder:
                 json=skills_data,
                 headers=config.API_HEADERS,
             )
+
+            # 201 Created or 409 Conflict (already exists) are both OK
+            if response.status_code in [201, 409]:
+                return True
+
             response.raise_for_status()
             return True
 
         except Exception as e:
-            print(f"{Fore.RED}✗ Failed to create skills: {e}{Style.RESET_ALL}")
+            print(f"{Fore.YELLOW}⚠ Skills skipped for {user_id}: {e}{Style.RESET_ALL}")
             return False
 
     def create_interests(self, user_id: str, interests: List[str]) -> bool:
-        """Create user interests via REST API"""
+        """Create user interests via REST API (skip if exists)"""
         try:
             interests_data = [
                 {"user_id": user_id, "interest": interest} for interest in interests
@@ -171,17 +176,21 @@ class ProfilesSeeder:
                 json=interests_data,
                 headers=config.API_HEADERS,
             )
+
+            if response.status_code in [201, 409]:
+                return True
+
             response.raise_for_status()
             return True
 
         except Exception as e:
-            print(f"{Fore.RED}✗ Failed to create interests: {e}{Style.RESET_ALL}")
+            print(f"{Fore.YELLOW}⚠ Interests skipped for {user_id}{Style.RESET_ALL}")
             return False
 
     def create_experiences(
         self, user_id: str, experiences: List[Dict[str, Any]]
     ) -> bool:
-        """Create user experiences via REST API"""
+        """Create user experiences via REST API (skip if exists)"""
         try:
             experiences_data = [
                 {
@@ -202,15 +211,19 @@ class ProfilesSeeder:
                 json=experiences_data,
                 headers=config.API_HEADERS,
             )
+
+            if response.status_code in [201, 409]:
+                return True
+
             response.raise_for_status()
             return True
 
         except Exception as e:
-            print(f"{Fore.RED}✗ Failed to create experiences: {e}{Style.RESET_ALL}")
+            print(f"{Fore.YELLOW}⚠ Experiences skipped for {user_id}{Style.RESET_ALL}")
             return False
 
     def create_projects(self, user_id: str, projects: List[Dict[str, Any]]) -> bool:
-        """Create user projects via REST API"""
+        """Create user projects via REST API (skip if exists)"""
         try:
             projects_data = [
                 {
@@ -230,11 +243,15 @@ class ProfilesSeeder:
                 json=projects_data,
                 headers=config.API_HEADERS,
             )
+
+            if response.status_code in [201, 409]:
+                return True
+
             response.raise_for_status()
             return True
 
         except Exception as e:
-            print(f"{Fore.RED}✗ Failed to create projects: {e}{Style.RESET_ALL}")
+            print(f"{Fore.YELLOW}⚠ Projects skipped for {user_id}{Style.RESET_ALL}")
             return False
 
     def seed_profile(
@@ -262,34 +279,14 @@ class ProfilesSeeder:
             )
             return None
 
-        # Step 3: Create skills (upsert - delete existing first)
-        self._delete_user_data(user_id, "user_skills")
+        # Step 3-6: Create related data (skip if exists - 409 is OK)
         self.create_skills(user_id, profile_data["skills"])
-
-        # Step 4: Create interests (upsert)
-        self._delete_user_data(user_id, "user_interests")
         self.create_interests(user_id, profile_data["interests"])
-
-        # Step 5: Create experiences (upsert)
-        self._delete_user_data(user_id, "user_experiences")
         self.create_experiences(user_id, profile_data["experiences"])
-
-        # Step 6: Create projects (upsert)
-        self._delete_user_data(user_id, "user_projects")
         self.create_projects(user_id, profile_data["projects"])
 
         self.created_user_ids.append(user_id)
         return user_id
-
-    def _delete_user_data(self, user_id: str, table: str):
-        """Delete existing user data for upsert"""
-        try:
-            self.http.delete(
-                f"{config.SUPABASE_REST_URL}/{table}?user_id=eq.{user_id}",
-                headers=config.API_HEADERS,
-            )
-        except:
-            pass  # Ignore if table doesn't exist or no data
 
     def seed_profiles(self, count: int = None, batch_size: int = None) -> List[str]:
         """Seed multiple profiles"""
