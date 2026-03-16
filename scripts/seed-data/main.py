@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Collabryx Database Seed Script
-Main entry point for seeding dummy data
+Main entry point for seeding dummy data using Supabase REST API
 
 Usage:
     python main.py                          # Run with default settings
@@ -13,6 +13,7 @@ Usage:
 import argparse
 import sys
 import os
+import httpx
 from datetime import datetime
 from colorama import Fore, Style, init
 
@@ -42,8 +43,8 @@ def print_banner():
     print(f"{Style.RESET_ALL}\n")
 
 
-def clear_database(supabase):
-    """Clear existing data from database"""
+def clear_database(http_client: httpx.Client):
+    """Clear existing data from database using REST API"""
     print(f"\n{Fore.RED}{'=' * 60}{Style.RESET_ALL}")
     print(f"{Fore.RED}CLEARING EXISTING DATA{Style.RESET_ALL}")
     print(f"{Fore.RED}{'=' * 60}{Style.RESET_ALL}\n")
@@ -80,10 +81,10 @@ def clear_database(supabase):
 
     for table in tables:
         try:
-            # Skip auth.users - cannot be deleted via API
-            supabase.table(table).delete().neq(
-                "id", "00000000-0000-0000-0000-000000000000"
-            ).execute()
+            # Delete all rows (PostgREST way)
+            response = http_client.delete(
+                f"{config.SUPABASE_REST_URL}/{table}", headers=config.API_HEADERS
+            )
             print(f"{Fore.GREEN}✓ Cleared {table}{Style.RESET_ALL}")
         except Exception as e:
             print(f"{Fore.YELLOW}⚠️  Could not clear {table}: {e}{Style.RESET_ALL}")
@@ -95,8 +96,8 @@ def clear_database(supabase):
     return True
 
 
-def verify_data(supabase):
-    """Verify seeded data with counts"""
+def verify_data(http_client: httpx.Client):
+    """Verify seeded data with counts using REST API"""
     print(f"\n{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
     print(f"{Fore.CYAN}VERIFYING DATA{Style.RESET_ALL}")
     print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}\n")
@@ -121,8 +122,14 @@ def verify_data(supabase):
 
     for table, label in tables:
         try:
-            result = supabase.table(table).select("id", count="exact").execute()
-            count = result.count if hasattr(result, "count") else len(result.data)
+            response = http_client.get(
+                f"{config.SUPABASE_REST_URL}/{table}?select=id",
+                headers={**config.API_HEADERS, "Prefer": "count=exact"},
+            )
+            response.raise_for_status()
+            # Get count from Content-Range header
+            content_range = response.headers.get("Content-Range", "")
+            count = content_range.split("/")[-1] if "/" in content_range else "0"
             print(f"{Fore.GREEN}✓ {label}: {count}{Style.RESET_ALL}")
         except Exception as e:
             print(f"{Fore.RED}✗ {label}: Error - {e}{Style.RESET_ALL}")
@@ -181,11 +188,16 @@ def main():
     # Print configuration summary
     config.print_summary()
 
-    # Initialize Supabase client
+    # Initialize HTTP client with service role key
     try:
-        from supabase import create_client
-
-        supabase = create_client(config.SUPABASE_URL, config.SUPABASE_SERVICE_ROLE_KEY)
+        http_client = httpx.Client(
+            timeout=30.0,
+            headers={
+                "apikey": config.SUPABASE_SERVICE_ROLE_KEY,
+                "Authorization": f"Bearer {config.SUPABASE_SERVICE_ROLE_KEY}",
+                "Content-Type": "application/json",
+            },
+        )
         print(f"{Fore.GREEN}✓ Connected to Supabase{Style.RESET_ALL}\n")
     except Exception as e:
         print(f"{Fore.RED}✗ Failed to connect to Supabase: {e}{Style.RESET_ALL}")
@@ -196,7 +208,7 @@ def main():
 
     # Clear existing data if requested
     if args.clear_existing:
-        if not clear_database(supabase):
+        if not clear_database(http_client):
             sys.exit(1)
 
     # Update config with CLI args
@@ -210,42 +222,46 @@ def main():
     start_time = datetime.now()
 
     # ========== STEP 1: Seed Profiles ==========
-    profiles_seeder = ProfilesSeeder(supabase)
+    profiles_seeder = ProfilesSeeder(http_client)
     user_ids = profiles_seeder.seed_profiles(count=config.SEED_COUNT_PROFILES)
 
     if not user_ids:
         print(f"{Fore.RED}✗ No profiles created. Exiting.{Style.RESET_ALL}")
+        http_client.close()
         sys.exit(1)
 
     # ========== STEP 2: Seed Content ==========
-    content_seeder = ContentSeeder(supabase)
+    content_seeder = ContentSeeder(http_client)
     content_seeder.seed_posts(user_ids, count=config.SEED_COUNT_POSTS)
 
     # ========== STEP 3: Seed Social Data ==========
-    social_seeder = SocialSeeder(supabase)
+    social_seeder = SocialSeeder(http_client)
     social_seeder.seed_all(user_ids)
 
     # ========== STEP 4: Seed Messaging ==========
-    messaging_seeder = MessagingSeeder(supabase)
+    messaging_seeder = MessagingSeeder(http_client)
     messaging_seeder.seed_conversations(user_ids)
 
     # ========== STEP 5: Seed Notifications ==========
     if not args.skip_notifications and config.ENABLE_NOTIFICATIONS:
-        notifications_seeder = NotificationsSeeder(supabase)
+        notifications_seeder = NotificationsSeeder(http_client)
         notifications_seeder.seed_notifications(user_ids)
 
     # ========== STEP 6: Seed Mentor Sessions ==========
     if not args.skip_mentor and config.ENABLE_MENTOR_SESSIONS:
-        mentor_seeder = MentorSeeder(supabase)
+        mentor_seeder = MentorSeeder(http_client)
         mentor_seeder.seed_sessions(user_ids)
 
     # ========== STEP 7: Generate Embeddings ==========
     if not args.skip_embeddings and config.ENABLE_EMBEDDINGS:
-        embeddings_seeder = EmbeddingsSeeder(supabase, config.PYTHON_WORKER_URL)
+        embeddings_seeder = EmbeddingsSeeder(http_client, config.PYTHON_WORKER_URL)
         embeddings_seeder.seed_embeddings()
 
     # ========== Verify Data ==========
-    verify_data(supabase)
+    verify_data(http_client)
+
+    # Close HTTP client
+    http_client.close()
 
     # Print summary
     elapsed = datetime.now() - start_time
