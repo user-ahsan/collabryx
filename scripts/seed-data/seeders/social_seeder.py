@@ -1,10 +1,11 @@
 """
 Social Seeder
-Creates connections and match suggestions
+Creates connections and match suggestions using Supabase REST API
 """
 
 import random
 import time
+import httpx
 from typing import List, Dict, Any
 from colorama import Fore, Style
 
@@ -12,10 +13,10 @@ from config import config
 
 
 class SocialSeeder:
-    """Seeder for connections and match suggestions"""
+    """Seeder for connections and match suggestions using REST API"""
 
-    def __init__(self, supabase_client):
-        self.supabase = supabase_client
+    def __init__(self, http_client: httpx.Client):
+        self.http = http_client
         self.created_connection_ids = []
 
     def create_connection(
@@ -25,7 +26,7 @@ class SocialSeeder:
         status: str = "accepted",
         message: str = None,
     ) -> bool:
-        """Create a connection between two users"""
+        """Create a connection between two users via REST API"""
         try:
             connection = {
                 "requester_id": requester_id,
@@ -34,16 +35,26 @@ class SocialSeeder:
                 "message": message,
             }
 
-            result = self.supabase.table("connections").insert(connection).execute()
+            response = self.http.post(
+                f"{config.SUPABASE_REST_URL}/connections",
+                json=connection,
+                headers=config.API_HEADERS,
+            )
 
-            if result.data:
-                self.created_connection_ids.append(result.data[0]["id"])
-                return True
+            if response.status_code == 201:
+                result = response.json()
+                if result:
+                    self.created_connection_ids.append(result[0]["id"])
+                    return True
 
             return False
 
-        except Exception as e:
+        except httpx.HTTPStatusError as e:
             # Ignore duplicate connections
+            if e.response.status_code == 409:
+                return False
+            return False
+        except Exception as e:
             return False
 
     def create_match_suggestion(
@@ -53,7 +64,7 @@ class SocialSeeder:
         match_percentage: int,
         reasons: List[Dict] = None,
     ) -> bool:
-        """Create a match suggestion"""
+        """Create a match suggestion via REST API"""
         try:
             if reasons is None:
                 reasons = [
@@ -74,10 +85,12 @@ class SocialSeeder:
                 "status": "active",
             }
 
-            result = (
-                self.supabase.table("match_suggestions").insert(suggestion).execute()
+            response = self.http.post(
+                f"{config.SUPABASE_REST_URL}/match_suggestions",
+                json=suggestion,
+                headers=config.API_HEADERS,
             )
-            return bool(result.data)
+            return response.status_code == 201
 
         except Exception as e:
             return False
