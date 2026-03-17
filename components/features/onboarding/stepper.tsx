@@ -33,17 +33,14 @@ export function Stepper({ steps, currentStep }: StepperProps) {
                                     scale: isCurrent ? 1.1 : 1,
                                 }}
                                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                        className={cn(
-                            "flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-full border-2 text-sm font-semibold transition-all duration-300 backdrop-blur-md bg-background",
-                            isCompleted ? glass("buttonPrimary") + " border-primary text-primary-foreground" :
-                                isCurrent ? "border-primary text-primary shadow-[0_0_20px_rgba(59,130,246,0.5)]" :
-                                    glass("subtle") + " text-muted-foreground"
-                        )}
-                    >
-                        {isCompleted && <Check className="w-5 h-5 md:w-6 md:h-6" />}
-                        {!isCompleted && Icon && <Icon className="w-4 h-4 md:w-5 md:h-5" />}
+                                className={cn(
+                                    "flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-full border-2 text-sm font-semibold transition-all duration-300 backdrop-blur-md bg-background",
+                                    isCompleted ? glass("buttonPrimary") + " border-primary text-primary-foreground" :
+                                        isCurrent ? "border-primary text-primary shadow-[0_0_20px_rgba(59,130,246,0.5)]" :
+                                            glass("subtle") + " text-muted-foreground"
+                                )}
                             >
-                                {isCompleted && <Check className="w-5 h-5" />}
+                                {isCompleted && <Check className="w-5 h-5 md:w-6 md:h-6" />}
                                 {!isCompleted && Icon && <Icon className="w-4 h-4 md:w-5 md:h-5" />}
                                 {!isCompleted && !Icon && <span className="text-sm">{index + 1}</span>}
                             </motion.div>
