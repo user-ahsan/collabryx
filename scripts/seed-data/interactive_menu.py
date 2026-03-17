@@ -23,11 +23,14 @@ class InteractiveMenu:
 
     def display(self):
         """Display the menu"""
-        # Clear screen
-        print("\033[2J\033[H", end="")
+        # Only clear screen if not first display
+        if hasattr(self, "_displayed"):
+            # Move cursor to home position instead of clearing
+            print("\033[H", end="")
+        self._displayed = True
 
         # Print header
-        print(f"\n{Fore.CYAN}{'=' * 70}{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}{'=' * 70}{Style.RESET_ALL}")
         print(f"{Fore.CYAN}{self.title}{Style.RESET_ALL}")
         print(f"{Fore.CYAN}{'=' * 70}{Style.RESET_ALL}\n")
 
@@ -74,17 +77,41 @@ class InteractiveMenu:
 
     def handle_input(self) -> bool:
         """Handle keyboard input. Returns False to exit."""
+        import time
+        time.sleep(0.05)  # Small delay to prevent CPU spinning
+        
         try:
             if msvcrt.kbhit():
                 key = msvcrt.getch()
-
-                if key == b"\x00" or key == b"\xe0":  # Arrow keys
+                
+                if key == b'\x00' or key == b'\xe0':  # Arrow keys
                     key = msvcrt.getch()
-                    if key == b"H":  # Up arrow
-                        self.selected_index = (self.selected_index - 1) % len(
-                            self.options
-                        )
+                    if key == b'H':  # Up arrow
+                        self.selected_index = max(0, self.selected_index - 1)
                         return True
+                    elif key == b'P':  # Down arrow
+                        self.selected_index = min(len(self.options) - 1, self.selected_index + 1)
+                        return True
+                
+                elif key == b' ':  # Space bar (multi-select only)
+                    if self.allow_multi_select:
+                        if self.selected_index in self.selected_items:
+                            self.selected_items.remove(self.selected_index)
+                        else:
+                            self.selected_items.add(self.selected_index)
+                    return True
+                
+                elif key == b'\r':  # Enter
+                    return False  # Exit to execute
+                
+                elif key.lower() == b'q':  # Quit
+                    return False
+                
+        except Exception as e:
+            print(f"Error: {e}")
+            pass
+        
+        return True
                     elif key == b"P":  # Down arrow
                         self.selected_index = (self.selected_index + 1) % len(
                             self.options
@@ -112,8 +139,10 @@ class InteractiveMenu:
 
     def run(self):
         """Run the interactive menu and return selected action(s)"""
+        # Initial display
+        self.display()
+        
         while True:
-            self.display()
             if not self.handle_input():
                 break
 
@@ -185,20 +214,24 @@ def run_interactive_seeder():
     # Add quick actions
     quick_actions = [
         {
-            "label": "⚡ Seed Everything (all modules in sequence)",
-            "action": lambda http: seed_everything(http),
+            'label': '⚡ Seed Everything (all modules in sequence)',
+            'action': lambda http: seed_everything(http),
         },
         {
-            "label": "⚙️  View/Modify Configuration",
-            "action": lambda http: view_configuration(),
+            'label': '⚙️  View/Modify Configuration',
+            'action': lambda http: view_configuration(),
         },
         {
-            "label": "📊 Check Database Status",
-            "action": lambda http: check_database_status(http),
+            'label': '📊 Check Database Status',
+            'action': lambda http: check_database_status(http),
         },
         {
-            "label": "🐍 Check Python Worker Status",
-            "action": lambda http: check_worker_status(),
+            'label': '🐍 Check Python Worker Status',
+            'action': lambda http: check_worker_status(),
+        },
+        {
+            'label': '❌ Exit',
+            'action': 'exit',
         },
     ]
 
@@ -226,36 +259,41 @@ def run_interactive_seeder():
         input(f"\n{Fore.YELLOW}Press Enter to exit...{Style.RESET_ALL}")
         return
 
-    while True:
-        # Main menu
-        main_menu = InteractiveMenu(
-            title="🚀 COLLABRYX DATABASE SEEDER - MAIN MENU",
-            options=menu_options
-            + [{"label": "─────────────────────────────────────────", "action": None}]
-            + quick_actions
-            + [{"label": "❌ Exit", "action": "exit"}],
-            allow_multi_select=True,
-        )
-
-        selected = main_menu.run()
-
-        # Handle exit
-        if not selected or (len(selected) == 1 and selected[0]["action"] == "exit"):
-            print(f"\n{Fore.GREEN}Goodbye! 👋{Style.RESET_ALL}\n")
-            http_client.close()
-            return
-
-        # Execute selected actions
-        for option in selected:
-            if option["action"] and option["action"] != "exit":
-                try:
-                    print(f"\n{Fore.CYAN}{'=' * 70}{Style.RESET_ALL}")
-                    print(f"{Fore.CYAN}Executing: {option['label']}{Style.RESET_ALL}")
-                    print(f"{Fore.CYAN}{'=' * 70}{Style.RESET_ALL}\n")
-
-                    option["action"](http_client)
-
-                    input(f"\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
+    # Create menu once
+    main_menu = InteractiveMenu(
+        title="🚀 COLLABRYX DATABASE SEEDER - MAIN MENU",
+        options=menu_options + [{'label': '─────────────────────────────────────────', 'action': None}] + quick_actions,
+        allow_multi_select=True
+    )
+    
+    # Run menu and get selection
+    selected = main_menu.run()
+    
+    # Handle exit
+    if not selected or (len(selected) == 1 and selected[0].get('action') == 'exit'):
+        print(f"\n{Fore.GREEN}Goodbye! 👋{Style.RESET_ALL}\n")
+        http_client.close()
+        return
+    
+    # Execute selected actions
+    for option in selected:
+        if option.get('action') and option['action'] != 'exit':
+            try:
+                print(f"\n{Fore.CYAN}{'=' * 70}{Style.RESET_ALL}")
+                print(f"{Fore.CYAN}Executing: {option['label']}{Style.RESET_ALL}")
+                print(f"{Fore.CYAN}{'=' * 70}{Style.RESET_ALL}\n")
+                
+                option['action'](http_client)
+                
+                input(f"\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
+            except KeyboardInterrupt:
+                print(f"\n{Fore.RED}✗ Operation cancelled{Style.RESET_ALL}")
+            except Exception as e:
+                print(f"\n{Fore.RED}✗ Error: {e}{Style.RESET_ALL}")
+                input(f"\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
+    
+    # Loop back to menu after execution
+    run_interactive_seeder()
                 except KeyboardInterrupt:
                     print(f"\n{Fore.RED}✗ Operation cancelled{Style.RESET_ALL}")
                 except Exception as e:
