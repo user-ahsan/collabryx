@@ -36,6 +36,8 @@ function PopoverContent({
           "rounded-xl",
           className
         )}
+        onOpenAutoFocus={(e) => e.preventDefault()}
+        onCloseAutoFocus={(e) => e.preventDefault()}
         {...props}
       />
     </PopoverPrimitive.Portal>
