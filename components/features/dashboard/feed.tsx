@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Bot, Inbox, Sparkles, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getInitials } from "@/lib/utils/format-initials"
-import { getCache, CACHE_KEYS } from "@/lib/dashboard-cache"
+import { getCache, setCache, CACHE_KEYS } from "@/lib/dashboard-cache"
 import { sortPostsByPriority, getPostTypeBadge } from "@/lib/utils/post-helpers"
+import { fetchPosts } from "@/lib/services/posts"
 import type { PostWithAuthor } from "@/types/database.types"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
@@ -25,7 +26,6 @@ import { PostDetailDialog } from "./posts/post-detail-dialog"
 import { AIContextCard } from "./ai-context-card"
 import { RequestReminderModal } from "./request-reminder/RequestReminderModal"
 import { GlassCard } from "@/components/shared/glass-card"
-import { usePosts } from "@/hooks/use-posts"
 
 // Extended type for UI component with additional UI fields
 interface PostUI extends PostWithAuthor {
@@ -45,6 +45,11 @@ interface PostUI extends PostWithAuthor {
 export function Feed() {
     // Check if user has completed embedding (for banner display only)
     const [hasEmbedding, setHasEmbedding] = useState<boolean | null>(null)
+    
+    // Posts state for infinite scroll
+    const [posts, setPosts] = useState<PostUI[]>([])
+    const [isInitialLoading, setIsInitialLoading] = useState(true)
+    const [fetchError, setFetchError] = useState<Error | null>(null)
 
     // Map raw API data to UI format
     const mapPostToUI = useCallback((post: PostWithAuthor): PostUI => ({
@@ -62,43 +67,52 @@ export function Feed() {
         myReaction: null,
     }), [])
 
-    // Fetch posts with React Query - always fetch with random for new users
-    const { data: postsData, isPending, error } = usePosts({ 
-        limit: 20,
-        random: true
-    })
-
-    // Map posts to UI format with stable reference, fallback to cache if needed
-    const posts: PostUI[] = useMemo(() => {
-        console.log('[Feed] postsData:', postsData?.length, 'error:', error)
-        
-        // If we have data from React Query, use it
-        if (postsData && postsData.length > 0) {
-            const mapped = postsData.map(mapPostToUI)
-            console.log('[Feed] Mapped posts:', mapped.length)
-            return mapped
-        }
-        
-        // If error and no data, try cache
-        if (error) {
+    // Fetch initial posts
+    const fetchInitialPosts = useCallback(async () => {
+        setIsInitialLoading(true)
+        try {
+            const { data, error } = await fetchPosts({ 
+                limit: 20,
+                random: hasEmbedding === false
+            })
+            
+            if (error) throw error
+            
+            if (data && data.length > 0) {
+                const mapped = data.map(mapPostToUI)
+                setPosts(mapped)
+                setCache(CACHE_KEYS.FEED_POSTS, mapped)
+                setHasMore(data.length === 20)
+            } else {
+                setHasMore(false)
+            }
+        } catch (err) {
+            console.error('Error fetching posts:', err)
+            setFetchError(err instanceof Error ? err : new Error('Failed to fetch posts'))
+            // Fallback to cache
             const cached = getCache<PostUI[]>(CACHE_KEYS.FEED_POSTS)
             if (cached) {
-                console.log('[Feed] Using cached posts:', cached.length)
-                return cached
+                setPosts(cached)
+                toast.info("Couldn't load latest posts. Showing cached data.", {
+                    id: "feed-cache-fallback",
+                })
             }
+        } finally {
+            setIsInitialLoading(false)
         }
-        
-        console.log('[Feed] Returning empty posts array')
-        return []
-    }, [postsData, error, mapPostToUI])
+    }, [mapPostToUI, hasEmbedding])
+
+    // Fetch initial posts when embedding status is known
+    useEffect(() => {
+        if (hasEmbedding !== null && posts.length === 0) {
+            fetchInitialPosts()
+        }
+    }, [hasEmbedding, fetchInitialPosts])
 
     // Stable sort to prevent reordering flickers
     const sortedPosts = useMemo(() => {
-        console.log('[Feed] posts length:', posts.length)
         if (posts.length === 0) return []
-        const sorted = sortPostsByPriority(posts)
-        console.log('[Feed] sortedPosts:', sorted.length)
-        return sorted
+        return sortPostsByPriority(posts)
     }, [posts])
 
     // Check embedding status on mount (for banner only, doesn't block rendering)
@@ -133,6 +147,8 @@ export function Feed() {
     const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set())
     const [newPostsCount, setNewPostsCount] = useState(3)
     const [isLoadingMore, setIsLoadingMore] = useState(false)
+    const [offset, setOffset] = useState(0)
+    const [hasMore, setHasMore] = useState(true)
     const [shareDialogState, setShareDialogState] = useState<{ isOpen: boolean; url: string }>({ isOpen: false, url: "" })
     const [selectedPostId, setSelectedPostId] = useState<string | null>(null)
 
@@ -144,9 +160,33 @@ export function Feed() {
     }
 
     const handleLoadMore = async () => {
+        if (isLoadingMore || !hasMore) return
+        
         setIsLoadingMore(true)
-        await new Promise((resolve) => setTimeout(resolve, 1500))
-        setIsLoadingMore(false)
+        const newOffset = offset + 20
+        
+        try {
+            const { data, error } = await fetchPosts({ 
+                limit: 20,
+                offset: newOffset,
+                random: hasEmbedding === false
+            })
+            
+            if (error) throw error
+            
+            if (data && data.length > 0) {
+                const mapped = data.map(mapPostToUI)
+                setPosts(prev => [...prev, ...mapped])
+                setOffset(newOffset)
+                setHasMore(data.length === 20) // If we got less than 20, no more posts
+            } else {
+                setHasMore(false)
+            }
+        } catch (error) {
+            console.error('Error loading more posts:', error)
+        } finally {
+            setIsLoadingMore(false)
+        }
     }
 
     const handleScrollTop = () => {
@@ -241,9 +281,9 @@ export function Feed() {
 
             {/* Feed Posts */}
             <div className="space-y-3 md:space-y-6" role="feed" aria-label="Posts feed">
-                {isPending && sortedPosts.length === 0 ? (
+                {isInitialLoading && sortedPosts.length === 0 ? (
                     <PostSkeletonList count={5} />
-                ) : error && sortedPosts.length === 0 ? (
+                ) : fetchError && sortedPosts.length === 0 ? (
                     /* Error State - Fallback to Cache */
                     <GlassCard innerClassName="py-16 px-6 text-center">
                         <div className="h-16 w-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -351,7 +391,7 @@ export function Feed() {
                 {isLoadingMore && <PostSkeleton variant="withoutMedia" />}
                 <InfiniteScrollTrigger
                     onLoadMore={handleLoadMore}
-                    hasMore={true}
+                    hasMore={hasMore}
                     isLoading={isLoadingMore}
                 />
             </div>
