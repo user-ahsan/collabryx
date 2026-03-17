@@ -99,23 +99,23 @@ export function MatchesClient() {
                 {/* Grid or List Layout */}
                 {isPending ? (
                     viewMode === "grid" ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 pb-20">
-                            <MatchCardSkeleton count={8} />
-                        </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6 lg:gap-8 pb-20">
+                        <MatchCardSkeleton count={8} />
+                    </div>
                     ) : (
-                        <div className="flex flex-col gap-4 pb-20">
-                            <MatchCardListViewSkeleton count={5} />
-                        </div>
+                    <div className="flex flex-col gap-4 md:gap-6 pb-20">
+                        <MatchCardListViewSkeleton count={5} />
+                    </div>
                     )
                 ) : error && matches.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-24 px-4 text-center">
                         <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-red-500/10 flex items-center justify-center mb-4 sm:mb-6">
                             <Users className="h-8 w-8 sm:h-10 sm:w-10 text-red-400" />
                         </div>
-                        <h2 className="text-xl sm:text-2xl font-bold tracking-tight mb-2 text-foreground">
+                        <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-2 text-foreground">
                             Unable to load matches
                         </h2>
-                        <p className="text-sm sm:text-base text-muted-foreground max-w-md mx-auto mb-6">
+                        <p className="text-sm md:text-base text-muted-foreground max-w-md mx-auto mb-6">
                             Please check your connection and try again.
                         </p>
                     </div>
@@ -124,10 +124,10 @@ export function MatchesClient() {
                         <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-primary/10 flex items-center justify-center mb-4 sm:mb-6">
                             <Users className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
                         </div>
-                        <h2 className="text-xl sm:text-2xl font-bold tracking-tight mb-2 text-foreground">
+                        <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-2 text-foreground">
                             No perfect matches found yet
                         </h2>
-                        <p className="text-sm sm:text-base text-muted-foreground max-w-md mx-auto mb-6">
+                        <p className="text-sm md:text-base text-muted-foreground max-w-md mx-auto mb-6">
                             We couldn&apos;t find anyone matching these exact criteria right now. Try broadening your preferences or check back later!
                         </p>
                         <Button
@@ -138,7 +138,7 @@ export function MatchesClient() {
                         </Button>
                     </div>
                 ) : viewMode === "grid" ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 pb-20">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6 lg:gap-8 pb-20">
                         {matches.map((match, index) => (
                             <div
                                 key={match.id}
@@ -148,6 +148,20 @@ export function MatchesClient() {
                                 }}
                             >
                                 <MatchCard match={match} index={index} />
+                            </div>
+                        ))}
+                    </div>
+                ) : viewMode === "list" ? (
+                    <div className="flex flex-col gap-4 md:gap-6 pb-20">
+                        {matches.map((match, index) => (
+                            <div
+                                key={match.id}
+                                style={{ 
+                                    animationDelay: `${index * 50}ms`,
+                                    animationFillMode: 'backwards'
+                                }}
+                            >
+                                <MatchCardListView match={match} index={index} />
                             </div>
                         ))}
                     </div>

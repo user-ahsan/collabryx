@@ -89,7 +89,7 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                                 </div>
                                 {isStrongMatch && (
                                     <div className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500/20 backdrop-blur-sm">
-                                        <span className="text-[8px]">🔥</span>
+                                        <span className="text-[10px]">🔥</span>
                                     </div>
                                 )}
                             </div>
@@ -118,7 +118,7 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
 
                         {/* Location / Availability Subtitle */}
                         {subtitle && (
-                            <p className="text-[11px] text-muted-foreground/80 mb-3 truncate">
+                            <p className="text-xs text-muted-foreground/80 mb-3 truncate">
                                 {subtitle}
                             </p>
                         )}
@@ -135,10 +135,10 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                                     <MatchReasonBadge
                                         type={match.insights[0].type === "complementary" ? "complementary" : match.insights[0].type === "shared" ? "interest" : "skill"}
                                         label={match.insights[0].text}
-                                        className="text-[10px] py-0 px-2"
+                                        className="text-xs py-0 px-2"
                                     />
                                     {match.insights.length > 1 && (
-                                        <span className="text-[10px] text-muted-foreground/60 flex items-center">+{match.insights.length - 1}</span>
+                                        <span className="text-xs text-muted-foreground/60 flex items-center">+{match.insights.length - 1}</span>
                                     )}
                                 </div>
                             )}
@@ -148,7 +148,7 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                                     <Badge
                                         key={skill}
                                         variant="secondary"
-                                        className="bg-muted/40 text-muted-foreground text-[10px] px-2 py-0 font-medium"
+                                        className="bg-muted/40 text-muted-foreground text-xs px-2 py-0 font-medium"
                                     >
                                         {skill}
                                     </Badge>
@@ -157,7 +157,7 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                                     <TooltipProvider delayDuration={300}>
                                         <Tooltip>
                                             <TooltipTrigger asChild>
-                                                <Badge variant="outline" className="text-[10px] px-2 py-0 font-medium border-dashed text-muted-foreground/70 cursor-help">
+                                                <Badge variant="outline" className="text-xs px-2 py-0 font-medium border-dashed text-muted-foreground/70 cursor-help">
                                                     +{match.skills.length - 2}
                                                 </Badge>
                                             </TooltipTrigger>
@@ -174,7 +174,7 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                         <div className="flex gap-2 mt-4 pt-3 border-t border-border/40 items-center">
                             {!requestSent ? (
                                 <Button
-                                    className="flex-1 h-[36px] text-xs font-medium min-h-[36px]"
+                                    className="flex-1 h-9 text-xs font-medium"
                                     onClick={(e) => {
                                         e.stopPropagation()
                                         setRequestSent(true)
@@ -186,7 +186,7 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                             ) : (
                                 <Button
                                     variant="outline"
-                                    className="flex-1 h-[36px] text-xs font-medium min-h-[36px] bg-emerald-500/10 text-emerald-500 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 border-emerald-500/20 group/cancel transition-colors"
+                                    className="flex-1 h-9 text-xs font-medium bg-emerald-500/10 text-emerald-500 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 border-emerald-500/20 group/cancel transition-colors"
                                     onClick={(e) => {
                                         e.stopPropagation()
                                         setRequestSent(false)
