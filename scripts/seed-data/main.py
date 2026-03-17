@@ -26,7 +26,7 @@ def main():
     """Main entry point - launch interactive menu"""
     print(f"\n{Fore.CYAN}")
     print("=" * 70)
-    print("  🚀 COLLABRYX INTERACTIVE DATABASE SEEDER")
+    print("  COLLABRYX INTERACTIVE DATABASE SEEDER")
     print("  Arrow keys to navigate, SPACE to select, ENTER to execute")
     print("=" * 70)
     print(f"{Style.RESET_ALL}\n")
