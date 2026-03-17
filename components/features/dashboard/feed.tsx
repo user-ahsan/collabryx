@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Bot, Inbox, Sparkles, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getInitials } from "@/lib/utils/format-initials"
+import { getCache, CACHE_KEYS } from "@/lib/dashboard-cache"
 import { sortPostsByPriority, getPostTypeBadge } from "@/lib/utils/post-helpers"
 import type { PostWithAuthor } from "@/types/database.types"
 import { toast } from "sonner"
@@ -61,17 +62,29 @@ export function Feed() {
         myReaction: null,
     }), [])
 
-    // Fetch posts with React Query - always fetch, random fallback for new users
+    // Fetch posts with React Query - always fetch with random for new users
     const { data: postsData, isPending, error } = usePosts({ 
         limit: 20,
-        random: hasEmbedding === false
+        random: true
     })
 
-    // Map posts to UI format with stable reference
+    // Map posts to UI format with stable reference, fallback to cache if needed
     const posts: PostUI[] = useMemo(() => {
-        if (!postsData) return []
-        return postsData.map(mapPostToUI)
-    }, [postsData, mapPostToUI])
+        // If we have data from React Query, use it
+        if (postsData && postsData.length > 0) {
+            return postsData.map(mapPostToUI)
+        }
+        
+        // If error and no data, try cache
+        if (error) {
+            const cached = getCache<PostUI[]>(CACHE_KEYS.FEED_POSTS)
+            if (cached) {
+                return cached
+            }
+        }
+        
+        return []
+    }, [postsData, error, mapPostToUI])
 
     // Stable sort to prevent reordering flickers
     const sortedPosts = useMemo(() => {
