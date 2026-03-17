@@ -12,7 +12,7 @@ export function PostCard({ children, className, onClick }: PostCardProps) {
         <GlassCard
             hoverable
             className={cn(
-                "transition-all duration-300 ease-in-out opacity-0 animate-in fade-in",
+                "transition-all duration-300 ease-in-out opacity-100",
                 className, 
                 onClick && "cursor-pointer", 
                 "shadow-md"
