@@ -6,6 +6,7 @@ Centralized configuration for database seeding operations
 import os
 from typing import List
 from dotenv import load_dotenv
+from colorama import Fore, Style
 
 # Load environment variables from .env file
 load_dotenv()
@@ -31,6 +32,18 @@ class SeedConfig:
     # PYTHON WORKER CONFIGURATION
     # =========================================================================
     PYTHON_WORKER_URL: str = os.getenv("PYTHON_WORKER_URL", "http://localhost:8000")
+
+    # =========================================================================
+    # SEEDING BEHAVIOR CONFIGURATION
+    # =========================================================================
+    SEED_USER_PASSWORD: str = os.getenv("SEED_USER_PASSWORD", "DemoPass123!")
+    INCREMENTAL_SEEDING: bool = (
+        os.getenv("INCREMENTAL_SEEDING", "true").lower() == "true"
+    )
+    CHECK_DUPLICATES: bool = os.getenv("CHECK_DUPLICATES", "true").lower() == "true"
+    SEED_PROFILES_RANDOMIZE_INDUSTRIES: bool = (
+        os.getenv("SEED_PROFILES_RANDOMIZE_INDUSTRIES", "true").lower() == "true"
+    )
 
     # =========================================================================
     # SEEDING TOGGLES (with backward compatibility for old env vars)
@@ -343,22 +356,31 @@ class SeedConfig:
         print("\n" + "=" * 60)
         print("SEEDING CONFIGURATION")
         print("=" * 60)
-        print(f"Profiles:           {cls.LIMIT_PROFILES}")
-        print(f"Posts:              {cls.LIMIT_POSTS}")
-        print(f"Connections:        {cls.LIMIT_CONNECTIONS}")
-        print(f"Matches/user:       {cls.LIMIT_MATCHES_PER_USER}")
-        print(f"Conversations:      {cls.LIMIT_CONVERSATIONS}")
-        print(f"Messages/conv:      {cls.LIMIT_MESSAGES_PER_CONVERSATION}")
-        print(f"Notifications:      {cls.LIMIT_NOTIFICATIONS_PER_USER}")
-        print(f"Mentor Sessions:    {cls.LIMIT_MENTOR_SESSIONS}")
-        print("-" * 60)
-        print(f"Industries:         {len(cls.INDUSTRIES)}")
-        print(f"Technical Skills:   {len(cls.TECHNICAL_SKILLS)}")
-        print(f"Soft Skills:        {len(cls.SOFT_SKILLS)}")
-        print(f"Locations:          {len(cls.LOCATIONS)}")
-        print(f"Universities:       {len(cls.UNIVERSITIES)}")
-        print(f"Companies:          {len(cls.COMPANIES)}")
-        print("=" * 60 + "\n")
+        print(f"\n{Fore.YELLOW}LIMITS:{Style.RESET_ALL}")
+        print(f"  Profiles:              {cls.LIMIT_PROFILES}")
+        print(f"  Posts:                 {cls.LIMIT_POSTS}")
+        print(f"  Connections:           {cls.LIMIT_CONNECTIONS}")
+        print(f"  Matches/user:          {cls.LIMIT_MATCHES_PER_USER}")
+        print(f"  Conversations:         {cls.LIMIT_CONVERSATIONS}")
+        print(f"  Messages/conv:         {cls.LIMIT_MESSAGES_PER_CONVERSATION}")
+        print(f"  Notifications:         {cls.LIMIT_NOTIFICATIONS_PER_USER}")
+        print(f"  Mentor Sessions:       {cls.LIMIT_MENTOR_SESSIONS}")
+        print(f"\n{Fore.YELLOW}BATCH PROCESSING:{Style.RESET_ALL}")
+        print(f"  BATCH_SIZE:            {cls.BATCH_SIZE}")
+        print(f"  DELAY_BETWEEN_BATCHES: {cls.DELAY_BETWEEN_BATCHES}s")
+        print(f"\n{Fore.YELLOW}SEEDING BEHAVIOR:{Style.RESET_ALL}")
+        print(f"  INCREMENTAL_SEEDING:   {cls.INCREMENTAL_SEEDING}")
+        print(f"  CHECK_DUPLICATES:      {cls.CHECK_DUPLICATES}")
+        print(f"  RANDOMIZE_INDUSTRIES:  {cls.SEED_PROFILES_RANDOMIZE_INDUSTRIES}")
+        print(f"  SEED_USER_PASSWORD:    {'*' * len(cls.SEED_USER_PASSWORD)}")
+        print(f"\n{Fore.YELLOW}DATA POOLS:{Style.RESET_ALL}")
+        print(f"  Industries:            {len(cls.INDUSTRIES)}")
+        print(f"  Technical Skills:      {len(cls.TECHNICAL_SKILLS)}")
+        print(f"  Soft Skills:           {len(cls.SOFT_SKILLS)}")
+        print(f"  Locations:             {len(cls.LOCATIONS)}")
+        print(f"  Universities:          {len(cls.UNIVERSITIES)}")
+        print(f"  Companies:             {len(cls.COMPANIES)}")
+        print("\n" + "=" * 60 + "\n")
 
 
 # Create a global config instance
