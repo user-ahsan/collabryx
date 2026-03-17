@@ -172,7 +172,7 @@ def run_embeddings_with_warning(http_client):
 
     seeder = EmbeddingsSeeder(http_client)
     try:
-        user_ids = seeder.fetch_user_ids()
+        user_ids = seeder.fetch_user_ids(http_client)
         if user_ids:
             seeder.queue_profiles_for_embeddings(user_ids)
             seeder.seed_embeddings()
@@ -256,9 +256,7 @@ def check_worker_status():
     print(f"\n{Fore.YELLOW}Checking Python worker status...{Style.RESET_ALL}\n")
 
     try:
-        import httpx as hx
-
-        response = hx.get(f"{config.PYTHON_WORKER_URL}/health", timeout=5.0)
+        response = httpx.get(f"{config.PYTHON_WORKER_URL}/health", timeout=5.0)
 
         if response.status_code == 200:
             data = response.json()
