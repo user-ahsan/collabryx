@@ -70,26 +70,35 @@ export function Feed() {
 
     // Map posts to UI format with stable reference, fallback to cache if needed
     const posts: PostUI[] = useMemo(() => {
+        console.log('[Feed] postsData:', postsData?.length, 'error:', error)
+        
         // If we have data from React Query, use it
         if (postsData && postsData.length > 0) {
-            return postsData.map(mapPostToUI)
+            const mapped = postsData.map(mapPostToUI)
+            console.log('[Feed] Mapped posts:', mapped.length)
+            return mapped
         }
         
         // If error and no data, try cache
         if (error) {
             const cached = getCache<PostUI[]>(CACHE_KEYS.FEED_POSTS)
             if (cached) {
+                console.log('[Feed] Using cached posts:', cached.length)
                 return cached
             }
         }
         
+        console.log('[Feed] Returning empty posts array')
         return []
     }, [postsData, error, mapPostToUI])
 
     // Stable sort to prevent reordering flickers
     const sortedPosts = useMemo(() => {
+        console.log('[Feed] posts length:', posts.length)
         if (posts.length === 0) return []
-        return sortPostsByPriority(posts)
+        const sorted = sortPostsByPriority(posts)
+        console.log('[Feed] sortedPosts:', sorted.length)
+        return sorted
     }, [posts])
 
     // Check embedding status on mount (for banner only, doesn't block rendering)
