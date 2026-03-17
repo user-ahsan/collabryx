@@ -249,11 +249,18 @@ export function Feed() {
                         </p>
                     </GlassCard>
                 ) : (
-                    sortedPosts.map((post) => {
+                    sortedPosts.map((post, index) => {
                         const postTypeBadge = getPostTypeBadge(post.post_type)
 
                         return (
-                            <div key={post.id} className="relative">
+                            <div 
+                                key={post.id} 
+                                className="relative"
+                                style={{ 
+                                    animationDelay: `${index * 50}ms`,
+                                    animationFillMode: 'backwards'
+                                }}
+                            >
                                 {/* Clickable overlay for the whole card */}
                                 <div
                                     className="absolute inset-0 z-0 cursor-pointer"
