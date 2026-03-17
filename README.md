@@ -208,9 +208,21 @@ collabryx/
 
 ### Database Seeding Commands
 
+**🎮 Interactive Mode (Recommended):**
+
+```bash
+cd scripts/seed-data
+python main.py
+```
+
+Use arrow keys to navigate, SPACE to select modules, ENTER to execute.
+
+**📋 Command Line Mode:**
+
 | Command | Description |
 |---------|-------------|
 | `cd scripts/seed-data` | Navigate to seeder directory |
+| `python main.py` | Launch interactive menu |
 | `python main.py --all` | Seed all data (profiles, posts, connections, etc.) |
 | `python main.py --profiles` | Seed user profiles only |
 | `python main.py --posts` | Seed posts with comments/reactions |
