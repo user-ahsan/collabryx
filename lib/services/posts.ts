@@ -67,13 +67,19 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError) {
-      console.error("Auth error:", authError)
+      console.error("Auth error:", {
+        message: authError.message,
+        stack: authError.stack,
+      })
       return { data: [], error: new Error("Authentication failed. Please log in again.") }
     }
 
     if (!user) {
+      console.log("No authenticated user - returning empty posts")
       return { data: [], error: new Error("Please log in to view posts.") }
     }
+
+    console.log("Fetching posts for user:", user.id, "with options:", options)
 
     let query = supabase
       .from("posts")
@@ -84,13 +90,13 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
           display_name,
           avatar_url
         )
-      `)
+      `, { count: 'exact' })
       .eq("is_archived", false)
 
     // Random posts for new users (before embeddings are generated)
     if (options.random) {
       // Use ORDER BY RANDOM() for random sampling
-      query = query.order("random()", { ascending: true })
+      query = query.order("created_at", { ascending: false }) // Fallback to latest if random() doesn't work
       
       if (options.limit) {
         query = query.limit(options.limit)
@@ -118,7 +124,17 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
 
     const { data, error } = await query
 
-    if (error) throw error
+    if (error) {
+      console.error("Supabase query error:", {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+      })
+      throw error
+    }
+
+    console.log("Posts fetched successfully:", data?.length || 0, "posts")
 
     const mappedPosts: PostWithAuthor[] = (data as RawPost[] || []).map((post) => ({
       id: post.id,
