@@ -11,7 +11,12 @@ export function PostCard({ children, className, onClick }: PostCardProps) {
     return (
         <GlassCard
             hoverable
-            className={cn(className, onClick && "cursor-pointer", "shadow-md")}
+            className={cn(
+                "transition-all duration-300 ease-in-out opacity-0 animate-in fade-in",
+                className, 
+                onClick && "cursor-pointer", 
+                "shadow-md"
+            )}
             innerClassName="p-3.5 sm:p-6 lg:p-8"
             onClick={onClick}
         >

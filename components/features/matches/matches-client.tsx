@@ -127,13 +127,29 @@ export function MatchesClient() {
                 ) : viewMode === "grid" ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 pb-20">
                         {matches.map((match, index) => (
-                            <MatchCard key={match.id} match={match} index={index} />
+                            <div
+                                key={match.id}
+                                style={{ 
+                                    animationDelay: `${index * 75}ms`,
+                                    animationFillMode: 'backwards'
+                                }}
+                            >
+                                <MatchCard match={match} index={index} />
+                            </div>
                         ))}
                     </div>
                 ) : (
                     <div className="flex flex-col gap-4 pb-20">
                         {matches.map((match, index) => (
-                            <MatchCardListView key={match.id} match={match} index={index} />
+                            <div
+                                key={match.id}
+                                style={{ 
+                                    animationDelay: `${index * 50}ms`,
+                                    animationFillMode: 'backwards'
+                                }}
+                            >
+                                <MatchCardListView match={match} index={index} />
+                            </div>
                         ))}
                     </div>
                 )}
