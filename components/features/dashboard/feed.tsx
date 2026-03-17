@@ -213,7 +213,7 @@ export function Feed() {
     }
 
     return (
-        <div className="space-y-3 md:space-y-6 lg:space-y-8 pb-6 md:pb-10">
+        <div className="space-y-4 md:space-y-6 lg:space-y-8 pb-6 md:pb-8">
             <NewPostsIndicator
                 count={newPostsCount}
                 visible={newPostsCount > 0}
@@ -248,7 +248,7 @@ export function Feed() {
             <RequestReminderModal />
 
             {/* AI Mentor Micro-Entry Point */}
-            <GlassCard innerClassName="p-3 md:p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:justify-between">
+            <GlassCard innerClassName="p-4 md:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:justify-between">
                 <div className="flex items-start sm:items-center gap-3">
                     <div className="h-10 w-10 bg-purple-500/10 rounded-lg flex items-center justify-center shrink-0 border border-purple-500/20">
                         <Bot className="h-5 w-5 text-purple-400" />
@@ -271,16 +271,16 @@ export function Feed() {
                 </Button>
             </GlassCard>
 
-            <div className="flex items-center justify-between px-1 md:px-2">
+            <div className="flex items-center justify-between px-2 md:px-4">
                 <div className="h-px bg-border flex-1" />
-                <span className="px-3 md:px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                <span className="px-4 md:px-6 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Recent Activity
                 </span>
                 <div className="h-px bg-border flex-1" />
             </div>
 
             {/* Feed Posts */}
-            <div className="space-y-3 md:space-y-6" role="feed" aria-label="Posts feed">
+            <div className="space-y-4 md:space-y-6" role="feed" aria-label="Posts feed">
                 {isInitialLoading && sortedPosts.length === 0 ? (
                     <PostSkeletonList count={5} />
                 ) : fetchError && sortedPosts.length === 0 ? (
@@ -377,7 +377,7 @@ export function Feed() {
 
 {/* Collapsible Comments */}
 {expandedComments.has(post.id) && (
-    <div className="animate-in slide-in-from-top-2 duration-200 px-2 sm:px-4">
+    <div className="animate-in slide-in-from-top-2 duration-200 px-4">
         <CommentSection postId={post.id} />
     </div>
 )}
