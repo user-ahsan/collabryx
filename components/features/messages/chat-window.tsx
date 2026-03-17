@@ -72,13 +72,13 @@ export function ChatWindow({ chatId, onBackToList, isConnected }: ChatWindowProp
                         <div className="flex items-center gap-2">
                             <h3 className="font-semibold text-sm md:text-base">Sarah Chen</h3>
                             {isConnected === true && (
-                                <Badge variant="outline" className="h-5 px-1.5 text-[10px] bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/30">
+                                <Badge variant="outline" className="h-5 px-1.5 text-xs bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/30">
                                     <CheckCircle2 className="h-3 w-3 mr-0.5" />
                                     Connected
                                 </Badge>
                             )}
                             {isConnected === false && (
-                                <Badge variant="outline" className="h-5 px-1.5 text-[10px] bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/30">
+                                <Badge variant="outline" className="h-5 px-1.5 text-xs bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/30">
                                     Not Connected
                                 </Badge>
                             )}
@@ -120,7 +120,7 @@ export function ChatWindow({ chatId, onBackToList, isConnected }: ChatWindowProp
                             >
                                 {msg.text}
                             </div>
-                            <span className="text-[10px] text-muted-foreground mt-1">
+                            <span className="text-xs text-muted-foreground mt-1">
                                 {msg.time}
                             </span>
                         </div>
