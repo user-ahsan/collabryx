@@ -87,7 +87,7 @@ function NotificationItem({
       <div
         className={cn(
           "flex items-start gap-4 p-4 rounded-lg transition-all duration-200",
-          "hover:bg-muted/50 focus-within:bg-muted/50",
+          "hover:bg-muted/50 focus-within:bg-muted/50 hover:scale-[1.01]",
           !notification.is_read && "bg-muted/30 border-l-4 border-l-primary"
         )}
       >
@@ -146,7 +146,8 @@ function NotificationItem({
           className={cn(
             "h-9 w-9 min-h-[44px] min-w-[44px] opacity-40 group-hover:opacity-100 group-focus-within:opacity-100",
             "transition-all duration-200 shrink-0 text-muted-foreground hover:text-destructive",
-            "focus:outline-none focus:ring-2 focus:ring-destructive focus:ring-offset-2"
+            "focus:outline-none focus:ring-2 focus:ring-destructive focus:ring-offset-2",
+            "hover:scale-110 active:scale-95"
           )}
           onClick={(e) => {
             e.stopPropagation()
@@ -154,7 +155,7 @@ function NotificationItem({
           }}
           aria-label="Dismiss notification"
         >
-          <X className="h-4 w-4" />
+          <X className="h-4 w-4 transition-transform duration-200" />
         </Button>
       </div>
     </motion.div>
@@ -276,15 +277,15 @@ function NotificationList({
           position: 'relative',
         }}
       >
-        {virtualizer.getVirtualItems().map((virtualRow) => {
+        {virtualizer.getVirtualItems().map((virtualRow, index) => {
           const notification = filteredNotifications[virtualRow.index]
           return (
             <motion.div
               key={notification.id}
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, x: -100 }}
-              transition={{ duration: 0.2 }}
+              exit={{ opacity: 0, x: -100, transition: { duration: 0.15 } }}
+              transition={{ duration: 0.2, delay: index * 0.03 }}
               style={{
                 position: 'absolute',
                 top: 0,
@@ -328,6 +329,7 @@ export function NotificationsWidget({
     deleteNotification.mutate(id, {
       onSuccess: () => {
         toast.success("Notification deleted", {
+          description: "You can undo this action",
           duration: 5000,
           action: {
             label: "Undo",
@@ -337,6 +339,7 @@ export function NotificationsWidget({
                 next.delete(id)
                 return next
               })
+              toast.success("Notification restored")
             }
           }
         })
@@ -347,7 +350,9 @@ export function NotificationsWidget({
           next.delete(id)
           return next
         })
-        toast.error("Failed to delete notification")
+        toast.error("Failed to delete notification", {
+          description: "Please try again"
+        })
       }
     })
   }, [deleteNotification])
@@ -437,10 +442,12 @@ export function NotificationsWidget({
             <Button
               variant="ghost"
               size="sm"
-              className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
+              className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground transition-colors duration-200"
               onClick={() => {
                 // Mark all as read logic
-                toast.success("All notifications marked as read")
+                toast.success("All notifications marked as read", {
+                  description: `${unreadCount} notifications cleared`
+                })
               }}
               aria-label="Mark all notifications as read"
             >
