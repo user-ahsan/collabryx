@@ -16,9 +16,13 @@ class EmbeddingsSeeder:
 
     def __init__(self, http_client: httpx.Client, worker_url: str = None):
         self.http = http_client
-        self.worker_url = worker_url or config.PYTHON_WORKER_URL
-        self.successful = 0
-        self.failed = 0
+        # Use provided URL, or ENV variable, or default
+        import os
+
+        self.worker_url = worker_url or os.getenv(
+            "PYTHON_WORKER_URL", config.PYTHON_WORKER_URL
+        )
+        self.stats = {"successful": 0, "failed": 0, "skipped": 0}
 
     def get_profiles_without_embeddings(self) -> List[Dict[str, Any]]:
         """Get profiles that don't have embeddings yet via REST API"""
@@ -108,17 +112,18 @@ class EmbeddingsSeeder:
             )
 
             if response.status_code == 200:
-                self.successful += 1
+                self.stats["successful"] += 1
                 return True
             elif response.status_code == 429:
                 # Rate limited, skip
+                self.stats["skipped"] += 1
                 return False
             else:
-                self.failed += 1
+                self.stats["failed"] += 1
                 return False
 
         except Exception as e:
-            self.failed += 1
+            self.stats["failed"] += 1
             return False
 
     def queue_profiles_for_embeddings(self, user_ids: List[str]) -> int:
@@ -186,7 +191,7 @@ class EmbeddingsSeeder:
                 print(
                     f"{Fore.YELLOW}   Make sure Docker container is running: docker-compose up -d{Style.RESET_ALL}"
                 )
-                return {"successful": 0, "failed": 0, "skipped": 0}
+                return self.stats
             print(f"{Fore.GREEN}✓ Python worker is healthy{Style.RESET_ALL}")
         except Exception as e:
             print(
@@ -194,9 +199,9 @@ class EmbeddingsSeeder:
             )
             print(f"{Fore.YELLOW}   Error: {e}{Style.RESET_ALL}")
             print(
-                f"{Fore.YELLOW}   Make sure Docker container is running: cd ../../python-worker && docker-compose up -d{Style.RESET_ALL}"
+                f"{Fore.YELLOW}   Make sure Docker container is running: docker-compose up -d{Style.RESET_ALL}"
             )
-            return {"successful": 0, "failed": 0, "skipped": 0}
+            return self.stats
 
         # Get profiles from pending queue
         try:
@@ -209,7 +214,7 @@ class EmbeddingsSeeder:
 
             if not queue:
                 print(f"{Fore.GREEN}✓ No profiles in pending queue{Style.RESET_ALL}")
-                return {"successful": 0, "failed": 0, "skipped": 0}
+                return self.stats
 
             print(
                 f"{Fore.YELLOW}Found {len(queue)} profiles in pending queue{Style.RESET_ALL}\n"
@@ -264,15 +269,12 @@ class EmbeddingsSeeder:
             print(f"{Fore.RED}✗ Error processing queue: {e}{Style.RESET_ALL}")
 
         print(f"\n{Fore.GREEN}{'=' * 60}{Style.RESET_ALL}")
-        print(f"{Fore.GREEN}✓ Successful: {self.successful}{Style.RESET_ALL}")
-        print(f"{Fore.RED}✗ Failed: {self.failed}{Style.RESET_ALL}")
+        print(f"{Fore.GREEN}✓ Successful: {self.stats['successful']}{Style.RESET_ALL}")
+        print(f"{Fore.RED}✗ Failed: {self.stats['failed']}{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}⊘ Skipped: {self.stats['skipped']}{Style.RESET_ALL}")
         print(f"{Fore.GREEN}{'=' * 60}{Style.RESET_ALL}\n")
 
-        return {
-            "successful": self.successful,
-            "failed": self.failed,
-            "skipped": len(queue) - self.successful - self.failed,
-        }
+        return self.stats
 
 
 if __name__ == "__main__":
