@@ -35,6 +35,7 @@ function PopoverContent({
           glass("dropdown"),
           "rounded-xl",
           "dark:bg-card/50 dark:border-border/40",
+          "transition-all duration-200",
           className
         )}
         onOpenAutoFocus={(e) => e.preventDefault()}
