@@ -268,23 +268,21 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
             </div>
 
             {/* Footer Actions - Redesigned */}
-            <div className="p-3 mt-auto shrink-0 relative z-[60]">
+            <div className="p-3 mt-auto shrink-0">
                 {!isCollapsed ? (
                     <div className="flex flex-col gap-2 p-2 bg-card rounded-xl border shadow-sm">
                         <TooltipProvider delayDuration={0}>
-                            <div className="flex items-center gap-1 relative">
-                                <div className="relative z-[60]">
-                                    <NotificationsWidget>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-10 w-10 hover:bg-muted/80 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
-                                        >
-                                            <Bell className="h-4 w-4" />
-                                            <span className="sr-only">Notifications</span>
-                                        </Button>
-                                    </NotificationsWidget>
-                                </div>
+                            <div className="flex items-center gap-1">
+                                <NotificationsWidget>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-10 w-10 hover:bg-muted/80 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+                                    >
+                                        <Bell className="h-4 w-4" />
+                                        <span className="sr-only">Notifications</span>
+                                    </Button>
+                                </NotificationsWidget>
 
                                 <Tooltip>
                                     <TooltipTrigger asChild>
@@ -307,18 +305,16 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
                 ) : (
                     <div className="flex flex-col gap-2 items-center">
                         <TooltipProvider delayDuration={0}>
-                            <div className="relative z-[60]">
-                                <NotificationsWidget>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-10 w-10 hover:bg-muted rounded-xl text-muted-foreground hover:text-foreground"
-                                    >
-                                        <Bell className="h-4 w-4" />
-                                        <span className="sr-only">Notifications</span>
-                                    </Button>
-                                </NotificationsWidget>
-                            </div>
+                            <NotificationsWidget>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-10 w-10 hover:bg-muted rounded-xl text-muted-foreground hover:text-foreground"
+                                >
+                                    <Bell className="h-4 w-4" />
+                                    <span className="sr-only">Notifications</span>
+                                </Button>
+                            </NotificationsWidget>
 
                             <Tooltip>
                                 <TooltipTrigger asChild>
