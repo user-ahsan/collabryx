@@ -147,14 +147,10 @@ def run_embeddings_with_warning(http_client):
     print(f"\n{Fore.RED}{'=' * 70}{Style.RESET_ALL}")
     print(f"{Fore.RED}WARNING: EMBEDDINGS SEEDING{Style.RESET_ALL}")
     print(f"{Fore.RED}{'=' * 70}{Style.RESET_ALL}\n")
-    print(
-        f"{Fore.YELLOW}Embedding generation via seeder is NOT RECOMMENDED.{Style.RESET_ALL}\n"
-    )
+    print(f"{Fore.YELLOW}Embedding generation via seeder is NOT RECOMMENDED.{Style.RESET_ALL}\n")
     print(f"{Fore.CYAN}Recommended approach:{Style.RESET_ALL}")
     print(f"  1. Start Python worker in Docker:")
-    print(
-        f"     {Fore.GREEN}cd ../../python-worker && docker-compose up -d{Style.RESET_ALL}"
-    )
+    print(f"     {Fore.GREEN}cd ../../python-worker && docker-compose up -d{Style.RESET_ALL}")
     print(f"  2. Worker will automatically process embeddings")
     print(f"  3. Monitor with: {Fore.GREEN}docker-compose logs -f{Style.RESET_ALL}\n")
     print(f"{Fore.YELLOW}Docker worker provides:{Style.RESET_ALL}")
@@ -162,17 +158,22 @@ def run_embeddings_with_warning(http_client):
     print(f"  - Rate limiting")
     print(f"  - Dead letter queue")
     print(f"  - Better error handling\n")
-
-    response = (
-        input(f"{Fore.YELLOW}Continue anyway? (y/n): {Style.RESET_ALL}").strip().lower()
-    )
-    if response != "y":
+    
+    response = input(f"{Fore.YELLOW}Continue anyway? (y/n): {Style.RESET_ALL}").strip().lower()
+    if response != 'y':
         print(f"\n{Fore.GREEN}Operation cancelled{Style.RESET_ALL}")
         return
-
+    
     seeder = EmbeddingsSeeder(http_client)
     try:
-        user_ids = seeder.fetch_user_ids(http_client)
+        # Get user IDs from profiles
+        response = http_client.get(
+            f"{config.SUPABASE_REST_URL}/profiles?select=id",
+            headers=config.API_HEADERS,
+        )
+        profiles = response.json() or []
+        user_ids = [p['id'] for p in profiles]
+        
         if user_ids:
             seeder.queue_profiles_for_embeddings(user_ids)
             seeder.seed_embeddings()
