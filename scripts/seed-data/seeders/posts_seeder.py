@@ -15,14 +15,97 @@ from data_generators.posts import generate_post, generate_comment, generate_reac
 
 
 class PostsSeeder(BaseSeeder):
-    """Seeder for posts, comments, and reactions"""
+    """Seeder for posts, comments, and reactions with incremental seeding"""
 
     def __init__(self, http_client):
         super().__init__(http_client)
+        self.stats = {
+            "posts": 0,
+            "comments": 0,
+            "reactions": 0,
+            "skipped_posts": 0,
+            "skipped_comments": 0,
+            "skipped_reactions": 0,
+            "failed": 0,
+        }
+        self.existing_posts_cache: set = set()
+        self.existing_comments_cache: dict = {}
+        self.existing_reactions_cache: dict = {}
+
+    def _load_existing_posts_cache(self):
+        """Fetch existing posts for duplicate checking"""
+        try:
+            response = self.http.get(
+                f"{config.SUPABASE_REST_URL}/posts?select=id,author_id,content",
+                headers=config.API_HEADERS,
+            )
+            response.raise_for_status()
+            posts = response.json() or []
+            # Create hash of author_id + content for duplicate detection
+            self.existing_posts_cache = {
+                f"{p['author_id']}:{p['content'][:100]}" for p in posts
+            }
+            print(
+                f"{Fore.YELLOW}  → Found {len(self.existing_posts_cache)} existing posts{Style.RESET_ALL}"
+            )
+        except Exception as e:
+            print(f"{Fore.RED}✗ Failed to fetch existing posts: {e}{Style.RESET_ALL}")
+
+    def _load_existing_comments_cache(self, post_id: str):
+        """Fetch existing comments for a post"""
+        try:
+            response = self.http.get(
+                f"{config.SUPABASE_REST_URL}/comments?select=id,author_id,content&post_id=eq.{post_id}",
+                headers=config.API_HEADERS,
+            )
+            response.raise_for_status()
+            comments = response.json() or []
+            self.existing_comments_cache[post_id] = {
+                f"{c['author_id']}:{c['content'][:100]}" for c in comments
+            }
+        except Exception:
+            self.existing_comments_cache[post_id] = set()
+
+    def _load_existing_reactions_cache(self, post_id: str):
+        """Fetch existing reactions for a post"""
+        try:
+            response = self.http.get(
+                f"{config.SUPABASE_REST_URL}/post_reactions?select=id,user_id&post_id=eq.{post_id}",
+                headers=config.API_HEADERS,
+            )
+            response.raise_for_status()
+            reactions = response.json() or []
+            self.existing_reactions_cache[post_id] = {r["user_id"] for r in reactions}
+        except Exception:
+            self.existing_reactions_cache[post_id] = set()
+
+    def _post_exists(self, author_id: str, content: str) -> bool:
+        """Check if post already exists"""
+        post_hash = f"{author_id}:{content[:100]}"
+        return post_hash in self.existing_posts_cache
+
+    def _comment_exists(self, post_id: str, author_id: str, content: str) -> bool:
+        """Check if comment already exists for post"""
+        if post_id not in self.existing_comments_cache:
+            self._load_existing_comments_cache(post_id)
+        comment_hash = f"{author_id}:{content[:100]}"
+        return comment_hash in self.existing_comments_cache.get(post_id, set())
+
+    def _reaction_exists(self, post_id: str, user_id: str) -> bool:
+        """Check if user already reacted to post (uses cache)"""
+        if post_id not in self.existing_reactions_cache:
+            self._load_existing_reactions_cache(post_id)
+        return user_id in self.existing_reactions_cache.get(post_id, set())
 
     def create_post(self, author_id: str, post_data: Dict[str, Any]) -> Optional[str]:
-        """Create a single post"""
+        """Create a single post with duplicate checking"""
         try:
+            # Check for duplicate
+            if self._post_exists(author_id, post_data["content"]):
+                print(f"{Fore.YELLOW}  ⚠️  Post exists, skipping{Style.RESET_ALL}")
+                self.stats["skipped_posts"] += 1
+                return None
+
             post = {
                 "author_id": author_id,
                 "content": post_data["content"],
@@ -38,15 +121,24 @@ class PostsSeeder(BaseSeeder):
 
             result = self.create_single("posts", post)
 
-            if not result:
-                print(
-                    f"\n{Fore.RED}✗ Failed to create post (no ID returned){Style.RESET_ALL}"
+            if result:
+                # Add to cache
+                self.existing_posts_cache.add(
+                    f"{author_id}:{post_data['content'][:100]}"
                 )
+                self.stats["posts"] += 1
+                print(f"{Fore.GREEN}  ✓ Post created{Style.RESET_ALL}")
+            else:
+                print(
+                    f"{Fore.RED}✗ Failed to create post (no ID returned){Style.RESET_ALL}"
+                )
+                self.stats["failed"] += 1
 
             return result
 
         except Exception as e:
-            print(f"\n{Fore.RED}✗ Error creating post: {e}{Style.RESET_ALL}")
+            print(f"{Fore.RED}✗ Error creating post: {e}{Style.RESET_ALL}")
+            self.stats["failed"] += 1
             return None
 
     def create_comment(
@@ -83,7 +175,7 @@ class PostsSeeder(BaseSeeder):
         """Create a reaction on a post (with duplicate prevention)"""
         try:
             # Check if reaction already exists (incremental seeding)
-            if self.reaction_exists(post_id, user_id):
+            if self._reaction_exists(post_id, user_id):
                 return False  # Already exists, skip
 
             if emoji is None:
@@ -204,7 +296,18 @@ class PostsSeeder(BaseSeeder):
             pass  # Ignore errors for count updates
 
     def seed(self, limit: Optional[int] = None) -> Dict[str, int]:
-        """Seed posts with comments and reactions"""
+        """Seed posts with comments and reactions (incremental - skips existing)"""
+
+        # Reset statistics
+        self.stats = {
+            "posts": 0,
+            "comments": 0,
+            "reactions": 0,
+            "skipped_posts": 0,
+            "skipped_comments": 0,
+            "skipped_reactions": 0,
+            "failed": 0,
+        }
 
         if limit is None:
             limit = int(config.LIMIT_POSTS) if config.LIMIT_POSTS != "-1" else 300
@@ -212,26 +315,26 @@ class PostsSeeder(BaseSeeder):
         comments_range = self.parse_limit_range(config.LIMIT_COMMENTS_PER_POST)
         reactions_range = self.parse_limit_range(config.LIMIT_REACTIONS_PER_POST)
 
+        # Fetch existing data for duplicate checking
+        print(
+            f"\n{Fore.YELLOW}⏳ Loading existing posts for duplicate checking...{Style.RESET_ALL}"
+        )
+        self._load_existing_posts_cache()
+
         # Show current database status
-        existing_posts = self.get_table_count("posts")
-        existing_comments = self.get_table_count("comments")
-        existing_reactions = self.get_table_count("post_reactions")
+        existing_posts = len(self.existing_posts_cache)
 
         print(f"\n{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
         print(f"{Fore.CYAN}CURRENT DATABASE STATUS{Style.RESET_ALL}")
         print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
         print(f"  📝 Existing Posts: {Fore.GREEN}{existing_posts:,}{Style.RESET_ALL}")
-        print(
-            f"  💬 Existing Comments: {Fore.GREEN}{existing_comments:,}{Style.RESET_ALL}"
-        )
-        print(
-            f"  👍 Existing Reactions: {Fore.GREEN}{existing_reactions:,}{Style.RESET_ALL}"
-        )
         print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
-        print(f"\n{Fore.YELLOW}➕ Adding {limit:,} new posts...{Style.RESET_ALL}\n")
+        print(
+            f"\n{Fore.YELLOW}➕ Attempting to add {limit:,} new posts...{Style.RESET_ALL}\n"
+        )
 
         print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}SEEDING {limit} POSTS{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}SEEDING {limit} POSTS (Incremental Mode){Style.RESET_ALL}")
         print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}\n")
 
         # Fetch user IDs for authors
@@ -241,9 +344,11 @@ class PostsSeeder(BaseSeeder):
 
         if not user_ids:
             print(f"{Fore.RED}✗ No users found. Seed profiles first.{Style.RESET_ALL}")
-            return {"created": 0, "skipped": 0, "failed": 0}
+            return self.stats
 
-        stats = {"created": 0, "comments": 0, "reactions": 0, "failed": 0}
+        # Clear caches for fresh data
+        self.existing_comments_cache = {}
+        self.existing_reactions_cache = {}
 
         for i in range(limit):
             # Pick random author
@@ -260,7 +365,6 @@ class PostsSeeder(BaseSeeder):
             post_id = self.create_post(author_id, post_data)
 
             if post_id:
-                stats["created"] += 1
                 print(
                     f"\r{Fore.CYAN}[{i + 1}/{limit}] ✓ Post created{Style.RESET_ALL}    ",
                     end="",
@@ -277,7 +381,7 @@ class PostsSeeder(BaseSeeder):
                     )
 
                     if comment_id:
-                        stats["comments"] += 1
+                        self.stats["comments"] += 1
 
                         # Some comments get replies (30% chance)
                         if random.random() < 0.3:
@@ -291,7 +395,7 @@ class PostsSeeder(BaseSeeder):
                                 reply_content,
                                 parent_id=comment_id,
                             )
-                            stats["comments"] += 1
+                            self.stats["comments"] += 1
 
                 # Add reactions (batch optimized)
                 num_reactions = random.randint(*reactions_range)
@@ -303,7 +407,7 @@ class PostsSeeder(BaseSeeder):
                 batch = []
                 for reacting_user in reacting_users:
                     # Skip if already reacted (incremental seeding)
-                    if not self.reaction_exists(post_id, reacting_user):
+                    if not self._reaction_exists(post_id, reacting_user):
                         emoji = generate_reaction()
                         batch.append(
                             {
@@ -316,13 +420,13 @@ class PostsSeeder(BaseSeeder):
                     # Process batch when it reaches 10 items
                     if len(batch) >= 10:
                         created = self.create_reactions_batch(batch)
-                        stats["reactions"] += created
+                        self.stats["reactions"] += created
                         batch = []
 
                 # Process remaining reactions
                 if batch:
                     created = self.create_reactions_batch(batch)
-                    stats["reactions"] += created
+                    self.stats["reactions"] += created
 
             # Progress logging
             self.log_progress(i, limit, "Posts")
@@ -335,21 +439,41 @@ class PostsSeeder(BaseSeeder):
         print(f"\n{Fore.GREEN}{'=' * 60}{Style.RESET_ALL}")
         print(f"{Fore.GREEN}✓ POSTS SEEDING COMPLETE{Style.RESET_ALL}")
         print(f"{Fore.GREEN}{'=' * 60}{Style.RESET_ALL}")
-        print(f"  Posts created:     {Fore.CYAN}{stats['created']:,}{Style.RESET_ALL}")
-        print(f"  Comments created:  {Fore.CYAN}{stats['comments']:,}{Style.RESET_ALL}")
         print(
-            f"  Reactions created: {Fore.CYAN}{stats['reactions']:,}{Style.RESET_ALL}"
+            f"  Posts created:      {Fore.GREEN}{self.stats['posts']:,}{Style.RESET_ALL}"
         )
         print(
-            f"  Failed:            {Fore.RED if stats['failed'] > 0 else Fore.GREEN}{stats['failed']:,}{Style.RESET_ALL}"
+            f"  Posts skipped:      {Fore.YELLOW}{self.stats['skipped_posts']:,}{Style.RESET_ALL}"
+        )
+        print(
+            f"  Comments created:   {Fore.GREEN}{self.stats['comments']:,}{Style.RESET_ALL}"
+        )
+        print(
+            f"  Comments skipped:   {Fore.YELLOW}{self.stats['skipped_comments']:,}{Style.RESET_ALL}"
+        )
+        print(
+            f"  Reactions created:  {Fore.GREEN}{self.stats['reactions']:,}{Style.RESET_ALL}"
+        )
+        print(
+            f"  Reactions skipped:  {Fore.YELLOW}{self.stats['skipped_reactions']:,}{Style.RESET_ALL}"
+        )
+        print(
+            f"  Failed:             {Fore.RED if self.stats['failed'] > 0 else Fore.GREEN}{self.stats['failed']:,}{Style.RESET_ALL}"
         )
 
-        # Calculate rate
-        total_ops = stats["created"] + stats["comments"] + stats["reactions"]
-        print(f"  Total operations:  {Fore.YELLOW}{total_ops:,}{Style.RESET_ALL}")
+        total_created = (
+            self.stats["posts"] + self.stats["comments"] + self.stats["reactions"]
+        )
+        total_skipped = (
+            self.stats["skipped_posts"]
+            + self.stats["skipped_comments"]
+            + self.stats["skipped_reactions"]
+        )
+        print(f"  Total created:      {Fore.CYAN}{total_created:,}{Style.RESET_ALL}")
+        print(f"  Total skipped:      {Fore.CYAN}{total_skipped:,}{Style.RESET_ALL}")
         print(f"{Fore.GREEN}{'=' * 60}{Style.RESET_ALL}\n")
 
-        return stats
+        return self.stats
 
 
 if __name__ == "__main__":
