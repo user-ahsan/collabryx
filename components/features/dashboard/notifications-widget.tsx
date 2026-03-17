@@ -20,6 +20,8 @@ import {
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
+import { useVirtualizer } from "@tanstack/react-virtual"
+import { useRef } from "react"
 import {
   useNotifications,
   useMarkAllNotificationsAsRead,
@@ -28,9 +30,12 @@ import {
   useUnreadCount,
   useRealtimeNotifications,
 } from "@/hooks/use-notifications"
+import type { NotificationWithActor } from "@/lib/services/notifications"
 import {
   NOTIFICATION_TABS,
   getNotificationCategory,
+  NOTIFICATION_TYPOGRAPHY,
+  NOTIFICATION_SPACING,
   type NotificationType,
   type NotificationCategory,
 } from "@/lib/constants/notifications"
@@ -97,11 +102,11 @@ function NotificationItem({
         {/* Content */}
         <div className="flex-1 space-y-2 min-w-0">
           <div className="flex justify-between items-start gap-2">
-            <p className="text-sm leading-relaxed">
-              <span className="font-semibold text-foreground">{notification.actor?.name || 'Unknown'}</span>{" "}
+            <p className={NOTIFICATION_TYPOGRAPHY.body}>
+              <span className="font-semibold text-foreground">{notification.actor_name || 'Unknown'}</span>{" "}
               <span className="text-muted-foreground/80">{notification.content}</span>
             </p>
-            <span className="text-xs text-muted-foreground/60 whitespace-nowrap mt-0.5">
+            <span className={NOTIFICATION_TYPOGRAPHY.timestamp}>
               {notification.time_ago}
             </span>
           </div>
@@ -163,9 +168,10 @@ function NotificationList({
   activeTab: NotificationCategory
   onDelete: (id: string) => void
 }) {
-  const { data: notifications, isLoading, error } = useNotifications({ limit: 50 })
+  const { data: notifications, isLoading, error } = useNotifications({ limit: 100 })
   const markAsRead = useMarkNotificationAsRead()
   const markAllAsRead = useMarkAllNotificationsAsRead()
+  const parentRef = useRef<HTMLDivElement>(null)
 
   // Filter notifications based on active tab
   const filteredNotifications = notifications?.filter((n) => {
@@ -174,6 +180,14 @@ function NotificationList({
     const category = getNotificationCategory(n.type as NotificationType)
     return category === activeTab
   }) || []
+
+  // Virtual scrolling for performance
+  const virtualizer = useVirtualizer({
+    count: filteredNotifications.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 100, // Estimate each item is ~100px
+    overscan: 3,
+  })
 
   const handleAccept = useCallback((id: string) => {
     console.log("Accept connection:", id)
@@ -241,7 +255,7 @@ function NotificationList({
         <div className="h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
           <Bell className="h-8 w-8 text-muted-foreground/50" />
         </div>
-        <h3 className="text-base font-semibold text-foreground mb-1">
+        <h3 className={cn("text-base", NOTIFICATION_TYPOGRAPHY.weightSemibold, NOTIFICATION_TYPOGRAPHY.title)}>
           No notifications
         </h3>
         <p className="text-sm text-muted-foreground max-w-[260px]">
@@ -254,18 +268,41 @@ function NotificationList({
   }
 
   return (
-    <div className="space-y-2 p-4 pb-6 min-h-[400px]">
-      <AnimatePresence>
-        {filteredNotifications.map((notification) => (
-          <NotificationItem
-            key={notification.id}
-            notification={notification}
-            onAccept={() => handleAccept(notification.id)}
-            onIgnore={() => handleIgnore(notification.id)}
-            onDismiss={() => onDelete(notification.id)}
-          />
-        ))}
-      </AnimatePresence>
+    <div ref={parentRef} className="h-[500px] overflow-auto p-4 pb-6">
+      <div
+        style={{
+          height: `${virtualizer.getTotalSize()}px`,
+          width: '100%',
+          position: 'relative',
+        }}
+      >
+        {virtualizer.getVirtualItems().map((virtualRow) => {
+          const notification = filteredNotifications[virtualRow.index]
+          return (
+            <motion.div
+              key={notification.id}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, x: -100 }}
+              transition={{ duration: 0.2 }}
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                transform: `translateY(${virtualRow.start}px)`,
+              }}
+            >
+              <NotificationItem
+                notification={notification}
+                onAccept={() => handleAccept(notification.id)}
+                onIgnore={() => handleIgnore(notification.id)}
+                onDismiss={() => onDelete(notification.id)}
+              />
+            </motion.div>
+          )
+        })}
+      </div>
     </div>
   )
 }
