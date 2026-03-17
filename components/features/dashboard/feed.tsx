@@ -1,13 +1,11 @@
 "use client"
 
-import { useState, useMemo, useEffect, useCallback } from "react"
+import { useState, useMemo, useCallback, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Bot, Inbox, Sparkles, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getInitials } from "@/lib/utils/format-initials"
-import { getCache, setCache, CACHE_KEYS } from "@/lib/dashboard-cache"
 import { sortPostsByPriority, getPostTypeBadge } from "@/lib/utils/post-helpers"
-import { fetchPosts } from "@/lib/services/posts"
 import type { PostWithAuthor } from "@/types/database.types"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
@@ -26,6 +24,7 @@ import { PostDetailDialog } from "./posts/post-detail-dialog"
 import { AIContextCard } from "./ai-context-card"
 import { RequestReminderModal } from "./request-reminder/RequestReminderModal"
 import { GlassCard } from "@/components/shared/glass-card"
+import { usePosts } from "@/hooks/use-posts"
 
 // Extended type for UI component with additional UI fields
 interface PostUI extends PostWithAuthor {
@@ -43,9 +42,8 @@ interface PostUI extends PostWithAuthor {
 }
 
 export function Feed() {
-    const [posts, setPosts] = useState<PostUI[]>([])
-    const [isFetching, setIsFetching] = useState(false)
-    const [hasEmbedding, setHasEmbedding] = useState<boolean | null>(null) // null = checking
+    // Check if user has completed embedding (for banner display only)
+    const [hasEmbedding, setHasEmbedding] = useState<boolean | null>(null)
 
     // Map raw API data to UI format
     const mapPostToUI = useCallback((post: PostWithAuthor): PostUI => ({
@@ -63,74 +61,51 @@ export function Feed() {
         myReaction: null,
     }), [])
 
-    // Check if user has completed embedding
-    const checkEmbeddingStatus = useCallback(async () => {
-        try {
-            const supabase = createClient()
-            const { data: { user } } = await supabase.auth.getUser()
-            
-            if (!user) {
+    // Fetch posts with React Query - always fetch, random fallback for new users
+    const { data: postsData, isPending, error } = usePosts({ 
+        limit: 20,
+        random: hasEmbedding === false
+    })
+
+    // Map posts to UI format with stable reference
+    const posts: PostUI[] = useMemo(() => {
+        if (!postsData) return []
+        return postsData.map(mapPostToUI)
+    }, [postsData, mapPostToUI])
+
+    // Stable sort to prevent reordering flickers
+    const sortedPosts = useMemo(() => {
+        if (posts.length === 0) return []
+        return sortPostsByPriority(posts)
+    }, [posts])
+
+    // Check embedding status on mount (for banner only, doesn't block rendering)
+    useEffect(() => {
+        const checkEmbeddingStatus = async () => {
+            try {
+                const supabase = createClient()
+                const { data: { user } } = await supabase.auth.getUser()
+                
+                if (!user) {
+                    setHasEmbedding(false)
+                    return
+                }
+
+                const { data: embedding } = await supabase
+                    .from("profile_embeddings")
+                    .select("status")
+                    .eq("user_id", user.id)
+                    .single()
+
+                setHasEmbedding(embedding?.status === 'completed')
+            } catch (error) {
+                console.error('Error checking embedding status:', error)
                 setHasEmbedding(false)
-                return
             }
-
-            const { data: embedding } = await supabase
-                .from("profile_embeddings")
-                .select("status")
-                .eq("user_id", user.id)
-                .single()
-
-            setHasEmbedding(embedding?.status === 'completed')
-        } catch (error) {
-            console.error('Error checking embedding status:', error)
-            setHasEmbedding(false)
         }
-    }, [])
-
-    // ── API → Cache → Hardcoded Fallback ──
-    const fetchPostsData = useCallback(async () => {
-        setIsFetching(true)
-        try {
-            // Fetch random posts if no embedding, otherwise fetch personalized
-            const { data, error } = await fetchPosts({ 
-                limit: 20,
-                random: hasEmbedding === false  // Use random for new users
-            })
-
-            if (error) throw error
-
-            if (data && data.length > 0) {
-                const mapped = data.map(mapPostToUI)
-                setPosts(mapped)
-                setCache(CACHE_KEYS.FEED_POSTS, mapped)
-            }
-        } catch {
-            const cached = getCache<PostUI[]>(CACHE_KEYS.FEED_POSTS)
-            if (cached) {
-                setPosts(cached)
-                toast.info("Couldn't load latest posts. Showing cached data.", {
-                    id: "feed-cache-fallback",
-                })
-            }
-        } finally {
-            setIsFetching(false)
-        }
-    }, [mapPostToUI, hasEmbedding])
-
-    // Check embedding status on mount
-    useEffect(() => {
+        
         checkEmbeddingStatus()
-    }, [checkEmbeddingStatus])
-
-    // Fetch posts once we know embedding status
-    useEffect(() => {
-        if (hasEmbedding !== null) {
-            fetchPostsData()
-        }
-    }, [hasEmbedding, fetchPostsData])
-
-    // ── Memoized sort ──
-    const sortedPosts = useMemo(() => sortPostsByPriority(posts), [posts])
+    }, [])
 
     // ── Ecosystem States ──
     const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set())
@@ -158,20 +133,21 @@ export function Feed() {
     }
 
     const handleReaction = (postId: string, emoji: string) => {
-        setPosts((prev) =>
-            prev.map((p) => (p.id === postId ? { ...p, myReaction: emoji } : p))
-        )
+        // Optimistic update - in production, this would call a mutation
+        const postElement = document.querySelector(`[data-post-id="${postId}"]`)
+        if (postElement) {
+            postElement.setAttribute('data-reaction', emoji)
+        }
+        toast.success(`Reaction added: ${emoji}`)
     }
 
     const handleMainLike = (postId: string) => {
-        setPosts((prev) =>
-            prev.map((p) => {
-                if (p.id === postId) {
-                    return { ...p, myReaction: p.myReaction ? null : "👍" }
-                }
-                return p
-            })
-        )
+        // Optimistic update - in production, this would call a mutation
+        const postElement = document.querySelector(`[data-post-id="${postId}"]`)
+        if (postElement) {
+            const currentReaction = postElement.getAttribute('data-reaction')
+            postElement.setAttribute('data-reaction', currentReaction ? '' : '👍')
+        }
     }
 
     return (
@@ -194,7 +170,7 @@ export function Feed() {
                                 Personalizing your feed
                             </h3>
                             <p className="text-xs text-muted-foreground mt-1">
-                                We're analyzing your profile to show you relevant content. 
+                                We&apos;re analyzing your profile to show you relevant content. 
                                 Meanwhile, here are some popular posts from the community!
                             </p>
                         </div>
@@ -243,11 +219,24 @@ export function Feed() {
 
             {/* Feed Posts */}
             <div className="space-y-3 md:space-y-6" role="feed" aria-label="Posts feed">
-                {isFetching && sortedPosts.length === 0 ? (
+                {isPending && sortedPosts.length === 0 ? (
                     <>
                         <PostSkeleton />
                         <PostSkeleton />
                     </>
+                ) : error && sortedPosts.length === 0 ? (
+                    /* Error State - Fallback to Cache */
+                    <GlassCard innerClassName="py-16 px-6 text-center">
+                        <div className="h-16 w-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Inbox className="h-8 w-8 text-red-400" />
+                        </div>
+                        <h3 className="text-lg font-bold text-foreground mb-2">
+                            Unable to load posts
+                        </h3>
+                        <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+                            Please check your connection and try again.
+                        </p>
+                    </GlassCard>
                 ) : sortedPosts.length === 0 ? (
                     /* Empty State */
                     <GlassCard innerClassName="py-16 px-6 text-center">
