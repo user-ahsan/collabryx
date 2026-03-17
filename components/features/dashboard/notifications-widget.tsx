@@ -269,7 +269,11 @@ function NotificationList({
   }
 
   return (
-    <div ref={parentRef} className="h-[500px] overflow-auto p-4 pb-6">
+    <div 
+      ref={parentRef} 
+      className="h-[500px] overflow-auto p-4 pb-6"
+      onWheel={(e) => e.stopPropagation()}
+    >
       <div
         style={{
           height: `${virtualizer.getTotalSize()}px`,
@@ -321,6 +325,22 @@ export function NotificationsWidget({
   useRealtimeNotifications()
 
   const deleteNotification = useDeleteNotification()
+
+  // Lock body scroll when popover is open
+  useEffect(() => {
+    if (open) {
+      document.body.style.overflow = 'hidden'
+      document.documentElement.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+      document.documentElement.style.overflow = ''
+    }
+    
+    return () => {
+      document.body.style.overflow = ''
+      document.documentElement.style.overflow = ''
+    }
+  }, [open])
 
   const handleDelete = useCallback((id: string) => {
     // Optimistic update
@@ -420,6 +440,10 @@ export function NotificationsWidget({
         avoidCollisions
         className="w-full min-w-[380px] max-w-[420px] max-h-[600px] p-0 bg-card/95 backdrop-blur-xl border border-border/60 shadow-2xl overflow-hidden rounded-xl z-[100]"
         onCloseAutoFocus={(e) => e.preventDefault()}
+        onWheel={(e) => {
+          // Prevent scroll from bubbling to page when popover is open
+          e.stopPropagation()
+        }}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border/60 shrink-0">
@@ -458,7 +482,16 @@ export function NotificationsWidget({
         </div>
 
         {/* Filter Tabs */}
-        <div className="border-b border-border/40 overflow-x-auto" role="tablist" aria-label="Notification filters">
+        <div 
+          className="border-b border-border/40 overflow-x-auto scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent" 
+          role="tablist" 
+          aria-label="Notification filters"
+          onWheel={(e) => {
+            e.stopPropagation()
+            e.currentTarget.scrollLeft += e.deltaY
+          }}
+          style={{ scrollBehavior: 'smooth' }}
+        >
           <div className="flex gap-1 p-2 min-w-max">
             {NOTIFICATION_TABS.map((tab) => {
               const TabIcon = tab.icon
@@ -486,12 +519,15 @@ export function NotificationsWidget({
         </div>
 
         {/* Notification List */}
-        <ScrollArea className="h-[500px] w-full">
+        <div 
+          className="h-[500px] w-full overflow-hidden"
+          onWheel={(e) => e.stopPropagation()}
+        >
           <NotificationList
             activeTab={activeTab}
             onDelete={handleDelete}
           />
-        </ScrollArea>
+        </div>
 
         {/* Footer */}
         <div className="border-t border-border/60 px-5 py-3 bg-muted/30">
