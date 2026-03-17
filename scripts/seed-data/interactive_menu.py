@@ -92,38 +92,54 @@ class InteractiveMenu:
 
     def handle_input(self) -> bool:
         """Handle keyboard input. Returns False to exit."""
-        time.sleep(0.05)
-
         try:
-            if msvcrt.kbhit():
-                key = msvcrt.getch()
+            # Wait for key press (blocking with timeout)
+            start_time = time.time()
+            while not msvcrt.kbhit():
+                if time.time() - start_time > 0.1:  # 100ms timeout
+                    return True  # Continue loop
+                time.sleep(0.01)
 
-                if key == b"\x00" or key == b"\xe0":
-                    key = msvcrt.getch()
-                    if key == b"H":
-                        self.selected_index = max(0, self.selected_index - 1)
-                        return True
-                    elif key == b"P":
-                        self.selected_index = min(
-                            len(self.options) - 1, self.selected_index + 1
-                        )
-                        return True
+            key = msvcrt.getch()
 
-                elif key == b" ":
-                    if self.allow_multi_select:
-                        if self.selected_index in self.selected_items:
-                            self.selected_items.remove(self.selected_index)
-                        else:
-                            self.selected_items.add(self.selected_index)
+            # Arrow keys send prefix byte first (\x00 or \xe0)
+            if key in [b"\x00", b"\xe0"]:
+                arrow = msvcrt.getch()
+                if arrow == b"H":  # Up
+                    self.selected_index = max(0, self.selected_index - 1)
+                    return True
+                elif arrow == b"P":  # Down
+                    self.selected_index = min(
+                        len(self.options) - 1, self.selected_index + 1
+                    )
+                    return True
+                elif arrow == b"K":  # Left (treat as up)
+                    self.selected_index = max(0, self.selected_index - 1)
+                    return True
+                elif arrow == b"M":  # Right (treat as down)
+                    self.selected_index = min(
+                        len(self.options) - 1, self.selected_index + 1
+                    )
                     return True
 
-                elif key == b"\r":
-                    return False
+            elif key == b" ":  # Space
+                if self.allow_multi_select:
+                    if self.selected_index in self.selected_items:
+                        self.selected_items.remove(self.selected_index)
+                    else:
+                        self.selected_items.add(self.selected_index)
+                return True
 
-                elif key.lower() == b"q":
-                    return False
+            elif key == b"\r" or key == b"\n":  # Enter
+                return False
 
-        except Exception:
+            elif key.lower() == b"q":  # Q
+                return False
+
+            elif key == b"\x1b":  # ESC
+                return False
+
+        except Exception as e:
             pass
 
         return True
