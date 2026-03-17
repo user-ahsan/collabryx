@@ -230,8 +230,8 @@ function NotificationList({
   }, [])
 
   return (
-    <ScrollArea className="flex-1 overflow-y-auto w-full" onWheel={(e) => e.stopPropagation()}>
-      <div className="space-y-2 p-4 pb-6 min-h-[400px]" onWheel={(e) => e.stopPropagation()}>
+    <ScrollArea className="flex-1 overflow-y-auto w-full">
+      <div className="space-y-2 p-4 pb-6 min-h-[400px]">
         {filteredNotifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
             <div className="h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
@@ -331,15 +331,10 @@ export function NotificationsWidget({
         sideOffset={12}
         collisionPadding={16}
         avoidCollisions
-        forceMount
-        onWheel={(e) => e.stopPropagation()}
         className="w-[400px] max-h-[600px] p-0 bg-card/95 backdrop-blur-xl border border-border/60 shadow-2xl overflow-hidden rounded-xl z-[100]"
-        style={{
-          position: 'fixed',
-        }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border/60 shrink-0" onWheel={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border/60 shrink-0">
           <div className="flex items-center gap-3">
             <h3 className="font-bold text-lg tracking-tight text-foreground">
               Notifications
@@ -360,10 +355,7 @@ export function NotificationsWidget({
               variant="ghost"
               size="sm"
               className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
-              onClick={(e) => {
-                e.stopPropagation()
-                handleMarkAllAsRead()
-              }}
+              onClick={handleMarkAllAsRead}
             >
               <CheckCheck className="mr-1.5 h-3.5 w-3.5" />
               Mark all read
@@ -372,7 +364,7 @@ export function NotificationsWidget({
         </div>
 
         {/* Filter Tabs */}
-        <div className="border-b border-border/40 overflow-x-auto" onWheel={(e) => e.stopPropagation()}>
+        <div className="border-b border-border/40 overflow-x-auto">
           <div className="flex gap-1 p-2 min-w-max">
             {NOTIFICATION_TABS.map((tab) => {
               const TabIcon = tab.icon
@@ -387,10 +379,7 @@ export function NotificationsWidget({
                       ? "bg-secondary text-foreground"
                       : "text-muted-foreground hover:text-foreground"
                   )}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setActiveTab(tab.id)
-                  }}
+                  onClick={() => setActiveTab(tab.id)}
                 >
                   <TabIcon className="h-3.5 w-3.5" />
                   {tab.label}
@@ -400,8 +389,8 @@ export function NotificationsWidget({
           </div>
         </div>
 
-        {/* Notification List - Fixed height with proper scroll capture */}
-        <div className="h-[500px] flex flex-col" onWheel={(e) => e.stopPropagation()}>
+        {/* Notification List */}
+        <div className="h-[500px] flex flex-col">
           <NotificationList
             notifications={notifications}
             activeTab={activeTab}
@@ -410,15 +399,12 @@ export function NotificationsWidget({
 
         {/* Footer */}
         {notifications.some((n) => n.read) && (
-          <div className="border-t border-border/60 px-5 py-3 bg-muted/30" onWheel={(e) => e.stopPropagation()}>
+          <div className="border-t border-border/60 px-5 py-3 bg-muted/30">
             <Button
               variant="ghost"
               size="sm"
               className="w-full h-8 text-xs text-muted-foreground hover:text-destructive"
-              onClick={(e) => {
-                e.stopPropagation()
-                handleClearAllRead()
-              }}
+              onClick={handleClearAllRead}
             >
               <Trash2 className="mr-1.5 h-3.5 w-3.5" />
               Clear all read notifications
