@@ -229,36 +229,34 @@ function NotificationList({
     // TODO: Implement dismiss logic
   }, [])
 
-  if (filteredNotifications.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-        <div className="h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
-          <Bell className="h-8 w-8 text-muted-foreground/50" />
-        </div>
-        <h3 className="text-base font-semibold text-foreground mb-1">
-          No notifications
-        </h3>
-        <p className="text-sm text-muted-foreground max-w-[260px]">
-          {activeTab === "unread"
-            ? "You're all caught up!"
-            : "When you get notifications, they'll appear here"}
-        </p>
-      </div>
-    )
-  }
-
   return (
     <ScrollArea className="flex-1 overflow-y-auto w-full">
-      <div className="space-y-2 p-4 pb-6">
-        {filteredNotifications.map((notification) => (
-          <NotificationItem
-            key={notification.id}
-            notification={notification}
-            onAccept={() => handleAccept(notification.id)}
-            onIgnore={() => handleIgnore(notification.id)}
-            onDismiss={() => handleDismiss(notification.id)}
-          />
-        ))}
+      <div className="space-y-2 p-4 pb-6 min-h-[400px]">
+        {filteredNotifications.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+            <div className="h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
+              <Bell className="h-8 w-8 text-muted-foreground/50" />
+            </div>
+            <h3 className="text-base font-semibold text-foreground mb-1">
+              No notifications
+            </h3>
+            <p className="text-sm text-muted-foreground max-w-[260px]">
+              {activeTab === "unread"
+                ? "You're all caught up!"
+                : "When you get notifications, they'll appear here"}
+            </p>
+          </div>
+        ) : (
+          filteredNotifications.map((notification) => (
+            <NotificationItem
+              key={notification.id}
+              notification={notification}
+              onAccept={() => handleAccept(notification.id)}
+              onIgnore={() => handleIgnore(notification.id)}
+              onDismiss={() => handleDismiss(notification.id)}
+            />
+          ))
+        )}
       </div>
     </ScrollArea>
   )
@@ -312,7 +310,7 @@ export function NotificationsWidget({
         <Button
           variant="ghost"
           size="icon"
-          className="relative"
+          className="relative shrink-0"
           aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ""}`}
         >
           <Bell className="h-5 w-5" />
@@ -329,9 +327,10 @@ export function NotificationsWidget({
 
       <PopoverContent
         side="bottom"
-        align="end"
-        sideOffset={12}
-        className="w-[400px] p-0 bg-card/95 backdrop-blur-xl border border-border/60 shadow-xl overflow-hidden rounded-xl z-50"
+        align="center"
+        sideOffset={8}
+        collisionPadding={16}
+        className="w-[400px] max-h-[600px] p-0 bg-card/95 backdrop-blur-xl border border-border/60 shadow-xl overflow-hidden rounded-xl z-50 origin-top"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border/60 shrink-0">
@@ -389,8 +388,8 @@ export function NotificationsWidget({
           </div>
         </div>
 
-        {/* Notification List */}
-        <div className="max-h-[60vh] flex flex-col">
+        {/* Notification List - Fixed height to prevent layout shift */}
+        <div className="h-[500px] flex flex-col">
           <NotificationList
             notifications={notifications}
             activeTab={activeTab}
