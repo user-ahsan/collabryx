@@ -87,7 +87,7 @@ export function ProfileHeader({
                                         />
                                     )}
                                 </div>
-                                <p className="text-sm sm:text-base text-emerald-500/90 dark:text-emerald-400 font-medium mt-1.5 break-words">{headline}</p>
+                                <p className="text-sm md:text-base text-emerald-500/90 dark:text-emerald-400 font-medium mt-1.5 break-words">{headline}</p>
                             </div>
 
                             {/* Primary Action Buttons */}
@@ -131,7 +131,7 @@ export function ProfileHeader({
                             </div>
                         )}
 
-                        <div className="flex flex-wrap gap-4 sm:gap-6 text-xs sm:text-sm text-muted-foreground font-medium">
+                        <div className="flex flex-wrap gap-4 md:gap-6 text-xs md:text-sm text-muted-foreground font-medium">
                             {location && (
                                 <div className="flex items-center gap-1.5 min-w-0 transition-colors hover:text-foreground">
                                     <MapPin className="h-4 w-4 shrink-0" />
@@ -162,10 +162,10 @@ export function ProfileHeader({
 
                         {/* Collaboration Readiness Indicator */}
                         <div className="pt-2 md:pt-3">
-                            <Badge
-                                variant="outline"
-                                className={cn(
-                                    "text-xs sm:text-sm px-3.5 py-1.5 inline-flex items-center font-medium",
+                                <Badge
+                                    variant="outline"
+                                    className={cn(
+                                        "text-xs md:text-sm px-4 py-1.5 inline-flex items-center font-medium",
                                     collaborationReadiness === "available" && "bg-green-500/10 text-green-700 dark:text-green-400 border-green-500/30",
                                     collaborationReadiness === "open" && "bg-yellow-500/10 text-yellow-700 dark:text-yellow-400 border-yellow-500/30",
                                     collaborationReadiness === "not-available" && "bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/30"
