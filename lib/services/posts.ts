@@ -95,10 +95,13 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
 
     // Random posts for new users (before embeddings are generated)
     if (options.random) {
-      // Use ORDER BY RANDOM() for random sampling
-      query = query.order("created_at", { ascending: false }) // Fallback to latest if random() doesn't work
+      // Use ORDER BY created_at for pagination support
+      query = query.order("created_at", { ascending: false })
       
-      if (options.limit) {
+      // Support pagination for random posts
+      if (options.offset) {
+        query = query.range(options.offset, options.offset + (options.limit || 20) - 1)
+      } else if (options.limit) {
         query = query.limit(options.limit)
       }
     } else {
