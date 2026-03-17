@@ -29,7 +29,7 @@ export function PostContent({ content, hasLink, linkUrl, hasMedia, mediaUrls, on
         >
             <RichTextDisplay
                 content={content}
-                className="text-sm md:text-[15px] lg:text-base leading-relaxed text-foreground/90 font-normal"
+                className="text-sm md:text-base lg:text-base leading-relaxed text-foreground/90 font-normal"
                 truncate={truncateText}
                 maxWords={50}
             />
@@ -79,9 +79,9 @@ export function PostContent({ content, hasLink, linkUrl, hasMedia, mediaUrls, on
                                         </div>
                                     </div>
                                     {mediaUrls.length > 1 && (
-                                        <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white px-2 py-0.5 rounded-md text-[10px] font-medium pointer-events-none">
-                                            {index + 1} / {mediaUrls.length}
-                                        </div>
+                                    <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white px-2 py-0.5 rounded-md text-xs font-medium pointer-events-none">
+                                        {index + 1} / {mediaUrls.length}
+                                    </div>
                                     )}
                                 </>
                             )}

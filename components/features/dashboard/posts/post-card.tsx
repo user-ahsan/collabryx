@@ -1,6 +1,15 @@
 import { cn } from "@/lib/utils"
 import { GlassCard } from "@/components/shared/glass-card"
 
+/**
+ * PostCard - Standardized post container
+ * 
+ * Design System Compliance:
+ * - 4-point grid spacing: p-4 sm:p-6 lg:p-8
+ * - Consistent shadow system via GlassCard
+ * - Transition duration: 300ms
+ */
+
 interface PostCardProps {
     children: React.ReactNode
     className?: string
@@ -14,10 +23,9 @@ export function PostCard({ children, className, onClick }: PostCardProps) {
             className={cn(
                 "transition-all duration-300 ease-in-out opacity-100",
                 className, 
-                onClick && "cursor-pointer", 
-                "shadow-md"
+                onClick && "cursor-pointer"
             )}
-            innerClassName="p-3.5 sm:p-6 lg:p-8"
+            innerClassName="p-4 sm:p-6 lg:p-8"
             onClick={onClick}
         >
             {children}

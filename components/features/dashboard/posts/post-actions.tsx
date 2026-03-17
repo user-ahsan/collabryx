@@ -55,7 +55,7 @@ export function PostActions({ postId, myReaction, onLike, onReaction, onCommentC
                     variant="ghost"
                     aria-label={reactionConfig ? `Remove ${reactionConfig.label} reaction` : "Like this post"}
                     className={cn(
-                        "rounded-lg transition-all gap-1.5 md:gap-2 h-8 md:h-9 px-3 md:px-4",
+                        "rounded-lg transition-all gap-2 h-9 px-4",
                         reactionConfig?.color || "text-muted-foreground hover:text-blue-400 hover:!bg-blue-500/10"
                     )}
                     onClick={() => onLike(postId)}
@@ -65,12 +65,12 @@ export function PostActions({ postId, myReaction, onLike, onReaction, onCommentC
                     {reactionConfig?.icon ? (
                         <ReactionIcon className={cn("h-4 w-4", reactionConfig.color, "fill-current")} />
                     ) : myReaction ? (
-                        <span className="text-base md:text-lg leading-none">{myReaction}</span>
+                        <span className="text-lg leading-none">{myReaction}</span>
                     ) : (
                         <ThumbsUp className="h-4 w-4 stroke-[1.5px]" />
                     )}
 
-                    <span className="font-medium text-xs md:text-sm">
+                    <span className="font-medium text-sm">
                         {reactionConfig?.label || "Like"}
                     </span>
                 </Button>
@@ -91,21 +91,21 @@ export function PostActions({ postId, myReaction, onLike, onReaction, onCommentC
                 <Button
                     variant="ghost"
                     aria-label="Comment on this post"
-                    className="rounded-lg text-muted-foreground hover:text-blue-400 hover:!bg-blue-500/10 transition-all gap-1.5 md:gap-2 h-8 md:h-9 px-3 md:px-4"
+                    className="rounded-lg text-muted-foreground hover:text-blue-400 hover:!bg-blue-500/10 transition-all gap-2 h-9 px-4"
                     onClick={() => onCommentClick(postId)}
                 >
                     <MessageCircle className="h-4 w-4 stroke-[1.5px]" />
-                    <span className="font-medium text-xs md:text-sm">Comment</span>
+                    <span className="font-medium text-sm">Comment</span>
                 </Button>
 
                 <Button
                     variant="ghost"
                     aria-label="Share this post"
-                    className="rounded-lg text-muted-foreground hover:text-blue-400 hover:!bg-blue-500/10 transition-all gap-1.5 md:gap-2 h-8 md:h-9 px-3 md:px-4"
+                    className="rounded-lg text-muted-foreground hover:text-blue-400 hover:!bg-blue-500/10 transition-all gap-2 h-9 px-4"
                     onClick={() => onShareClick(postId)}
                 >
                     <Share2 className="h-4 w-4 stroke-[1.5px]" />
-                    <span className="font-medium text-xs md:text-sm">Share</span>
+                    <span className="font-medium text-sm">Share</span>
                 </Button>
             </div>
         </div>
