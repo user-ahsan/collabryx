@@ -14,11 +14,12 @@ from seeders.base_seeder import BaseSeeder
 
 
 class ConnectionsSeeder(BaseSeeder):
-    """Seeder for connections between users"""
+    """Seeder for connections between users with incremental seeding"""
 
     def __init__(self, http_client):
         super().__init__(http_client)
         self.existing_connections = None
+        self.stats = {"created": 0, "skipped": 0, "failed": 0}
 
     def create_connection(
         self,
@@ -39,15 +40,19 @@ class ConnectionsSeeder(BaseSeeder):
         return result is not None
 
     def get_existing_connections(self) -> Set[Tuple[str, str]]:
-        """Get existing connections to avoid duplicates"""
-        if self.existing_connections is not None:
-            return self.existing_connections
-
+        """Get existing connections to avoid duplicates (always fetch from DB)"""
+        # Always fetch fresh from database for incremental seeding
         self.existing_connections = self.fetch_existing_connections()
+        print(
+            f"{Fore.YELLOW}  → Found {len(self.existing_connections)} existing connections{Style.RESET_ALL}"
+        )
         return self.existing_connections
 
     def seed(self, limit: int = None) -> Dict[str, int]:
-        """Seed connections between users"""
+        """Seed connections between users (incremental - skips existing)"""
+
+        # Reset statistics
+        self.stats = {"created": 0, "skipped": 0, "failed": 0}
 
         if limit is None:
             limit = (
@@ -56,22 +61,30 @@ class ConnectionsSeeder(BaseSeeder):
                 else 500
             )
 
+        # Fetch existing connections first
+        print(
+            f"\n{Fore.YELLOW}⏳ Loading existing connections for duplicate checking...{Style.RESET_ALL}"
+        )
+        existing = self.get_existing_connections()
+
         # Show current database status
-        existing_connections = self.get_table_count("connections")
+        existing_count = len(existing)
 
         print(f"\n{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
         print(f"{Fore.CYAN}CURRENT DATABASE STATUS{Style.RESET_ALL}")
         print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
         print(
-            f"  🔗 Existing Connections: {Fore.GREEN}{existing_connections:,}{Style.RESET_ALL}"
+            f"  🔗 Existing Connections: {Fore.GREEN}{existing_count:,}{Style.RESET_ALL}"
         )
         print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
         print(
-            f"\n{Fore.YELLOW}➕ Adding {limit:,} new connections...{Style.RESET_ALL}\n"
+            f"\n{Fore.YELLOW}➕ Attempting to add {limit:,} new connections...{Style.RESET_ALL}\n"
         )
 
         print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}SEEDING {limit} CONNECTIONS{Style.RESET_ALL}")
+        print(
+            f"{Fore.CYAN}SEEDING {limit} CONNECTIONS (Incremental Mode){Style.RESET_ALL}"
+        )
         print(f"{Fore.CYAN}{'=' * 60}{Style.RESET_ALL}\n")
 
         # Fetch user IDs
@@ -83,25 +96,21 @@ class ConnectionsSeeder(BaseSeeder):
             print(
                 f"{Fore.RED}✗ Need at least 2 users. Seed profiles first.{Style.RESET_ALL}"
             )
-            return {"created": 0, "skipped": 0, "failed": 0}
+            return self.stats
 
-        # Get existing connections
-        existing = self.get_existing_connections()
-
-        stats = {"created": 0, "skipped": 0, "failed": 0}
         attempts = 0
         max_attempts = limit * 3  # Try 3x to account for duplicates
 
-        while stats["created"] < limit and attempts < max_attempts:
+        while self.stats["created"] < limit and attempts < max_attempts:
             attempts += 1
 
             # Pick two different users
             requester, receiver = random.sample(user_ids, 2)
             pair_key = (requester, receiver)
 
-            # Skip if already connected
-            if pair_key in existing:
-                stats["skipped"] += 1
+            # Skip if already connected (both directions)
+            if pair_key in existing or (receiver, requester) in existing:
+                self.stats["skipped"] += 1
                 continue
 
             existing.add(pair_key)
@@ -112,37 +121,54 @@ class ConnectionsSeeder(BaseSeeder):
             )[0]
 
             print(
-                f"\r{Fore.CYAN}[{stats['created'] + 1}/{limit}] Creating connection...{Style.RESET_ALL}",
+                f"\r{Fore.CYAN}[{self.stats['created'] + 1}/{limit}] Creating connection...{Style.RESET_ALL}",
                 end="",
                 flush=True,
             )
 
             if self.create_connection(requester, receiver, status):
-                stats["created"] += 1
+                self.stats["created"] += 1
                 print(
-                    f"\r{Fore.CYAN}[{stats['created']}/{limit}] ✓ Connection created{Style.RESET_ALL}    ",
+                    f"\r{Fore.CYAN}[{self.stats['created']}/{limit}] ✓ Connection created{Style.RESET_ALL}    ",
                     end="",
                     flush=True,
                 )
 
-                # Create reverse connection for accepted
+                # Create reverse connection for accepted (check first)
                 if status == "accepted":
-                    self.create_connection(receiver, requester, "accepted")
-                    existing.add((receiver, requester))
+                    reverse_key = (receiver, requester)
+                    if reverse_key not in existing:
+                        self.create_connection(receiver, requester, "accepted")
+                        existing.add(reverse_key)
+                    else:
+                        self.stats["skipped"] += 1
             else:
-                stats["failed"] += 1
+                self.stats["failed"] += 1
                 print(
-                    f"\r{Fore.RED}[{stats['created'] + 1}/{limit}] ✗ Failed{Style.RESET_ALL}    ",
+                    f"\r{Fore.RED}[{self.stats['created'] + 1}/{limit}] ✗ Failed{Style.RESET_ALL}    ",
                     end="",
                     flush=True,
                 )
 
             # Rate limiting
-            if stats["created"] % config.BATCH_SIZE == 0:
+            if self.stats["created"] % config.BATCH_SIZE == 0:
                 time.sleep(config.DELAY_BETWEEN_BATCHES)
 
-        self.log_stats(stats, "Connections")
-        return stats
+        # Print detailed statistics
+        print(f"\n{Fore.GREEN}{'=' * 60}{Style.RESET_ALL}")
+        print(f"{Fore.GREEN}✓ CONNECTIONS SEEDING COMPLETE{Style.RESET_ALL}")
+        print(f"{Fore.GREEN}{'=' * 60}{Style.RESET_ALL}")
+        print(f"  Created:     {Fore.GREEN}{self.stats['created']:,}{Style.RESET_ALL}")
+        print(f"  Skipped:     {Fore.YELLOW}{self.stats['skipped']:,}{Style.RESET_ALL}")
+        print(
+            f"  Failed:      {Fore.RED if self.stats['failed'] > 0 else Fore.GREEN}{self.stats['failed']:,}{Style.RESET_ALL}"
+        )
+        print(
+            f"  Total:       {Fore.CYAN}{sum(self.stats.values()):,}{Style.RESET_ALL}"
+        )
+        print(f"{Fore.GREEN}{'=' * 60}{Style.RESET_ALL}\n")
+
+        return self.stats
 
 
 if __name__ == "__main__":
