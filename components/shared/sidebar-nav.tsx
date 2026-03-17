@@ -270,54 +270,56 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
             {/* Footer Actions - Redesigned */}
             <div className="p-4 mt-auto shrink-0">
                 {!isCollapsed ? (
-                    <div className="flex items-center justify-between gap-1 p-1.5 bg-card rounded-xl border shadow-sm">
+                    <div className="flex flex-col gap-2 p-2 bg-card rounded-xl border shadow-sm">
                         <TooltipProvider delayDuration={0}>
-                            <NotificationsWidget>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-11 w-11 md:h-9 md:w-9 hover:bg-muted/80 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
-                                >
-                                    <Bell className="h-4.5 w-4.5" />
-                                    <span className="sr-only">Notifications</span>
-                                </Button>
-                            </NotificationsWidget>
-
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button onClick={() => openSettings('profile')} variant="ghost" size="icon" className="h-11 w-11 md:h-9 md:w-9 hover:bg-muted/80 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-                                        <Settings className="h-4.5 w-4.5" />
-                                        <span className="sr-only">Settings</span>
+                            <div className="flex items-center gap-1">
+                                <NotificationsWidget>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-10 w-10 hover:bg-muted/80 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+                                    >
+                                        <Bell className="h-4 w-4" />
+                                        <span className="sr-only">Notifications</span>
                                     </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Settings</TooltipContent>
-                            </Tooltip>
+                                </NotificationsWidget>
+
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button onClick={() => openSettings('profile')} variant="ghost" size="icon" className="h-10 w-10 hover:bg-muted/80 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
+                                            <Settings className="h-4 w-4" />
+                                            <span className="sr-only">Settings</span>
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Settings</TooltipContent>
+                                </Tooltip>
+                            </div>
                         </TooltipProvider>
 
-                        <div className="h-5 w-px bg-border/40 mx-1" />
+                        <div className="h-px w-full bg-border/40 my-1" />
 
-                        <div className="flex justify-center flex-1 ml-2">
+                        <div className="flex justify-center">
                             <AnimatedThemeToggler variant="slider" />
                         </div>
                     </div>
                 ) : (
-                    <div className="flex flex-col gap-3 items-center">
+                    <div className="flex flex-col gap-2 items-center">
                         <TooltipProvider delayDuration={0}>
                             <NotificationsWidget>
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-11 w-11 md:h-9 md:w-9 hover:bg-muted rounded-xl text-muted-foreground hover:text-foreground"
+                                    className="h-10 w-10 hover:bg-muted rounded-xl text-muted-foreground hover:text-foreground"
                                 >
-                                    <Bell className="h-5 w-5" />
+                                    <Bell className="h-4 w-4" />
                                     <span className="sr-only">Notifications</span>
                                 </Button>
                             </NotificationsWidget>
 
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button onClick={() => openSettings('profile')} variant="ghost" size="icon" className="h-11 w-11 md:h-9 md:w-9 hover:bg-muted rounded-xl text-muted-foreground hover:text-foreground">
-                                        <Settings className="h-5 w-5" />
+                                    <Button onClick={() => openSettings('profile')} variant="ghost" size="icon" className="h-10 w-10 hover:bg-muted rounded-xl text-muted-foreground hover:text-foreground">
+                                        <Settings className="h-4 w-4" />
                                         <span className="sr-only">Settings</span>
                                     </Button>
                                 </TooltipTrigger>
@@ -325,7 +327,9 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
                             </Tooltip>
                         </TooltipProvider>
 
-                        <AnimatedThemeToggler className="h-11 w-11 md:h-9 md:w-9 hover:bg-muted rounded-xl" />
+                        <div className="h-px w-8 bg-border/40" />
+
+                        <AnimatedThemeToggler className="h-10 w-10 hover:bg-muted rounded-xl" />
                     </div>
                 )}
             </div>
