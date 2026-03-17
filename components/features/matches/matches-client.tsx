@@ -1,16 +1,15 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useMemo } from "react"
 import { MatchCard } from "@/components/features/matches/match-card"
 import { MatchCardListView } from "@/components/features/matches/match-card-list-view"
+import { MatchCardSkeleton, MatchCardListViewSkeleton } from "@/components/features/matches/match-card-skeleton"
 import { MatchContextHeader } from "@/components/features/matches/match-context-header"
 import { MatchFilters } from "@/components/features/matches/match-filters"
 import { toast } from "sonner"
 import { Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { getCache, setCache, CACHE_KEYS } from "@/lib/dashboard-cache"
-import { fetchMatches } from "@/lib/services/matches"
-import { TOAST_MESSAGES, TOAST_IDS } from "@/lib/constants/toast-messages"
+import { useMatches } from "@/hooks/use-matches-query"
 
 type ViewMode = "grid" | "list"
 
@@ -30,49 +29,28 @@ interface UIMatch {
 }
 
 export function MatchesClient() {
-    const [matches, setMatches] = useState<UIMatch[]>([])
-    const [isLoading, setIsLoading] = useState(true)
+    // Fetch matches with React Query
+    const { data: matchesData, isPending, error } = useMatches({ limit: 20 })
 
-    // Fetch matches from API
-    const fetchMatchesData = useCallback(async () => {
-        setIsLoading(true)
-        try {
-            const { data, error } = await fetchMatches({ limit: 20 })
-
-            if (error) throw error
-
-            const uiMatches: UIMatch[] = (data || []).map((match) => ({
-                id: match.id,
-                name: match.matched_user_name ?? "Unknown",
-                role: match.matched_user_role ?? "",
-                avatar: match.matched_user_avatar ?? "/avatars/01.png",
-                compatibility: match.match_percentage,
-                skills: [],
-                bio: "",
-                location: "",
-                timezone: "PST",
-                availability: "full-time" as const,
-                insights: [
-                    { type: "complementary" as const, text: "Matches your skills" },
-                ],
-            }))
-
-            setMatches(uiMatches)
-            setCache(CACHE_KEYS.MATCHES, uiMatches)
-        } catch {
-            const cached = getCache<UIMatch[]>(CACHE_KEYS.MATCHES)
-            if (cached) {
-                setMatches(cached)
-                toast.info(TOAST_MESSAGES.MATCHES.CACHE, { id: TOAST_IDS.MATCHES })
-            }
-        } finally {
-            setIsLoading(false)
-        }
-    }, [])
-
-    useEffect(() => {
-        fetchMatchesData()
-    }, [fetchMatchesData])
+    // Map to UI format with stable reference
+    const matches: UIMatch[] = useMemo(() => {
+        if (!matchesData) return []
+        return matchesData.map((match) => ({
+            id: match.id,
+            name: match.matched_user_name ?? "Unknown",
+            role: match.matched_user_role ?? "",
+            avatar: match.matched_user_avatar ?? "/avatars/01.png",
+            compatibility: match.match_percentage,
+            skills: [],
+            bio: "",
+            location: "",
+            timezone: "PST",
+            availability: "full-time" as const,
+            insights: [
+                { type: "complementary" as const, text: "Matches your skills" },
+            ],
+        }))
+    }, [matchesData])
     const [preferences, setPreferences] = useState({
         role: "CTO",
         industry: "Fintech",
@@ -106,9 +84,27 @@ export function MatchesClient() {
                 />
 
                 {/* Grid or List Layout */}
-                {isLoading ? (
-                    <div className="flex items-center justify-center py-24">
-                        <p className="text-muted-foreground">Loading matches...</p>
+                {isPending ? (
+                    viewMode === "grid" ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-6 pb-20">
+                            <MatchCardSkeleton count={8} />
+                        </div>
+                    ) : (
+                        <div className="flex flex-col gap-4 pb-20">
+                            <MatchCardListViewSkeleton count={5} />
+                        </div>
+                    )
+                ) : error && matches.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-24 px-4 text-center">
+                        <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-red-500/10 flex items-center justify-center mb-4 sm:mb-6">
+                            <Users className="h-8 w-8 sm:h-10 sm:w-10 text-red-400" />
+                        </div>
+                        <h2 className="text-xl sm:text-2xl font-bold tracking-tight mb-2 text-foreground">
+                            Unable to load matches
+                        </h2>
+                        <p className="text-sm sm:text-base text-muted-foreground max-w-md mx-auto mb-6">
+                            Please check your connection and try again.
+                        </p>
                     </div>
                 ) : matches.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-24 px-4 text-center">
