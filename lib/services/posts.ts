@@ -135,6 +135,9 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
     }
 
     console.log("Posts fetched successfully:", data?.length || 0, "posts")
+    if (data && data.length > 0) {
+      console.log("First post sample:", JSON.stringify(data[0], null, 2))
+    }
 
     const mappedPosts: PostWithAuthor[] = (data as RawPost[] || []).map((post) => ({
       id: post.id,
@@ -157,8 +160,13 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
     }))
 
     return { data: mappedPosts, error: null }
-  } catch (error) {
-    console.error("Error fetching posts:", error)
+  } catch (error: any) {
+    console.error("Error fetching posts:", {
+      message: error?.message || error,
+      stack: error?.stack,
+      code: error?.code,
+      error: error,
+    })
     return { data: [], error: error instanceof Error ? error : new Error("Unknown error") }
   }
 }
