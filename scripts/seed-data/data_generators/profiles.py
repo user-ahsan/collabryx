@@ -653,15 +653,52 @@ def generate_complete_profile(
     return profile
 
 
-def generate_profiles(count: int) -> List[Dict[str, Any]]:
-    """Generate multiple complete profiles distributed across industries"""
+def generate_profiles(count: int, existing_emails: set = None) -> List[Dict[str, Any]]:
+    """Generate multiple complete profiles distributed across industries
+
+    Args:
+        count: Number of profiles to generate
+        existing_emails: Set of existing emails to avoid duplicates
+
+    Returns:
+        List of complete profile dictionaries
+    """
     profiles = []
+    used_emails = existing_emails if existing_emails else set()
+
+    # Use random industry distribution if enabled, otherwise distribute evenly
+    use_random = config.SEED_PROFILES_RANDOMIZE_INDUSTRIES
 
     for i in range(count):
-        industry = config.INDUSTRIES[i % len(config.INDUSTRIES)]  # Distribute evenly
+        # Industry selection: random or evenly distributed
+        if use_random:
+            industry = random.choice(config.INDUSTRIES)
+        else:
+            industry = config.INDUSTRIES[i % len(config.INDUSTRIES)]
+
         is_student = random.random() < 0.3  # 30% students
 
-        profile = generate_complete_profile(industry, is_student)
+        # Generate profile with unique email
+        max_attempts = 10
+        for attempt in range(max_attempts):
+            profile = generate_complete_profile(industry, is_student)
+
+            # Check if email is unique
+            if profile["email"] not in used_emails:
+                used_emails.add(profile["email"])
+                break
+
+            # If duplicate, regenerate with different name combination
+            if attempt < max_attempts - 1:
+                # Force regeneration by modifying the random seed slightly
+                import time
+
+                random.seed(time.time() + attempt)
+        else:
+            # If we couldn't find unique email after max attempts, add timestamp
+            profile["email"] = f"{profile['email'].split('@')[0]}-{i}@collabryx.demo"
+            used_emails.add(profile["email"])
+
         profiles.append(profile)
 
     return profiles
