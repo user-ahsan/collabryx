@@ -10,6 +10,7 @@ import { toast } from "sonner"
 import { Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useMatches } from "@/hooks/use-matches-query"
+import { getCache, CACHE_KEYS } from "@/lib/dashboard-cache"
 
 type ViewMode = "grid" | "list"
 
@@ -32,25 +33,37 @@ export function MatchesClient() {
     // Fetch matches with React Query
     const { data: matchesData, isPending, error } = useMatches({ limit: 20 })
 
-    // Map to UI format with stable reference
+    // Map to UI format with stable reference, fallback to cache if needed
     const matches: UIMatch[] = useMemo(() => {
-        if (!matchesData) return []
-        return matchesData.map((match) => ({
-            id: match.id,
-            name: match.matched_user_name ?? "Unknown",
-            role: match.matched_user_role ?? "",
-            avatar: match.matched_user_avatar ?? "/avatars/01.png",
-            compatibility: match.match_percentage,
-            skills: [],
-            bio: "",
-            location: "",
-            timezone: "PST",
-            availability: "full-time" as const,
-            insights: [
-                { type: "complementary" as const, text: "Matches your skills" },
-            ],
-        }))
-    }, [matchesData])
+        // If we have data from React Query, use it
+        if (matchesData && matchesData.length > 0) {
+            return matchesData.map((match) => ({
+                id: match.id,
+                name: match.matched_user_name ?? "Unknown",
+                role: match.matched_user_role ?? "",
+                avatar: match.matched_user_avatar ?? "/avatars/01.png",
+                compatibility: match.match_percentage,
+                skills: [],
+                bio: "",
+                location: "",
+                timezone: "PST",
+                availability: "full-time" as const,
+                insights: [
+                    { type: "complementary" as const, text: "Matches your skills" },
+                ],
+            }))
+        }
+        
+        // If error and no data, try cache
+        if (error) {
+            const cached = getCache<UIMatch[]>(CACHE_KEYS.MATCHES)
+            if (cached) {
+                return cached
+            }
+        }
+        
+        return []
+    }, [matchesData, error])
     const [preferences, setPreferences] = useState({
         role: "CTO",
         industry: "Fintech",
