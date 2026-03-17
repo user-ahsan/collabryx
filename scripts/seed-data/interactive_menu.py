@@ -1,21 +1,18 @@
 #!/usr/bin/env python3
 """
 Interactive Menu with Arrow Key Navigation
-Supports up/down navigation and space bar for multi-selection
-Optimized for PowerShell - no flickering
+Uses ctypes for direct Windows console input - most reliable method
 """
 
 import sys
 import os
-import msvcrt
 import time
-import httpx
+import msvcrt
 from colorama import Fore, Style, init
 from datetime import datetime
 
 init()
 
-# Add parent directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from config import config
@@ -30,400 +27,336 @@ from seeders.mentor_seeder import MentorSeeder
 from seeders.embeddings_seeder import EmbeddingsSeeder
 
 
-class InteractiveMenu:
-    """Interactive menu with arrow key navigation and multi-selection"""
+def get_arrow_key():
+    """Get arrow key input. Returns: 'up', 'down', 'space', 'enter', 'q', 'esc', or None"""
+    try:
+        if not msvcrt.kbhit():
+            return None
 
-    def __init__(self, title: str, options: list, allow_multi_select: bool = False):
+        key = msvcrt.getch()
+
+        # Arrow keys start with \xe0 or \x00
+        if key == b"\xe0" or key == b"\x00":
+            key2 = msvcrt.getch()
+            if key2 == b"H":
+                return "up"
+            elif key2 == b"P":
+                return "down"
+            elif key2 == b"K":
+                return "up"
+            elif key2 == b"M":
+                return "down"
+        elif key == b" ":
+            return "space"
+        elif key == b"\r" or key == b"\n":
+            return "enter"
+        elif key.lower() == b"q":
+            return "q"
+        elif key == b"\x1b":
+            return "esc"
+    except:
+        pass
+
+    return None
+
+
+def clear_screen():
+    """Clear screen and move cursor to home"""
+    print("\033[2J\033[H", end="")
+    print("\033[?25l", end="")  # Hide cursor
+
+
+def show_cursor():
+    """Show cursor"""
+    print("\033[?25h", end="")
+
+
+class Menu:
+    def __init__(self, title, options, allow_multi=True):
         self.title = title
         self.options = options
-        self.selected_index = 0
-        self.selected_items = set()
-        self.allow_multi_select = allow_multi_select
-        self._displayed = False
+        self.selected = 0
+        self.checked = set()
+        self.allow_multi = allow_multi
 
-    def display(self):
-        """Display the menu"""
-        if self._displayed:
-            print("\033[H", end="")  # Move cursor to home
-        self._displayed = True
+    def draw(self):
+        clear_screen()
 
-        print(f"{Fore.CYAN}{'=' * 70}{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}{self.title}{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}{'=' * 70}{Style.RESET_ALL}\n")
+        print(Fore.CYAN + "=" * 70 + Style.RESET_ALL)
+        print(Fore.CYAN + self.title + Style.RESET_ALL)
+        print(Fore.CYAN + "=" * 70 + Style.RESET_ALL)
+        print()
 
-        if self.allow_multi_select:
-            print(f"{Fore.YELLOW}Instructions:{Style.RESET_ALL}")
-            print(f"  UP/DOWN : Navigate options")
-            print(f"  SPACE   : Select/deselect option")
-            print(f"  ENTER   : Execute selected option(s)")
-            print(f"  Q       : Quit\n")
-        else:
-            print(f"{Fore.YELLOW}Instructions:{Style.RESET_ALL}")
-            print(f"  UP/DOWN : Navigate options")
-            print(f"  ENTER   : Select option")
-            print(f"  Q       : Quit\n")
+        if self.allow_multi:
+            print(
+                Fore.YELLOW
+                + "Controls: UP/DOWN arrows, SPACE to select, ENTER to run, Q to quit"
+                + Style.RESET_ALL
+            )
+            print()
 
-        for i, option in enumerate(self.options):
-            if i == self.selected_index:
-                if i in self.selected_items:
-                    print(
-                        f"  {Fore.GREEN}> [{Fore.WHITE}OK{Fore.GREEN}]{Style.RESET_ALL} {option['label']}"
-                    )
+        for i, opt in enumerate(self.options):
+            if i == self.selected:
+                marker = Fore.GREEN + ">>" + Style.RESET_ALL
+                if i in self.checked:
+                    status = Fore.GREEN + "[X]" + Style.RESET_ALL
                 else:
-                    print(f"  {Fore.GREEN}> [ ]{Style.RESET_ALL} {option['label']}")
-
-                if "warning" in option:
+                    status = "   "
+                print(f"{marker} {status} {opt['label']}")
+                if "warning" in opt:
                     print(
-                        f"      {Fore.RED}WARNING: {option['warning']}{Style.RESET_ALL}"
+                        Fore.RED + f"      WARNING: {opt['warning']}" + Style.RESET_ALL
                     )
             else:
-                if i in self.selected_items:
-                    print(f"     [{Fore.GREEN}OK{Style.RESET_ALL}] {option['label']}")
+                if i in self.checked:
+                    print(f"       [{Fore.GREEN}X{Style.RESET_ALL}] {opt['label']}")
                 else:
-                    print(f"      [ ] {option['label']}")
+                    print(f"       [ ] {opt['label']}")
 
-        print(f"\n{Fore.CYAN}{'=' * 70}{Style.RESET_ALL}")
+        print()
+        print(Fore.CYAN + "=" * 70 + Style.RESET_ALL)
 
-        if self.allow_multi_select and self.selected_items:
-            selected_labels = [self.options[i]["label"] for i in self.selected_items]
+        if self.checked:
             print(
-                f"{Fore.GREEN}Selected: {len(self.selected_items)} module(s){Style.RESET_ALL}\n"
+                Fore.GREEN
+                + f"Selected: {len(self.checked)} module(s)"
+                + Style.RESET_ALL
             )
 
-    def handle_input(self) -> bool:
-        """Handle keyboard input. Returns False to exit."""
-        try:
-            # Wait for key press (blocking with timeout)
-            start_time = time.time()
-            while not msvcrt.kbhit():
-                if time.time() - start_time > 0.1:  # 100ms timeout
-                    return True  # Continue loop
-                time.sleep(0.01)
-
-            key = msvcrt.getch()
-
-            # Arrow keys send prefix byte first (\x00 or \xe0)
-            if key in [b"\x00", b"\xe0"]:
-                arrow = msvcrt.getch()
-                if arrow == b"H":  # Up
-                    self.selected_index = max(0, self.selected_index - 1)
-                    return True
-                elif arrow == b"P":  # Down
-                    self.selected_index = min(
-                        len(self.options) - 1, self.selected_index + 1
-                    )
-                    return True
-                elif arrow == b"K":  # Left (treat as up)
-                    self.selected_index = max(0, self.selected_index - 1)
-                    return True
-                elif arrow == b"M":  # Right (treat as down)
-                    self.selected_index = min(
-                        len(self.options) - 1, self.selected_index + 1
-                    )
-                    return True
-
-            elif key == b" ":  # Space
-                if self.allow_multi_select:
-                    if self.selected_index in self.selected_items:
-                        self.selected_items.remove(self.selected_index)
-                    else:
-                        self.selected_items.add(self.selected_index)
-                return True
-
-            elif key == b"\r" or key == b"\n":  # Enter
-                return False
-
-            elif key.lower() == b"q":  # Q
-                return False
-
-            elif key == b"\x1b":  # ESC
-                return False
-
-        except Exception as e:
-            pass
-
-        return True
-
     def run(self):
-        """Run the interactive menu and return selected action(s)"""
-        self.display()
+        self.draw()
 
         while True:
-            if not self.handle_input():
-                break
+            time.sleep(0.05)
+            key = get_arrow_key()
 
-        if self.allow_multi_select:
-            return [self.options[i] for i in self.selected_items]
-        else:
-            return self.options[self.selected_index]
+            if key == "up":
+                self.selected = max(0, self.selected - 1)
+                self.draw()
+            elif key == "down":
+                self.selected = min(len(self.options) - 1, self.selected + 1)
+                self.draw()
+            elif key == "space" and self.allow_multi:
+                if self.selected in self.checked:
+                    self.checked.remove(self.selected)
+                else:
+                    self.checked.add(self.selected)
+                self.draw()
+            elif key == "enter":
+                show_cursor()
+                if self.allow_multi:
+                    return [self.options[i] for i in self.checked]
+                else:
+                    return [self.options[self.selected]]
+            elif key in ["q", "esc"]:
+                show_cursor()
+                return []
 
 
-def run_embeddings_with_warning(http_client):
-    """Run embeddings seeder with warning"""
-    print(f"\n{Fore.RED}{'=' * 70}{Style.RESET_ALL}")
-    print(f"{Fore.RED}WARNING: EMBEDDINGS SEEDING{Style.RESET_ALL}")
-    print(f"{Fore.RED}{'=' * 70}{Style.RESET_ALL}\n")
+def run_embeddings_with_warning(http):
+    print(Fore.RED + "\n" + "=" * 70 + Style.RESET_ALL)
+    print(Fore.RED + "WARNING: EMBEDDINGS SEEDING" + Style.RESET_ALL)
+    print(Fore.RED + "=" * 70 + Style.RESET_ALL + "\n")
     print(
-        f"{Fore.YELLOW}Embedding generation via seeder is NOT RECOMMENDED.{Style.RESET_ALL}\n"
+        Fore.YELLOW
+        + "Embedding generation via seeder is NOT RECOMMENDED."
+        + Style.RESET_ALL
+        + "\n"
     )
-    print(f"{Fore.CYAN}Recommended approach:{Style.RESET_ALL}")
-    print(f"  1. Start Python worker in Docker:")
+    print(Fore.CYAN + "Recommended:" + Style.RESET_ALL)
+    print("  1. Start Docker worker:")
     print(
-        f"     {Fore.GREEN}cd ../../python-worker && docker-compose up -d{Style.RESET_ALL}"
+        Fore.GREEN
+        + "     cd ../../python-worker && docker-compose up -d"
+        + Style.RESET_ALL
     )
-    print(f"  2. Worker will automatically process embeddings")
-    print(f"  3. Monitor with: {Fore.GREEN}docker-compose logs -f{Style.RESET_ALL}\n")
-    print(f"{Fore.YELLOW}Docker worker provides:{Style.RESET_ALL}")
-    print(f"  - Automatic retry on failures")
-    print(f"  - Rate limiting")
-    print(f"  - Dead letter queue")
-    print(f"  - Better error handling\n")
+    print("  2. Worker processes embeddings automatically")
+    print(
+        "  3. Monitor: "
+        + Fore.GREEN
+        + "docker-compose logs -f"
+        + Style.RESET_ALL
+        + "\n"
+    )
 
-    response = (
-        input(f"{Fore.YELLOW}Continue anyway? (y/n): {Style.RESET_ALL}").strip().lower()
+    ans = (
+        input(Fore.YELLOW + "Continue anyway? (y/n): " + Style.RESET_ALL)
+        .strip()
+        .lower()
     )
-    if response != "y":
-        print(f"\n{Fore.GREEN}Operation cancelled{Style.RESET_ALL}")
+    if ans != "y":
+        print(Fore.GREEN + "Cancelled" + Style.RESET_ALL)
         return
 
-    seeder = EmbeddingsSeeder(http_client)
+    seeder = EmbeddingsSeeder(http)
     try:
-        # Get user IDs from profiles
-        response = http_client.get(
-            f"{config.SUPABASE_REST_URL}/profiles?select=id",
-            headers=config.API_HEADERS,
+        resp = http.get(
+            f"{config.SUPABASE_REST_URL}/profiles?select=id", headers=config.API_HEADERS
         )
-        profiles = response.json() or []
+        profiles = resp.json() or []
         user_ids = [p["id"] for p in profiles]
 
         if user_ids:
             seeder.queue_profiles_for_embeddings(user_ids)
             seeder.seed_embeddings()
         else:
-            print(f"{Fore.RED}No profiles found. Seed profiles first.{Style.RESET_ALL}")
+            print(Fore.RED + "No profiles found" + Style.RESET_ALL)
     except Exception as e:
-        print(f"{Fore.RED}Error: {e}{Style.RESET_ALL}")
+        print(Fore.RED + f"Error: {e}" + Style.RESET_ALL)
 
 
-def seed_everything(http_client):
-    """Seed all modules in sequence"""
-    print(f"\n{Fore.GREEN}{'=' * 70}{Style.RESET_ALL}")
-    print(f"{Fore.GREEN}SEEDING EVERYTHING{Style.RESET_ALL}")
-    print(f"{Fore.GREEN}{'=' * 70}{Style.RESET_ALL}\n")
+def seed_everything(http):
+    print(Fore.GREEN + "\n" + "=" * 70 + Style.RESET_ALL)
+    print(Fore.GREEN + "SEEDING EVERYTHING" + Style.RESET_ALL)
+    print(Fore.GREEN + "=" * 70 + Style.RESET_ALL + "\n")
 
-    start_time = datetime.now()
+    start = datetime.now()
 
     modules = [
-        ("Profiles", lambda: ProfilesSeeder(http_client).seed_profiles(count=100)),
-        ("Posts", lambda: PostsSeeder(http_client).seed(limit=300)),
-        ("Connections", lambda: ConnectionsSeeder(http_client).seed(limit=500)),
-        ("Matches", lambda: MatchesSeeder(http_client).seed(limit_per_user=5)),
-        ("Conversations", lambda: ConversationsSeeder(http_client).seed(limit=150)),
-        ("Messages", lambda: MessagesSeeder(http_client).seed()),
-        ("Notifications", lambda: NotificationsSeeder(http_client).seed(count=100)),
-        ("Mentor Sessions", lambda: MentorSeeder(http_client).seed(count=50)),
+        ("Profiles", lambda: ProfilesSeeder(http).seed_profiles(count=100)),
+        ("Posts", lambda: PostsSeeder(http).seed(limit=300)),
+        ("Connections", lambda: ConnectionsSeeder(http).seed(limit=500)),
+        ("Matches", lambda: MatchesSeeder(http).seed(limit_per_user=5)),
+        ("Conversations", lambda: ConversationsSeeder(http).seed(limit=150)),
+        ("Messages", lambda: MessagesSeeder(http).seed()),
+        ("Notifications", lambda: NotificationsSeeder(http).seed(count=100)),
+        ("Mentor", lambda: MentorSeeder(http).seed(count=50)),
     ]
 
     for name, action in modules:
-        print(
-            f"\n{Fore.CYAN}[{modules.index((name, action)) + 1}/{len(modules)}] Seeding {name}...{Style.RESET_ALL}"
-        )
+        print(Fore.CYAN + f"Seeding {name}..." + Style.RESET_ALL)
         try:
             action()
         except Exception as e:
-            print(f"{Fore.RED}Failed: {e}{Style.RESET_ALL}")
+            print(Fore.RED + f"Failed: {e}" + Style.RESET_ALL)
 
-    elapsed = datetime.now() - start_time
-    print(f"\n{Fore.GREEN}{'=' * 70}{Style.RESET_ALL}")
-    print(f"{Fore.GREEN}SEEDING COMPLETE{Style.RESET_ALL}")
-    print(
-        f"{Fore.GREEN}Total time: {elapsed.total_seconds():.1f} seconds{Style.RESET_ALL}"
-    )
-    print(f"{Fore.GREEN}{'=' * 70}{Style.RESET_ALL}\n")
+    elapsed = (datetime.now() - start).total_seconds()
+    print(Fore.GREEN + f"\nDone in {elapsed:.1f}s" + Style.RESET_ALL)
 
 
-def view_configuration():
-    """View configuration"""
-    config.print_summary()
-
-
-def check_database_status(http_client):
-    """Check database status"""
-    print(f"\n{Fore.YELLOW}Checking database status...{Style.RESET_ALL}\n")
-
-    try:
-        tables = [
-            ("Profiles", "profiles"),
-            ("Posts", "posts"),
-            ("Connections", "connections"),
-            ("Conversations", "conversations"),
-            ("Messages", "messages"),
-            ("Notifications", "notifications"),
-            ("Mentor Sessions", "ai_mentor_sessions"),
-        ]
-
-        for name, table in tables:
-            response = http_client.get(
+def check_db_status(http):
+    print(Fore.YELLOW + "\nDatabase Status:" + Style.RESET_ALL)
+    tables = ["profiles", "posts", "connections", "conversations", "messages"]
+    for table in tables:
+        try:
+            resp = http.get(
                 f"{config.SUPABASE_REST_URL}/{table}?select=id&limit=1",
                 headers=config.API_HEADERS,
             )
-            count = len(response.json()) if response.json() else 0
-            print(f"  {Fore.GREEN}OK{Style.RESET_ALL} {name}: {count:,} records")
+            count = len(resp.json() or [])
+            print(f"  {table}: {count:,}")
+        except:
+            pass
 
-    except Exception as e:
-        print(f"{Fore.RED}Error: {e}{Style.RESET_ALL}")
 
-
-def check_worker_status():
-    """Check Python worker status"""
-    print(f"\n{Fore.YELLOW}Checking Python worker status...{Style.RESET_ALL}\n")
-
+def check_worker():
+    print(Fore.YELLOW + "\nWorker Status:" + Style.RESET_ALL)
     try:
-        response = httpx.get(f"{config.PYTHON_WORKER_URL}/health", timeout=5.0)
+        import httpx as hx
 
-        if response.status_code == 200:
-            data = response.json()
+        resp = hx.get(f"{config.PYTHON_WORKER_URL}/health", timeout=5.0)
+        if resp.status_code == 200:
+            data = resp.json()
             print(
-                f"  {Fore.GREEN}OK{Style.RESET_ALL} Status: {data.get('status', 'unknown')}"
+                Fore.GREEN
+                + f"  Status: {data.get('status', 'unknown')}"
+                + Style.RESET_ALL
             )
-            print(
-                f"  {Fore.GREEN}OK{Style.RESET_ALL} Model: {data.get('model_info', {}).get('model_name', 'unknown')}"
-            )
-            print(
-                f"  {Fore.GREEN}OK{Style.RESET_ALL} Queue Size: {data.get('queue_size', 'unknown')}"
-            )
-        else:
-            print(
-                f"{Fore.RED}Worker returned status {response.status_code}{Style.RESET_ALL}"
-            )
-
     except Exception as e:
-        print(f"{Fore.RED}Cannot connect to worker: {e}{Style.RESET_ALL}")
-        print(f"   Make sure Docker container is running")
-
-
-def print_header():
-    """Print application header"""
-    print(f"\n{Fore.CYAN}")
-    print("=" * 70)
-    print("  COLLABRYX INTERACTIVE DATABASE SEEDER")
-    print("  Environment-driven seeding with real UUIDs from Supabase")
-    print("=" * 70)
-    print(f"{Style.RESET_ALL}\n")
+        print(Fore.RED + f"  Cannot connect: {e}" + Style.RESET_ALL)
 
 
 def run_interactive_seeder():
-    """Run the interactive seeder with arrow key navigation"""
-    print_header()
+    print(Fore.CYAN + "\n" + "=" * 70 + Style.RESET_ALL)
+    print(Fore.CYAN + "  COLLABRYX INTERACTIVE DATABASE SEEDER" + Style.RESET_ALL)
+    print(Fore.CYAN + "=" * 70 + Style.RESET_ALL + "\n")
 
     if not config.validate():
-        print(f"\n{Fore.RED}Configuration validation failed{Style.RESET_ALL}")
-        print(f"   Please create a .env file with your Supabase credentials")
-        input(f"\n{Fore.YELLOW}Press Enter to exit...{Style.RESET_ALL}")
+        print(Fore.RED + "Configuration failed. Create .env file." + Style.RESET_ALL)
+        input("Press Enter...")
         return
 
     try:
-        http_client = httpx.Client(
+        http = httpx.Client(
             timeout=30.0,
-            limits=httpx.Limits(max_connections=100, max_keepalive_connections=20),
+            limits=httpx.Limits(max_connections=100),
             headers={
                 "apikey": config.SUPABASE_SERVICE_ROLE_KEY,
                 "Authorization": f"Bearer {config.SUPABASE_SERVICE_ROLE_KEY}",
                 "Content-Type": "application/json",
             },
         )
-        print(f"{Fore.GREEN}Connected to Supabase{Style.RESET_ALL}\n")
+        print(Fore.GREEN + "Connected to Supabase" + Style.RESET_ALL + "\n")
     except Exception as e:
-        print(f"{Fore.RED}Failed to connect to Supabase: {e}{Style.RESET_ALL}")
-        input(f"\n{Fore.YELLOW}Press Enter to exit...{Style.RESET_ALL}")
+        print(Fore.RED + f"Failed: {e}" + Style.RESET_ALL)
+        input("Press Enter...")
         return
 
-    menu_options = [
+    options = [
+        {"label": "Seed Profiles (users)"},
+        {"label": "Seed Posts (with comments/reactions)"},
+        {"label": "Seed Connections"},
+        {"label": "Seed Matches"},
+        {"label": "Seed Conversations"},
+        {"label": "Seed Messages"},
+        {"label": "Seed Notifications"},
+        {"label": "Seed Mentor Sessions"},
         {
-            "label": "Seed Profiles (users with complete data)",
-            "action": lambda http: ProfilesSeeder(http).seed_profiles(count=100),
+            "label": "Generate Embeddings",
+            "warning": "NOT RECOMMENDED - Use Docker instead",
         },
-        {
-            "label": "Seed Posts (with comments & reactions)",
-            "action": lambda http: PostsSeeder(http).seed(limit=300),
-        },
-        {
-            "label": "Seed Connections (user relationships)",
-            "action": lambda http: ConnectionsSeeder(http).seed(limit=500),
-        },
-        {
-            "label": "Seed Matches (AI-powered suggestions)",
-            "action": lambda http: MatchesSeeder(http).seed(limit_per_user=5),
-        },
-        {
-            "label": "Seed Conversations (chat threads)",
-            "action": lambda http: ConversationsSeeder(http).seed(limit=150),
-        },
-        {
-            "label": "Seed Messages (in conversations)",
-            "action": lambda http: MessagesSeeder(http).seed(),
-        },
-        {
-            "label": "Seed Notifications (activity feed)",
-            "action": lambda http: NotificationsSeeder(http).seed(count=100),
-        },
-        {
-            "label": "Seed Mentor Sessions (AI mentoring)",
-            "action": lambda http: MentorSeeder(http).seed(count=50),
-        },
-        {
-            "label": "Generate Embeddings (vector embeddings)",
-            "action": lambda http: run_embeddings_with_warning(http),
-            "warning": "NOT RECOMMENDED - Use Docker worker instead",
-        },
-        {"label": "-" * 60, "action": None},
-        {
-            "label": "Seed Everything (all modules)",
-            "action": lambda http: seed_everything(http),
-        },
-        {"label": "View Configuration", "action": lambda http: view_configuration()},
-        {
-            "label": "Check Database Status",
-            "action": lambda http: check_database_status(http),
-        },
-        {"label": "Check Worker Status", "action": lambda http: check_worker_status()},
-        {"label": "Exit", "action": "exit"},
+        {"label": "-" * 60},
+        {"label": "Seed Everything"},
+        {"label": "Check Database Status"},
+        {"label": "Check Worker Status"},
+        {"label": "Exit"},
     ]
 
+    actions = {
+        0: lambda: ProfilesSeeder(http).seed_profiles(count=100),
+        1: lambda: PostsSeeder(http).seed(limit=300),
+        2: lambda: ConnectionsSeeder(http).seed(limit=500),
+        3: lambda: MatchesSeeder(http).seed(limit_per_user=5),
+        4: lambda: ConversationsSeeder(http).seed(limit=150),
+        5: lambda: MessagesSeeder(http).seed(),
+        6: lambda: NotificationsSeeder(http).seed(count=100),
+        7: lambda: MentorSeeder(http).seed(count=50),
+        8: lambda: run_embeddings_with_warning(http),
+        10: lambda: seed_everything(http),
+        11: lambda: check_db_status(http),
+        12: lambda: check_worker(),
+        13: lambda: None,
+    }
+
     while True:
-        main_menu = InteractiveMenu(
-            title="COLLABRYX DATABASE SEEDER - MAIN MENU",
-            options=menu_options,
-            allow_multi_select=True,
-        )
+        menu = Menu("COLLABRYX DATABASE SEEDER", options, allow_multi=True)
+        selected = menu.run()
 
-        selected = main_menu.run()
-
-        if not selected or (len(selected) == 1 and selected[0].get("action") == "exit"):
-            print(f"\n{Fore.GREEN}Goodbye!{Style.RESET_ALL}\n")
-            http_client.close()
+        if not selected or (len(selected) == 1 and selected[0]["label"] == "Exit"):
+            print(Fore.GREEN + "\nGoodbye!" + Style.RESET_ALL + "\n")
+            http.close()
             return
 
-        for option in selected:
-            if option.get("action") and option["action"] != "exit":
+        for opt in selected:
+            idx = options.index(opt)
+            if idx in actions and idx != 13:
                 try:
-                    print(f"\n{Fore.CYAN}{'=' * 70}{Style.RESET_ALL}")
-                    print(f"{Fore.CYAN}Executing: {option['label']}{Style.RESET_ALL}")
-                    print(f"{Fore.CYAN}{'=' * 70}{Style.RESET_ALL}\n")
-
-                    option["action"](http_client)
-
-                    input(f"\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
-                except KeyboardInterrupt:
-                    print(f"\n{Fore.RED}Operation cancelled{Style.RESET_ALL}")
+                    print(Fore.CYAN + f"\nRunning: {opt['label']}..." + Style.RESET_ALL)
+                    actions[idx]()
+                    input(
+                        Fore.YELLOW + "\nPress Enter to continue..." + Style.RESET_ALL
+                    )
                 except Exception as e:
-                    print(f"\n{Fore.RED}Error: {e}{Style.RESET_ALL}")
-                    input(f"\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
+                    print(Fore.RED + f"Error: {e}" + Style.RESET_ALL)
+                    input(
+                        Fore.YELLOW + "\nPress Enter to continue..." + Style.RESET_ALL
+                    )
 
 
 if __name__ == "__main__":
     try:
         run_interactive_seeder()
     except KeyboardInterrupt:
-        print(f"\n\n{Fore.YELLOW}Interrupted by user{Style.RESET_ALL}")
+        show_cursor()
+        print(Fore.YELLOW + "\nInterrupted" + Style.RESET_ALL)
         sys.exit(0)
