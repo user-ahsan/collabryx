@@ -199,7 +199,7 @@ def run_embeddings_with_warning(http):
 
         if user_ids:
             seeder.queue_profiles_for_embeddings(user_ids)
-            seeder.seed_embeddings()
+            seeder.seed_embeddings(batch_size=10)
         else:
             print(Fore.RED + "No profiles found" + Style.RESET_ALL)
     except Exception as e:
@@ -253,9 +253,7 @@ def check_db_status(http):
 def check_worker():
     print(Fore.YELLOW + "\nWorker Status:" + Style.RESET_ALL)
     try:
-        import httpx as hx
-
-        resp = hx.get(f"{config.PYTHON_WORKER_URL}/health", timeout=5.0)
+        resp = httpx.get(f"{config.PYTHON_WORKER_URL}/health", timeout=5.0)
         if resp.status_code == 200:
             data = resp.json()
             print(
