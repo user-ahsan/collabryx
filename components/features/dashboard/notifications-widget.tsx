@@ -326,11 +326,12 @@ export function NotificationsWidget({
       </PopoverTrigger>
 
       <PopoverContent
-        side="bottom"
-        align="center"
+        side="right"
+        align="start"
         sideOffset={8}
         collisionPadding={16}
-        className="w-[400px] max-h-[600px] p-0 bg-card/95 backdrop-blur-xl border border-border/60 shadow-xl overflow-hidden rounded-xl z-50 origin-top"
+        avoidCollisions
+        className="w-[400px] max-h-[600px] p-0 bg-card/95 backdrop-blur-xl border border-border/60 shadow-xl overflow-hidden rounded-xl z-50"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border/60 shrink-0">
