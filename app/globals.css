@@ -168,9 +168,134 @@
     background-color: var(--background);
     color: var(--foreground);
   }
+
+  /* Typography - Tightened letter-spacing for headings */
+  .font-heading {
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+  }
+
+  .font-sans {
+    letter-spacing: 0;
+    line-height: 1.5;
+  }
 }
 
 @layer utilities {
+  /* ===========================================
+     DESIGN SYSTEM UTILITIES
+     Collabryx Standardized Design System
+     =========================================== */
+
+  /* Shadow System - Consistent shadow scale */
+  .shadow-xs {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  }
+
+  .shadow-sm {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  }
+
+  .shadow-md {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .shadow-lg {
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  }
+
+  .shadow-xl {
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+  }
+
+  .shadow-2xl {
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.16);
+  }
+
+  /* Glass-specific shadows */
+  .shadow-glass-card {
+    box-shadow: 
+      0 4px 32px 0 rgba(59, 130, 246, 0.06),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+  }
+
+  .shadow-glass-overlay {
+    box-shadow: 
+      0 8px 40px 0 rgba(0, 0, 0, 0.5),
+      0 0 60px -20px rgba(59, 130, 246, 0.1);
+  }
+
+  /* Dark mode shadow adjustments */
+  .dark .shadow-glass-card {
+    box-shadow: 
+      0 4px 32px 0 rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+  }
+
+  /* Typography Utilities - Heading refinements */
+  .text-display {
+    font-family: var(--font-heading);
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+
+  .text-h1 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+  }
+
+  .text-h2 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+  }
+
+  .text-h3 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
+    line-height: 1.25;
+  }
+
+  /* 4-Point Grid Spacing Utilities */
+  .spacing-4 { spacing: 0.25rem; }
+  .spacing-8 { spacing: 0.5rem; }
+  .spacing-12 { spacing: 0.75rem; }
+  .spacing-16 { spacing: 1rem; }
+  .spacing-20 { spacing: 1.25rem; }
+  .spacing-24 { spacing: 1.5rem; }
+  .spacing-32 { spacing: 2rem; }
+
+  /* Component States - Standardized */
+  .state-loading {
+    pointer-events: none;
+    opacity: 0.7;
+  }
+
+  .state-disabled {
+    pointer-events: none;
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .state-active {
+    transform: scale(0.98);
+  }
+
+  /* Focus Rings - Consistent */
+  .focus-ring {
+    outline: none;
+  }
+
+  .focus-ring:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  /* ===========================================
+     EXISTING UTILITIES
+     =========================================== */
+
   .liquid-glass {
     position: relative;
     background: rgba(255, 255, 255, 0.2);

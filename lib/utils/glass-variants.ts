@@ -3,8 +3,16 @@ import { cn } from "@/lib/utils"
 /**
  * Glass Variants - Standardized Glassmorphism System for Collabryx
  * 
- * Usage: import { glassVariants } from "@/lib/utils/glass-variants"
- * Then: className={cn("your-classes", glassVariants.card)}
+ * Part of the Collabryx Design System
+ * Related: @/lib/constants/spacing, @/lib/constants/typography, @/lib/constants/colors
+ * 
+ * Usage: import { glass, glassVariants } from "@/lib/utils/glass-variants"
+ * Then: className={cn("your-classes", glass('card'))}
+ * 
+ * Brand Colors (PRESERVED):
+ * - Dark Mode Background: #0A0A0F (Deep Navy-Black)
+ * - Brand Color: oklch(0.488 0.243 264.376) (Purple-Blue)
+ * - Glass Effects: Blue-tinted with blue-400/10 borders
  */
 
 export const glassVariants = {
