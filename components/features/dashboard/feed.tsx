@@ -15,7 +15,7 @@ import { PostHeader } from "./posts/post-header"
 import { PostContent } from "./posts/post-content"
 import { PostActions } from "./posts/post-actions"
 import { CreatePostModal } from "./create-post/create-post-modal"
-import { PostSkeleton } from "./posts/post-skeleton"
+import { PostSkeleton, PostSkeletonList } from "./posts/post-skeleton"
 import { NewPostsIndicator } from "./posts/new-posts-indicator"
 import { InfiniteScrollTrigger } from "./posts/infinite-scroll-trigger"
 import { CommentSection } from "./comments/comment-section"
@@ -220,10 +220,7 @@ export function Feed() {
             {/* Feed Posts */}
             <div className="space-y-3 md:space-y-6" role="feed" aria-label="Posts feed">
                 {isPending && sortedPosts.length === 0 ? (
-                    <>
-                        <PostSkeleton />
-                        <PostSkeleton />
-                    </>
+                    <PostSkeletonList count={5} />
                 ) : error && sortedPosts.length === 0 ? (
                     /* Error State - Fallback to Cache */
                     <GlassCard innerClassName="py-16 px-6 text-center">
@@ -329,7 +326,7 @@ export function Feed() {
                     })
                 )}
 
-                {isLoadingMore && <PostSkeleton />}
+                {isLoadingMore && <PostSkeleton variant="withoutMedia" />}
                 <InfiniteScrollTrigger
                     onLoadMore={handleLoadMore}
                     hasMore={true}
