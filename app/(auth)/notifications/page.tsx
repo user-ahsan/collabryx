@@ -200,6 +200,10 @@ export default function NotificationsPage() {
 
   const unreadCount = notifications.filter((n) => !n.read).length
 
+  const handleBack = useCallback(() => {
+    router.back()
+  }, [router])
+
   // Filter notifications based on active tab
   const filteredNotifications = notifications.filter((n) => {
     if (activeTab === "all") return true
@@ -246,13 +250,43 @@ export default function NotificationsPage() {
     <div className="container max-w-4xl mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-8">
       {/* Header */}
       <div className="mb-6 md:mb-8">
-        <div className="flex items-center justify-between mb-2">
+        {/* Mobile Back Button */}
+        <div className="md:hidden flex items-center gap-3 mb-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-10 w-10 shrink-0"
+            onClick={handleBack}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-5 w-5"
+            >
+              <path d="m12 19-7-7 7-7" />
+              <path d="M19 12H5" />
+            </svg>
+          </Button>
+          <h1 className="text-xl font-bold tracking-tight text-foreground">
+            Notifications
+          </h1>
+        </div>
+
+        {/* Desktop Header */}
+        <div className="hidden md:flex items-center justify-between mb-2">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <Bell className="h-5 w-5 md:h-6 md:w-6 text-primary" />
+            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <Bell className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">
+              <h1 className="text-3xl font-bold tracking-tight text-foreground">
                 Notifications
               </h1>
               <p className="text-sm text-muted-foreground mt-0.5">
@@ -266,7 +300,7 @@ export default function NotificationsPage() {
             <Button
               variant="outline"
               size="sm"
-              className="hidden md:flex items-center gap-2"
+              className="flex items-center gap-2"
               onClick={handleMarkAllAsRead}
             >
               <CheckCheck className="h-4 w-4" />
