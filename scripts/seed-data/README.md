@@ -1,224 +1,214 @@
-# Collabryx Database Seeder
+# 🚀 Collabryx Database Seeder
 
-Generate realistic dummy data for the Collabryx platform with 100% complete profiles across 20 industries.
+Interactive database seeding system with arrow key navigation and multi-selection support.
 
-## Features
-
-- **100 Realistic Profiles** - Complete with auth users, profiles, skills, interests, experiences, and projects
-- **20 Industries** - Fintech, EdTech, HealthTech, AI/ML, and more
-- **Real Embeddings** - Generates actual vector embeddings using the Python worker
-- **Full Social Graph** - Connections, match suggestions, conversations, messages
-- **Notifications** - Activity feed notifications
-- **AI Mentor Sessions** - Sample AI mentoring conversations
-
-## Quick Start
-
-### 1. Install Dependencies
+## 🎮 Quick Start
 
 ```bash
 cd scripts/seed-data
-pip install -r requirements.txt
+python main.py
 ```
 
-### 2. Configure Environment
+## 🎯 Interactive Menu Controls
 
-```bash
-# Copy the example environment file
-cp .env.example .env
+| Key | Action |
+|-----|--------|
+| **↑ / ↓** | Navigate up/down |
+| **← / →** | Also navigate (left=up, right=down) |
+| **SPACE** | Select/deselect module |
+| **ENTER** | Execute selected modules |
+| **Q** or **ESC** | Quit |
 
-# Edit .env with your Supabase credentials
-# - SUPABASE_URL: Your Supabase project URL
-# - SUPABASE_SERVICE_ROLE_KEY: Your service role key (from Project Settings > API)
-# - PYTHON_WORKER_URL: Usually http://localhost:8000
+## ✨ Features
+
+- **Arrow Key Navigation** - Full keyboard navigation support
+- **Multi-Selection** - Select multiple modules at once
+- **Incremental Seeding** - Automatically skips existing records (no duplicates)
+- **Real-time Statistics** - Shows created/skipped/failed counts
+- **Embeddings Warning** - Warns about using Docker worker for embeddings
+- **PowerShell Optimized** - No flickering, works in CMD and PowerShell
+
+## 📋 Available Modules
+
+1. **Seed Profiles** - Users with complete data (skills, interests, experiences)
+2. **Seed Posts** - Posts with comments and reactions
+3. **Seed Connections** - User relationships (bidirectional)
+4. **Seed Matches** - AI-powered match suggestions
+5. **Seed Conversations** - Chat threads between users
+6. **Seed Messages** - Messages in conversations
+7. **Seed Notifications** - Activity feed notifications
+8. **Seed Mentor Sessions** - AI mentoring conversations
+9. **Generate Embeddings** - ⚠️ NOT RECOMMENDED (use Docker worker)
+10. **Seed Everything** - All modules in sequence
+11. **Check Database Status** - View record counts
+12. **Check Worker Status** - Python worker health check
+
+## 🔧 Configuration
+
+Create a `.env` file in the `scripts/seed-data` directory:
+
+```env
+# Supabase Configuration
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+SUPABASE_REST_URL=https://your-project.supabase.co/rest/v1
+
+# Seeding Behavior
+SEED_USER_PASSWORD=DemoPass123!
+INCREMENTAL_SEEDING=true
+CHECK_DUPLICATES=true
+
+# Limits
+LIMIT_PROFILES=100
+LIMIT_POSTS=300
+LIMIT_CONNECTIONS=500
+LIMIT_MATCHES_PER_USER=5
+LIMIT_CONVERSATIONS=150
+LIMIT_MESSAGES_PER_CONVERSATION=5,20
+LIMIT_NOTIFICATIONS_PER_USER=5
+LIMIT_MENTOR_SESSIONS=50
+
+# Batch Processing
+BATCH_SIZE=10
+DELAY_BETWEEN_BATCHES=2.0
+
+# Python Worker
+PYTHON_WORKER_URL=http://localhost:8000
 ```
 
-### 3. Start Python Worker (for embeddings)
+## 🐍 Python Worker for Embeddings
+
+**IMPORTANT**: For embedding generation, use the Docker worker instead of the seeder:
 
 ```bash
-# Make sure the Python worker is running
+# Start the Python worker
 cd ../../python-worker
 docker-compose up -d
 
-# Verify it's healthy
+# Monitor logs
+docker-compose logs -f
+
+# Check health
 curl http://localhost:8000/health
 ```
 
-### 4. Run the Seeder
+**Benefits:**
+- ✅ Automatic retry on failures
+- ✅ Rate limiting
+- ✅ Dead letter queue for failed embeddings
+- ✅ Better error handling
+- ✅ Runs in background
+
+## 📊 Incremental Seeding
+
+All seeders support **incremental seeding** - they automatically skip existing records:
+
+- **First run**: Creates all records
+- **Second run**: Skips all existing records (0 duplicates)
+- **Statistics**: Shows created/skipped/failed counts
+
+### Example Output
+
+```
+======================================================================
+✓ PROFILES SEEDING COMPLETE
+======================================================================
+  Created:              10
+  Skipped (email):      0
+  Skipped (profile):    0
+  Failed:               0
+  Total Processed:      10
+======================================================================
+```
+
+Run again:
+
+```
+======================================================================
+✓ PROFILES SEEDING COMPLETE
+======================================================================
+  Created:              0
+  Skipped (email):      10
+  Skipped (profile):    10
+  Failed:               0
+  Total Processed:      20
+======================================================================
+```
+
+## 🧪 Testing
+
+Test incremental seeding:
 
 ```bash
-# Seed with default settings (100 profiles)
-python main.py
-
-# Custom profile count
-python main.py --profiles 50
-
-# Clear existing data first
-python main.py --clear-existing
-
-# Skip embeddings (faster)
-python main.py --skip-embeddings
+cd scripts/seed-data
+python test_incremental.py
 ```
 
-## Command Line Options
+This runs each seeder twice and verifies no duplicates are created.
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--profiles N` | Number of profiles to create | 100 |
-| `--posts N` | Number of posts to create | 300 |
-| `--clear-existing` | Delete all data before seeding | Off |
-| `--skip-embeddings` | Don't generate embeddings | Off |
-| `--skip-mentor` | Skip AI mentor sessions | Off |
-| `--skip-notifications` | Skip notifications | Off |
-| `--batch-size N` | Batch size for rate limiting | 10 |
-
-## What Gets Created
-
-| Entity | Count | Description |
-|--------|-------|-------------|
-| Auth Users | 100 | Real Supabase auth users |
-| Profiles | 100 | Complete profiles with bio, headline, etc. |
-| Skills | 500-800 | 5-10 skills per user |
-| Interests | 300-500 | 3-5 interests per user |
-| Experiences | 100-200 | Work/education history |
-| Projects | 100-200 | Portfolio projects |
-| Posts | 300 | Feed posts with various types |
-| Comments | 600-900 | Comments on posts |
-| Reactions | 1500-3000 | Emoji reactions |
-| Connections | 500 | User connections |
-| Match Suggestions | 250-500 | AI match recommendations |
-| Conversations | 150 | Chat threads |
-| Messages | 1000 | Chat messages |
-| Notifications | 500 | Activity notifications |
-| Mentor Sessions | 50 | AI mentoring conversations |
-| Embeddings | 100 | Vector embeddings (if enabled) |
-
-## Target Industries
-
-1. Fintech
-2. EdTech
-3. HealthTech
-4. E-commerce
-5. AI/ML
-6. Cybersecurity
-7. Blockchain
-8. Cloud Computing
-9. DevTools
-10. SaaS
-11. Gaming
-12. Social Media
-13. PropTech
-14. AgriTech
-15. CleanTech
-16. Biotech
-17. Robotics
-18. IoT
-19. AR/VR
-20. Data Analytics
-
-## User Credentials
-
-All created users have the same password for easy testing:
-
-```
-Password: DemoPass123!
-```
-
-Example login emails:
-- john.smith@gmail.com
-- sarah.johnson@stanford.edu
-- mike.chen@outlook.com
-
-## Verification
-
-After seeding, verify the data:
-
-```sql
--- Check profile count
-SELECT COUNT(*) FROM profiles;
-
--- Check posts with author info
-SELECT p.content, pr.display_name 
-FROM posts p 
-JOIN profiles pr ON p.author_id = pr.id 
-LIMIT 10;
-
--- Check connections
-SELECT COUNT(*) FROM connections WHERE status = 'accepted';
-
--- Check embeddings
-SELECT COUNT(*) FROM profile_embeddings WHERE status = 'completed';
-```
-
-## Troubleshooting
-
-### Python Worker Not Available
-
-```bash
-# Check if Docker container is running
-docker ps | grep python-worker
-
-# View logs
-docker-compose logs -f
-
-# Restart
-docker-compose restart
-```
-
-### Rate Limiting Errors
-
-The seeder includes automatic rate limiting. If you encounter errors:
-
-```bash
-# Reduce batch size
-python main.py --batch-size 5
-
-# Increase delay between batches (edit config.py)
-# DELAY_BETWEEN_BATCHES = 5.0
-```
-
-### Supabase Connection Failed
-
-1. Verify SUPABASE_URL is correct (https://xxx.supabase.co)
-2. Use SERVICE_ROLE_KEY, not the anon key
-3. Check network connectivity
-
-## File Structure
+## 📁 Project Structure
 
 ```
 scripts/seed-data/
-├── main.py                      # Entry point
-├── config.py                    # Configuration
-├── requirements.txt             # Python dependencies
-├── .env.example                 # Environment template
-├── data_generators/
-│   ├── __init__.py
-│   ├── names.py                 # Name/email generation
-│   ├── profiles.py              # Profile data generation
-│   ├── posts.py                 # Post content generation
-│   └── conversations.py         # Chat message generation
-├── templates/
-│   ├── profile_templates.json   # Bio/headline templates
-│   ├── post_templates.json      # Post content templates
-│   └── message_templates.json   # Chat templates
-└── seeders/
-    ├── __init__.py
-    ├── profiles_seeder.py       # Users + profiles
-    ├── content_seeder.py        # Posts + comments
-    ├── social_seeder.py         # Connections + matches
-    ├── messaging_seeder.py      # Conversations + messages
-    ├── notifications_seeder.py  # Notifications
-    ├── mentor_seeder.py         # AI mentor sessions
-    └── embeddings_seeder.py     # Vector embeddings
+├── main.py                    # Entry point (launches interactive menu)
+├── interactive_menu.py        # Interactive menu with arrow navigation
+├── config.py                  # Configuration and ENV variables
+├── test_incremental.py        # Incremental seeding test suite
+├── seeders/
+│   ├── base_seeder.py         # Base seeder with utilities
+│   ├── profiles_seeder.py     # User profiles with skills/interests
+│   ├── posts_seeder.py        # Posts, comments, reactions
+│   ├── connections_seeder.py  # User connections
+│   ├── matches_seeder.py      # Match suggestions
+│   ├── conversations_seeder.py # Conversations
+│   ├── messages_seeder.py     # Messages
+│   ├── notifications_seeder.py # Notifications
+│   ├── mentor_seeder.py       # AI mentor sessions
+│   └── embeddings_seeder.py   # Embedding queue (use Docker instead)
+└── data_generators/
+    ├── profiles.py            # Profile data generation
+    ├── posts.py               # Post data generation
+    ├── conversations.py       # Conversation data generation
+    └── ...
 ```
 
-## Safety Notes
+## 🔒 Security Notes
 
-⚠️ **DO NOT run on production databases!**
+- Uses Supabase service role key (admin access)
+- **Never commit .env file** (add to .gitignore)
+- Run in development/staging only
+- Review data before production seeding
 
-- Always use a development/staging Supabase project
-- The `--clear-existing` flag will DELETE all data
-- Created users are for testing only
+## 🐛 Troubleshooting
 
-## License
+### Arrow keys not working
+- Use PowerShell or CMD (not PowerShell ISE)
+- Make sure terminal window is focused
+- Try pressing keys more deliberately
 
-Internal tool for Collabryx development.
+### Menu flickering
+- Fixed in latest version
+- Update to latest commit
+
+### Connection failed
+- Check .env file has correct Supabase credentials
+- Verify Supabase project is accessible
+- Check network connection
+
+### Python worker not available
+- Start Docker: `docker-compose up -d`
+- Check health: `curl http://localhost:8000/health`
+- View logs: `docker-compose logs -f`
+
+## 📚 Related Documentation
+
+- [Main README](../../README.md) - Project overview
+- [Architecture](../../docs/ARCHITECTURE.md) - System architecture
+- [Deployment](../../docs/DEPLOYMENT.md) - Deployment guide
+- [Database Schema](../../docs/08-database-seeding/) - Database documentation
+
+---
+
+**Last Updated:** 2026-03-17  
+**Version:** 2.0.0 (Interactive Menu)  
+**Platform:** Windows (PowerShell/CMD)
