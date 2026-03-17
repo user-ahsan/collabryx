@@ -38,7 +38,13 @@ def print_menu():
     print(f"{Fore.YELLOW}MAIN MENU{Style.RESET_ALL}")
     print(f"{Fore.YELLOW}{'=' * 70}{Style.RESET_ALL}\n")
 
-    print(f"{Fore.GREEN}SEEDING MODULES:{Style.RESET_ALL}")
+    print(f"{Fore.GREEN}INTERACTIVE MODE:{Style.RESET_ALL}")
+    print(
+        f"  {Fore.CYAN}A.{Style.RESET_ALL} 🎮 Interactive Menu (arrow keys + space bar)"
+    )
+    print(f"      ↑/↓ navigate, SPACE select multiple, ENTER execute")
+
+    print(f"\n{Fore.GREEN}SEEDING MODULES:{Style.RESET_ALL}")
     print("  1. 👤 Seed Profiles (users with complete data)")
     print("  2. 📝 Seed Posts (with comments & reactions)")
     print("  3. 🔗 Seed Connections (user relationships)")
@@ -784,6 +790,13 @@ def main():
         print_menu()
 
         choice = get_input("Select option", default=0)
+
+        # Handle interactive menu
+        if isinstance(choice, str) and choice.lower() == "a":
+            from interactive_menu import run_interactive_seeder
+
+            run_interactive_seeder()
+            continue
 
         if choice == 0:
             print(f"\n{Fore.GREEN}Goodbye! 👋{Style.RESET_ALL}\n")
