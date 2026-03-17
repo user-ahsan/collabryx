@@ -9,6 +9,7 @@ import sys
 import os
 import msvcrt
 import time
+import httpx
 from colorama import Fore, Style, init
 from datetime import datetime
 
