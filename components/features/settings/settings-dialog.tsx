@@ -13,16 +13,14 @@ import {
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { User, Shield, Bell, CreditCard, Loader2, Info, Code2, Briefcase } from "lucide-react"
+import { User, Shield, Bell, CreditCard, Loader2, Code2, Briefcase } from "lucide-react"
 import { ProfileSettingsTab } from "./profile-settings-tab"
 import { SkillsInterestsSettingsTab } from "./skills-settings-tab"
 import { ExperienceProjectsSettingsTab } from "./experience-projects-settings-tab"
+import { NotificationPreferencesForm } from "./notification-preferences-form"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
 
@@ -30,17 +28,11 @@ export function SettingsDialog() {
     const { isOpen, setIsOpen, activeTab, setActiveTab } = useSettings()
 
     const [isLoading, setIsLoading] = useState(true)
-    const [, setIsSaving] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
     // User data state
     const [userId, setUserId] = useState<string | null>(null)
     const [email, setEmail] = useState("")
-    const [preferences, setPreferences] = useState({
-        email_new_connections: true,
-        email_messages: true,
-        ai_smart_match_alerts: false
-    })
 
     const supabase = createClient()
 
@@ -55,11 +47,6 @@ export function SettingsDialog() {
                 if (process.env.NODE_ENV === 'development') {
                     setUserId('dev-user-123')
                     setEmail('developer@example.com')
-                    setPreferences({
-                        email_new_connections: true,
-                        email_messages: true,
-                        ai_smart_match_alerts: false,
-                    })
                     setIsLoading(false)
                     return
                 }
@@ -71,24 +58,6 @@ export function SettingsDialog() {
 
                 setUserId(user.id)
                 setEmail(user.email || "")
-
-                const { data: profileData, error: profileError } = await supabase
-                    .from('profiles')
-                    .select('email_new_connections, email_messages, ai_smart_match_alerts')
-                    .eq('id', user.id)
-                    .single()
-
-                if (profileError && profileError.code !== 'PGRST116') {
-                    throw profileError
-                }
-
-                if (profileData) {
-                    setPreferences({
-                        email_new_connections: profileData.email_new_connections ?? true,
-                        email_messages: profileData.email_messages ?? true,
-                        ai_smart_match_alerts: profileData.ai_smart_match_alerts ?? false,
-                    })
-                }
             } catch (err: unknown) {
                 console.error("Error fetching settings:", err)
                 setError("Failed to load settings. Showing local defaults.")
@@ -99,38 +68,6 @@ export function SettingsDialog() {
 
         fetchUserData()
     }, [isOpen, supabase])
-
-    const handleSavePreferences = async () => {
-        setIsSaving(true)
-        setError(null)
-        try {
-            if (process.env.NODE_ENV === 'development') {
-                await new Promise(resolve => setTimeout(resolve, 500))
-                return
-            }
-
-            if (!userId) throw new Error("Not authenticated")
-
-            const { error: updateError } = await supabase
-                .from('profiles')
-                .update({
-                    ...preferences,
-                    updated_at: new Date().toISOString()
-                })
-                .eq('id', userId)
-
-            if (updateError) throw updateError
-        } catch (err: unknown) {
-            console.error("Error saving settings:", err)
-            setError("Failed to save settings.")
-        } finally {
-            setIsSaving(false)
-        }
-    }
-
-    const updatePreferenceField = (field: string, value: boolean) => {
-        setPreferences(prev => ({ ...prev, [field]: value }))
-    }
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -272,68 +209,8 @@ export function SettingsDialog() {
                                              </Card>
                                         </TabsContent>
 
-                                        <TabsContent value="notifications" className="mt-0 space-y-6">
-                                            <Card className="border-none shadow-none bg-transparent">
-                                                <CardHeader className="px-0 pt-0">
-                                                    <CardTitle>Email Notifications</CardTitle>
-                                                    <CardDescription>Choose what updates you want to receive.</CardDescription>
-                                                </CardHeader>
-                                                <CardContent className="space-y-6 px-0 pb-0">
-                                                     <div className="flex items-center justify-between">
-                                                         <div className="space-y-0.5">
-                                                             <Label className="text-sm font-medium">New Connections</Label>
-                                                             <p className="text-xs text-muted-foreground mr-6">Receive emails when someone invites you.</p>
-                                                         </div>
-                                                         <Switch
-                                                             checked={preferences.email_new_connections}
-                                                             onChange={(e) => {
-                                                                 updatePreferenceField("email_new_connections", e.target.checked)
-                                                                 handleSavePreferences()
-                                                             }}
-                                                         />
-                                                     </div>
-                                                     <Separator className={glass("divider")} />
-                                                     <div className="flex items-center justify-between">
-                                                         <div className="space-y-0.5">
-                                                             <Label className="text-sm font-medium">Messages</Label>
-                                                             <p className="text-xs text-muted-foreground mr-6">Receive emails for new messages.</p>
-                                                         </div>
-                                                         <Switch
-                                                             checked={preferences.email_messages}
-                                                             onChange={(e) => {
-                                                                 updatePreferenceField("email_messages", e.target.checked)
-                                                                 handleSavePreferences()
-                                                             }}
-                                                         />
-                                                     </div>
-                                                     <Separator className={glass("divider")} />
-                                                     <div className="flex items-center justify-between group">
-                                                         <div className="space-y-0.5">
-                                                             <div className="flex items-center gap-2">
-                                                                 <Label className="text-sm font-medium">AI Smart Match Alerts</Label>
-                                                                 <TooltipProvider delayDuration={100}>
-                                                                     <Tooltip>
-                                                                         <TooltipTrigger asChild>
-                                                                             <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                                                                         </TooltipTrigger>
-                                                                         <TooltipContent>
-                                                                             <p className="max-w-xs text-xs">Let Collabryx AI find the best co-founders for you and notify you directly.</p>
-                                                                         </TooltipContent>
-                                                                     </Tooltip>
-                                                                 </TooltipProvider>
-                                                             </div>
-                                                             <p className="text-xs text-muted-foreground mr-6">Weekly digest of potential tailored matches.</p>
-                                                         </div>
-                                                         <Switch
-                                                             checked={preferences.ai_smart_match_alerts}
-                                                             onChange={(e) => {
-                                                                 updatePreferenceField("ai_smart_match_alerts", e.target.checked)
-                                                                 handleSavePreferences()
-                                                             }}
-                                                         />
-                                                     </div>
-                                                </CardContent>
-                                            </Card>
+                                        <TabsContent value="notifications" className="mt-0">
+                                            {userId ? <NotificationPreferencesForm userId={userId} /> : null}
                                         </TabsContent>
 
                                         <TabsContent value="billing" className="mt-0">
