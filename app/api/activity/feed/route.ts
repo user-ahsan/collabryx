@@ -55,7 +55,22 @@ export async function GET(request: Request) {
     }
 
     // Transform data for frontend
-    const transformedActivities = (activities || []).map((activity: any) => ({
+    const transformedActivities = (activities || []).map((activity: {
+      id: string
+      type: string
+      activity: string
+      match_percentage?: number
+      created_at: string
+      is_read: boolean
+      actor_user_id: string
+      actor_profile?: {
+        id: string
+        display_name?: string
+        full_name?: string
+        avatar_url?: string
+        headline?: string
+      }
+    }) => ({
       id: activity.id,
       type: activity.type,
       activity: activity.activity,
