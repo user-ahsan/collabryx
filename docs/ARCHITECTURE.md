@@ -47,7 +47,12 @@ graph TB
     end
     
     subgraph AI["AI/ML Pipeline"]
-        PythonWorker[Python Embedding Worker]
+        PythonWorker[Python Multi-Service Backend]
+        MatchGen[Match Generator]
+        NotifEngine[Notification Engine]
+        FeedScorer[Feed Scorer]
+        ContentMod[Content Moderator]
+        AIMentor[AI Mentor Processor]
         FaceAPI[Face Detection]
         VectorDB[Vector Search]
     end
@@ -163,7 +168,7 @@ All tables have RLS policies enforcing:
 
 ### AI/ML Pipeline (Python Worker)
 
-The embedding generation system runs as a separate Python service:
+The Python worker is a **multi-service backend** running on FastAPI (port 8000) with 9 specialized services:
 
 ```mermaid
 sequenceDiagram
@@ -186,13 +191,38 @@ sequenceDiagram
     Note over Worker: DLQ retry: 3 attempts
 ```
 
-**Components:**
-- **Embedding Generator:** `python-worker/embedding_generator.py`
-- **Rate Limiter:** `python-worker/rate_limiter.py`
-- **Validator:** `python-worker/embedding_validator.py`
-- **Dead Letter Queue:** Failed embeddings retry automatically
+**Services (9 total):**
+
+| Service | Purpose | Key Features |
+|---------|---------|--------------|
+| `embedding_generator` | Vector embeddings | Sentence Transformers, all-MiniLM-L6-v2, 384 dimensions |
+| `match_generator` | AI-powered matching | pgvector similarity search, multi-factor scoring |
+| `notification_engine` | Smart notifications | Priority batching (5min windows), daily digests |
+| `activity_tracker` | User engagement | Profile view tracking, match activity, 24h deduplication |
+| `feed_scorer` | Feed personalization | Thompson Sampling, hybrid scoring (semantic + engagement + recency) |
+| `content_moderator` | Content safety | Google Perspective API, Hugging Face models, PII detection |
+| `ai_mentor_processor` | AI mentor | Gemini Pro API, session summarization, action item extraction |
+| `event_processor` | Real-time events | Supabase Realtime listener, engagement tracking, trending detection |
+| `analytics_aggregator` | Analytics | Daily metrics (DAU/MAU/WAU), weekly digests, 90-day retention |
+
+**Supporting Components:**
+- **Rate Limiter:** `python-worker/rate_limiter.py` (3 requests/hour/user for embeddings)
+- **Validator:** `python-worker/embedding_validator.py` (384-dimension validation)
+- **Dead Letter Queue:** Automatic retry with exponential backoff (3 attempts max)
 
 **Model:** `all-MiniLM-L6-v2` (384 dimensions, CPU-optimized)
+
+**API Endpoints:**
+- `POST /api/matches/generate` - Generate matches for user
+- `POST /api/matches/generate/batch` - Batch generate for multiple users
+- `POST /api/notifications/send` - Send notification
+- `POST /api/notifications/digest/send` - Send daily digest
+- `POST /api/activity/track/view` - Track profile view
+- `GET /api/activity/feed` - Get activity feed
+- `POST /api/moderate` - Moderate content
+- `POST /api/ai-mentor/message` - Send AI mentor message
+- `POST /api/analytics/daily` - Aggregate daily stats
+- `GET /health` - Health check endpoint
 
 ### 3D Visualization Layer
 
@@ -674,8 +704,11 @@ graph TB
     
     subgraph Worker["Python Worker (Render/Railway)"]
         Container[Docker Container]
-        Health[Health Check]
+        Health[Health Check :8000]
+        FastAPI[FastAPI Server]
+        Services[9 Services]
         Queue[Queue Processor]
+        Realtime[Supabase Realtime Listener]
     end
     
     subgraph CDN["Content Delivery"]
@@ -713,9 +746,17 @@ NODE_ENV=production
 
 **Python Worker Environment:**
 ```env
+# Supabase
 SUPABASE_URL=https://xxx.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=eyJhbG...
+
+# API Configuration
 ALLOWED_ORIGINS=https://collabryx.com
+PORT=8000
+
+# External APIs (optional)
+PERSPECTIVE_API_KEY=...  # Google Perspective API for content moderation
+GEMINI_API_KEY=...       # Google Gemini API for AI mentor
 ```
 
 ### Monitoring & Observability
@@ -723,14 +764,27 @@ ALLOWED_ORIGINS=https://collabryx.com
 **Health Checks:**
 - Frontend: Vercel Analytics
 - Database: Supabase Dashboard
-- Worker: `/health` endpoint
+- Worker: `/health` endpoint (returns all 9 services status)
 - Realtime: Connection monitoring
 
 **Alerts:**
 - Embedding queue depth > 100
 - DLQ exhaustion (retry limit reached)
+- Match generation failures
+- Notification delivery failures
+- Content moderation API errors
+- AI mentor API rate limits
 - API error rate > 5%
 - Response time > 2s
+
+**Metrics Tracked:**
+- Daily Active Users (DAU)
+- Monthly Active Users (MAU)
+- Match acceptance rate
+- Content flag rate
+- Embedding generation time
+- Notification open rate
+- Feed engagement time
 
 ---
 

@@ -67,9 +67,18 @@
 - **[Cobe](https://github.com/shuding/cobe)** - Lightweight WebGL globe
 
 ### AI & Backend Services
-- **Python Worker** - Embedding generation (Sentence Transformers, all-MiniLM-L6-v2)
+- **Python Worker** - Multi-service backend (FastAPI on :8000):
+  - `embedding_generator` - Vector embeddings (Sentence Transformers, all-MiniLM-L6-v2, 384 dimensions)
+  - `match_generator` - AI-powered match scoring with pgvector similarity search
+  - `notification_engine` - Smart notifications with priority batching
+  - `activity_tracker` - User activity and engagement tracking
+  - `feed_scorer` - Personalized feed ranking (Thompson Sampling + hybrid scoring)
+  - `content_moderator` - AI content moderation (Google Perspective API + Hugging Face)
+  - `ai_mentor_processor` - Gemini-powered AI mentor with session summarization
+  - `event_processor` - Real-time event processing via Supabase Realtime
+  - `analytics_aggregator` - Daily analytics and weekly digest generation
 - **Edge Functions** - 5 Deno functions (generate-embedding, send-notification, calculate-matches, sync-profile-data, cleanup-expired-data)
-- **OpenAI/Anthropic** - AI mentor chat integration
+- **OpenAI/Anthropic/Gemini** - Multi-provider AI mentor chat integration
 
 ### State & Forms
 - **[Zustand 5](https://zustand-demo.pmnd.rs/)** - Lightweight state management
@@ -170,10 +179,22 @@ collabryx/
 │   ├── 05-deployment/         # Deployment guides
 │   ├── 06-contributing/       # Contributing guide
 │   └── 07-reference/          # Reference docs
-├── python-worker/             # Python embedding service
+├── python-worker/             # Python multi-service backend (FastAPI)
+│   ├── services/              # Core services (9 services)
+│   │   ├── embedding_generator.py
+│   │   ├── match_generator.py
+│   │   ├── notification_engine.py
+│   │   ├── activity_tracker.py
+│   │   ├── feed_scorer.py
+│   │   ├── content_moderator.py
+│   │   ├── ai_mentor_processor.py
+│   │   ├── event_processor.py
+│   │   └── analytics_aggregator.py
+│   ├── main.py                # FastAPI entry point
+│   └── tests/                 # Service tests
 ├── supabase/
 │   ├── functions/             # Edge Functions (Deno)
-│   └── setup/                 # Database schema (26+ tables)
+│   └── setup/                 # Database schema (31 tables + RLS + triggers)
 ├── public/                    # Static assets
 ├── types/                     # TypeScript types
 └── expected-objects/          # Backend schema specs
