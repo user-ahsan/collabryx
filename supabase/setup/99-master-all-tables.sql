@@ -618,23 +618,24 @@ CREATE INDEX IF NOT EXISTS idx_profiles_email ON public.profiles(email);
 CREATE INDEX IF NOT EXISTS idx_profiles_updated_at ON public.profiles(updated_at DESC);
 
 -- User skills indexes
-CREATE INDEX IF NOT EXISTS idx_user_skills_user_id ON public.user_skills(user_id);
+-- User skills indexes
+CREATE INDEX IF NOT EXISTS idx_user_skills_user ON public.user_skills(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_skills_skill_name ON public.user_skills(skill_name);
 
 -- User interests indexes
-CREATE INDEX IF NOT EXISTS idx_user_interests_user_id ON public.user_interests(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_interests_user ON public.user_interests(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_interests_interest ON public.user_interests(interest);
 
 -- User experiences indexes
-CREATE INDEX IF NOT EXISTS idx_user_experiences_user_id ON public.user_experiences(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_experiences_user ON public.user_experiences(user_id);
 
 -- User projects indexes
-CREATE INDEX IF NOT EXISTS idx_user_projects_user_id ON public.user_projects(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_projects_user ON public.user_projects(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_projects_public ON public.user_projects(is_public);
 
 -- Posts indexes
 CREATE INDEX IF NOT EXISTS idx_posts_author_id ON public.posts(author_id);
-CREATE INDEX IF NOT EXISTS idx_posts_created_at ON public.posts(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_posts_created ON public.posts(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_posts_post_type_created ON public.posts(post_type, created_at DESC);
 
 -- Post attachments indexes
@@ -645,7 +646,7 @@ CREATE INDEX IF NOT EXISTS idx_post_reactions_post_id ON public.post_reactions(p
 
 -- Comments indexes
 CREATE INDEX IF NOT EXISTS idx_comments_post_id ON public.comments(post_id);
-CREATE INDEX IF NOT EXISTS idx_comments_author_id ON public.comments(author_id);
+CREATE INDEX IF NOT EXISTS idx_comments_author ON public.comments(author_id);
 CREATE INDEX IF NOT EXISTS idx_comments_parent_id ON public.comments(parent_id);
 
 -- Connections indexes
@@ -675,8 +676,8 @@ CREATE INDEX IF NOT EXISTS idx_conversations_last_message ON public.conversation
 
 -- Messages indexes
 CREATE INDEX IF NOT EXISTS idx_messages_conversation_id ON public.messages(conversation_id);
-CREATE INDEX IF NOT EXISTS idx_messages_created_at ON public.messages(created_at DESC);
-CREATE INDEX IF NOT EXISTS idx_messages_sender_id ON public.messages(sender_id);
+CREATE INDEX IF NOT EXISTS idx_messages_created ON public.messages(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_messages_sender ON public.messages(sender_id);
 
 -- Notifications indexes
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON public.notifications(user_id);
@@ -2031,7 +2032,7 @@ CREATE POLICY "Service role can manage analytics" ON public.user_analytics FOR A
 -- --------------------------------------------
 -- PLATFORM ANALYTICS RLS
 -- --------------------------------------------
-CREATE POLICY "Authenticated users can view platform analytics" ON public.platform_analytics FOR SELECT USING (auth.role() = 'authenticated');
+CREATE POLICY "Authenticated users can view platform analytics" ON public.platform_analytics FOR SELECT USING ((select auth.role()) = 'authenticated');
 
 CREATE POLICY "Service role can manage platform analytics" ON public.platform_analytics FOR ALL USING ((SELECT auth.jwt() ->> 'role') = 'service_role');
 
