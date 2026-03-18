@@ -41,7 +41,7 @@ export function ContentModerationGuard({
     return <>{children}</>
   }
 
-  const { approved, flag_for_review, auto_reject, risk_score, action, details } = moderationResult
+  const { approved, flag_for_review, auto_reject, details } = moderationResult
 
   if (approved && !flag_for_review) {
     return <>{children}</>
