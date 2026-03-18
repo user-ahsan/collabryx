@@ -57,7 +57,6 @@ export async function generateMatches(
       const errorData = await response.json().catch(() => ({}))
       
       if (response.status === 429) {
-        const retryAfter = errorData.detail?.retry_after || 3600
         const resetAt = errorData.detail?.reset_at
         throw new Error(
           `Rate limit exceeded. Please try again ${resetAt ? `after ${resetAt}` : "later"}`
