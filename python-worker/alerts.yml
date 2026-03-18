@@ -1,0 +1,346 @@
+# Collabryx Python Worker - Prometheus Alerting Rules
+# 
+# These rules define conditions that trigger alerts for the embedding service.
+# Import into Prometheus configuration via rule_files section.
+#
+# Usage:
+#   rule_files:
+#     - "alerts.yml"
+#
+# Documentation: https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/
+
+groups:
+  # =====================================================
+  # Service Availability Alerts
+  # =====================================================
+  - name: embedding_service_availability
+    interval: 30s  # Evaluation interval
+    
+    rules:
+      # Service Down Alert
+      # Triggers when service is unreachable for 1 minute
+      - alert: EmbeddingServiceDown
+        expr: up{job="embedding-service"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: embedding-service
+          team: platform
+        annotations:
+          summary: "Embedding Service is down"
+          description: "The embedding service at {{ $labels.instance }} has been unreachable for more than 1 minute."
+          runbook_url: "https://github.com/user-ahsan/collabryx/blob/main/python-worker/RUNBOOK.md#service-down"
+          impact: "Embedding generation is completely unavailable. Users cannot update profiles or get matches."
+          
+      # Health Check Failed
+      # Triggers when health endpoint returns unhealthy status
+      - alert: EmbeddingServiceUnhealthy
+        expr: probe_success{job="embedding-service"} == 0
+        for: 2m
+        labels:
+          severity: warning
+          service: embedding-service
+          team: platform
+        annotations:
+          summary: "Embedding Service health check failed"
+          description: "Health check endpoint is not responding successfully for {{ $labels.instance }}."
+          runbook_url: "https://github.com/user-ahsan/collabryx/blob/main/python-worker/RUNBOOK.md#health-check-failed"
+          impact: "Service may be degraded or experiencing issues."
+
+  # =====================================================
+  # Queue Health Alerts
+  # =====================================================
+  - name: embedding_service_queue_health
+    interval: 30s
+    
+    rules:
+      # High Queue Size Alert
+      # Triggers when queue depth exceeds 80 items (80% capacity)
+      - alert: EmbeddingQueueHighDepth
+        expr: embedding_service_queue_size > 80
+        for: 5m
+        labels:
+          severity: warning
+          service: embedding-service
+          team: platform
+        annotations:
+          summary: "Embedding queue depth is critically high"
+          description: "Queue size is {{ $value }} items (threshold: 80). Processing may be falling behind."
+          runbook_url: "https://github.com/user-ahsan/collabryx/blob/main/python-worker/RUNBOOK.md#high-queue-depth"
+          impact: "Users may experience delays in embedding generation and profile updates."
+          action: "Check processing speed and error rates. Consider scaling horizontally."
+      
+      # Queue Capacity Critical
+      # Triggers when queue is nearly full (>95 items)
+      - alert: EmbeddingQueueNearCapacity
+        expr: embedding_service_queue_size > 95
+        for: 2m
+        labels:
+          severity: critical
+          service: embedding-service
+          team: platform
+        annotations:
+          summary: "Embedding queue is at capacity"
+          description: "Queue size is {{ $value }} items (capacity: 100). New requests will be rejected."
+          runbook_url: "https://github.com/user-ahsan/collabryx/blob/main/python-worker/RUNBOOK.md#queue-at-capacity"
+          impact: "New embedding requests are being rejected with 503 Service Unavailable."
+          action: "Immediate action required. Scale service or investigate processing bottleneck."
+      
+      # DLQ Size Alert
+      # Triggers when dead letter queue has >10 pending items
+      - alert: EmbeddingDLQSizeHigh
+        expr: embedding_service_dlq_size > 10
+        for: 10m
+        labels:
+          severity: warning
+          service: embedding-service
+          team: platform
+        annotations:
+          summary: "Dead letter queue size is growing"
+          description: "DLQ has {{ $value }} pending items. Embeddings are failing and requiring retries."
+          runbook_url: "https://github.com/user-ahsan/collabryx/blob/main/python-worker/RUNBOOK.md#dlq-size-high"
+          impact: "Some users' embeddings are failing to generate, affecting match quality."
+          action: "Investigate failure reasons in logs. Check Supabase connectivity and model loading."
+      
+      # DLQ Exhausted
+      # Triggers when DLQ has >50 items (retry exhaustion)
+      - alert: EmbeddingDLQExhausted
+        expr: embedding_service_dlq_size > 50
+        for: 30m
+        labels:
+          severity: critical
+          service: embedding-service
+          team: platform
+        annotations:
+          summary: "Dead letter queue is critically large"
+          description: "DLQ has {{ $value }} items. Many embedding requests are failing repeatedly."
+          runbook_url: "https://github.com/user-ahsan/collabryx/blob/main/python-worker/RUNBOOK.md#dlq-exhausted"
+          impact: "Significant number of users have failed embeddings. Match suggestions will be inaccurate."
+          action: "Urgent investigation required. Check model health, database connectivity, and memory usage."
+
+  # =====================================================
+  # Error Rate Alerts
+  # =====================================================
+  - name: embedding_service_errors
+    interval: 30s
+    
+    rules:
+      # High Error Rate Alert
+      # Triggers when error rate exceeds 5% of requests
+      - alert: EmbeddingHighErrorRate
+        expr: |
+          (
+            sum(rate(embedding_service_errors_total[5m]))
+            /
+            sum(rate(embedding_service_requests_total[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: embedding-service
+          team: platform
+        annotations:
+          summary: "Embedding service error rate is high"
+          description: "Error rate is {{ $value | humanizePercentage }} over the last 5 minutes (threshold: 5%)."
+          runbook_url: "https://github.com/user-ahsan/collabryx/blob/main/python-worker/RUNBOOK.md#high-error-rate"
+          impact: "Users are experiencing failures when generating embeddings."
+          action: "Check error logs for root cause. Common issues: Supabase connection, model loading, memory pressure."
+      
+      # Critical Error Rate Alert
+      # Triggers when error rate exceeds 20%
+      - alert: EmbeddingCriticalErrorRate
+        expr: |
+          (
+            sum(rate(embedding_service_errors_total[5m]))
+            /
+            sum(rate(embedding_service_requests_total[5m]))
+          ) > 0.20
+        for: 2m
+        labels:
+          severity: critical
+          service: embedding-service
+          team: platform
+        annotations:
+          summary: "Embedding service error rate is critical"
+          description: "Error rate is {{ $value | humanizePercentage }} over the last 5 minutes (threshold: 20%)."
+          runbook_url: "https://github.com/user-ahsan/collabryx/blob/main/python-worker/RUNBOOK.md#critical-error-rate"
+          impact: "Major service degradation. Most embedding requests are failing."
+          action: "Immediate escalation required. Consider rolling back recent changes or restarting service."
+      
+      # Specific Error Type Spike
+      # Triggers when a specific error type spikes
+      - alert: EmbeddingErrorTypeSpike
+        expr: |
+          sum(rate(embedding_service_errors_total[5m])) by (error_type) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: embedding-service
+          team: platform
+        annotations:
+          summary: "Spike in {{ $labels.error_type }} errors"
+          description: "Error type '{{ $labels.error_type }}' is occurring at {{ $value }} errors per second."
+          runbook_url: "https://github.com/user-ahsan/collabryx/blob/main/python-worker/RUNBOOK.md#error-type-spike"
+          impact: "Specific failure pattern detected. May indicate a bug or infrastructure issue."
+          action: "Investigate the specific error type in logs. Check for patterns in failed requests."
+
+  # =====================================================
+  # Resource Usage Alerts
+  # =====================================================
+  - name: embedding_service_resources
+    interval: 30s
+    
+    rules:
+      # High Memory Usage Alert
+      # Triggers when process RSS memory exceeds 1.5GB
+      - alert: EmbeddingHighMemoryUsage
+        expr: embedding_service_memory_usage_bytes{type="process_rss"} > 1.5e9
+        for: 5m
+        labels:
+          severity: warning
+          service: embedding-service
+          team: platform
+        annotations:
+          summary: "Embedding service memory usage is high"
+          description: "Process memory (RSS) is {{ $value | humanize1024 }}B (threshold: 1.5GB)."
+          runbook_url: "https://github.com/user-ahsan/collabryx/blob/main/python-worker/RUNBOOK.md#high-memory-usage"
+          impact: "Service may be killed by OOM killer if memory continues to grow."
+          action: "Check for memory leaks. Consider increasing memory limit or optimizing model loading."
+      
+      # Critical Memory Usage
+      # Triggers when memory exceeds 1.8GB (near OOM)
+      - alert: EmbeddingCriticalMemoryUsage
+        expr: embedding_service_memory_usage_bytes{type="process_rss"} > 1.8e9
+        for: 2m
+        labels:
+          severity: critical
+          service: embedding-service
+          team: platform
+        annotations:
+          summary: "Embedding service memory usage is critical"
+          description: "Process memory (RSS) is {{ $value | humanize1024 }}B (threshold: 1.8GB). OOM imminent."
+          runbook_url: "https://github.com/user-ahsan/collabryx/blob/main/python-worker/RUNBOOK.md#critical-memory-usage"
+          impact: "Service will likely crash due to out-of-memory error."
+          action: "Immediate restart required. Investigate memory leak after service is stable."
+      
+      # Low Available System Memory
+      # Triggers when system available memory is below 500MB
+      - alert: EmbeddingLowSystemMemory
+        expr: embedding_service_memory_usage_bytes{type="system_available"} < 5.24e8
+        for: 5m
+        labels:
+          severity: warning
+          service: embedding-service
+          team: platform
+        annotations:
+          summary: "System available memory is low"
+          description: "Available system memory is {{ $value | humanize1024 }}B (threshold: 500MB)."
+          runbook_url: "https://github.com/user-ahsan/collabryx/blob/main/python-worker/RUNBOOK.md#low-system-memory"
+          impact: "Host system is running low on memory. Other services may be affected."
+          action: "Check other processes on the host. Consider migrating to a larger instance."
+      
+      # High Response Time Alert
+      # Triggers when p95 latency exceeds 2 seconds
+      - alert: EmbeddingHighLatency
+        expr: |
+          histogram_quantile(0.95, 
+            rate(embedding_service_request_duration_seconds_bucket[5m])
+          ) > 2
+        for: 5m
+        labels:
+          severity: warning
+          service: embedding-service
+          team: platform
+        annotations:
+          summary: "Embedding service latency is high"
+          description: "95th percentile response time is {{ $value }}s (threshold: 2s)."
+          runbook_url: "https://github.com/user-ahsan/collabryx/blob/main/python-worker/RUNBOOK.md#high-latency"
+          impact: "Users are experiencing slow embedding generation. May timeout."
+          action: "Check CPU usage, model loading, and database query performance."
+      
+      # Critical Response Time
+      # Triggers when p95 latency exceeds 5 seconds
+      - alert: EmbeddingCriticalLatency
+        expr: |
+          histogram_quantile(0.95, 
+            rate(embedding_service_request_duration_seconds_bucket[5m])
+          ) > 5
+        for: 2m
+        labels:
+          severity: critical
+          service: embedding-service
+          team: platform
+        annotations:
+          summary: "Embedding service latency is critical"
+          description: "95th percentile response time is {{ $value }}s (threshold: 5s)."
+          runbook_url: "https://github.com/user-ahsan/collabryx/blob/main/python-worker/RUNBOOK.md#critical-latency"
+          impact: "Service is severely degraded. Most requests are timing out."
+          action: "Immediate investigation required. Check for resource exhaustion or deadlock."
+
+  # =====================================================
+  # Business Logic Alerts
+  # =====================================================
+  - name: embedding_service_business_metrics
+    interval: 60s
+    
+    rules:
+      # Low Processing Speed
+      # Triggers when processing speed drops below 10 embeddings/minute
+      - alert: EmbeddingLowThroughput
+        expr: embedding_service_processing_speed < 10
+        for: 15m
+        labels:
+          severity: warning
+          service: embedding-service
+          team: platform
+        annotations:
+          summary: "Embedding processing speed is low"
+          description: "Processing speed is {{ $value }} embeddings/min (threshold: 10/min)."
+          runbook_url: "https://github.com/user-ahsan/collabryx/blob/main/python-worker/RUNBOOK.md#low-throughput"
+          impact: "Embedding queue may grow if request rate exceeds processing capacity."
+          action: "Check for bottlenecks in processing pipeline. Verify model is loaded correctly."
+      
+      # No Requests Received
+      # Triggers when no requests for 10 minutes (may indicate upstream issue)
+      - alert: EmbeddingNoRequests
+        expr: sum(rate(embedding_service_requests_total[10m])) == 0
+        for: 10m
+        labels:
+          severity: info
+          service: embedding-service
+          team: platform
+        annotations:
+          summary: "No embedding requests received"
+          description: "Service has received no requests in the last 10 minutes."
+          runbook_url: "https://github.com/user-ahsan/collabryx/blob/main/python-worker/RUNBOOK.md#no-requests"
+          impact: "May indicate upstream service issues or deployment problems."
+          action: "Check frontend and API gateway. Verify traffic routing."
+
+# =====================================================
+# Recording Rules (Pre-computed Metrics)
+# =====================================================
+  - name: embedding_service_recording_rules
+    interval: 30s
+    
+    rules:
+      # Pre-compute error rate for dashboards
+      - record: embedding_service:error_rate:ratio_rate5m
+        expr: |
+          sum(rate(embedding_service_errors_total[5m]))
+          /
+          sum(rate(embedding_service_requests_total[5m]))
+      
+      # Pre-compute request rate
+      - record: embedding_service:request_rate:rate1m
+        expr: sum(rate(embedding_service_requests_total[1m])) * 60
+      
+      # Pre-compute p95 latency
+      - record: embedding_service:latency_p95:seconds
+        expr: |
+          histogram_quantile(0.95, 
+            rate(embedding_service_request_duration_seconds_bucket[5m])
+          )
+      
+      # Pre-compute queue growth rate
+      - record: embedding_service:queue_growth:rate5m
+        expr: deriv(embedding_service_queue_size[5m])
