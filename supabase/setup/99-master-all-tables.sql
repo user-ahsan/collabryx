@@ -1,15 +1,15 @@
 -- ============================================================================
 -- COLLABRYX DATABASE SCHEMA - COMPLETE MASTER FILE
 -- ============================================================================
--- Version: 2.1.0 (Production Aligned)
--- Date: 2026-03-14
+-- Version: 3.0.0 (Complete Consolidation)
+-- Date: 2026-03-18
 -- 
 -- This file contains the COMPLETE database schema including:
--- - 26 Tables (user management, social, matching, messaging, AI, embeddings)
+-- - 31 Tables (26 core + 5 ML features: feed_scores, events, user_analytics, platform_analytics, content_moderation_logs)
 -- - All indexes optimized for common queries (including HNSW for vectors)
 -- - All triggers for automation (updated_at, counts, embeddings)
--- - All RLS policies for security (50+ policies)
--- - All helper functions (get_conversation, are_connected, etc.)
+-- - All RLS policies for security (60+ policies)
+-- - All helper functions (35+ functions including match-making, notifications, comments, embeddings)
 -- - Storage buckets for file uploads (post-media, profile-media, project-media)
 -- - Realtime enabled for all tables (Supabase Realtime)
 -- - Complete embedding infrastructure (DLQ, rate limiting, pending queue)
@@ -17,7 +17,8 @@
 -- Usage: Run this ONCE in Supabase SQL Editor
 -- URL: https://supabase.com/dashboard/project/_/sql/new
 --
--- PRODUCTION READY: Tested and verified against actual Supabase implementation
+-- PRODUCTION READY: All functionality consolidated into single file
+-- DEPRECATED: 99-rate-limit-function.sql, 100-helper-functions.sql (merged into this file)
 -- ============================================================================
 
 -- ============================================================================
@@ -1273,7 +1274,202 @@ GRANT EXECUTE ON FUNCTION public.queue_embedding_request(UUID, TEXT) TO authenti
 GRANT EXECUTE ON FUNCTION public.get_pending_queue_stats() TO authenticated;
 
 -- ============================================================================
--- SECTION 5.5: NEW ML FEATURE FUNCTIONS
+-- SECTION 5.5: ADDITIONAL HELPER FUNCTIONS
+-- ============================================================================
+
+-- --------------------------------------------
+-- FUNCTION: get_pending_connection_count
+-- --------------------------------------------
+CREATE OR REPLACE FUNCTION public.get_pending_connection_count(target_user_id UUID)
+RETURNS INTEGER AS $$
+BEGIN
+    RETURN (
+        SELECT COUNT(*)::INTEGER
+        FROM public.connections
+        WHERE receiver_id = target_user_id
+        AND status = 'pending'
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+COMMENT ON FUNCTION public.get_pending_connection_count(UUID) IS 
+'Get count of pending connection requests for a user';
+
+GRANT EXECUTE ON FUNCTION public.get_pending_connection_count(UUID) TO authenticated;
+
+-- --------------------------------------------
+-- FUNCTION: get_connection_status
+-- --------------------------------------------
+CREATE OR REPLACE FUNCTION public.get_connection_status(user1_id UUID, user2_id UUID)
+RETURNS TEXT AS $$
+DECLARE
+    conn_status TEXT;
+BEGIN
+    SELECT status INTO conn_status
+    FROM public.connections
+    WHERE (requester_id = user1_id AND receiver_id = user2_id)
+       OR (requester_id = user2_id AND receiver_id = user1_id)
+    LIMIT 1;
+    
+    RETURN COALESCE(conn_status, 'not_connected');
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+COMMENT ON FUNCTION public.get_connection_status(UUID, UUID) IS 
+'Get connection status between two users: pending, accepted, declined, blocked, or not_connected';
+
+GRANT EXECUTE ON FUNCTION public.get_connection_status(UUID, UUID) TO authenticated;
+
+-- --------------------------------------------
+-- FUNCTION: get_unread_notification_count
+-- --------------------------------------------
+CREATE OR REPLACE FUNCTION public.get_unread_notification_count(p_user_id UUID)
+RETURNS INTEGER AS $$
+BEGIN
+    RETURN (
+        SELECT COUNT(*)::INTEGER
+        FROM public.notifications
+        WHERE user_id = p_user_id
+        AND is_read = false
+    );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+COMMENT ON FUNCTION public.get_unread_notification_count(UUID) IS 
+'Get count of unread notifications for a user';
+
+GRANT EXECUTE ON FUNCTION public.get_unread_notification_count(UUID) TO authenticated;
+
+-- --------------------------------------------
+-- FUNCTION: get_comment_depth
+-- --------------------------------------------
+CREATE OR REPLACE FUNCTION public.get_comment_depth(p_comment_id UUID)
+RETURNS INTEGER AS $$
+DECLARE
+    v_depth INTEGER := 0;
+    v_parent_id UUID;
+BEGIN
+    SELECT parent_id INTO v_parent_id
+    FROM public.comments
+    WHERE id = p_comment_id;
+    
+    WHILE v_parent_id IS NOT NULL LOOP
+        v_depth := v_depth + 1;
+        
+        SELECT parent_id INTO v_parent_id
+        FROM public.comments
+        WHERE id = v_parent_id;
+    END LOOP;
+    
+    RETURN v_depth;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+COMMENT ON FUNCTION public.get_comment_depth(UUID) IS 
+'Get the nesting depth of a comment (0 = top-level, 1+ = reply depth)';
+
+GRANT EXECUTE ON FUNCTION public.get_comment_depth(UUID) TO authenticated;
+
+-- --------------------------------------------
+-- FUNCTION: get_comment_replies_count
+-- --------------------------------------------
+CREATE OR REPLACE FUNCTION public.get_comment_replies_count(p_comment_id UUID)
+RETURNS INTEGER AS $$
+DECLARE
+    v_count INTEGER := 0;
+BEGIN
+    WITH RECURSIVE reply_tree AS (
+        SELECT id, parent_id
+        FROM public.comments
+        WHERE parent_id = p_comment_id
+        
+        UNION ALL
+        
+        SELECT c.id, c.parent_id
+        FROM public.comments c
+        INNER JOIN reply_tree rt ON c.parent_id = rt.id
+    )
+    SELECT COUNT(*)::INTEGER INTO v_count
+    FROM reply_tree;
+    
+    RETURN v_count;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+COMMENT ON FUNCTION public.get_comment_replies_count(UUID) IS 
+'Get total count of all replies (including nested) for a comment';
+
+GRANT EXECUTE ON FUNCTION public.get_comment_replies_count(UUID) TO authenticated;
+
+-- --------------------------------------------
+-- FUNCTION: get_profile_completion_percentage
+-- --------------------------------------------
+CREATE OR REPLACE FUNCTION public.get_profile_completion_percentage(p_user_id UUID)
+RETURNS INTEGER AS $$
+DECLARE
+    v_completion INTEGER := 0;
+    v_has_skills INTEGER := 0;
+    v_has_interests INTEGER := 0;
+    v_has_experience INTEGER := 0;
+    v_has_projects INTEGER := 0;
+BEGIN
+    -- Basic profile (25%)
+    SELECT COUNT(*)::INTEGER INTO v_completion
+    FROM public.profiles
+    WHERE id = p_user_id
+    AND (
+        (display_name IS NOT NULL AND display_name != '')
+        OR (full_name IS NOT NULL AND full_name != '')
+    )
+    AND headline IS NOT NULL
+    AND headline != '';
+    
+    IF v_completion > 0 THEN
+        v_completion := 25;
+    END IF;
+    
+    -- Skills (25%)
+    SELECT COUNT(*)::INTEGER INTO v_has_skills
+    FROM public.user_skills
+    WHERE user_id = p_user_id;
+    
+    IF v_has_skills > 0 THEN
+        v_completion := v_completion + 25;
+    END IF;
+    
+    -- Interests (25%)
+    SELECT COUNT(*)::INTEGER INTO v_has_interests
+    FROM public.user_interests
+    WHERE user_id = p_user_id;
+    
+    IF v_has_interests > 0 THEN
+        v_completion := v_completion + 25;
+    END IF;
+    
+    -- Experience or Projects (25%)
+    SELECT COUNT(*)::INTEGER INTO v_has_experience
+    FROM public.user_experiences
+    WHERE user_id = p_user_id;
+    
+    SELECT COUNT(*)::INTEGER INTO v_has_projects
+    FROM public.user_projects
+    WHERE user_id = p_user_id;
+    
+    IF v_has_experience > 0 OR v_has_projects > 0 THEN
+        v_completion := v_completion + 25;
+    END IF;
+    
+    RETURN v_completion;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+COMMENT ON FUNCTION public.get_profile_completion_percentage(UUID) IS 
+'Calculate profile completion percentage (0-100) based on filled sections';
+
+GRANT EXECUTE ON FUNCTION public.get_profile_completion_percentage(UUID) TO authenticated;
+
+-- ============================================================================
+-- SECTION 5.6: NEW ML FEATURE FUNCTIONS
 -- ============================================================================
 
 -- --------------------------------------------
@@ -2061,6 +2257,61 @@ COMMENT ON TABLE public.embedding_pending_queue IS 'Queue for pending embedding 
 -- SETUP COMPLETE
 -- ============================================================================
 -- 
+-- ✅ 31 Tables created (26 core + 5 ML features)
+-- ✅ 80+ Indexes created (including HNSW for vector search)
+-- ✅ 25+ Triggers created
+-- ✅ 60+ RLS policies created
+-- ✅ 35+ Helper functions created (ALL consolidated from deprecated files)
+-- ✅ 3 Storage buckets configured
+-- ✅ All tables added to realtime
+-- ✅ SECURITY: All functions have SECURITY DEFINER SET search_path = public
+--
+-- ML FEATURES:
+-- - feed_scores: Personalized feed ranking with Thompson Sampling
+-- - events: Central event store for real-time processing
+-- - user_analytics: Per-user engagement metrics
+-- - platform_analytics: Daily aggregated platform metrics
+-- - content_moderation_logs: AI content moderation audit trail
+--
+-- MATCH SYSTEM:
+-- - find_similar_users: pgvector cosine similarity search
+-- - get_user_skills: User skills retrieval
+-- - get_user_interests: User interests retrieval
+-- - calculate_skills_overlap: Jaccard similarity
+-- - calculate_match_percentage: Basic match scoring
+-- - get_shared_skills: Shared skills array
+-- - get_shared_interests: Shared interests array
+-- - get_users_needing_matches: Batch job query
+-- - cleanup_old_match_suggestions: Maintenance (30-day retention)
+-- - get_user_match_stats: User match statistics
+--
+-- CONNECTION HELPERS:
+-- - get_pending_connection_count: Pending requests count
+-- - get_connection_status: Status between users
+--
+-- NOTIFICATION HELPERS:
+-- - get_unread_notification_count: Unread count
+--
+-- COMMENT HELPERS:
+-- - get_comment_depth: Nesting level
+-- - get_comment_replies_count: Total replies (recursive)
+--
+-- PROFILE HELPERS:
+-- - get_profile_completion_percentage: Completion (0-100%)
+--
+-- EMBEDDING SYSTEM:
+-- - profile_embeddings: 384-dimension vectors with HNSW index
+-- - embedding_dead_letter_queue: Failed retry queue (3 retries max)
+-- - embedding_rate_limits: 3 requests/hour/user limit
+-- - embedding_pending_queue: Reliable onboarding queue
+-- - check_embedding_rate_limit: Rate limit checker (100/hour)
+-- - queue_embedding_request: Queue management
+-- - get_pending_queue_stats: Queue statistics
+--
+-- DEPRECATED FILES (functionality merged into this file):
+-- - supabase/setup/99-rate-limit-function.sql ❌ DELETED
+-- - supabase/setup/100-helper-functions.sql ❌ DELETED
+--
 -- ✅ 31 Tables created (26 core + 5 ML features)
 -- ✅ 80+ Indexes created (including HNSW for vector search)
 -- ✅ 25+ Triggers created
