@@ -2176,25 +2176,28 @@ CREATE INDEX IF NOT EXISTS idx_comment_likes_comment_user
   ON public.comment_likes(comment_id, user_id);
 
 -- Connections indexes
-CREATE INDEX IF NOT EXISTS idx_connections_user1_status 
-  ON public.connections(user_id_1, status);
+CREATE INDEX IF NOT EXISTS idx_connections_requester_status 
+  ON public.connections(requester_id, status);
 
-CREATE INDEX IF NOT EXISTS idx_connections_user2_status 
-  ON public.connections(user_id_2, status);
+CREATE INDEX IF NOT EXISTS idx_connections_receiver_status 
+  ON public.connections(receiver_id, status);
 
 -- Matches indexes
-CREATE INDEX IF NOT EXISTS idx_match_suggestions_user_score 
-  ON public.match_suggestions(user_id, match_score DESC);
+CREATE INDEX IF NOT EXISTS idx_match_suggestions_user_percentage 
+  ON public.match_suggestions(user_id, match_percentage DESC);
 
-CREATE INDEX IF NOT EXISTS idx_match_scores_user 
-  ON public.match_scores(user_id_1, user_id_2);
+CREATE INDEX IF NOT EXISTS idx_match_scores_suggestion 
+  ON public.match_scores(suggestion_id);
 
-CREATE INDEX IF NOT EXISTS idx_match_activity_user_last 
-  ON public.match_activity(user_id, last_interaction DESC);
+CREATE INDEX IF NOT EXISTS idx_match_activity_target_created 
+  ON public.match_activity(target_user_id, created_at DESC);
 
 -- Conversations and messages indexes
-CREATE INDEX IF NOT EXISTS idx_conversations_user_updated 
-  ON public.conversations(user_id, last_message_at DESC);
+CREATE INDEX IF NOT EXISTS idx_conversations_participant1_updated 
+  ON public.conversations(participant_1, last_message_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_conversations_participant2_updated 
+  ON public.conversations(participant_2, last_message_at DESC);
 
 CREATE INDEX IF NOT EXISTS idx_messages_conversation_created 
   ON public.messages(conversation_id, created_at ASC);
