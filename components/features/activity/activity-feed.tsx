@@ -6,7 +6,6 @@ import { useActivityFeed, type ActivityFeedItem } from "@/hooks/use-activity-fee
 import { Button } from "@/components/ui/button"
 import { GlassCard } from "@/components/shared/glass-card"
 import { Bell } from "lucide-react"
-import { cn } from "@/lib/utils"
 
 interface ActivityFeedProps {
   initialLimit?: number
