@@ -38,6 +38,9 @@ export interface EmbeddingGenerationResult {
     used_fallback?: boolean;
   };
   error?: string;
+  retryAfter?: number;
+  resetAt?: string;
+  remaining?: number;
 }
 
 /**
@@ -96,7 +99,10 @@ export async function generateUserEmbedding(userId: string): Promise<EmbeddingGe
       return {
         success: false,
         message: `Embedding rate limit exceeded. Try again in ${minutes} minute${minutes > 1 ? 's' : ''}.`,
-        error: 'RateLimitError'
+        error: 'RateLimitError',
+        retryAfter: error.retryAfter,
+        resetAt: error.resetAt,
+        remaining: error.remaining
       };
     }
     return {
@@ -225,6 +231,75 @@ export async function regenerateEmbedding(userId: string): Promise<EmbeddingGene
 
   // Then trigger generation
   return generateUserEmbedding(userId);
+}
+
+/**
+ * Check rate limit status before attempting embedding generation
+ * Returns rate limit status without making API call
+ */
+export async function checkEmbeddingRateLimit(_userId?: string): Promise<{
+  allowed: boolean;
+  remaining: number;
+  resetAt: string;
+  retryAfter?: number;
+}> {
+  const supabase = createClient();
+  
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  if (!session?.access_token) {
+    return {
+      allowed: false,
+      remaining: 0,
+      resetAt: new Date().toISOString(),
+    };
+  }
+
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/embeddings/rate-limit`,
+      {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      if (response.status === 429) {
+        const data = await response.json();
+        return {
+          allowed: false,
+          remaining: data.detail?.remaining || 0,
+          resetAt: data.detail?.reset_at || new Date().toISOString(),
+          retryAfter: data.detail?.retry_after || 3600,
+        };
+      }
+      
+      return {
+        allowed: true,
+        remaining: 10,
+        resetAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      };
+    }
+
+    const data = await response.json();
+    return {
+      allowed: data.allowed,
+      remaining: data.remaining,
+      resetAt: data.reset_at,
+      retryAfter: data.retry_after,
+    };
+  } catch (error) {
+    console.error("Error checking embedding rate limit:", error);
+    return {
+      allowed: true,
+      remaining: 10,
+      resetAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+    };
+  }
 }
 
 /**

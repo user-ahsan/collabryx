@@ -78,6 +78,14 @@ export const TOAST_MESSAGES = {
     INVALID_TYPE: "Invalid file type",
     IN_PROGRESS: "Uploading...",
   },
+  RATE_LIMIT: {
+    EXCEEDED: "Rate limit exceeded",
+    RETRY_AFTER: (minutes: number) => `Please try again in ${minutes} minute${minutes > 1 ? 's' : ''}`,
+    EMBEDDING: {
+      EXCEEDED: "Embedding rate limit exceeded",
+      RETRY_AFTER: (minutes: number) => `Profile embedding unavailable. Try again in ${minutes} minute${minutes > 1 ? 's' : ''}.`,
+    },
+  },
 } as const
 
 /**
