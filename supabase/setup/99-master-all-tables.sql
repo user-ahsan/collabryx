@@ -643,6 +643,7 @@ CREATE INDEX IF NOT EXISTS idx_post_attachments_post_id ON public.post_attachmen
 
 -- Post reactions indexes
 CREATE INDEX IF NOT EXISTS idx_post_reactions_post_id ON public.post_reactions(post_id);
+CREATE INDEX IF NOT EXISTS idx_post_reactions_user_id ON public.post_reactions(user_id);
 
 -- Comments indexes
 CREATE INDEX IF NOT EXISTS idx_comments_post_id ON public.comments(post_id);
@@ -656,6 +657,7 @@ CREATE INDEX IF NOT EXISTS idx_connections_status ON public.connections(status);
 
 -- Match suggestions indexes
 CREATE INDEX IF NOT EXISTS idx_match_suggestions_user_id ON public.match_suggestions(user_id);
+CREATE INDEX IF NOT EXISTS idx_match_suggestions_matched_user_id ON public.match_suggestions(matched_user_id);
 CREATE INDEX IF NOT EXISTS idx_match_suggestions_user_percentage ON public.match_suggestions(user_id, match_percentage DESC);
 CREATE INDEX IF NOT EXISTS idx_match_suggestions_status ON public.match_suggestions(status);
 
@@ -663,6 +665,7 @@ CREATE INDEX IF NOT EXISTS idx_match_suggestions_status ON public.match_suggesti
 CREATE INDEX IF NOT EXISTS idx_match_scores_suggestion_id ON public.match_scores(suggestion_id);
 
 -- Match activity indexes
+CREATE INDEX IF NOT EXISTS idx_match_activity_actor_user ON public.match_activity(actor_user_id);
 CREATE INDEX IF NOT EXISTS idx_match_activity_target_user ON public.match_activity(target_user_id);
 CREATE INDEX IF NOT EXISTS idx_match_activity_created ON public.match_activity(created_at DESC);
 
@@ -681,6 +684,7 @@ CREATE INDEX IF NOT EXISTS idx_messages_sender ON public.messages(sender_id);
 
 -- Notifications indexes
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON public.notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_actor_id ON public.notifications(actor_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON public.notifications(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON public.notifications(is_read);
 
