@@ -1637,20 +1637,18 @@ BEGIN
     SELECT ARRAY_AGG(s.name) INTO shared_skills
     FROM skills s WHERE s.id = ANY(shared_skill_ids);
     
-    SELECT ARRAY_AGG(s.name) INTO complementary_skills
+    -- Get complementary skills (skills one has but other doesn't)
+    SELECT ARRAY_AGG(DISTINCT s.name) INTO complementary_skills
     FROM skills s 
-    WHERE s.id = ANY(
-        ARRAY(
-            SELECT UNNEST(user1_skill_ids)
-            EXCEPT
-            SELECT UNNEST(user2_skill_ids)
-        )
-        UNION
-        ARRAY(
-            SELECT UNNEST(user2_skill_ids)
-            EXCEPT
-            SELECT UNNEST(user1_skill_ids)
-        )
+    WHERE s.id IN (
+        SELECT UNNEST(user1_skill_ids)
+        EXCEPT
+        SELECT UNNEST(user2_skill_ids)
+    )
+    OR s.id IN (
+        SELECT UNNEST(user2_skill_ids)
+        EXCEPT
+        SELECT UNNEST(user1_skill_ids)
     );
     
     RETURN NEXT;
