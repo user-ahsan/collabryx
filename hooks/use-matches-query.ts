@@ -12,6 +12,7 @@ import {
   fetchMatchPreferences,
   updateMatchPreferences,
 } from '@/lib/services/matches'
+import { generateMatches, generateBatchMatches, checkMatchGenerationStatus } from '@/lib/services/match-generation'
 
 export const MATCH_QUERY_KEYS = {
   all: ['matches'] as const,
@@ -102,5 +103,45 @@ export function useUpdateMatchPreferences() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: MATCH_QUERY_KEYS.preferences() })
     },
+  })
+}
+
+export function useGenerateMatches() {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: ({ userId, limit }: { userId: string; limit?: number }) => 
+      generateMatches(userId, limit),
+    onSuccess: (result) => {
+      if (result.data) {
+        // Invalidate matches list to refresh UI
+        queryClient.invalidateQueries({ queryKey: MATCH_QUERY_KEYS.lists() })
+      }
+    },
+  })
+}
+
+export function useGenerateBatchMatches() {
+  const queryClient = useQueryClient()
+  
+  return useMutation({
+    mutationFn: ({ userIds, limitPerUser }: { userIds?: string[]; limitPerUser?: number }) => 
+      generateBatchMatches(userIds, limitPerUser),
+    onSuccess: () => {
+      // Invalidate all match queries after batch processing
+      queryClient.invalidateQueries({ queryKey: MATCH_QUERY_KEYS.all })
+    },
+  })
+}
+
+export function useCheckMatchGenerationStatus() {
+  return useQuery({
+    queryKey: ['match-generation-status'],
+    queryFn: async () => {
+      const { data, error } = await checkMatchGenerationStatus('')
+      if (error) throw error
+      return data
+    },
+    enabled: false, // Manual trigger only
   })
 }
