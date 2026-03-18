@@ -224,15 +224,21 @@ CREATE TABLE IF NOT EXISTS public.match_suggestions (
 CREATE TABLE IF NOT EXISTS public.match_scores (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     suggestion_id UUID NOT NULL REFERENCES public.match_suggestions(id) ON DELETE CASCADE,
+    semantic_similarity REAL DEFAULT 0,
     skills_overlap INTEGER NOT NULL DEFAULT 0 CHECK (skills_overlap >= 0 AND skills_overlap <= 100),
     complementary_score INTEGER NOT NULL DEFAULT 0 CHECK (complementary_score >= 0 AND complementary_score <= 100),
     shared_interests INTEGER NOT NULL DEFAULT 0 CHECK (shared_interests >= 0 AND shared_interests <= 100),
-    availability_score INTEGER CHECK (availability_score >= 0 AND availability_score <= 100),
+    activity_match REAL DEFAULT 0,
+    overall_score REAL DEFAULT 0,
+    model_version TEXT DEFAULT 'rule-based-v1',
+    model_config JSONB DEFAULT '{}',
     overlapping_skills TEXT[] DEFAULT '{}',
     complementary_explanation TEXT,
     shared_interest_tags TEXT[] DEFAULT '{}',
     insights JSONB DEFAULT '[]',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    calculated_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- --------------------------------------------
@@ -443,6 +449,166 @@ CREATE TABLE IF NOT EXISTS public.embedding_pending_queue (
 );
 
 -- ============================================================================
+-- SECTION 2.5: NEW ML FEATURE TABLES (27-31)
+-- ============================================================================
+
+-- --------------------------------------------
+-- TABLE 27: feed_scores
+-- --------------------------------------------
+-- Cached personalized feed ranking scores
+CREATE TABLE IF NOT EXISTS public.feed_scores (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    post_id UUID NOT NULL REFERENCES public.posts(id) ON DELETE CASCADE,
+    score REAL NOT NULL DEFAULT 0,
+    semantic_score REAL DEFAULT 0,
+    engagement_score REAL DEFAULT 0,
+    recency_score REAL DEFAULT 0,
+    connection_boost REAL DEFAULT 1,
+    factors JSONB DEFAULT '{}',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    expires_at TIMESTAMPTZ,
+    CONSTRAINT unique_user_post_score UNIQUE (user_id, post_id)
+);
+
+-- --------------------------------------------
+-- TABLE 28: events
+-- --------------------------------------------
+-- Central event store for analytics and event processing
+CREATE TABLE IF NOT EXISTS public.events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_type TEXT NOT NULL,
+    event_category TEXT GENERATED ALWAYS AS (
+        CASE 
+            WHEN event_type LIKE 'post_%' THEN 'content'
+            WHEN event_type LIKE 'connection_%' THEN 'network'
+            WHEN event_type LIKE 'message_%' THEN 'communication'
+            WHEN event_type LIKE 'match_%' THEN 'matching'
+            WHEN event_type LIKE 'profile_%' THEN 'profile'
+            WHEN event_type LIKE 'notification_%' THEN 'notification'
+            ELSE 'other'
+        END
+    ) STORED,
+    actor_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+    target_id UUID,
+    target_type TEXT,
+    metadata JSONB DEFAULT '{}',
+    session_id UUID,
+    ip_address INET,
+    user_agent TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- --------------------------------------------
+-- TABLE 29: user_analytics
+-- --------------------------------------------
+-- Per-user engagement metrics and activity tracking
+CREATE TABLE IF NOT EXISTS public.user_analytics (
+    user_id UUID PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
+    profile_views_count INTEGER DEFAULT 0,
+    profile_views_last_7_days INTEGER DEFAULT 0,
+    profile_views_last_30_days INTEGER DEFAULT 0,
+    post_impressions_count INTEGER DEFAULT 0,
+    post_reactions_received INTEGER DEFAULT 0,
+    post_comments_received INTEGER DEFAULT 0,
+    posts_created_count INTEGER DEFAULT 0,
+    match_suggestions_count INTEGER DEFAULT 0,
+    matches_accepted_count INTEGER DEFAULT 0,
+    match_acceptance_rate REAL DEFAULT 0,
+    high_confidence_matches_count INTEGER DEFAULT 0,
+    connections_count INTEGER DEFAULT 0,
+    connection_requests_sent INTEGER DEFAULT 0,
+    connection_requests_received INTEGER DEFAULT 0,
+    mutual_connections_avg INTEGER DEFAULT 0,
+    messages_sent_count INTEGER DEFAULT 0,
+    messages_received_count INTEGER DEFAULT 0,
+    conversations_count INTEGER DEFAULT 0,
+    avg_response_time_minutes REAL DEFAULT 0,
+    ai_sessions_count INTEGER DEFAULT 0,
+    ai_messages_count INTEGER DEFAULT 0,
+    sessions_count INTEGER DEFAULT 0,
+    total_time_spent_minutes INTEGER DEFAULT 0,
+    last_active TIMESTAMPTZ,
+    last_active_ip INET,
+    engagement_score REAL DEFAULT 0,
+    influence_score REAL DEFAULT 0,
+    activity_streak_days INTEGER DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    last_calculated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- --------------------------------------------
+-- TABLE 30: platform_analytics
+-- --------------------------------------------
+-- Daily aggregated platform-wide metrics
+CREATE TABLE IF NOT EXISTS public.platform_analytics (
+    date DATE PRIMARY KEY,
+    dau INTEGER DEFAULT 0,
+    mau INTEGER DEFAULT 0,
+    wau INTEGER DEFAULT 0,
+    new_users INTEGER DEFAULT 0,
+    deleted_users INTEGER DEFAULT 0,
+    active_users_change REAL DEFAULT 0,
+    new_posts INTEGER DEFAULT 0,
+    total_posts INTEGER DEFAULT 0,
+    posts_with_media INTEGER DEFAULT 0,
+    avg_post_length INTEGER DEFAULT 0,
+    new_matches INTEGER DEFAULT 0,
+    total_matches INTEGER DEFAULT 0,
+    avg_match_score REAL DEFAULT 0,
+    high_confidence_matches INTEGER DEFAULT 0,
+    new_connections INTEGER DEFAULT 0,
+    total_connections INTEGER DEFAULT 0,
+    connection_acceptance_rate REAL DEFAULT 0,
+    pending_requests INTEGER DEFAULT 0,
+    new_messages INTEGER DEFAULT 0,
+    total_messages INTEGER DEFAULT 0,
+    new_conversations INTEGER DEFAULT 0,
+    avg_messages_per_conversation REAL DEFAULT 0,
+    total_profile_views INTEGER DEFAULT 0,
+    total_post_reactions INTEGER DEFAULT 0,
+    total_comments INTEGER DEFAULT 0,
+    avg_session_duration_minutes REAL DEFAULT 0,
+    ai_sessions_count INTEGER DEFAULT 0,
+    ai_messages_count INTEGER DEFAULT 0,
+    avg_session_length REAL DEFAULT 0,
+    content_flagged INTEGER DEFAULT 0,
+    content_approved INTEGER DEFAULT 0,
+    content_rejected INTEGER DEFAULT 0,
+    avg_moderation_time_seconds REAL DEFAULT 0,
+    api_requests_count INTEGER DEFAULT 0,
+    avg_api_latency_ms REAL DEFAULT 0,
+    error_count INTEGER DEFAULT 0,
+    error_rate REAL DEFAULT 0,
+    embeddings_generated INTEGER DEFAULT 0,
+    embeddings_pending INTEGER DEFAULT 0,
+    embeddings_failed INTEGER DEFAULT 0,
+    avg_embedding_time_ms REAL DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- --------------------------------------------
+-- TABLE 31: content_moderation_logs
+-- --------------------------------------------
+-- Audit trail for content moderation decisions
+CREATE TABLE IF NOT EXISTS public.content_moderation_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    content_type TEXT NOT NULL,
+    content_id UUID,
+    user_id UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+    action TEXT NOT NULL CHECK (action IN ('approved', 'flag_for_review', 'auto_reject')),
+    risk_score REAL DEFAULT 0,
+    toxicity_score REAL DEFAULT 0,
+    spam_score REAL DEFAULT 0,
+    nsfw_score REAL DEFAULT 0,
+    pii_detected BOOLEAN DEFAULT FALSE,
+    details JSONB DEFAULT '{}',
+    moderated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ============================================================================
 -- SECTION 3: INDEXES
 -- ============================================================================
 
@@ -555,6 +721,43 @@ CREATE INDEX IF NOT EXISTS idx_rate_limit_created ON public.embedding_rate_limit
 CREATE INDEX IF NOT EXISTS idx_pending_queue_user_id ON public.embedding_pending_queue(user_id);
 CREATE INDEX IF NOT EXISTS idx_pending_queue_status ON public.embedding_pending_queue(status);
 CREATE INDEX IF NOT EXISTS idx_pending_queue_created ON public.embedding_pending_queue(created_at);
+
+-- Feed scores indexes
+CREATE INDEX IF NOT EXISTS idx_feed_scores_user_id ON public.feed_scores(user_id);
+CREATE INDEX IF NOT EXISTS idx_feed_scores_user_score ON public.feed_scores(user_id, score DESC);
+CREATE INDEX IF NOT EXISTS idx_feed_scores_post_id ON public.feed_scores(post_id);
+CREATE INDEX IF NOT EXISTS idx_feed_scores_created_at ON public.feed_scores(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_feed_scores_expires_at ON public.feed_scores(expires_at) WHERE expires_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_feed_scores_active ON public.feed_scores(user_id, score DESC) 
+    WHERE expires_at IS NULL OR expires_at > NOW();
+
+-- Events indexes
+CREATE INDEX IF NOT EXISTS idx_events_actor_id ON public.events(actor_id);
+CREATE INDEX IF NOT EXISTS idx_events_actor_created ON public.events(actor_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_events_event_type ON public.events(event_type);
+CREATE INDEX IF NOT EXISTS idx_events_event_type_created ON public.events(event_type, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_events_target ON public.events(target_type, target_id);
+CREATE INDEX IF NOT EXISTS idx_events_category ON public.events(event_category);
+CREATE INDEX IF NOT EXISTS idx_events_created_at ON public.events(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_events_session ON public.events(session_id);
+CREATE INDEX IF NOT EXISTS idx_events_metadata_gin ON public.events USING GIN (metadata);
+CREATE INDEX IF NOT EXISTS idx_events_time_range ON public.events(created_at DESC, event_type);
+
+-- User analytics indexes
+CREATE INDEX IF NOT EXISTS idx_user_analytics_last_active ON public.user_analytics(last_active DESC);
+CREATE INDEX IF NOT EXISTS idx_user_analytics_engagement_score ON public.user_analytics(engagement_score DESC);
+CREATE INDEX IF NOT EXISTS idx_user_analytics_influence_score ON public.user_analytics(influence_score DESC);
+CREATE INDEX IF NOT EXISTS idx_user_analytics_match_rate ON public.user_analytics(match_acceptance_rate DESC);
+
+-- Platform analytics indexes
+CREATE INDEX IF NOT EXISTS idx_platform_analytics_date ON public.platform_analytics(date DESC);
+CREATE INDEX IF NOT EXISTS idx_platform_analytics_dau ON public.platform_analytics(dau DESC);
+CREATE INDEX IF NOT EXISTS idx_platform_analytics_new_users ON public.platform_analytics(new_users DESC);
+
+-- Content moderation logs indexes
+CREATE INDEX IF NOT EXISTS idx_moderation_logs_user_id ON public.content_moderation_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_moderation_logs_action ON public.content_moderation_logs(action);
+CREATE INDEX IF NOT EXISTS idx_moderation_logs_moderated_at ON public.content_moderation_logs(moderated_at DESC);
 
 -- ============================================================================
 -- SECTION 4: DROP EXISTING FUNCTIONS (for clean recreation)
@@ -1070,6 +1273,269 @@ GRANT EXECUTE ON FUNCTION public.queue_embedding_request(UUID, TEXT) TO authenti
 GRANT EXECUTE ON FUNCTION public.get_pending_queue_stats() TO authenticated;
 
 -- ============================================================================
+-- SECTION 5.5: NEW ML FEATURE FUNCTIONS
+-- ============================================================================
+
+-- --------------------------------------------
+-- FUNCTION: find_similar_users
+-- --------------------------------------------
+-- Find users with similar embeddings using pgvector
+CREATE OR REPLACE FUNCTION public.find_similar_users(
+    query_embedding VECTOR(384),
+    match_limit INTEGER DEFAULT 50,
+    exclude_user_id UUID DEFAULT NULL
+)
+RETURNS TABLE (
+    user_id UUID,
+    display_name TEXT,
+    headline TEXT,
+    avatar_url TEXT,
+    location TEXT,
+    similarity_score REAL,
+    profile_completion INTEGER,
+    is_online BOOLEAN
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        p.id as user_id,
+        p.display_name,
+        p.headline,
+        p.avatar_url,
+        p.location,
+        (1 - (pe.embedding <-> query_embedding)) as similarity_score,
+        p.profile_completion,
+        (p.last_active > NOW() - INTERVAL '5 minutes') as is_online
+    FROM profiles p
+    INNER JOIN profile_embeddings pe ON p.id = pe.user_id
+    WHERE p.id != COALESCE(exclude_user_id, p.id)
+        AND p.onboarding_completed = true
+        AND p.id NOT IN (
+            SELECT receiver_id FROM connections 
+            WHERE requester_id = exclude_user_id AND status = 'accepted'
+            UNION
+            SELECT requester_id FROM connections 
+            WHERE receiver_id = exclude_user_id AND status = 'accepted'
+        )
+        AND p.id NOT IN (
+            SELECT receiver_id FROM connections 
+            WHERE requester_id = exclude_user_id AND status = 'pending'
+            UNION
+            SELECT requester_id FROM connections 
+            WHERE receiver_id = exclude_user_id AND status = 'pending'
+        )
+        AND p.id NOT IN (
+            SELECT matched_user_id FROM match_suggestions
+            WHERE user_id = exclude_user_id 
+            AND created_at > NOW() - INTERVAL '30 days'
+        )
+    ORDER BY pe.embedding <-> query_embedding
+    LIMIT match_limit;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- --------------------------------------------
+-- FUNCTION: get_user_skills
+-- --------------------------------------------
+CREATE OR REPLACE FUNCTION public.get_user_skills(p_user_id UUID)
+RETURNS TABLE (
+    skill_id UUID,
+    name TEXT,
+    category TEXT,
+    proficiency_level TEXT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        us.id as skill_id,
+        s.name,
+        s.category,
+        us.proficiency_level
+    FROM user_skills us
+    INNER JOIN skills s ON us.skill_id = s.id
+    WHERE us.user_id = p_user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- --------------------------------------------
+-- FUNCTION: get_user_interests
+-- --------------------------------------------
+CREATE OR REPLACE FUNCTION public.get_user_interests(p_user_id UUID)
+RETURNS TABLE (
+    interest_id UUID,
+    name TEXT,
+    category TEXT
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        ui.id as interest_id,
+        i.name,
+        i.category
+    FROM user_interests ui
+    INNER JOIN interests i ON ui.interest_id = i.id
+    WHERE ui.user_id = p_user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- --------------------------------------------
+-- FUNCTION: calculate_skills_overlap
+-- --------------------------------------------
+CREATE OR REPLACE FUNCTION public.calculate_skills_overlap(
+    user1_id UUID,
+    user2_id UUID
+)
+RETURNS TABLE (
+    overlap_ratio REAL,
+    user1_skills TEXT[],
+    user2_skills TEXT[],
+    shared_skills TEXT[],
+    complementary_skills TEXT[]
+) AS $$
+DECLARE
+    user1_skill_ids UUID[];
+    user2_skill_ids UUID[];
+    shared_skill_ids UUID[];
+    all_skill_ids UUID[];
+BEGIN
+    SELECT ARRAY_AGG(skill_id) INTO user1_skill_ids
+    FROM user_skills WHERE user_id = user1_id;
+    
+    SELECT ARRAY_AGG(skill_id) INTO user2_skill_ids
+    FROM user_skills WHERE user_id = user2_id;
+    
+    IF user1_skill_ids IS NULL OR user2_skill_ids IS NULL THEN
+        overlap_ratio := 0;
+        user1_skills := ARRAY[]::TEXT[];
+        user2_skills := ARRAY[]::TEXT[];
+        shared_skills := ARRAY[]::TEXT[];
+        complementary_skills := ARRAY[]::TEXT[];
+        RETURN NEXT;
+        RETURN;
+    END IF;
+    
+    SELECT ARRAY(
+        SELECT UNNEST(user1_skill_ids)
+        INTERSECT
+        SELECT UNNEST(user2_skill_ids)
+    ) INTO shared_skill_ids;
+    
+    SELECT ARRAY(
+        SELECT UNNEST(user1_skill_ids)
+        UNION
+        SELECT UNNEST(user2_skill_ids)
+    ) INTO all_skill_ids;
+    
+    IF array_length(all_skill_ids, 1) > 0 THEN
+        overlap_ratio := array_length(shared_skill_ids, 1)::REAL / array_length(all_skill_ids, 1)::REAL;
+    ELSE
+        overlap_ratio := 0;
+    END IF;
+    
+    SELECT ARRAY_AGG(s.name) INTO user1_skills
+    FROM skills s WHERE s.id = ANY(user1_skill_ids);
+    
+    SELECT ARRAY_AGG(s.name) INTO user2_skills
+    FROM skills s WHERE s.id = ANY(user2_skill_ids);
+    
+    SELECT ARRAY_AGG(s.name) INTO shared_skills
+    FROM skills s WHERE s.id = ANY(shared_skill_ids);
+    
+    SELECT ARRAY_AGG(s.name) INTO complementary_skills
+    FROM skills s 
+    WHERE s.id = ANY(
+        ARRAY(
+            SELECT UNNEST(user1_skill_ids)
+            EXCEPT
+            SELECT UNNEST(user2_skill_ids)
+        )
+        UNION
+        ARRAY(
+            SELECT UNNEST(user2_skill_ids)
+            EXCEPT
+            SELECT UNNEST(user1_skill_ids)
+        )
+    );
+    
+    RETURN NEXT;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- --------------------------------------------
+-- FUNCTION: get_users_needing_matches
+-- --------------------------------------------
+CREATE OR REPLACE FUNCTION public.get_users_needing_matches()
+RETURNS TABLE (id UUID) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT DISTINCT p.id
+    FROM profiles p
+    WHERE p.onboarding_completed = true
+        AND p.id IN (SELECT user_id FROM profile_embeddings WHERE status = 'completed')
+        AND NOT EXISTS (
+            SELECT 1 FROM match_suggestions ms
+            WHERE ms.user_id = p.id
+                AND ms.created_at > NOW() - INTERVAL '7 days'
+        );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- --------------------------------------------
+-- FUNCTION: cleanup_old_match_suggestions
+-- --------------------------------------------
+CREATE OR REPLACE FUNCTION public.cleanup_old_match_suggestions(retention_days INTEGER DEFAULT 30)
+RETURNS VOID AS $$
+BEGIN
+    DELETE FROM match_scores
+    WHERE suggestion_id IN (
+        SELECT id FROM match_suggestions
+        WHERE created_at < NOW() - (retention_days || ' days')::INTERVAL
+    );
+    
+    DELETE FROM match_suggestions
+    WHERE created_at < NOW() - (retention_days || ' days')::INTERVAL;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- --------------------------------------------
+-- FUNCTION: get_user_match_stats
+-- --------------------------------------------
+CREATE OR REPLACE FUNCTION public.get_user_match_stats(p_user_id UUID)
+RETURNS TABLE (
+    total_suggestions INTEGER,
+    accepted_count INTEGER,
+    pending_count INTEGER,
+    avg_match_score REAL,
+    high_confidence_count INTEGER
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        COUNT(*)::INTEGER as total_suggestions,
+        COUNT(CASE WHEN c.status = 'accepted' THEN 1 END)::INTEGER as accepted_count,
+        COUNT(CASE WHEN c.status = 'pending' THEN 1 END)::INTEGER as pending_count,
+        AVG(ms.match_percentage)::REAL as avg_match_score,
+        COUNT(CASE WHEN ms.match_percentage >= 80 THEN 1 END)::INTEGER as high_confidence_count
+    FROM match_suggestions ms
+    LEFT JOIN connections c ON (
+        (c.requester_id = ms.user_id AND c.receiver_id = ms.matched_user_id) OR
+        (c.receiver_id = ms.user_id AND c.requester_id = ms.matched_user_id)
+    )
+    WHERE ms.user_id = p_user_id
+        AND ms.created_at > NOW() - INTERVAL '30 days';
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- Grant permissions for new functions
+GRANT EXECUTE ON FUNCTION public.find_similar_users(VECTOR, INTEGER, UUID) TO service_role;
+GRANT EXECUTE ON FUNCTION public.get_user_skills(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_user_interests(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.calculate_skills_overlap(UUID, UUID) TO service_role;
+GRANT EXECUTE ON FUNCTION public.get_users_needing_matches() TO service_role;
+GRANT EXECUTE ON FUNCTION public.cleanup_old_match_suggestions(INTEGER) TO service_role;
+GRANT EXECUTE ON FUNCTION public.get_user_match_stats(UUID) TO authenticated;
+
+-- ============================================================================
 -- SECTION 6: ROW LEVEL SECURITY (RLS)
 -- ============================================================================
 
@@ -1340,6 +1806,41 @@ CREATE POLICY "service_role_manage_pending_queue" ON public.embedding_pending_qu
 
 CREATE POLICY "users_view_own_pending_queue" ON public.embedding_pending_queue FOR SELECT USING ((SELECT auth.uid()) = user_id);
 
+-- --------------------------------------------
+-- FEED SCORES RLS
+-- --------------------------------------------
+CREATE POLICY "Users can view own feed scores" ON public.feed_scores FOR SELECT USING (user_id = (SELECT auth.uid()));
+
+CREATE POLICY "Service role can manage feed scores" ON public.feed_scores FOR ALL USING ((SELECT auth.jwt() ->> 'role') = 'service_role');
+
+-- --------------------------------------------
+-- EVENTS RLS
+-- --------------------------------------------
+CREATE POLICY "Users can view own events" ON public.events FOR SELECT USING (actor_id = (SELECT auth.uid()));
+
+CREATE POLICY "Service role can manage events" ON public.events FOR ALL USING ((SELECT auth.jwt() ->> 'role') = 'service_role');
+
+-- --------------------------------------------
+-- USER ANALYTICS RLS
+-- --------------------------------------------
+CREATE POLICY "Users can view own analytics" ON public.user_analytics FOR SELECT USING (user_id = (SELECT auth.uid()));
+
+CREATE POLICY "Users can update own analytics" ON public.user_analytics FOR UPDATE USING (user_id = (SELECT auth.uid())) WITH CHECK (user_id = (SELECT auth.uid()));
+
+CREATE POLICY "Service role can manage analytics" ON public.user_analytics FOR ALL USING ((SELECT auth.jwt() ->> 'role') = 'service_role');
+
+-- --------------------------------------------
+-- PLATFORM ANALYTICS RLS
+-- --------------------------------------------
+CREATE POLICY "Authenticated users can view platform analytics" ON public.platform_analytics FOR SELECT USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Service role can manage platform analytics" ON public.platform_analytics FOR ALL USING ((SELECT auth.jwt() ->> 'role') = 'service_role');
+
+-- --------------------------------------------
+-- CONTENT MODERATION LOGS RLS
+-- --------------------------------------------
+CREATE POLICY "Service role can manage moderation logs" ON public.content_moderation_logs FOR ALL USING ((SELECT auth.jwt() ->> 'role') = 'service_role');
+
 -- ============================================================================
 -- SECTION 7: REALTIME
 -- ============================================================================
@@ -1373,6 +1874,11 @@ BEGIN
     ALTER PUBLICATION supabase_realtime ADD TABLE public.embedding_dead_letter_queue;
     ALTER PUBLICATION supabase_realtime ADD TABLE public.embedding_rate_limits;
     ALTER PUBLICATION supabase_realtime ADD TABLE public.embedding_pending_queue;
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.feed_scores;
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.events;
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.user_analytics;
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.platform_analytics;
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.content_moderation_logs;
 EXCEPTION
     WHEN duplicate_object THEN NULL;
 END $$;
@@ -1555,14 +2061,30 @@ COMMENT ON TABLE public.embedding_pending_queue IS 'Queue for pending embedding 
 -- SETUP COMPLETE
 -- ============================================================================
 -- 
--- ✅ 26 Tables created
--- ✅ 60+ Indexes created (including HNSW for vector search)
--- ✅ 20+ Triggers created
--- ✅ 50+ RLS policies created
--- ✅ 15+ Helper functions created
+-- ✅ 31 Tables created (26 core + 5 ML features)
+-- ✅ 80+ Indexes created (including HNSW for vector search)
+-- ✅ 25+ Triggers created
+-- ✅ 60+ RLS policies created
+-- ✅ 25+ Helper functions created
 -- ✅ 3 Storage buckets configured
 -- ✅ All tables added to realtime
 -- ✅ SECURITY: All functions have SECURITY DEFINER SET search_path = public
+--
+-- ML FEATURES (NEW):
+-- - feed_scores: Personalized feed ranking with Thompson Sampling
+-- - events: Central event store for real-time processing
+-- - user_analytics: Per-user engagement metrics
+-- - platform_analytics: Daily aggregated platform metrics
+-- - content_moderation_logs: AI content moderation audit trail
+--
+-- MATCH SYSTEM:
+-- - find_similar_users: pgvector cosine similarity search
+-- - get_user_skills: User skills retrieval
+-- - get_user_interests: User interests retrieval
+-- - calculate_skills_overlap: Jaccard similarity for skills
+-- - get_users_needing_matches: Batch job query
+-- - cleanup_old_match_suggestions: Maintenance (30-day retention)
+-- - get_user_match_stats: User match statistics
 --
 -- EMBEDDING SYSTEM:
 -- - profile_embeddings: 384-dimension vectors with HNSW index
