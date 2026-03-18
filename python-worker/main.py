@@ -25,6 +25,9 @@ from embedding_validator import EmbeddingValidator
 from services.match_generator import MatchGenerator
 from services.notification_engine import NotificationEngine
 from services.activity_tracker import ActivityTracker
+from services.content_moderator import ContentModerator
+from services.ai_mentor_processor import AIMentorProcessor
+from services.analytics_aggregator import AnalyticsAggregator
 
 load_dotenv()
 
@@ -38,6 +41,11 @@ logger = logging.getLogger(__name__)
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
+
+# External API keys (optional - services have fallbacks)
+PERSPECTIVE_API_KEY = os.getenv("PERSPECTIVE_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+HUGGING_FACE_TOKEN = os.getenv("HUGGING_FACE_TOKEN")
 
 
 # Validate required environment variables
@@ -1125,6 +1133,183 @@ async def cleanup_notifications(request: NotificationCleanupRequest):
     except Exception as e:
         logger.error(f"Error cleaning up notifications: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ============================================================================
+# MISSING API ENDPOINTS - IMPLEMENTATION COMPLETE
+# ============================================================================
+
+
+# --------------------------------------------
+# Content Moderation Endpoint
+# --------------------------------------------
+class ModerateRequest(BaseModel):
+    content: str = Field(..., description="Content to moderate")
+    content_type: str = Field(
+        default="post", description="Type of content (post, comment, message)"
+    )
+
+
+class ModerateResponse(BaseModel):
+    approved: bool
+    flag_for_review: bool
+    auto_reject: bool
+    risk_score: float
+    action: str
+    details: dict
+    error: Optional[str] = None
+
+
+@app.post("/api/moderate", response_model=ModerateResponse)
+async def moderate_content_endpoint(request: ModerateRequest):
+    """
+    Moderate content for toxicity, spam, NSFW, and PII.
+    Uses Google Perspective API with fallback to keyword-based detection.
+    """
+    try:
+        moderator = ContentModerator(
+            SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, PERSPECTIVE_API_KEY
+        )
+        result = await moderator.moderate_content(
+            content=request.content, content_type=request.content_type
+        )
+
+        logger.info(
+            f"Content moderation: {result['action']} (risk: {result['risk_score']:.2f})"
+        )
+
+        return ModerateResponse(**result)
+
+    except Exception as e:
+        logger.error(f"Error moderating content: {str(e)}")
+        # Return safe fallback - reject on error
+        return ModerateResponse(
+            approved=False,
+            flag_for_review=False,
+            auto_reject=True,
+            risk_score=1.0,
+            action="auto_reject",
+            details={"error": str(e)},
+            error=str(e),
+        )
+
+
+# --------------------------------------------
+# AI Mentor Message Endpoint
+# --------------------------------------------
+class MentorMessageRequest(BaseModel):
+    user_id: str = Field(..., description="User ID")
+    message: str = Field(..., description="User message to AI mentor")
+    session_id: Optional[str] = Field(
+        None, description="Existing session ID (optional)"
+    )
+
+
+class MentorMessageResponse(BaseModel):
+    response: str
+    action_items: List[dict]
+    session_id: str
+    message_id: Optional[str]
+    suggested_next_steps: List[str]
+    error: Optional[str] = None
+
+
+@app.post("/api/ai-mentor/message", response_model=MentorMessageResponse)
+async def ai_mentor_message(request: MentorMessageRequest):
+    """
+    Send message to AI mentor and get response.
+    Uses Google Gemini API with fallback to predefined responses.
+    """
+    try:
+        processor = AIMentorProcessor(
+            SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GEMINI_API_KEY
+        )
+        result = await processor.generate_response(
+            user_id=request.user_id,
+            message=request.message,
+            session_id=request.session_id,
+        )
+
+        logger.info(f"AI mentor response generated for user {request.user_id}")
+
+        return MentorMessageResponse(**result)
+
+    except Exception as e:
+        logger.error(f"Error generating AI mentor response: {str(e)}")
+        # Return helpful fallback response
+        return MentorMessageResponse(
+            response="I apologize, but I'm experiencing technical difficulties at the moment. Please try again in a few minutes. In the meantime, consider reviewing your profile and exploring potential matches!",
+            action_items=[],
+            session_id=request.session_id or "",
+            message_id=None,
+            suggested_next_steps=[
+                "Review your profile completeness",
+                "Explore your match suggestions",
+                "Update your skills and interests",
+            ],
+            error=str(e),
+        )
+
+
+# --------------------------------------------
+# Analytics Daily Aggregation Endpoint
+# --------------------------------------------
+class AnalyticsDailyRequest(BaseModel):
+    date: Optional[str] = Field(
+        None, description="Date in ISO format (YYYY-MM-DD), defaults to today"
+    )
+
+
+class AnalyticsDailyResponse(BaseModel):
+    status: str
+    date: str
+    metrics: dict
+    error: Optional[str] = None
+
+
+@app.post("/api/analytics/daily", response_model=AnalyticsDailyResponse)
+async def aggregate_daily_analytics(request: AnalyticsDailyRequest):
+    """
+    Aggregate daily platform analytics.
+    Calculates DAU, MAU, WAU, and other platform metrics.
+    """
+    try:
+        aggregator = AnalyticsAggregator(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+
+        # Parse date if provided
+        target_date = None
+        if request.date:
+            try:
+                target_date = datetime.fromisoformat(
+                    request.date.replace("Z", "+00:00")
+                )
+            except ValueError:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Invalid date format. Use ISO format (YYYY-MM-DD)",
+                )
+
+        result = await aggregator.aggregate_daily_stats(date=target_date)
+
+        if result.get("status") == "error":
+            raise HTTPException(
+                status_code=500, detail=result.get("error", "Aggregation failed")
+            )
+
+        logger.info(f"Daily analytics aggregated for {result.get('date')}")
+
+        return AnalyticsDailyResponse(**result)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error aggregating daily analytics: {str(e)}")
+        return AnalyticsDailyResponse(
+            status="error",
+            date=request.date or datetime.now().isoformat(),
+            metrics={},
+            error=str(e),
+        )
 
 
 @app.exception_handler(Exception)
