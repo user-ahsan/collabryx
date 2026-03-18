@@ -3,6 +3,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile } from '@/types/database.types'
+import { generateUserEmbedding } from '@/lib/services/embeddings'
+import { TOAST_MESSAGES } from '@/lib/constants/toast-messages'
+import { toast } from 'sonner'
 
 // ===========================================
 // PROFILE HOOK
@@ -80,8 +83,37 @@ export function useUpdateProfile() {
       if (error) throw error
       return data
     },
-    onSuccess: () => {
+    onSuccess: async (data) => {
       queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEYS.current() })
+      
+      // Trigger embedding generation after successful profile update
+      if (data && 'id' in data) {
+        try {
+          const result = await generateUserEmbedding(data.id)
+          
+          if (!result.success && result.error === 'RateLimitError') {
+            // Show rate limit warning but don't block profile update
+            toast.warning(TOAST_MESSAGES.RATE_LIMIT.EMBEDDING.EXCEEDED, {
+              description: result.retryAfter 
+                ? TOAST_MESSAGES.RATE_LIMIT.EMBEDDING.RETRY_AFTER(Math.ceil(result.retryAfter / 60))
+                : undefined,
+              duration: 5000,
+            })
+          } else if (!result.success) {
+            // Log embedding failure but don't show error to user (profile update succeeded)
+            console.warn('Embedding generation failed after profile update:', result.error)
+          } else {
+            // Success - show info toast
+            toast.info('Profile updated', {
+              description: 'Your profile embedding is being refreshed for better matches.',
+              duration: 3000,
+            })
+          }
+        } catch (error) {
+          // Silently handle embedding errors (don't block profile update)
+          console.error('Failed to trigger embedding after profile update:', error)
+        }
+      }
     },
   })
 }
