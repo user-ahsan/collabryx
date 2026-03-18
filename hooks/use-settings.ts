@@ -2,11 +2,11 @@ import { create } from 'zustand'
 
 interface SettingsState {
     isOpen: boolean
-    activeTab: 'profile' | 'skills' | 'experience' | 'account' | 'notifications' | 'billing'
-    openSettings: (tab?: 'profile' | 'skills' | 'experience' | 'account' | 'notifications' | 'billing') => void
+    activeTab: 'profile' | 'skills' | 'experience' | 'account' | 'notifications' | 'privacy' | 'billing'
+    openSettings: (tab?: 'profile' | 'skills' | 'experience' | 'account' | 'notifications' | 'privacy' | 'billing') => void
     closeSettings: () => void
     setIsOpen: (isOpen: boolean) => void
-    setActiveTab: (tab: 'profile' | 'skills' | 'experience' | 'account' | 'notifications' | 'billing') => void
+    setActiveTab: (tab: 'profile' | 'skills' | 'experience' | 'account' | 'notifications' | 'privacy' | 'billing') => void
 }
 
 export const useSettings = create<SettingsState>((set) => ({

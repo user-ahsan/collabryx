@@ -16,11 +16,13 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { User, Shield, Bell, CreditCard, Loader2, Code2, Briefcase } from "lucide-react"
+import { User, Shield, Bell, CreditCard, Loader2, Code2, Briefcase, Lock } from "lucide-react"
 import { ProfileSettingsTab } from "./profile-settings-tab"
 import { SkillsInterestsSettingsTab } from "./skills-settings-tab"
 import { ExperienceProjectsSettingsTab } from "./experience-projects-settings-tab"
 import { NotificationPreferencesForm } from "./notification-preferences-form"
+import { PrivacySettingsForm } from "./privacy-settings-form"
+import { BlockedUsersList } from "./blocked-users-list"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
 
@@ -33,6 +35,8 @@ export function SettingsDialog() {
     // User data state
     const [userId, setUserId] = useState<string | null>(null)
     const [email, setEmail] = useState("")
+
+    type SettingsTab = 'profile' | 'skills' | 'experience' | 'account' | 'notifications' | 'privacy' | 'billing'
 
     const supabase = createClient()
 
@@ -100,7 +104,7 @@ export function SettingsDialog() {
                     <div className="flex flex-1 overflow-hidden relative z-10">
                         <Tabs
                             value={activeTab}
-                            onValueChange={(val) => setActiveTab(val as "profile" | "skills" | "experience" | "account" | "notifications" | "billing")}
+                            onValueChange={(val) => setActiveTab(val as SettingsTab)}
                             className="flex flex-col md:flex-row w-full"
                         >
                             {/* Sidebar inside Dialog - Desktop: Vertical, Mobile: Horizontal Scroll */}
@@ -145,6 +149,14 @@ export function SettingsDialog() {
                                     )}>
                                         <Bell className="h-4 w-4 shrink-0" />
                                         <span className="hidden md:inline">Notifications</span>
+                                    </TabsTrigger>
+                                    <TabsTrigger value="privacy" className={cn(
+                                        "justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap",
+                                        glass("tabActive"),
+                                        glass("tabInactive")
+                                    )}>
+                                        <Lock className="h-4 w-4 shrink-0" />
+                                        <span className="hidden md:inline">Privacy</span>
                                     </TabsTrigger>
                                     <TabsTrigger value="billing" className={cn(
                                         "justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap",
@@ -211,6 +223,11 @@ export function SettingsDialog() {
 
                                         <TabsContent value="notifications" className="mt-0">
                                             {userId ? <NotificationPreferencesForm userId={userId} /> : null}
+                                        </TabsContent>
+
+                                        <TabsContent value="privacy" className="mt-0 space-y-6">
+                                            {userId ? <PrivacySettingsForm userId={userId} /> : null}
+                                            {userId ? <BlockedUsersList userId={userId} /> : null}
                                         </TabsContent>
 
                                         <TabsContent value="billing" className="mt-0">
