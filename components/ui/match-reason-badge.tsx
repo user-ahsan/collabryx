@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 
 export type MatchReasonType = "skill" | "interest" | "availability" | "stage" | "complementary"
 
@@ -9,12 +10,12 @@ interface MatchReasonBadgeProps {
     className?: string
 }
 
-const reasonColors: Record<MatchReasonType, string> = {
-    skill: "bg-muted/50 text-muted-foreground border-border",
-    interest: "bg-muted/50 text-muted-foreground border-border",
-    availability: "bg-muted/50 text-muted-foreground border-border",
-    stage: "bg-muted/50 text-muted-foreground border-border",
-    complementary: "bg-muted/50 text-muted-foreground border-border",
+const reasonStyles: Record<MatchReasonType, string> = {
+    skill: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+    interest: "bg-green-500/10 text-green-400 border-green-500/20",
+    availability: "bg-purple-500/10 text-purple-400 border-purple-500/20",
+    stage: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+    complementary: "bg-pink-500/10 text-pink-400 border-pink-500/20",
 }
 
 const reasonIcons: Record<MatchReasonType, string> = {
@@ -30,8 +31,8 @@ export function MatchReasonBadge({ type, label, className }: MatchReasonBadgePro
         <Badge
             variant="outline"
             className={cn(
-                "text-[10px] px-2 py-0.5 font-medium border",
-                reasonColors[type],
+                "text-[10px] px-2 py-0.5 font-medium border backdrop-blur-sm",
+                reasonStyles[type],
                 className
             )}
         >

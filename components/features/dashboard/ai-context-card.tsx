@@ -1,8 +1,10 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Sparkles, Settings2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 import { GlassCard } from "@/components/shared/glass-card"
 
 interface AIContextCardProps {
@@ -30,18 +32,25 @@ export function AIContextCard({
             </div>
             <div className="flex items-center gap-1.5 flex-wrap">
                 {contexts.map((context, index) => (
-                    <span
+                    <Badge
                         key={index}
-                        className="inline-flex items-center px-2.5 py-1.5 rounded-full text-xs font-medium bg-primary/10 text-primary border border-primary/15"
+                        variant="secondary"
+                        className={cn(
+                            "px-2.5 py-1.5 text-xs font-medium rounded-full",
+                            glass("badge")
+                        )}
                     >
                         {context}
-                    </span>
+                    </Badge>
                 ))}
             </div>
             <Button
                 variant="ghost"
                 size="sm"
-                className="h-8 px-3 text-sm text-muted-foreground hover:text-foreground rounded-full ml-auto"
+                className={cn(
+                    "h-8 px-3 text-sm text-muted-foreground rounded-full ml-auto",
+                    glass("buttonGhost")
+                )}
                 onClick={onEditContext}
             >
                 <Settings2 className="h-3 w-3 mr-1" />

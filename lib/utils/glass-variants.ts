@@ -31,8 +31,9 @@ export const glassVariants = {
   /**
    * TIER 2: Dialog/Modal Overlay Glass
    * For: DialogContent, Sheet, Modal overlays, Popovers
+   * Matches postcard background: bg-blue-950/[0.05]
    */
-  overlay: "bg-card/95 backdrop-blur-2xl border-blue-500/20 shadow-[0_8px_40px_0_rgba(0,0,0,0.5),0_0_60px_-20px_rgba(59,130,246,0.1)]",
+  overlay: "bg-blue-950/[0.05] backdrop-blur-2xl border-blue-500/20 shadow-[0_8px_40px_0_rgba(0,0,0,0.5),0_0_60px_-20px_rgba(59,130,246,0.1)]",
   
   /**
    * TIER 2.5: Dialog Highlights (decorative elements for dialogs)
@@ -90,6 +91,18 @@ export const glassVariants = {
    * For: Primary buttons with subtle glass overlay
    */
   buttonPrimary: "bg-primary shadow-[0_4px_32px_0_rgba(59,130,246,0.06)] hover:shadow-[0_8px_40px_0_rgba(59,130,246,0.12)] transition-all",
+  
+  /**
+   * TIER 5.8: Button Primary Glow
+   * For: Primary buttons with signature blue glow
+   */
+  buttonPrimaryGlow: "shadow-[0_4px_20px_0_rgba(59,130,246,0.3)] hover:shadow-[0_6px_28px_0_rgba(59,130,246,0.4)] transition-all",
+  
+  /**
+   * TIER 5.9: Button Secondary Glow
+   * For: Secondary buttons with subtle glow
+   */
+  buttonSecondaryGlow: "shadow-[0_2px_12px_0_rgba(0,0,0,0.1)] hover:shadow-[0_4px_16px_0_rgba(0,0,0,0.15)] transition-all",
 
   /**
    * TIER 6: Media Overlay Glass

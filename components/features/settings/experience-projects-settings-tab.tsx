@@ -7,10 +7,13 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
 import { Loader2, Plus, Trash2, Link as LinkIcon } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { validateExperienceProjectsSettings } from "@/lib/validations/settings"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 
 export function ExperienceProjectsSettingsTab({ userId }: { userId: string }) {
     const supabase = createClient()
@@ -209,20 +212,26 @@ const [experiences, setExperiences] = useState<Experience[]>([])
     }
 
     return (
-        <Card className="border-none shadow-none bg-transparent">
+        <Card className={cn("border-none shadow-none bg-transparent", glass("cardInner"))}>
             <CardHeader className="px-0 pt-0">
-                <CardTitle>Experience & Projects</CardTitle>
-                <CardDescription>Showcase your professional timeline and technical projects to matches.</CardDescription>
+                <CardTitle className="text-lg font-semibold">Experience & Projects</CardTitle>
+                <CardDescription className="text-sm">Showcase your professional timeline and technical projects to matches.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-8 px-0 pb-0">
+            <CardContent className="space-y-6 px-0 pb-0">
                 {error && <div className="text-sm font-medium text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>}
                 {successMsg && <div className="text-sm font-medium text-emerald-500 bg-emerald-500/10 p-3 rounded-md">{successMsg}</div>}
 
                 {/* Experiences Section */}
                 <div className="space-y-4">
-                    <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                    <div className="flex items-center justify-between">
                         <Label className="text-base font-semibold">Work Experience</Label>
-                        <Button type="button" variant="ghost" size="sm" onClick={handleAddExperience} className="hover:bg-primary/20 hover:text-primary">
+                        <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={handleAddExperience}
+                            className={cn("hover:bg-primary/20 hover:text-primary", glass("buttonGhost"))}
+                        >
                             <Plus className="w-4 h-4 mr-2" /> Add Experience
                         </Button>
                     </div>
@@ -230,7 +239,10 @@ const [experiences, setExperiences] = useState<Experience[]>([])
                     {experiences.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No experiences added yet.</p>}
 
                     {experiences.map((exp, i) => (
-                        <div key={exp.id || i} className="p-4 rounded-xl border border-white/10 bg-white/5 relative group">
+                        <div key={exp.id || i} className={cn(
+                            "p-4 rounded-xl relative group",
+                            glass("subtle")
+                        )}>
                             <Button
                                 type="button"
                                 variant="ghost"
@@ -248,7 +260,7 @@ const [experiences, setExperiences] = useState<Experience[]>([])
                                         <Input
                                             value={exp.title}
                                             onChange={e => updateExperience(exp.id, 'title', e.target.value)}
-                                            className="bg-white/5 border-white/10 focus:border-primary/50"
+                                            className={cn("focus:border-primary/50", glass("input"))}
                                             placeholder="e.g. Frontend Developer"
                                         />
                                     </div>
@@ -257,7 +269,7 @@ const [experiences, setExperiences] = useState<Experience[]>([])
                                         <Input
                                             value={exp.company}
                                             onChange={e => updateExperience(exp.id, 'company', e.target.value)}
-                                            className="bg-white/5 border-white/10 focus:border-primary/50"
+                                            className={cn("focus:border-primary/50", glass("input"))}
                                             placeholder="e.g. Acme Corp"
                                         />
                                     </div>
@@ -267,7 +279,7 @@ const [experiences, setExperiences] = useState<Experience[]>([])
                                     <Textarea
                                         value={exp.description || ''}
                                         onChange={e => updateExperience(exp.id, 'description', e.target.value)}
-                                        className="h-20 bg-white/5 border-white/10 focus:border-primary/50"
+                                        className={cn("min-h-[80px] focus:border-primary/50", glass("input"))}
                                         placeholder="What did you do?"
                                     />
                                 </div>
@@ -277,10 +289,17 @@ const [experiences, setExperiences] = useState<Experience[]>([])
                 </div>
 
                 {/* Projects Section */}
-                <div className="space-y-4 pt-4 border-t border-white/10">
-                    <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                <div className="space-y-4 pt-4">
+                    <Separator className={glass("divider")} />
+                    <div className="flex items-center justify-between">
                         <Label className="text-base font-semibold">Projects</Label>
-                        <Button type="button" variant="ghost" size="sm" onClick={handleAddProject} className="hover:bg-primary/20 hover:text-primary">
+                        <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={handleAddProject}
+                            className={cn("hover:bg-primary/20 hover:text-primary", glass("buttonGhost"))}
+                        >
                             <Plus className="w-4 h-4 mr-2" /> Add Project
                         </Button>
                     </div>
@@ -288,7 +307,10 @@ const [experiences, setExperiences] = useState<Experience[]>([])
                     {projects.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No projects added yet.</p>}
 
                     {projects.map((proj, i) => (
-                        <div key={proj.id || i} className="p-4 rounded-xl border border-white/10 bg-white/5 relative group">
+                        <div key={proj.id || i} className={cn(
+                            "p-4 rounded-xl relative group",
+                            glass("subtle")
+                        )}>
                             <Button
                                 type="button"
                                 variant="ghost"
@@ -306,7 +328,7 @@ const [experiences, setExperiences] = useState<Experience[]>([])
                                         <Input
                                             value={proj.title}
                                             onChange={e => updateProject(proj.id, 'title', e.target.value)}
-                                            className="bg-white/5 border-white/10 focus:border-primary/50"
+                                            className={cn("focus:border-primary/50", glass("input"))}
                                             placeholder="e.g. HealthTracker App"
                                         />
                                     </div>
@@ -317,7 +339,7 @@ const [experiences, setExperiences] = useState<Experience[]>([])
                                             <Input
                                                 value={proj.url || ''}
                                                 onChange={e => updateProject(proj.id, 'url', e.target.value)}
-                                                className="pl-9 bg-white/5 border-white/10 focus:border-primary/50"
+                                                className={cn("pl-9 focus:border-primary/50", glass("input"))}
                                                 placeholder="https://..."
                                             />
                                         </div>
@@ -328,7 +350,7 @@ const [experiences, setExperiences] = useState<Experience[]>([])
                                     <Textarea
                                         value={proj.description || ''}
                                         onChange={e => updateProject(proj.id, 'description', e.target.value)}
-                                        className="h-20 bg-white/5 border-white/10 focus:border-primary/50"
+                                        className={cn("min-h-[80px] focus:border-primary/50", glass("input"))}
                                         placeholder="What is this project about?"
                                     />
                                 </div>
@@ -344,7 +366,11 @@ const [experiences, setExperiences] = useState<Experience[]>([])
                     ))}
                 </div>
 
-                <Button onClick={handleSave} disabled={isSaving} className="mt-4">
+                <Button 
+                    onClick={handleSave} 
+                    disabled={isSaving} 
+                    className={cn("mt-4", glass("buttonPrimary"), glass("buttonPrimaryGlow"))}
+                >
                     {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
                     {isSaving ? "Saving..." : "Save Changes"}
                 </Button>

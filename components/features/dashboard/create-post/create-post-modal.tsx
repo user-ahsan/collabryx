@@ -10,13 +10,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { ImageIcon, Calendar, FileText, Smile, X, Loader2 } from "lucide-react"
+import { ImageIcon, Calendar, FileText, Smile, Loader2, Link2 } from "lucide-react"
 import { IntentPrompt } from "./intent-prompt"
-import { toast } from "sonner"
-import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
-import { getFileCategory, validateImage, validateDocument } from "@/lib/utils/file-validation"
+import { useAttachmentUploadPrePost } from "@/hooks/use-post-attachments"
+import { PostAttachmentUpload } from "@/components/features/posts/post-attachment-upload"
 
 const EMOJIS = [
     { char: "😀", label: "Smile" }, { char: "😂", label: "Laugh" }, { char: "❤️", label: "Love" },
@@ -32,12 +31,6 @@ const postSchema = z.object({
 
 type PostFormValues = z.infer<typeof postSchema>
 
-interface MediaFile {
-    file: File
-    preview: string
-    type: 'image' | 'video'
-}
-
 // Temporary mock mutation since Supabase fetching is isolated to feed right now
 const createPostMock = async (data: Record<string, unknown>) => {
     return new Promise((resolve) => setTimeout(() => resolve(data), 1200))
@@ -45,7 +38,6 @@ const createPostMock = async (data: Record<string, unknown>) => {
 
 export function CreatePostModal() {
     const [open, setOpen] = useState(false)
-    const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([])
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     const {
@@ -61,13 +53,22 @@ export function CreatePostModal() {
     })
 
     const contentValue = useWatch({ name: "content", control })
+    
+    // Use the new attachment upload hook
+    const {
+        files: mediaFiles,
+        previews: mediaPreviews,
+        handleFileSelect,
+        removeFile,
+        clearFiles
+    } = useAttachmentUploadPrePost()
 
     const { mutate, isPending } = useMutation({
         mutationFn: createPostMock,
         onSuccess: () => {
             // Optimistically update the feed cache if implemented, or invalidate
             reset()
-            setMediaFiles([])
+            clearFiles()
             setOpen(false)
         }
     })
@@ -75,62 +76,23 @@ export function CreatePostModal() {
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             const files = Array.from(e.target.files)
-            const validFiles: MediaFile[] = []
-
-            for (const file of files) {
-                // Validate file
-                const category = getFileCategory(file.type)
-                
-                if (category === "image") {
-                    const validation = validateImage(file, { maxSize: 50 * 1024 * 1024 }) // 50MB for posts
-                    if (!validation.valid) {
-                        toast.error(`"${file.name}": ${validation.error}`)
-                        continue
-                    }
-                } else if (category === "video") {
-                    const sizeValidation = validateImage(file, { maxSize: 50 * 1024 * 1024 })
-                    if (!sizeValidation.valid) {
-                        toast.error(`"${file.name}": ${sizeValidation.error}`)
-                        continue
-                    }
-                } else if (category === "document") {
-                    const validation = validateDocument(file)
-                    if (!validation.valid) {
-                        toast.error(`"${file.name}": ${validation.error}`)
-                        continue
-                    }
-                } else {
-                    toast.error(`"${file.name}": Unsupported file type`)
-                    continue
-                }
-
-                validFiles.push({
-                    file,
-                    preview: URL.createObjectURL(file),
-                    type: (file.type.startsWith('video') ? 'video' : 'image') as 'image' | 'video'
-                })
-            }
-
-            if (validFiles.length > 0) {
-                setMediaFiles(prev => [...prev, ...validFiles])
-            }
+            handleFileSelect(files)
         }
         if (fileInputRef.current) fileInputRef.current.value = ''
     }
 
     const handleRemoveMedia = (index: number) => {
-        setMediaFiles(prev => {
-            const newFiles = [...prev]
-            URL.revokeObjectURL(newFiles[index].preview)
-            newFiles.splice(index, 1)
-            return newFiles
-        })
+        removeFile(index)
     }
 
     const onSubmit = (data: PostFormValues) => {
         mutate({
             ...data,
-            mediaFiles,
+            mediaFiles: mediaFiles.map((file, index) => ({
+                file,
+                preview: mediaPreviews[index],
+                type: file.type.startsWith('video') ? 'video' as const : 'image' as const
+            })),
             // eslint-disable-next-line react-hooks/purity
             id: Date.now(),
             author: "Maria Rodriguez",
@@ -164,18 +126,21 @@ export function CreatePostModal() {
                     </div>
                 </div>
             </DialogTrigger>
-            <DialogContent className={cn(
-                "sm:max-w-[600px] p-0 gap-0 overflow-hidden sm:rounded-2xl",
-                glass("overlay")
-            )}>
-                <DialogHeader className={cn("px-5 py-4 border-b", glass("divider"))}>
+            <DialogContent 
+                className={cn(
+                    "sm:max-w-[600px] p-0 gap-0 overflow-hidden sm:rounded-2xl",
+                    "bg-blue-950/[0.05] backdrop-blur-2xl"
+                )}
+                showDecorations={true}
+            >
+                <DialogHeader className={cn("px-5 py-4", glass("divider"))}>
                     <DialogTitle className="text-lg font-bold">Create Post</DialogTitle>
                     <DialogDescription className="sr-only">
                         Share your updates, projects, or look for teammates with the community.
                     </DialogDescription>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col">
+                <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col relative z-10">
                     <div className="p-5 max-h-[60vh] overflow-y-auto no-scrollbar">
                         <div className="flex gap-4 items-start mb-4">
                             <Avatar className="h-10 w-10 ring-2 ring-border shadow-sm shrink-0 mt-1">
@@ -193,75 +158,92 @@ export function CreatePostModal() {
 
                         <Textarea
                             placeholder="What are you trying to build?"
-                            className="w-full resize-none border-none bg-transparent focus-visible:ring-0 min-h-[120px] text-lg lg:text-xl p-0 pl-4 placeholder:text-muted-foreground leading-relaxed"
+                            className={cn(
+                                "w-full resize-none border-none bg-transparent focus-visible:ring-0 min-h-[120px] text-lg lg:text-xl p-0 pl-4 placeholder:text-muted-foreground leading-relaxed",
+                                glass("input")
+                            )}
                             {...register("content")}
                         />
                         {errors.content && (
                             <p className="text-red-500 text-sm mt-1">{errors.content.message}</p>
                         )}
 
-                        {mediaFiles.length > 0 && (
-                            <div className="flex gap-2 overflow-x-auto py-3 mt-2">
-                                {mediaFiles.map((media, index) => (
-                                    <div key={index} className="relative flex-shrink-0 group">
-                                        {media.type === 'image' ? (
-                                            <Image src={media.preview} alt="preview" width={128} height={128} unoptimized className="h-32 w-32 object-cover rounded-xl border border-white/10 shadow-sm" />
-                                        ) : (
-                                            <video src={media.preview} className="h-32 w-32 object-cover rounded-xl border border-white/10 shadow-sm" />
-                                        )}
-                                        <button
-                                            type="button"
-                                            onClick={() => handleRemoveMedia(index)}
-                                            className="absolute top-2 right-2 bg-black/50 hover:bg-destructive text-white rounded-full p-1.5 backdrop-blur-md transition-colors"
-                                        >
-                                            <X className="h-3 w-3" />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                        {/* Use the new attachment upload component */}
+                        <div className="mt-4">
+                            <PostAttachmentUpload
+                                onFilesChange={handleFileSelect}
+                                maxFiles={10}
+                            />
+                        </div>
                     </div>
 
-                    <div className={cn("p-4 border-t", glass("divider"))}>
+                    <div className={cn("p-4", glass("divider"))}>
                         <div className="flex items-center justify-between mb-4">
                             <span className="text-sm font-semibold text-muted-foreground pl-1">Add to your post</span>
                             <div className="flex items-center gap-1">
-                                <input
-                                    type="file"
-                                    ref={fileInputRef}
-                                    className="hidden"
-                                    accept="image/*,video/*"
-                                    multiple
-                                    onChange={handleFileChange}
-                                />
                                 <Button
                                     type="button"
                                     variant="ghost"
                                     size="icon"
-                                    className="text-blue-500 hover:text-blue-600 hover:bg-blue-500/10 rounded-full"
+                                    className={cn(
+                                        "rounded-full text-blue-400 hover:text-blue-300",
+                                        glass("buttonGhost")
+                                    )}
                                     onClick={() => fileInputRef.current?.click()}
+                                    disabled={mediaFiles.length >= 10}
+                                    title="Add images or videos"
                                 >
                                     <ImageIcon className="h-5 w-5" />
                                 </Button>
-                                <Button type="button" variant="ghost" size="icon" className="text-orange-500 hover:text-orange-600 hover:bg-orange-500/10 rounded-full">
+                                <Button 
+                                    type="button" 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className={cn(
+                                        "rounded-full text-purple-400 hover:text-purple-300",
+                                        glass("buttonGhost")
+                                    )}
+                                    title="Schedule post (coming soon)"
+                                >
                                     <Calendar className="h-5 w-5" />
                                 </Button>
-                                <Button type="button" variant="ghost" size="icon" className="text-red-500 hover:text-red-600 hover:bg-red-500/10 rounded-full">
+                                <Button 
+                                    type="button" 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className={cn(
+                                        "rounded-full text-orange-400 hover:text-orange-300",
+                                        glass("buttonGhost")
+                                    )}
+                                    title="Add document (coming soon)"
+                                >
                                     <FileText className="h-5 w-5" />
+                                </Button>
+                                <Button 
+                                    type="button" 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className={cn(
+                                        "rounded-full text-green-400 hover:text-green-300",
+                                        glass("buttonGhost")
+                                    )}
+                                    title="Add link (coming soon)"
+                                >
+                                    <Link2 className="h-5 w-5" />
                                 </Button>
                                 <Popover>
                                     <PopoverTrigger asChild>
-                                        <Button type="button" variant="ghost" size="icon" className="text-muted-foreground hover:text-primary rounded-full">
+                                        <Button type="button" variant="ghost" size="icon" className={cn("rounded-full text-yellow-400 hover:text-yellow-300", glass("buttonGhost"))}>
                                             <Smile className="h-5 w-5" />
                                         </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-64 p-2" align="end" side="top">
+                                    <PopoverContent className={cn("w-64 p-2", glass("dropdown"))} align="end" side="top">
                                         <div className="grid grid-cols-5 gap-2">
                                             {EMOJIS.map((emoji) => (
                                                 <button
                                                     key={emoji.char}
                                                     type="button"
-                                                    className="text-2xl hover:bg-muted p-1 rounded transition-colors flex items-center justify-center"
+                                                    className="text-2xl hover:bg-white/10 p-1 rounded transition-colors flex items-center justify-center"
                                                     onClick={() => setValue("content", contentValue + emoji.char)}
                                                 >
                                                     <span aria-label={emoji.label}>{emoji.char}</span>
@@ -275,7 +257,11 @@ export function CreatePostModal() {
 
                         <Button
                             type="submit"
-                            className="w-full rounded-xl font-bold py-6 bg-primary hover:bg-primary/90 shadow-[0_4px_20px_0_rgba(59,130,246,0.3)] hover:shadow-[0_6px_28px_0_rgba(59,130,246,0.4)] transition-all"
+                            className={cn(
+                                "w-full rounded-xl font-bold py-6",
+                                glass("buttonPrimary"),
+                                glass("buttonPrimaryGlow")
+                            )}
                             disabled={isPending || (!contentValue?.trim() && mediaFiles.length === 0)}
                         >
                             {isPending ? (

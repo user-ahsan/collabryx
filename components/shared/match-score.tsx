@@ -4,6 +4,7 @@ import { motion } from "framer-motion"
 import { Sparkles } from "lucide-react"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 import { GlassCard } from "@/components/shared/glass-card"
 
 interface MatchDimension {
@@ -144,6 +145,8 @@ export function MatchScoreCompact({
     return (
         <div className={cn(
             horizontal ? "flex items-center gap-2" : "flex flex-col items-center",
+            "p-1.5 rounded-lg",
+            glass("subtle"),
             className
         )}>
             <span className={cn(
@@ -157,7 +160,7 @@ export function MatchScoreCompact({
             </span>
             {/* Thin accent line instead of thick bar */}
             <div className={cn(
-                "bg-muted rounded-full overflow-hidden",
+                "bg-muted/50 rounded-full overflow-hidden",
                 horizontal ? "w-12 h-1" : "w-16 h-0.5"
             )}>
                 <div

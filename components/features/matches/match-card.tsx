@@ -14,6 +14,7 @@ import { MatchReasonBadge } from "@/components/ui/match-reason-badge"
 import { MatchCardDropdown } from "@/components/shared/glass-dropdown-menu"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 import { formatInitials } from "@/lib/utils/format-initials"
 
 interface MatchCardProps {
@@ -148,7 +149,10 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                                     <Badge
                                         key={skill}
                                         variant="secondary"
-                                        className="bg-muted/40 text-muted-foreground text-xs px-2 py-0 font-medium"
+                                        className={cn(
+                                            "text-xs px-2 py-0 font-medium",
+                                            glass("badge")
+                                        )}
                                     >
                                         {skill}
                                     </Badge>
@@ -157,7 +161,13 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                                     <TooltipProvider delayDuration={300}>
                                         <Tooltip>
                                             <TooltipTrigger asChild>
-                                                <Badge variant="outline" className="text-xs px-2 py-0 font-medium border-dashed text-muted-foreground/70 cursor-help">
+                                                <Badge 
+                                                    variant="outline" 
+                                                    className={cn(
+                                                        "text-xs px-2 py-0 font-medium border-dashed cursor-help",
+                                                        glass("badge")
+                                                    )}
+                                                >
                                                     +{match.skills.length - 2}
                                                 </Badge>
                                             </TooltipTrigger>
@@ -174,7 +184,11 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                         <div className="flex gap-2 mt-4 pt-3 border-t border-border/40 items-center">
                             {!requestSent ? (
                                 <Button
-                                    className="flex-1 h-9 text-xs font-medium"
+                                    className={cn(
+                                        "flex-1 h-9 text-xs font-medium",
+                                        glass("buttonPrimary"),
+                                        glass("buttonPrimaryGlow")
+                                    )}
                                     onClick={(e) => {
                                         e.stopPropagation()
                                         setRequestSent(true)
@@ -186,7 +200,10 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                             ) : (
                                 <Button
                                     variant="outline"
-                                    className="flex-1 h-9 text-xs font-medium bg-emerald-500/10 text-emerald-500 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 border-emerald-500/20 group/cancel transition-colors"
+                                    className={cn(
+                                        "flex-1 h-9 text-xs font-medium border-emerald-500/20 bg-emerald-500/10 text-emerald-500 transition-colors",
+                                        "hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 group/cancel"
+                                    )}
                                     onClick={(e) => {
                                         e.stopPropagation()
                                         setRequestSent(false)

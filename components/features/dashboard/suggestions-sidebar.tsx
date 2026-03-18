@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Sparkles, ArrowRight, UserPlus, Eye, Inbox } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
 import { getCache, setCache, CACHE_KEYS } from "@/lib/dashboard-cache"
@@ -13,6 +14,7 @@ import { fetchMatches } from "@/lib/services/matches"
 import { TOAST_MESSAGES, TOAST_IDS } from "@/lib/constants/toast-messages"
 import { MatchActivityCard } from "./match-activity-card"
 import { GlassCard } from "@/components/shared/glass-card"
+import { MatchReasonBadge } from "@/components/ui/match-reason-badge"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 
@@ -35,16 +37,7 @@ interface UIMatchSuggestion {
     reasons: MatchReason[]
 }
 
-const getReasonColor = (type: MatchReason["type"]) => {
-    switch (type) {
-        case "skill":
-            return "bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-900"
-        case "interest":
-            return "bg-green-100 dark:bg-green-950 text-green-700 dark:text-green-300 border-green-200 dark:border-green-900"
-        case "availability":
-            return "bg-purple-100 dark:bg-purple-950 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-900"
-    }
-}
+
 
 export function SuggestionsSidebar({ className }: MatchIntelligencePanelProps) {
     const [matches, setMatches] = useState<UIMatchSuggestion[]>([])
@@ -234,37 +227,39 @@ export function SuggestionsSidebar({ className }: MatchIntelligencePanelProps) {
                                         </div>
                                     </div>
 
-                                    {/* Reason Badges */}
+                                    {/* Reason Badges - Using MatchReasonBadge with glass variants */}
                                     <div className="flex flex-wrap gap-1.5">
                                         {match.reasons.map((reason, index) => (
-                                            <Badge
+                                            <MatchReasonBadge
                                                 key={index}
-                                                variant="outline"
-                                                className={cn(
-                                                    "text-xs px-2.5 py-0.5 font-medium border",
-                                                    getReasonColor(reason.type)
-                                                )}
-                                            >
-                                                {reason.label}
-                                            </Badge>
+                                                type={reason.type}
+                                                label={reason.label}
+                                            />
                                         ))}
                                     </div>
 
                                     {/* Action Buttons */}
                                     <div className="flex gap-2">
-                                        {/* View Match - Outlined (secondary) */}
+                                        {/* View Match - Ghost button with glass variant */}
                                         <Button
                                             size="sm"
-                                            variant="outline"
-                                            className="h-8 flex-1 px-3 rounded-md text-sm font-medium hover:bg-muted border-border"
+                                            variant="ghost"
+                                            className={cn(
+                                                "h-8 flex-1 px-3 rounded-md text-sm font-medium",
+                                                glass("buttonGhost")
+                                            )}
                                         >
                                             <Eye className="h-3 w-3 mr-1" />
                                             View Match
                                         </Button>
-                                        {/* Connect - Filled (primary) */}
+                                        {/* Connect - Primary with glass glow effect */}
                                         <Button
                                             size="sm"
-                                            className="h-8 flex-1 px-3 rounded-md text-sm font-medium shadow-sm hover:shadow-md"
+                                            className={cn(
+                                                "h-8 flex-1 px-3 rounded-md text-sm font-medium",
+                                                glass("buttonPrimary"),
+                                                glass("buttonPrimaryGlow")
+                                            )}
                                         >
                                             <UserPlus className="h-3 w-3 mr-1" />
                                             Connect
