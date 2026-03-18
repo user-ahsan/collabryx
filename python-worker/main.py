@@ -24,6 +24,7 @@ from rate_limiter import RateLimiter
 from embedding_validator import EmbeddingValidator
 from services.match_generator import MatchGenerator
 from services.notification_engine import NotificationEngine
+from services.activity_tracker import ActivityTracker
 
 load_dotenv()
 
@@ -1004,6 +1005,101 @@ async def send_digest(request: NotificationDigestRequest):
         raise
     except Exception as e:
         logger.error(f"Error sending digest: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =====================================================
+# Activity Tracker Endpoints (Tasks 1.4.5-1.4.7)
+# =====================================================
+
+
+class ActivityTrackViewRequest(BaseModel):
+    """Request body for tracking profile view"""
+
+    viewer_id: str
+    target_id: str
+
+
+class ActivityTrackMatchRequest(BaseModel):
+    """Request body for tracking match building"""
+
+    user_id: str
+    matched_user_id: str
+
+
+class ActivityFeedRequest(BaseModel):
+    """Request body for activity feed"""
+
+    user_id: str
+    limit: int = Field(default=20, ge=1, le=50)
+
+
+@app.post("/api/activity/track/view")
+async def track_profile_view(request: ActivityTrackViewRequest):
+    """
+    Track profile view.
+    Task: 1.4.5
+    """
+    try:
+        tracker = ActivityTracker(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+        result = await tracker.track_profile_view(
+            viewer_id=request.viewer_id, target_id=request.target_id
+        )
+
+        if result["status"] == "failed":
+            raise HTTPException(
+                status_code=500, detail=result.get("error", "Failed to track")
+            )
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error tracking profile view: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/activity/track/build")
+async def track_match_building(request: ActivityTrackMatchRequest):
+    """
+    Track match building.
+    Task: 1.4.5
+    """
+    try:
+        tracker = ActivityTracker(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+        result = await tracker.track_match_building(
+            user_id=request.user_id, matched_user_id=request.matched_user_id
+        )
+
+        if result["status"] == "failed":
+            raise HTTPException(
+                status_code=500, detail=result.get("error", "Failed to track")
+            )
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error tracking match building: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/activity/feed")
+async def get_activity_feed(user_id: str, limit: int = 20):
+    """
+    Get activity feed for user.
+    Task: 1.4.5
+    """
+    try:
+        tracker = ActivityTracker(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+        activities = await tracker.get_activity_feed(user_id=user_id, limit=limit)
+
+        return {"activities": activities}
+
+    except Exception as e:
+        logger.error(f"Error getting activity feed: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 
