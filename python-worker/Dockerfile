@@ -21,13 +21,21 @@ RUN uv pip install --no-cache-dir -r requirements.txt
 # Stage 2: Runtime - Minimal production image
 FROM python:3.11-slim-bookworm AS runtime
 
+# Metadata labels for security and maintenance
+LABEL maintainer="Collabryx Team"
+LABEL version="1.0.0"
+LABEL description="Python embedding generation service for Collabryx platform"
+LABEL security.policy="restricted"
+LABEL org.opencontainers.image.source="https://github.com/user-ahsan/collabryx"
+
 WORKDIR /app
 
-# Install runtime dependencies only
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Install security updates and runtime dependencies
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+    && apt-get clean \
+    && apt-get autoremove -y
 
 # Copy virtual environment from builder
 COPY --from=builder /app/.venv /app/.venv
@@ -41,7 +49,16 @@ COPY rate_limiter.py .
 
 # Create non-root user for security
 RUN useradd --create-home --shell /bin/bash appuser
+
+# Create required directories with proper permissions
+RUN mkdir -p /app/logs /tmp && chown -R appuser:appuser /app /tmp
+
+# Set ownership before switching user
 RUN chown -R appuser:appuser /app
+
+# Declare volume mount point for logs (persisted externally)
+VOLUME ["/app/logs"]
+
 USER appuser
 
 # Set environment variables

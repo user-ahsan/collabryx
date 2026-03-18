@@ -12,6 +12,16 @@ services:
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000}
     volumes:
       - ./logs:/app/logs
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=256m
+      - /app/logs:noexec,nosuid,size=512m
     logging:
       driver: json-file
       options:
@@ -26,10 +36,19 @@ services:
       retries: 3
       start_period: 40s
     deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 30s
+        order: start-first
+      rollback_config:
+        parallelism: 1
+        delay: 30s
+        order: stop-first
       resources:
         limits:
           cpus: '2.0'
-          memory: 2G
+          memory: 3G
         reservations:
           cpus: '1.0'
           memory: 1G
