@@ -729,8 +729,8 @@ CREATE INDEX IF NOT EXISTS idx_feed_scores_user_score ON public.feed_scores(user
 CREATE INDEX IF NOT EXISTS idx_feed_scores_post_id ON public.feed_scores(post_id);
 CREATE INDEX IF NOT EXISTS idx_feed_scores_created_at ON public.feed_scores(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_feed_scores_expires_at ON public.feed_scores(expires_at) WHERE expires_at IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_feed_scores_active ON public.feed_scores(user_id, score DESC) 
-    WHERE expires_at IS NULL OR expires_at > NOW();
+-- Note: Removed immutable index predicate with NOW(), use application-side filtering instead
+CREATE INDEX IF NOT EXISTS idx_feed_scores_active ON public.feed_scores(user_id, score DESC);
 
 -- Events indexes
 CREATE INDEX IF NOT EXISTS idx_events_actor_id ON public.events(actor_id);
