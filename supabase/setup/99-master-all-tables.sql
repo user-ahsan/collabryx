@@ -729,8 +729,7 @@ CREATE INDEX IF NOT EXISTS idx_feed_scores_user_score ON public.feed_scores(user
 CREATE INDEX IF NOT EXISTS idx_feed_scores_post_id ON public.feed_scores(post_id);
 CREATE INDEX IF NOT EXISTS idx_feed_scores_created_at ON public.feed_scores(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_feed_scores_expires_at ON public.feed_scores(expires_at) WHERE expires_at IS NOT NULL;
--- Note: Removed immutable index predicate with NOW(), use application-side filtering instead
-CREATE INDEX IF NOT EXISTS idx_feed_scores_active ON public.feed_scores(user_id, score DESC);
+-- Note: idx_feed_scores_active removed (duplicate of idx_feed_scores_user_score)
 
 -- Events indexes
 CREATE INDEX IF NOT EXISTS idx_events_actor_id ON public.events(actor_id);
@@ -1775,6 +1774,12 @@ ALTER TABLE public.profile_embeddings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.embedding_dead_letter_queue ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.embedding_rate_limits ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.embedding_pending_queue ENABLE ROW LEVEL SECURITY;
+-- ML Feature Tables - Enable RLS
+ALTER TABLE public.feed_scores ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_analytics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.platform_analytics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.content_moderation_logs ENABLE ROW LEVEL SECURITY;
 
 -- --------------------------------------------
 -- PROFILES RLS
