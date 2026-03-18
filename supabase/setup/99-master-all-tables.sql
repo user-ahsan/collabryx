@@ -2182,16 +2182,6 @@ CREATE INDEX IF NOT EXISTS idx_connections_requester_status
 CREATE INDEX IF NOT EXISTS idx_connections_receiver_status 
   ON public.connections(receiver_id, status);
 
--- Matches indexes
-CREATE INDEX IF NOT EXISTS idx_match_suggestions_user_percentage 
-  ON public.match_suggestions(user_id, match_percentage DESC);
-
-CREATE INDEX IF NOT EXISTS idx_match_scores_suggestion 
-  ON public.match_scores(suggestion_id);
-
-CREATE INDEX IF NOT EXISTS idx_match_activity_target_created 
-  ON public.match_activity(target_user_id, created_at DESC);
-
 -- Conversations and messages indexes
 CREATE INDEX IF NOT EXISTS idx_conversations_participant1_updated 
   ON public.conversations(participant_1, last_message_at DESC);
