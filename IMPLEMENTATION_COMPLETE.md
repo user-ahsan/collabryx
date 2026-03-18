@@ -13,7 +13,7 @@
 | **Total Commits** | 35+ |
 | **Python Services** | 9 |
 | **SQL Files** | 10 (consolidated into 99-master-all-tables.sql) |
-| **API Endpoints** | 20+ |
+| **API Endpoints** | 18 |
 | **Database Tables** | 31 total (7 new ML tables) |
 | **Database Functions** | 35+ |
 | **Database Triggers** | 30+ |

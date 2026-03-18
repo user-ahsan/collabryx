@@ -212,17 +212,38 @@ sequenceDiagram
 
 **Model:** `all-MiniLM-L6-v2` (384 dimensions, CPU-optimized)
 
-**API Endpoints:**
+**API Endpoints (18 total):**
+
+**Embedding Services:**
+- `GET /` - Root endpoint
+- `GET /health` - Health check (all services)
+- `GET /model-info` - Model information
+- `POST /generate-embedding` - Generate embedding from text
+- `POST /generate-embedding-from-profile` - Generate embedding from user profile
+
+**Match Services:**
 - `POST /api/matches/generate` - Generate matches for user
 - `POST /api/matches/generate/batch` - Batch generate for multiple users
+- `GET /health/matches` - Match service health check
+
+**Notification Services:**
 - `POST /api/notifications/send` - Send notification
 - `POST /api/notifications/digest/send` - Send daily digest
+- `POST /api/notifications/cleanup` - Cleanup old notifications (admin)
+
+**Activity Services:**
 - `POST /api/activity/track/view` - Track profile view
+- `POST /api/activity/track/build` - Track match building
 - `GET /api/activity/feed` - Get activity feed
-- `POST /api/moderate` - Moderate content
-- `POST /api/ai-mentor/message` - Send AI mentor message
-- `POST /api/analytics/daily` - Aggregate daily stats
-- `GET /health` - Health check endpoint
+
+**Content Moderation:**
+- `POST /api/moderate` - Moderate content (toxicity, spam, NSFW, PII)
+
+**AI Mentor:**
+- `POST /api/ai-mentor/message` - Send message to AI mentor
+
+**Analytics:**
+- `POST /api/analytics/daily` - Aggregate daily platform stats
 
 ### 3D Visualization Layer
 
