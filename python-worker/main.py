@@ -5,7 +5,7 @@ FastAPI server for generating semantic embeddings using Sentence Transformers
 
 from fastapi import FastAPI, HTTPException, status, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel, Field, validator
 from typing import Optional, List
 import os
@@ -17,6 +17,15 @@ import shutil
 from datetime import datetime, timedelta
 import httpx
 from contextlib import asynccontextmanager
+
+# Prometheus metrics
+from prometheus_client import (
+    Counter,
+    Histogram,
+    Gauge,
+    generate_latest,
+    CONTENT_TYPE_LATEST,
+)
 
 from dotenv import load_dotenv
 from supabase import create_client, Client
@@ -78,6 +87,57 @@ processing_semaphore = asyncio.Semaphore(5)  # Max 5 concurrent generations
 
 # Graceful shutdown flag
 SHUTDOWN_FLAG = False
+
+# =====================================================
+# Prometheus Metrics
+# =====================================================
+
+# Request counter - tracks total HTTP requests
+REQUEST_COUNTER = Counter(
+    name="embedding_service_requests_total",
+    documentation="Total number of HTTP requests",
+    labelnames=["method", "endpoint", "status_code"],
+)
+
+# Request duration histogram - tracks request latency
+REQUEST_DURATION = Histogram(
+    name="embedding_service_request_duration_seconds",
+    documentation="Request duration in seconds",
+    labelnames=["method", "endpoint"],
+    buckets=[0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0],
+)
+
+# Queue size gauge - current queue depth
+QUEUE_SIZE_GAUGE = Gauge(
+    name="embedding_service_queue_size",
+    documentation="Current number of items in the processing queue",
+)
+
+# Error counter - tracks failed requests
+ERROR_COUNTER = Counter(
+    name="embedding_service_errors_total",
+    documentation="Total number of errors",
+    labelnames=["error_type", "endpoint"],
+)
+
+# Processing speed gauge - embeddings generated per minute
+PROCESSING_SPEED_GAUGE = Gauge(
+    name="embedding_service_processing_speed",
+    documentation="Number of embeddings processed per minute",
+)
+
+# Memory usage gauge
+MEMORY_USAGE_GAUGE = Gauge(
+    name="embedding_service_memory_usage_bytes",
+    documentation="Current memory usage in bytes",
+    labelnames=["type"],  # "process_rss", "process_vms", "system_available"
+)
+
+# DLQ size gauge
+DLQ_SIZE_GAUGE = Gauge(
+    name="embedding_service_dlq_size",
+    documentation="Current number of items in dead letter queue",
+)
 
 
 @asynccontextmanager
@@ -148,6 +208,57 @@ app.add_middleware(
     allow_methods=["POST", "GET", "OPTIONS"],
     allow_headers=["Authorization", "Content-Type"],
 )
+
+
+# =====================================================
+# Metrics Middleware
+# =====================================================
+
+
+@app.middleware("http")
+async def metrics_middleware(request: Request, call_next):
+    """Middleware to track request metrics with Prometheus"""
+    start_time = time.time()
+
+    try:
+        response = await call_next(request)
+
+        # Record request counter
+        REQUEST_COUNTER.labels(
+            method=request.method,
+            endpoint=request.url.path,
+            status_code=response.status_code,
+        ).inc()
+
+        # Record request duration
+        duration = time.time() - start_time
+        REQUEST_DURATION.labels(
+            method=request.method,
+            endpoint=request.url.path,
+        ).observe(duration)
+
+        # Update queue size gauge
+        QUEUE_SIZE_GAUGE.set(request_queue.qsize())
+
+        # Update memory gauges
+        process = psutil.Process(os.getpid())
+        process_memory = process.memory_info()
+        MEMORY_USAGE_GAUGE.labels(type="process_rss").set(process_memory.rss)
+        MEMORY_USAGE_GAUGE.labels(type="process_vms").set(process_memory.vms)
+
+        return response
+
+    except Exception as e:
+        # Record error counter
+        ERROR_COUNTER.labels(
+            error_type=type(e).__name__,
+            endpoint=request.url.path,
+        ).inc()
+
+        # Update queue size gauge even on error
+        QUEUE_SIZE_GAUGE.set(request_queue.qsize())
+
+        raise
 
 
 class EmbeddingRequest(BaseModel):
@@ -705,6 +816,33 @@ async def health():
             },
         },
     }
+
+
+@app.get("/metrics")
+async def metrics():
+    """
+    Prometheus metrics endpoint.
+    Returns metrics in Prometheus exposition format for scraping.
+    """
+    # Update DLQ size gauge (query database)
+    if supabase:
+        try:
+            dlq_response = (
+                supabase.table("embedding_dead_letter_queue")
+                .select("id")
+                .eq("status", "pending")
+                .execute()
+            )
+            DLQ_SIZE_GAUGE.set(len(dlq_response.data or []))
+        except Exception as e:
+            logger.error(f"Failed to query DLQ size: {e}")
+            DLQ_SIZE_GAUGE.set(0)
+
+    # Generate Prometheus metrics
+    return Response(
+        content=generate_latest(),
+        media_type=CONTENT_TYPE_LATEST,
+    )
 
 
 @app.get("/model-info")
