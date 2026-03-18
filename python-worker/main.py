@@ -22,6 +22,7 @@ from supabase import create_client, Client
 from embedding_generator import generator, construct_semantic_text
 from rate_limiter import RateLimiter
 from embedding_validator import EmbeddingValidator
+from services.match_generator import MatchGenerator
 
 load_dotenv()
 
@@ -762,6 +763,162 @@ async def generate_embedding_from_profile(request: ProfileDataRequest):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error preparing embedding generation: {str(e)}",
         )
+
+
+# =====================================================
+# Match Generation Endpoints (Tasks 1.2.7-1.2.9)
+# =====================================================
+
+
+class MatchGenerateRequest(BaseModel):
+    """Request body for match generation"""
+
+    user_id: str = Field(..., description="User ID to generate matches for")
+    limit: int = Field(default=20, ge=1, le=50, description="Max matches to generate")
+
+
+class MatchBatchRequest(BaseModel):
+    """Request body for batch match generation"""
+
+    user_ids: Optional[List[str]] = Field(None, description="Specific users to process")
+    limit_per_user: int = Field(default=20, ge=1, le=50)
+
+
+class MatchResponse(BaseModel):
+    """Response body for match generation"""
+
+    suggestions_created: int
+    matches: List[dict]
+    error: Optional[str] = None
+
+
+@app.post("/api/matches/generate", response_model=MatchResponse)
+async def generate_matches(request: MatchGenerateRequest):
+    """
+    Generate match suggestions for a single user.
+    Task: 1.2.8
+    """
+    try:
+        if not supabase:
+            raise HTTPException(
+                status_code=503, detail="Database connection not available"
+            )
+
+        generator = MatchGenerator(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+        result = await generator.generate_matches_for_user(
+            user_id=request.user_id, limit=request.limit
+        )
+
+        if result.get("error"):
+            raise HTTPException(status_code=400, detail=result["error"])
+
+        logger.info(
+            f"Generated {result['suggestions_created']} matches for user {request.user_id}"
+        )
+        return MatchResponse(
+            suggestions_created=result["suggestions_created"],
+            matches=result["matches"],
+            error=None,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating matches: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to generate matches: {str(e)}"
+        )
+
+
+@app.post("/api/matches/generate/batch")
+async def generate_matches_batch(
+    request: MatchBatchRequest, background_tasks: BackgroundTasks
+):
+    """
+    Generate matches for multiple users in background.
+    Task: 1.2.9
+    """
+    try:
+        if not supabase:
+            raise HTTPException(
+                status_code=503, detail="Database connection not available"
+            )
+
+        # Get users to process
+        if request.user_ids:
+            users_to_process = request.user_ids
+        else:
+            # Get users without recent suggestions
+            response = await asyncio.to_thread(
+                supabase.rpc("get_users_needing_matches").execute
+            )
+            users_to_process = [u["id"] for u in (response.data or [])][:50]
+
+        if not users_to_process:
+            return {
+                "status": "no_users",
+                "message": "No users need match generation",
+                "processed_count": 0,
+            }
+
+        # Process in background
+        async def process_batch():
+            generator = MatchGenerator(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+            total_created = 0
+
+            for user_id in users_to_process:
+                try:
+                    result = await generator.generate_matches_for_user(
+                        user_id=user_id, limit=request.limit_per_user
+                    )
+                    total_created += result.get("suggestions_created", 0)
+                    await asyncio.sleep(0.5)  # Rate limiting
+                except Exception as e:
+                    logger.error(f"Error generating matches for {user_id}: {str(e)}")
+
+            logger.info(
+                f"Batch complete: {total_created} matches created for {len(users_to_process)} users"
+            )
+
+        background_tasks.add_task(process_batch)
+
+        return {
+            "status": "processing",
+            "message": f"Batch match generation started for {len(users_to_process)} users",
+            "users_count": len(users_to_process),
+            "limit_per_user": request.limit_per_user,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error starting batch match generation: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to start batch: {str(e)}")
+
+
+@app.get("/health/matches")
+async def matches_health():
+    """Health check for match generation service"""
+    try:
+        # Check if we can query match_suggestions
+        response = await asyncio.to_thread(
+            supabase.table("match_suggestions").select("id").limit(1).execute
+        )
+
+        return {
+            "status": "healthy",
+            "service": "match_generator",
+            "database_connected": True,
+            "timestamp": datetime.now().isoformat(),
+        }
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "service": "match_generator",
+            "database_connected": False,
+            "error": str(e),
+            "timestamp": datetime.now().isoformat(),
+        }
 
 
 @app.exception_handler(Exception)
