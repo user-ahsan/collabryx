@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
 import { Loader2, Plus, X } from "lucide-react"
 import { validateSkillsSettings } from "@/lib/validations/settings"
 import { toast } from "sonner"
@@ -157,8 +158,8 @@ export function SkillsInterestsSettingsTab({ userId }: { userId: string }) {
     return (
         <Card className={cn("border-none shadow-none bg-transparent", glass("cardInner"))}>
             <CardHeader className="px-0 pt-0">
-                <CardTitle>Skills & Interests</CardTitle>
-                <CardDescription>Add your skills and interests to improve matching.</CardDescription>
+                <CardTitle className="text-lg font-semibold">Skills & Interests</CardTitle>
+                <CardDescription className="text-sm">Add your skills and interests to improve matching.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 px-0 pb-0">
                 {error && <div className="text-sm font-medium text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>}
@@ -175,24 +176,37 @@ export function SkillsInterestsSettingsTab({ userId }: { userId: string }) {
                                 onChange={(e) => setSkillsInput(e.target.value)}
                                 onKeyDown={handleAddSkill}
                                 placeholder="e.g. React, UI Design, Marketing (Press Enter)"
-                                className="bg-white/5 border-white/10 focus:border-primary/50"
+                                className={cn("min-h-[44px] focus:border-primary/50", glass("input"))}
                             />
                             <button
                                 type="button"
                                 onClick={handleAddSkill}
-                                className="flex items-center justify-center p-2 rounded-md bg-white/10 text-white hover:bg-white/20 transition-all duration-300 border border-white/10"
+                                className={cn(
+                                    "flex items-center justify-center p-2 rounded-md transition-all duration-300 min-h-[44px]",
+                                    glass("buttonGhost")
+                                )}
                             >
                                 <Plus className="w-5 h-5" />
                             </button>
                         </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-2 min-h-[60px] p-4 rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm">
+                    <div className={cn(
+                        "flex flex-wrap gap-2 min-h-[60px] p-4 rounded-xl backdrop-blur-sm",
+                        glass("subtle")
+                    )}>
                         {skills.length === 0 ? (
                             <span className="text-sm text-muted-foreground w-full text-center py-2">No skills added yet.</span>
                         ) : (
                             skills.map((skill) => (
-                                <Badge key={skill.skill_name} variant="secondary" className="px-3 py-1.5 text-sm gap-1 pl-4 rounded-full bg-primary/10 hover:bg-primary/20 text-primary border-none">
+                                <Badge 
+                                    key={skill.skill_name} 
+                                    variant="secondary" 
+                                    className={cn(
+                                        "px-3 py-1.5 text-sm gap-1 pl-4 rounded-full border-none",
+                                        glass("badge")
+                                    )}
+                                >
                                     {skill.skill_name}
                                     <button
                                         type="button"
@@ -208,7 +222,8 @@ export function SkillsInterestsSettingsTab({ userId }: { userId: string }) {
                 </div>
 
                 {/* Interests Section */}
-                <div className="space-y-4 pt-4 border-t border-white/10">
+                <div className="space-y-4 pt-4">
+                    <Separator className={glass("divider")} />
                     <div className="grid gap-2">
                         <Label htmlFor="interestsInput" className="text-base font-semibold">Your Interests & Goals</Label>
                         <div className="flex gap-2">
@@ -218,24 +233,37 @@ export function SkillsInterestsSettingsTab({ userId }: { userId: string }) {
                                 onChange={(e) => setInterestsInput(e.target.value)}
                                 onKeyDown={handleAddInterest}
                                 placeholder="e.g. Fintech, EdTech, Web3 (Press Enter)"
-                                className="bg-white/5 border-white/10 focus:border-primary/50"
+                                className={cn("min-h-[44px] focus:border-primary/50", glass("input"))}
                             />
                             <button
                                 type="button"
                                 onClick={handleAddInterest}
-                                className="flex items-center justify-center p-2 rounded-md bg-white/10 text-white hover:bg-white/20 transition-all duration-300 border border-white/10"
+                                className={cn(
+                                    "flex items-center justify-center p-2 rounded-md transition-all duration-300 min-h-[44px]",
+                                    glass("buttonGhost")
+                                )}
                             >
                                 <Plus className="w-5 h-5" />
                             </button>
                         </div>
                     </div>
 
-                    <div className="flex flex-wrap gap-2 min-h-[60px] p-4 rounded-xl border border-white/10 bg-white/5 backdrop-blur-sm">
+                    <div className={cn(
+                        "flex flex-wrap gap-2 min-h-[60px] p-4 rounded-xl backdrop-blur-sm",
+                        glass("subtle")
+                    )}>
                         {interests.length === 0 ? (
                             <span className="text-sm text-muted-foreground w-full text-center py-2">No interests added yet.</span>
                         ) : (
                             interests.map((interest) => (
-                                <Badge key={interest.interest} variant="secondary" className="px-3 py-1.5 text-sm gap-1 pl-4 rounded-full bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border-none">
+                                <Badge 
+                                    key={interest.interest} 
+                                    variant="secondary" 
+                                    className={cn(
+                                        "px-3 py-1.5 text-sm gap-1 pl-4 rounded-full border-none",
+                                        glass("badge")
+                                    )}
+                                >
                                     {interest.interest}
                                     <button
                                         type="button"
@@ -250,7 +278,11 @@ export function SkillsInterestsSettingsTab({ userId }: { userId: string }) {
                     </div>
                 </div>
 
-                <Button onClick={handleSave} disabled={isSaving} className="mt-4">
+                <Button 
+                    onClick={handleSave} 
+                    disabled={isSaving} 
+                    className={cn("mt-4", glass("buttonPrimary"), glass("buttonPrimaryGlow"))}
+                >
                     {isSaving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
                     {isSaving ? "Saving..." : "Save Changes"}
                 </Button>

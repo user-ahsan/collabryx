@@ -134,18 +134,22 @@ export function SettingsDialog() {
 
     return (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogContent className={cn(
-                "max-w-[95vw] md:max-w-5xl p-0 h-[85vh] overflow-hidden sm:rounded-2xl",
-                glass("overlay")
-            )}>
-                <div className="relative z-10 flex flex-col h-full w-full">
+            <DialogContent 
+                className={cn(
+                    "max-w-[95vw] md:max-w-5xl p-0 h-[85vh] overflow-hidden sm:rounded-2xl",
+                    glass("overlay"),
+                    glass("dialogHighlights")
+                )}
+                showDecorations={false}
+            >
+                <div className="relative z-20 flex flex-col h-full w-full">
                     <DialogTitle className="sr-only">Account Settings</DialogTitle>
                     <DialogDescription className="sr-only">
                         Manage your profile, account preferences, notifications, and billing details.
                     </DialogDescription>
-                    <DialogHeader className="px-6 py-4 border-b border-white/10 shrink-0">
-                        <DialogTitle className="text-2xl font-bold">Settings</DialogTitle>
-                        <DialogDescription>
+                    <DialogHeader className="px-4 md:px-6 py-4 border-b border-blue-400/10 shrink-0">
+                        <DialogTitle className="text-xl md:text-2xl font-bold">Settings</DialogTitle>
+                        <DialogDescription className="text-sm">
                             Manage your profile, account preferences, and notifications.
                         </DialogDescription>
                     </DialogHeader>
@@ -162,62 +166,62 @@ export function SettingsDialog() {
                             onValueChange={(val) => setActiveTab(val as "profile" | "skills" | "experience" | "account" | "notifications" | "billing")}
                             className="flex flex-col md:flex-row w-full"
                         >
-                            {/* Sidebar inside Dialog */}
-                            <div className="md:w-60 shrink-0 md:border-r md:border-white/10 overflow-y-auto">
-                                <TabsList className="flex md:flex-col h-auto w-full items-stretch justify-start p-2 md:p-4 gap-1 bg-transparent">
+                            {/* Sidebar inside Dialog - Desktop: Vertical, Mobile: Horizontal Scroll */}
+                            <div className="md:w-60 shrink-0 md:border-r md:border-white/10 overflow-x-auto md:overflow-y-auto">
+                                <TabsList className="flex md:flex-col h-auto w-full items-stretch justify-start p-2 md:p-4 gap-2 bg-transparent min-h-[44px]">
                                     <TabsTrigger value="profile" className={cn(
-                                        "justify-start gap-2 px-3 py-2 transition-all text-sm font-medium rounded-lg",
-                                        "data-[state=active]:bg-background/50 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/40",
-                                        "hover:bg-white/[0.04]"
+                                        "justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap",
+                                        glass("tabActive"),
+                                        glass("tabInactive")
                                     )}>
-                                        <User className="h-4 w-4" />
+                                        <User className="h-4 w-4 shrink-0" />
                                         <span className="hidden md:inline">Profile</span>
                                     </TabsTrigger>
                                     <TabsTrigger value="skills" className={cn(
-                                        "justify-start gap-2 px-3 py-2 transition-all text-sm font-medium rounded-lg",
-                                        "data-[state=active]:bg-background/50 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/40",
-                                        "hover:bg-white/[0.04]"
+                                        "justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap",
+                                        glass("tabActive"),
+                                        glass("tabInactive")
                                     )}>
-                                        <Code2 className="h-4 w-4" />
+                                        <Code2 className="h-4 w-4 shrink-0" />
                                         <span className="hidden md:inline">Skills & Interests</span>
                                     </TabsTrigger>
                                     <TabsTrigger value="experience" className={cn(
-                                        "justify-start gap-2 px-3 py-2 transition-all text-sm font-medium rounded-lg",
-                                        "data-[state=active]:bg-background/50 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/40",
-                                        "hover:bg-white/[0.04]"
+                                        "justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap",
+                                        glass("tabActive"),
+                                        glass("tabInactive")
                                     )}>
-                                        <Briefcase className="h-4 w-4" />
+                                        <Briefcase className="h-4 w-4 shrink-0" />
                                         <span className="hidden md:inline">Experience & Projects</span>
                                     </TabsTrigger>
                                     <TabsTrigger value="account" className={cn(
-                                        "justify-start gap-2 px-3 py-2 transition-all text-sm font-medium rounded-lg",
-                                        "data-[state=active]:bg-background/50 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/40",
-                                        "hover:bg-white/[0.04]"
+                                        "justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap",
+                                        glass("tabActive"),
+                                        glass("tabInactive")
                                     )}>
-                                        <Shield className="h-4 w-4" />
+                                        <Shield className="h-4 w-4 shrink-0" />
                                         <span className="hidden md:inline">Account</span>
                                     </TabsTrigger>
                                     <TabsTrigger value="notifications" className={cn(
-                                        "justify-start gap-2 px-3 py-2 transition-all text-sm font-medium rounded-lg",
-                                        "data-[state=active]:bg-background/50 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/40",
-                                        "hover:bg-white/[0.04]"
+                                        "justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap",
+                                        glass("tabActive"),
+                                        glass("tabInactive")
                                     )}>
-                                        <Bell className="h-4 w-4" />
+                                        <Bell className="h-4 w-4 shrink-0" />
                                         <span className="hidden md:inline">Notifications</span>
                                     </TabsTrigger>
                                     <TabsTrigger value="billing" className={cn(
-                                        "justify-start gap-2 px-3 py-2 transition-all text-sm font-medium rounded-lg",
-                                        "data-[state=active]:bg-background/50 data-[state=active]:shadow-sm data-[state=active]:border data-[state=active]:border-border/40",
-                                        "hover:bg-white/[0.04]"
+                                        "justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap",
+                                        glass("tabActive"),
+                                        glass("tabInactive")
                                     )}>
-                                        <CreditCard className="h-4 w-4" />
+                                        <CreditCard className="h-4 w-4 shrink-0" />
                                         <span className="hidden md:inline">Billing</span>
                                     </TabsTrigger>
                                 </TabsList>
                             </div>
 
                             {/* Content Area */}
-                            <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6">
+                            <div className="flex-1 overflow-y-auto p-4 md:p-6 pb-24 md:pb-6">
                                 {isLoading ? (
                                     <div className="h-full flex items-center justify-center text-muted-foreground">
                                         <Loader2 className="h-8 w-8 animate-spin" />
@@ -243,29 +247,29 @@ export function SettingsDialog() {
                                                     <CardDescription>Manage your password and security settings.</CardDescription>
                                                 </CardHeader>
                                                 <CardContent className="space-y-4 px-0 pb-0">
-                                                    <div className="space-y-2">
-                                                        <div className="flex justify-between items-center">
-                                                            <Label htmlFor="email">Email address</Label>
-                                                            <span className="text-xs text-muted-foreground italic">Unchangeable</span>
-                                                        </div>
-                                                        <Input id="email" value={email} disabled className="bg-white/5 border-white/10 opacity-70 cursor-not-allowed" />
-                                                    </div>
-                                                    <div className="space-y-2">
-                                                        <Label htmlFor="new-password">New Password</Label>
-                                                        <Input id="new-password" type="password" className="bg-white/5 border-white/10 focus:border-primary/50" />
-                                                    </div>
-                                                    <Button>Change Password</Button>
+                                                     <div className="space-y-2">
+                                                         <div className="flex justify-between items-center">
+                                                             <Label htmlFor="email">Email address</Label>
+                                                             <span className="text-xs text-muted-foreground italic">Unchangeable</span>
+                                                         </div>
+                                                         <Input id="email" value={email} disabled className={cn("opacity-70 cursor-not-allowed", glass("input"))} />
+                                                     </div>
+                                                     <div className="space-y-2">
+                                                         <Label htmlFor="new-password">New Password</Label>
+                                                         <Input id="new-password" type="password" className={cn("focus:border-primary/50", glass("input"))} />
+                                                     </div>
+                                                     <Button className={cn("mt-2", glass("buttonPrimary"), glass("buttonPrimaryGlow"))}>Change Password</Button>
                                                 </CardContent>
                                             </Card>
-                                            <Separator />
-                                            <Card className="border-none shadow-none bg-transparent">
-                                                <CardHeader className="px-0 pt-4">
-                                                    <CardTitle className="text-red-500">Danger Zone</CardTitle>
-                                                </CardHeader>
-                                                <CardContent className="px-0 pb-0">
-                                                    <Button variant="destructive">Delete Account</Button>
-                                                </CardContent>
-                                            </Card>
+                                             <Separator className={glass("divider")} />
+                                             <Card className="border-none shadow-none bg-transparent">
+                                                 <CardHeader className="px-0 pt-4">
+                                                     <CardTitle className="text-red-500 font-semibold">Danger Zone</CardTitle>
+                                                 </CardHeader>
+                                                 <CardContent className="px-0 pb-0">
+                                                     <Button variant="destructive" className={glass("buttonSecondaryGlow")}>Delete Account</Button>
+                                                 </CardContent>
+                                             </Card>
                                         </TabsContent>
 
                                         <TabsContent value="notifications" className="mt-0 space-y-6">
@@ -275,59 +279,59 @@ export function SettingsDialog() {
                                                     <CardDescription>Choose what updates you want to receive.</CardDescription>
                                                 </CardHeader>
                                                 <CardContent className="space-y-6 px-0 pb-0">
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="space-y-0.5">
-                                                            <Label>New Connections</Label>
-                                                            <p className="text-sm text-muted-foreground mr-6">Receive emails when someone invites you.</p>
-                                                        </div>
-                                                        <Switch
-                                                            checked={preferences.email_new_connections}
-                                                            onChange={(e) => {
-                                                                updatePreferenceField("email_new_connections", e.target.checked)
-                                                                handleSavePreferences()
-                                                            }}
-                                                        />
-                                                    </div>
-                                                    <Separator />
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="space-y-0.5">
-                                                            <Label>Messages</Label>
-                                                            <p className="text-sm text-muted-foreground mr-6">Receive emails for new messages.</p>
-                                                        </div>
-                                                        <Switch
-                                                            checked={preferences.email_messages}
-                                                            onChange={(e) => {
-                                                                updatePreferenceField("email_messages", e.target.checked)
-                                                                handleSavePreferences()
-                                                            }}
-                                                        />
-                                                    </div>
-                                                    <Separator />
-                                                    <div className="flex items-center justify-between group">
-                                                        <div className="space-y-0.5">
-                                                            <div className="flex items-center gap-2">
-                                                                <Label>AI Smart Match Alerts</Label>
-                                                                <TooltipProvider delayDuration={100}>
-                                                                    <Tooltip>
-                                                                        <TooltipTrigger asChild>
-                                                                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                                                                        </TooltipTrigger>
-                                                                        <TooltipContent>
-                                                                            <p className="max-w-xs text-xs">Let Collabryx AI find the best co-founders for you and notify you directly.</p>
-                                                                        </TooltipContent>
-                                                                    </Tooltip>
-                                                                </TooltipProvider>
-                                                            </div>
-                                                            <p className="text-sm text-muted-foreground mr-6">Weekly digest of potential tailored matches.</p>
-                                                        </div>
-                                                        <Switch
-                                                            checked={preferences.ai_smart_match_alerts}
-                                                            onChange={(e) => {
-                                                                updatePreferenceField("ai_smart_match_alerts", e.target.checked)
-                                                                handleSavePreferences()
-                                                            }}
-                                                        />
-                                                    </div>
+                                                     <div className="flex items-center justify-between">
+                                                         <div className="space-y-0.5">
+                                                             <Label className="text-sm font-medium">New Connections</Label>
+                                                             <p className="text-xs text-muted-foreground mr-6">Receive emails when someone invites you.</p>
+                                                         </div>
+                                                         <Switch
+                                                             checked={preferences.email_new_connections}
+                                                             onChange={(e) => {
+                                                                 updatePreferenceField("email_new_connections", e.target.checked)
+                                                                 handleSavePreferences()
+                                                             }}
+                                                         />
+                                                     </div>
+                                                     <Separator className={glass("divider")} />
+                                                     <div className="flex items-center justify-between">
+                                                         <div className="space-y-0.5">
+                                                             <Label className="text-sm font-medium">Messages</Label>
+                                                             <p className="text-xs text-muted-foreground mr-6">Receive emails for new messages.</p>
+                                                         </div>
+                                                         <Switch
+                                                             checked={preferences.email_messages}
+                                                             onChange={(e) => {
+                                                                 updatePreferenceField("email_messages", e.target.checked)
+                                                                 handleSavePreferences()
+                                                             }}
+                                                         />
+                                                     </div>
+                                                     <Separator className={glass("divider")} />
+                                                     <div className="flex items-center justify-between group">
+                                                         <div className="space-y-0.5">
+                                                             <div className="flex items-center gap-2">
+                                                                 <Label className="text-sm font-medium">AI Smart Match Alerts</Label>
+                                                                 <TooltipProvider delayDuration={100}>
+                                                                     <Tooltip>
+                                                                         <TooltipTrigger asChild>
+                                                                             <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                                                                         </TooltipTrigger>
+                                                                         <TooltipContent>
+                                                                             <p className="max-w-xs text-xs">Let Collabryx AI find the best co-founders for you and notify you directly.</p>
+                                                                         </TooltipContent>
+                                                                     </Tooltip>
+                                                                 </TooltipProvider>
+                                                             </div>
+                                                             <p className="text-xs text-muted-foreground mr-6">Weekly digest of potential tailored matches.</p>
+                                                         </div>
+                                                         <Switch
+                                                             checked={preferences.ai_smart_match_alerts}
+                                                             onChange={(e) => {
+                                                                 updatePreferenceField("ai_smart_match_alerts", e.target.checked)
+                                                                 handleSavePreferences()
+                                                             }}
+                                                         />
+                                                     </div>
                                                 </CardContent>
                                             </Card>
                                         </TabsContent>

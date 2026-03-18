@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { MessageSquare } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 
 interface IntentOption {
     id: string
@@ -75,6 +76,7 @@ export function IntentPrompt({ className, onSelectIntent }: IntentPromptProps) {
                 onClick={() => setIsExpanded(!isExpanded)}
                 className={cn(
                     "w-full justify-start gap-2 h-auto py-2 px-3",
+                    glass("input"),
                     selectedIntent && "bg-primary/5 border-primary/20"
                 )}
             >
@@ -87,7 +89,7 @@ export function IntentPrompt({ className, onSelectIntent }: IntentPromptProps) {
             </Button>
 
             {isExpanded && (
-                <div className="grid grid-cols-2 gap-2 p-2 bg-muted/30 rounded-lg">
+                <div className={cn("grid grid-cols-2 gap-2 p-2 rounded-lg", glass("subtle"))}>
                     {INTENT_OPTIONS.map((option) => (
                         <Button
                             key={option.id}

@@ -1,12 +1,16 @@
 "use client"
 
+import { useState } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { UserPlus, X, CheckCircle2, Clock, Sparkles, Mail } from "lucide-react"
 import { GlassCard } from "@/components/shared/glass-card"
+import { MatchReasonBadge } from "@/components/ui/match-reason-badge"
 import { formatInitials } from "@/lib/utils/format-initials"
+import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 
 const RECEIVED_REQUESTS: ReceivedRequest[] = [
     {
@@ -112,6 +116,14 @@ type RequestCardProps = {
 function RequestCard({ request, type }: RequestCardProps) {
     const isReceived = type === "received";
     const receivedRequest = isReceived ? request as ReceivedRequest : null;
+    const [isActionPending, setIsActionPending] = useState(false);
+
+    const handleAction = async (action: "accept" | "decline") => {
+        setIsActionPending(true);
+        // TODO: Implement actual API calls
+        await new Promise(resolve => setTimeout(resolve, 500));
+        setIsActionPending(false);
+    };
     
     return (
         <GlassCard hoverable className="my-2" innerClassName="p-4 sm:p-6">
@@ -123,72 +135,128 @@ function RequestCard({ request, type }: RequestCardProps) {
                 </Avatar>
 
                 {/* Content */}
-                <div className="flex-1 space-y-2.5 sm:space-y-3 min-w-0">
-                    <div className="flex flex-col gap-2">
+                <div className="flex-1 space-y-3 sm:space-y-4 min-w-0">
+                    <div className="flex flex-col gap-2.5">
                         <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
                                     <h3 className="font-bold text-base sm:text-lg break-words">{request.user.name}</h3>
                                     {isReceived && receivedRequest?.matchScore && (
-                                        <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/30 shrink-0">
+                                        <Badge className={cn(
+                                            "bg-primary/10 text-primary border-primary/30 shrink-0 font-semibold",
+                                            glass("badge")
+                                        )}>
                                             <Sparkles className="h-3 w-3 mr-1" />
                                             {receivedRequest.matchScore}% Match
                                         </Badge>
                                     )}
                                 </div>
                                 <p className="text-sm text-muted-foreground break-words mt-1">{request.user.role}</p>
-                                <p className="text-xs text-muted-foreground mt-0.5">{request.user.location}</p>
+                                <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
+                                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
+                                    {request.user.location}
+                                    <span className="text-muted-foreground/60">•</span>
+                                    <span className="font-medium">{request.time}</span>
+                                </p>
                             </div>
-                            <span className="text-xs text-muted-foreground whitespace-nowrap shrink-0">{request.time}</span>
                         </div>
                     </div>
 
-                    {/* Skills */}
+                    {/* Skills with MatchReasonBadge */}
                     <div className="flex flex-wrap gap-1.5">
-                        {request.user.skills.map((skill: string) => (
-                            <Badge key={skill} variant="outline" className="text-xs">
-                                {skill}
-                            </Badge>
+                        {request.user.skills.map((skill: string, index: number) => (
+                            <MatchReasonBadge 
+                                key={`${skill}-${index}`}
+                                type="skill" 
+                                label={skill} 
+                            />
                         ))}
                     </div>
 
                     {/* Message (only for received requests) */}
                     {isReceived && receivedRequest?.message && (
-                        <div className="p-3 bg-secondary/20 rounded-lg border border-border/20">
-                            <div className="flex items-start gap-2">
+                        <div className={cn(
+                            "p-3 rounded-lg border",
+                            glass("overlay"),
+                            glass("subtle")
+                        )}>
+                            <div className="flex items-start gap-2.5">
                                 <Mail className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-                                <p className="text-sm text-foreground/80 italic break-words">{receivedRequest.message}</p>
+                                <p className="text-sm text-foreground/80 italic break-words leading-relaxed">{receivedRequest.message}</p>
                             </div>
                         </div>
                     )}
 
+                    {/* Divider */}
+                    <div className={cn("border-t", glass("divider"))} />
+
                     {/* Actions */}
-                    <div className="flex flex-col xs:flex-row gap-2 pt-2">
+                    <div className="flex flex-col xs:flex-row gap-2 pt-1">
                         {type === "received" ? (
                             <>
                                 <div className="flex gap-2">
-                                    <Button size="sm" className="flex-1 xs:flex-auto">
+                                    <Button 
+                                        size="sm" 
+                                        disabled={isActionPending}
+                                        className={cn(
+                                            "flex-1 xs:flex-auto min-h-[44px] xs:min-h-[36px] font-semibold",
+                                            glass("buttonPrimary"),
+                                            glass("buttonPrimaryGlow")
+                                        )}
+                                        onClick={() => handleAction("accept")}
+                                    >
                                         <CheckCircle2 className="mr-1.5 h-4 w-4" />
-                                        <span className="hidden xs:inline">Accept</span>
-                                        <span className="xs:hidden">Accept</span>
+                                        {isActionPending ? "Accepting..." : "Accept"}
                                     </Button>
-                                    <Button size="sm" variant="outline" className="flex-1 xs:flex-auto">
+                                    <Button 
+                                        size="sm" 
+                                        variant="outline"
+                                        disabled={isActionPending}
+                                        className={cn(
+                                            "flex-1 xs:flex-auto min-h-[44px] xs:min-h-[36px]",
+                                            glass("buttonGhost")
+                                        )}
+                                        onClick={() => handleAction("decline")}
+                                    >
                                         <X className="mr-1.5 h-4 w-4" />
-                                        <span className="hidden xs:inline">Decline</span>
-                                        <span className="xs:hidden">Decline</span>
+                                        {isActionPending ? "Declining..." : "Decline"}
                                     </Button>
                                 </div>
-                                <Button size="sm" variant="ghost" className="w-full xs:w-auto">
+                                <Button 
+                                    size="sm" 
+                                    variant="ghost" 
+                                    disabled={isActionPending}
+                                    className={cn(
+                                        "w-full xs:w-auto min-h-[44px] xs:min-h-[36px]",
+                                        glass("buttonGhost")
+                                    )}
+                                >
                                     View Profile
                                 </Button>
                             </>
                         ) : (
                             <>
-                                <Button size="sm" variant="outline" className="w-full xs:w-auto" disabled>
+                                <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    disabled
+                                    className={cn(
+                                        "w-full xs:w-auto min-h-[44px] xs:min-h-[36px]",
+                                        glass("buttonGhost")
+                                    )}
+                                >
                                     <Clock className="mr-1.5 h-4 w-4" />
                                     Pending
                                 </Button>
-                                <Button size="sm" variant="ghost" className="w-full xs:w-auto">
+                                <Button 
+                                    size="sm" 
+                                    variant="ghost"
+                                    disabled={isActionPending}
+                                    className={cn(
+                                        "w-full xs:w-auto min-h-[44px] xs:min-h-[36px]",
+                                        glass("buttonGhost")
+                                    )}
+                                >
                                     Cancel Request
                                 </Button>
                             </>
@@ -201,6 +269,8 @@ function RequestCard({ request, type }: RequestCardProps) {
 }
 
 export function RequestsClient() {
+    const [activeTab, setActiveTab] = useState<"received" | "sent">("received");
+
     return (
         <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 max-w-4xl">
             <div className="mb-6 sm:mb-8">
@@ -208,19 +278,40 @@ export function RequestsClient() {
                 <p className="text-sm sm:text-base text-muted-foreground">Manage your incoming and outgoing connection requests</p>
             </div>
 
-            <Tabs defaultValue="received" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-4 sm:mb-6">
-                    <TabsTrigger value="received" className="relative">
-                        <span className="hidden xs:inline">Received</span>
-                        <span className="xs:hidden">Inbox</span>
-                        <Badge className="ml-1.5 sm:ml-2 h-5 w-5 flex items-center justify-center rounded-full p-0 text-xs">
+            <Tabs defaultValue="received" className="w-full" onValueChange={(value) => setActiveTab(value as "received" | "sent")}>
+                <TabsList className={cn(
+                    "grid w-full grid-cols-2 mb-4 sm:mb-6 min-h-[44px]",
+                    glass("subtle")
+                )}>
+                    <TabsTrigger 
+                        value="received" 
+                        className={cn(
+                            "relative data-[state=active]:font-semibold",
+                            activeTab === "received" && glass("tabActive"),
+                            activeTab !== "received" && glass("tabInactive")
+                        )}
+                    >
+                        Received
+                        <Badge className={cn(
+                            "ml-2 h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full text-xs font-semibold",
+                            glass("badge")
+                        )}>
                             {RECEIVED_REQUESTS.length}
                         </Badge>
                     </TabsTrigger>
-                    <TabsTrigger value="sent">
-                        <span className="hidden xs:inline">Sent</span>
-                        <span className="xs:hidden">Sent</span>
-                        <Badge variant="secondary" className="ml-1.5 sm:ml-2 h-5 w-5 flex items-center justify-center rounded-full p-0 text-xs">
+                    <TabsTrigger 
+                        value="sent"
+                        className={cn(
+                            "relative data-[state=active]:font-semibold",
+                            activeTab === "sent" && glass("tabActive"),
+                            activeTab !== "sent" && glass("tabInactive")
+                        )}
+                    >
+                        Sent
+                        <Badge className={cn(
+                            "ml-2 h-5 min-w-[20px] px-1.5 flex items-center justify-center rounded-full text-xs",
+                            glass("badge")
+                        )}>
                             {SENT_REQUESTS.length}
                         </Badge>
                     </TabsTrigger>
@@ -232,13 +323,22 @@ export function RequestsClient() {
                             <RequestCard key={request.id} request={request} type="received" />
                         ))
                     ) : (
-                        <GlassCard innerClassName="flex flex-col items-center justify-center py-10 sm:py-12 px-4">
-                            <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-secondary/20 border border-border/20 flex items-center justify-center mb-3 sm:mb-4">
-                                <UserPlus className="h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground" />
+                        <GlassCard 
+                            innerClassName={cn(
+                                "flex flex-col items-center justify-center py-12 sm:py-16 px-4",
+                                glass("cardInner")
+                            )}
+                        >
+                            <div className={cn(
+                                "h-16 w-16 sm:h-20 sm:w-20 rounded-full flex items-center justify-center mb-4 sm:mb-5",
+                                glass("subtle"),
+                                glass("badge")
+                            )}>
+                                <UserPlus className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground" />
                             </div>
-                            <h3 className="font-semibold text-base sm:text-lg mb-2">No pending requests</h3>
-                            <p className="text-center text-sm sm:text-base text-muted-foreground max-w-sm px-4">
-                                You don&apos;t have unknown connection requests at the moment.
+                            <h3 className="font-semibold text-lg sm:text-xl mb-2">No pending requests</h3>
+                            <p className="text-center text-sm sm:text-base text-muted-foreground max-w-sm px-4 leading-relaxed">
+                                You don&apos;t have any pending connection requests at the moment.
                             </p>
                         </GlassCard>
                     )}
@@ -250,13 +350,22 @@ export function RequestsClient() {
                             <RequestCard key={request.id} request={request} type="sent" />
                         ))
                     ) : (
-                        <GlassCard innerClassName="flex flex-col items-center justify-center py-10 sm:py-12 px-4">
-                            <div className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-secondary/20 border border-border/20 flex items-center justify-center mb-3 sm:mb-4">
-                                <Clock className="h-7 w-7 sm:h-8 sm:w-8 text-muted-foreground" />
+                        <GlassCard 
+                            innerClassName={cn(
+                                "flex flex-col items-center justify-center py-12 sm:py-16 px-4",
+                                glass("cardInner")
+                            )}
+                        >
+                            <div className={cn(
+                                "h-16 w-16 sm:h-20 sm:w-20 rounded-full flex items-center justify-center mb-4 sm:mb-5",
+                                glass("subtle"),
+                                glass("badge")
+                            )}>
+                                <Clock className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground" />
                             </div>
-                            <h3 className="font-semibold text-base sm:text-lg mb-2">No sent requests</h3>
-                            <p className="text-center text-sm sm:text-base text-muted-foreground max-w-sm px-4">
-                                You haven&apos;t sent unknown connection requests yet.
+                            <h3 className="font-semibold text-lg sm:text-xl mb-2">No sent requests</h3>
+                            <p className="text-center text-sm sm:text-base text-muted-foreground max-w-sm px-4 leading-relaxed">
+                                You haven&apos;t sent any connection requests yet.
                             </p>
                         </GlassCard>
                     )}

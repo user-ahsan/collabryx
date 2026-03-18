@@ -5,6 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Bell, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 import { GlassCard } from "@/components/shared/glass-card"
 import { toast } from "sonner"
 import { getCache, setCache, CACHE_KEYS } from "@/lib/dashboard-cache"
@@ -79,7 +80,10 @@ export function MatchActivityCard({
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="h-8 px-3 text-sm text-muted-foreground hover:text-foreground hover:bg-white/[0.04] transition-colors cursor-pointer"
+                        className={cn(
+                            "h-8 px-3 text-sm text-muted-foreground transition-colors cursor-pointer",
+                            glass("buttonGhost")
+                        )}
                     >
                         View All
                         <ArrowRight className="h-3 w-3 ml-1" />
@@ -91,9 +95,15 @@ export function MatchActivityCard({
                     {activities.map((activity) => (
                         <div
                             key={activity.id}
-                            className="flex items-center gap-3 p-2.5 rounded-lg hover:bg-white/[0.04] transition-all duration-200 cursor-pointer"
+                            className={cn(
+                                "flex items-center gap-3 p-2.5 rounded-lg transition-all duration-200 cursor-pointer",
+                                glass("tabInactive")
+                            )}
                         >
-                            <Avatar className="h-9 w-9 border border-white/[0.08] shadow-sm shrink-0">
+                            <Avatar className={cn(
+                                "h-9 w-9 shrink-0",
+                                glass("bubbleAccent")
+                            )}>
                                 <AvatarImage src={activity.user_avatar} />
                                 <AvatarFallback className="text-xs bg-blue-500/10 text-blue-400 font-bold">
                                     {activity.user_initials}
@@ -104,7 +114,10 @@ export function MatchActivityCard({
                                     <span className="font-medium">{activity.user_name}</span>{" "}
                                     <span className="text-muted-foreground">{activity.activity}</span>
                                 </p>
-                                <p className="text-xs font-semibold text-primary mt-1">
+                                <p className={cn(
+                                    "text-xs font-semibold mt-1",
+                                    glass("badge")
+                                )}>
                                     {activity.match_percentage}% match
                                 </p>
                             </div>
