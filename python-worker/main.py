@@ -12,6 +12,8 @@ import os
 import time
 import asyncio
 import logging
+import psutil
+import shutil
 from datetime import datetime, timedelta
 import httpx
 from contextlib import asynccontextmanager
@@ -31,9 +33,10 @@ from services.analytics_aggregator import AnalyticsAggregator
 
 load_dotenv()
 
-# Configure structured logging
+# Configure structured JSON logging
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=logging.INFO,
+    format='{"timestamp": "%(asctime)s", "level": "%(levelname)s", "logger": "%(name)s", "message": "%(message)s"}',
 )
 logger = logging.getLogger(__name__)
 
@@ -648,7 +651,7 @@ async def root():
 
 @app.get("/health")
 async def health():
-    """Health check endpoint with Supabase connectivity test"""
+    """Health check endpoint with comprehensive system metrics"""
     supabase_healthy = False
     try:
         if supabase:
@@ -657,13 +660,50 @@ async def health():
     except Exception as e:
         logger.error(f"Supabase health check failed: {e}")
 
+    # Get memory usage
+    memory_info = psutil.virtual_memory()
+    process = psutil.Process(os.getpid())
+    process_memory = process.memory_info()
+
+    # Get disk usage
+    disk_usage = shutil.disk_usage("/")
+
+    # Determine overall status
+    status = "healthy"
+    if not supabase_healthy:
+        status = "degraded"
+    elif memory_info.percent > 90:
+        status = "warning"
+        logger.warning(f"High memory usage: {memory_info.percent:.1f}%")
+    elif disk_usage.percent > 85:
+        status = "warning"
+        logger.warning(f"High disk usage: {disk_usage.percent:.1f}%")
+
     return {
-        "status": "healthy" if supabase_healthy else "degraded",
+        "status": status,
         "timestamp": time.time(),
         "model_info": generator.get_model_info(),
         "supabase_connected": supabase_healthy,
         "queue_size": request_queue.qsize(),
         "queue_capacity": MAX_QUEUE_SIZE,
+        "system": {
+            "memory": {
+                "percent": memory_info.percent,
+                "available_mb": round(memory_info.available / 1024 / 1024, 2),
+                "total_mb": round(memory_info.total / 1024 / 1024, 2),
+                "used_mb": round(memory_info.used / 1024 / 1024, 2),
+            },
+            "process_memory": {
+                "rss_mb": round(process_memory.rss / 1024 / 1024, 2),
+                "vms_mb": round(process_memory.vms / 1024 / 1024, 2),
+            },
+            "disk": {
+                "percent": disk_usage.percent,
+                "free_gb": round(disk_usage.free / 1024 / 1024 / 1024, 2),
+                "total_gb": round(disk_usage.total / 1024 / 1024 / 1024, 2),
+                "used_gb": round(disk_usage.used / 1024 / 1024 / 1024, 2),
+            },
+        },
     }
 
 
