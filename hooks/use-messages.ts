@@ -10,6 +10,7 @@ interface Message {
     sender_id: string
     text: string
     is_read: boolean
+    read_at?: string | null
     attachment_url?: string
     attachment_type?: "image" | "file"
     created_at: string
@@ -24,7 +25,7 @@ interface UseMessagesReturn {
     refreshMessages: () => Promise<void>
 }
 
-export function useMessages(conversationId?: string): UseMessagesReturn {
+export function useMessages(conversationId?: string, currentUserId?: string): UseMessagesReturn {
     const [messages, setMessages] = useState<Message[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -76,6 +77,23 @@ export function useMessages(conversationId?: string): UseMessagesReturn {
                 (payload) => {
                     const newMessage = payload.new as Message
                     setMessages(prev => [...prev, newMessage])
+                }
+            )
+            .on(
+                "postgres_changes",
+                {
+                    event: "UPDATE",
+                    schema: "public",
+                    table: "messages",
+                    filter: `conversation_id=eq.${conversationId}`
+                },
+                (payload) => {
+                    const updatedMessage = payload.new as Message
+                    setMessages(prev =>
+                        prev.map(msg =>
+                            msg.id === updatedMessage.id ? updatedMessage : msg
+                        )
+                    )
                 }
             )
             .subscribe()
@@ -146,12 +164,29 @@ export function useMessages(conversationId?: string): UseMessagesReturn {
                 })
                 .eq("id", convId)
 
-            await supabase
+            const { error: updateError } = await supabase
                 .from("messages")
-                .update({ is_read: true })
+                .update({ 
+                    is_read: true,
+                    read_at: new Date().toISOString()
+                })
                 .eq("conversation_id", convId)
                 .eq("is_read", false)
                 .neq("sender_id", user.id)
+                .select()
+
+            if (!updateError && updateError === null) {
+                // Broadcast read receipt event via realtime
+                supabase.channel(`read:${convId}`).send({
+                    type: "broadcast",
+                    event: "read_receipt",
+                    payload: {
+                        conversation_id: convId,
+                        user_id: user.id,
+                        read_at: new Date().toISOString()
+                    }
+                })
+            }
         } catch (err) {
             console.error("Error marking messages as read:", err)
         }
