@@ -197,10 +197,17 @@ Value: 76.76.21.21
 
 In Railway dashboard:
 ```
+# Supabase
 SUPABASE_URL=https://xxx.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=eyJhbG...
+
+# API Configuration
 ALLOWED_ORIGINS=https://collabryx.com,https://staging.collabryx.com
 PORT=8000
+
+# External APIs (optional - features work without them)
+PERSPECTIVE_API_KEY=...  # Google Perspective API for content moderation
+GEMINI_API_KEY=...       # Google Gemini API for AI mentor
 ```
 
 #### Step 4: Deploy
@@ -213,14 +220,30 @@ PORT=8000
 ```json
 {
   "status": "healthy",
+  "services": {
+    "embedding_generator": "operational",
+    "match_generator": "operational",
+    "notification_engine": "operational",
+    "activity_tracker": "operational",
+    "feed_scorer": "operational",
+    "content_moderator": "operational",
+    "ai_mentor_processor": "operational",
+    "event_processor": "operational",
+    "analytics_aggregator": "operational"
+  },
   "model_info": {
     "model_name": "all-MiniLM-L6-v2",
     "dimensions": 384,
     "device": "cpu"
   },
+  "external_apis": {
+    "perspective_api": "configured",
+    "gemini_api": "configured"
+  },
   "supabase_connected": true,
   "queue_size": 0,
-  "queue_capacity": 100
+  "queue_capacity": 100,
+  "uptime": "24h 15m"
 }
 ```
 
@@ -251,10 +274,17 @@ Add this URL to Vercel's `PYTHON_WORKER_URL` environment variable.
 #### Step 3: Set Environment Variables
 
 ```
+# Supabase
 SUPABASE_URL=https://xxx.supabase.co
 SUPABASE_SERVICE_ROLE_KEY=eyJhbG...
+
+# API Configuration
 ALLOWED_ORIGINS=https://collabryx.com
 PORT=8000
+
+# External APIs (optional)
+PERSPECTIVE_API_KEY=...  # Google Perspective API for content moderation
+GEMINI_API_KEY=...       # Google Gemini API for AI mentor
 ```
 
 #### Step 4: Choose Instance Type
@@ -510,11 +540,21 @@ LIMIT 10;
 curl https://worker.collabryx.com/health
 ```
 
-**Metrics to Track:**
-- Queue depth (alert if > 100)
-- DLQ size (alert if > 10)
-- Processing time (alert if > 5s)
-- Error rate (alert if > 5%)
+**Service-Specific Metrics:**
+
+| Service | Metric | Alert Threshold |
+|---------|--------|-----------------|
+| All Services | Error rate | > 5% |
+| All Services | Response time | > 2s |
+| embedding_generator | Queue depth | > 100 |
+| embedding_generator | DLQ size | > 10 |
+| embedding_generator | Processing time | > 5s |
+| match_generator | Match generation failures | > 10/hour |
+| notification_engine | Delivery failures | > 5% |
+| content_moderator | API errors | > 10% |
+| ai_mentor_processor | Gemini API rate limit | > 5/hour |
+| event_processor | Event backlog | > 1000 |
+| analytics_aggregator | Aggregation failures | > 1/day |
 
 **Logging:**
 ```python
