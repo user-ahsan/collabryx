@@ -1,24 +1,26 @@
 -- ============================================================================
 -- COLLABRYX DATABASE SCHEMA - COMPLETE MASTER FILE
 -- ============================================================================
--- Version: 3.0.0 (Complete Consolidation)
--- Date: 2026-03-18
+-- Version: 3.1.0 (Phase 2 Task 3 - Missing Indexes Added)
+-- Date: 2026-03-19
 -- 
 -- This file contains the COMPLETE database schema including:
 -- - 31 Tables (26 core + 5 ML features: feed_scores, events, user_analytics, platform_analytics, content_moderation_logs)
--- - All indexes optimized for common queries (including HNSW for vectors)
+-- - All indexes optimized for common queries (including HNSW for vectors + composite indexes)
 -- - All triggers for automation (updated_at, counts, embeddings)
 -- - All RLS policies for security (60+ policies)
 -- - All helper functions (35+ functions including match-making, notifications, comments, embeddings)
 -- - Storage buckets for file uploads (post-media, profile-media, project-media)
 -- - Realtime enabled for all tables (Supabase Realtime)
 -- - Complete embedding infrastructure (DLQ, rate limiting, pending queue)
+-- - Missing composite indexes (connections status, notifications unread)
 --
 -- Usage: Run this ONCE in Supabase SQL Editor
 -- URL: https://supabase.com/dashboard/project/_/sql/new
 --
 -- PRODUCTION READY: All functionality consolidated into single file
 -- DEPRECATED: 99-rate-limit-function.sql, 100-helper-functions.sql (merged into this file)
+-- RELATED: 99-missing-indexes.sql (standalone migration for these indexes)
 -- ============================================================================
 
 -- ============================================================================
@@ -654,6 +656,9 @@ CREATE INDEX IF NOT EXISTS idx_comments_parent_id ON public.comments(parent_id);
 CREATE INDEX IF NOT EXISTS idx_connections_requester_id ON public.connections(requester_id);
 CREATE INDEX IF NOT EXISTS idx_connections_receiver_id ON public.connections(receiver_id);
 CREATE INDEX IF NOT EXISTS idx_connections_status ON public.connections(status);
+-- Composite indexes for connection status queries (Phase 2 Task 3)
+CREATE INDEX IF NOT EXISTS idx_connections_requester_receiver_status ON public.connections(requester_id, receiver_id, status);
+CREATE INDEX IF NOT EXISTS idx_connections_receiver_requester_status ON public.connections(receiver_id, requester_id, status);
 
 -- Match suggestions indexes
 CREATE INDEX IF NOT EXISTS idx_match_suggestions_user_id ON public.match_suggestions(user_id);
@@ -687,6 +692,9 @@ CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON public.notifications(use
 CREATE INDEX IF NOT EXISTS idx_notifications_actor_id ON public.notifications(actor_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_created_at ON public.notifications(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_notifications_is_read ON public.notifications(is_read);
+-- Partial index for unread notification queries (Phase 2 Task 3)
+-- Only indexes rows where is_read = false (smaller, faster for badge counts)
+CREATE INDEX IF NOT EXISTS idx_notifications_unread ON public.notifications(user_id, created_at DESC) WHERE is_read = false;
 
 -- AI Mentor sessions indexes
 CREATE INDEX IF NOT EXISTS idx_ai_mentor_sessions_user_id ON public.ai_mentor_sessions(user_id);
