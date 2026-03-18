@@ -7,7 +7,13 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { ArrowLeft, CheckCircle2, MoreVertical, Phone, Video } from "lucide-react"
 import { MessageInput } from "./message-input"
+import { MessageBubble } from "./message-bubble"
+import { TypingIndicator } from "./typing-indicator"
 import { glass } from "@/lib/utils/glass-variants"
+import { useMessages } from "@/hooks/use-messages"
+import { useTypingIndicator } from "@/hooks/use-typing-indicator"
+import { useEffect, useState } from "react"
+import { createClient } from "@/lib/supabase/client"
 
 interface ChatWindowProps {
     chatId?: string
@@ -15,28 +21,27 @@ interface ChatWindowProps {
     isConnected?: boolean | null
 }
 
-const MESSAGES = [
-    {
-        id: "1",
-        senderId: "them",
-        text: "Hey! I saw your profile and thought we'd be a great match.",
-        time: "10:30 AM",
-    },
-    {
-        id: "2",
-        senderId: "me",
-        text: "Hi Sarah! Thanks for reaching out. What specifically caught your eye?",
-        time: "10:32 AM",
-    },
-    {
-        id: "3",
-        senderId: "them",
-        text: "I really liked your experience with React and AI integration. avoiding overly complex solutions.",
-        time: "10:35 AM",
-    },
-]
-
 export function ChatWindow({ chatId, onBackToList, isConnected }: ChatWindowProps) {
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+    const { messages, isLoading, markAsRead } = useMessages(chatId, currentUserId || undefined)
+    const { isTyping, sendTypingEvent, clearTypingStatus } = useTypingIndicator(chatId, currentUserId || undefined)
+
+    useEffect(() => {
+        const getUser = async () => {
+            const supabase = createClient()
+            const { data: { user } } = await supabase.auth.getUser()
+            setCurrentUserId(user?.id || null)
+        }
+        getUser()
+    }, [])
+
+    // Mark messages as read when viewing conversation
+    useEffect(() => {
+        if (chatId && currentUserId) {
+            markAsRead(chatId)
+        }
+    }, [chatId, currentUserId, markAsRead])
+
     if (!chatId) {
         return (
             <div className="h-full flex items-center justify-center text-muted-foreground">
@@ -102,33 +107,43 @@ export function ChatWindow({ chatId, onBackToList, isConnected }: ChatWindowProp
             {/* Messages */}
             <ScrollArea className="flex-1 p-3 md:p-4">
                 <div className="space-y-3 md:space-y-4">
-                    {MESSAGES.map((msg) => (
-                        <div
-                            key={msg.id}
-                            className={cn(
-                                "flex w-full flex-col",
-                                msg.senderId === "me" ? "items-end" : "items-start"
-                            )}
-                        >
-                            <div
-                                className={cn(
-                                    "rounded-2xl p-2.5 md:p-3 text-sm max-w-[95%] md:max-w-[80%] shadow-sm transition-all",
-                                    msg.senderId === "me"
-                                        ? "bg-primary/90 backdrop-blur-md text-primary-foreground rounded-br-none shadow-[0_4px_32px_0_rgba(59,130,246,0.06)]"
-                                        : "bg-background/40 backdrop-blur-md rounded-bl-none border border-border/40"
-                                )}
-                            >
-                                {msg.text}
-                            </div>
-                            <span className="text-xs text-muted-foreground mt-1">
-                                {msg.time}
-                            </span>
+                    {isLoading ? (
+                        <div className="text-center text-muted-foreground py-8">
+                            Loading messages...
                         </div>
-                    ))}
+                    ) : messages.length === 0 ? (
+                        <div className="text-center text-muted-foreground py-8">
+                            No messages yet. Start the conversation!
+                        </div>
+                    ) : (
+                        messages.map((msg) => (
+                            <MessageBubble
+                                key={msg.id}
+                                id={msg.id}
+                                text={msg.text}
+                                senderId={msg.sender_id}
+                                currentUserId={currentUserId || ""}
+                                isRead={msg.is_read}
+                                readAt={msg.read_at}
+                                createdAt={msg.created_at}
+                                attachmentUrl={msg.attachment_url}
+                                attachmentType={msg.attachment_type}
+                            />
+                        ))
+                    )}
+                    
+                    {/* Typing Indicator */}
+                    {isTyping && (
+                        <TypingIndicator isTyping={true} />
+                    )}
                 </div>
             </ScrollArea>
 
-            <MessageInput />
+            <MessageInput 
+                conversationId={chatId}
+                onTyping={() => sendTypingEvent(chatId)}
+                onStopTyping={() => clearTypingStatus()}
+            />
         </div>
     )
 }
