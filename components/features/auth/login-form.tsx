@@ -179,9 +179,9 @@ export function LoginForm() {
                         <div className="space-y-2">
                             <div className="flex justify-between items-center">
                                 <Label htmlFor="password">Password</Label>
-                                <Button variant="link" className="px-0 h-auto text-sm text-muted-foreground hover:text-primary" tabIndex={-1}>
+                                <Link href="/forgot-password" className="px-0 h-auto text-sm text-muted-foreground hover:text-primary">
                                     Forgot password?
-                                </Button>
+                                </Link>
                             </div>
                             <div className="relative">
                                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
