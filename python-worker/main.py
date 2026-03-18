@@ -23,6 +23,7 @@ from embedding_generator import generator, construct_semantic_text
 from rate_limiter import RateLimiter
 from embedding_validator import EmbeddingValidator
 from services.match_generator import MatchGenerator
+from services.notification_engine import NotificationEngine
 
 load_dotenv()
 
@@ -919,6 +920,115 @@ async def matches_health():
             "error": str(e),
             "timestamp": datetime.now().isoformat(),
         }
+
+
+# =====================================================
+# Notification Endpoints (Tasks 1.3.6-1.3.7)
+# =====================================================
+
+
+class NotificationSendRequest(BaseModel):
+    """Request body for sending notification"""
+
+    user_id: str
+    type: str
+    actor_id: str
+    content: str
+    resource_type: Optional[str] = None
+    resource_id: Optional[str] = None
+    priority: Optional[str] = None
+
+
+class NotificationDigestRequest(BaseModel):
+    """Request body for daily digest"""
+
+    user_id: str
+
+
+class NotificationCleanupRequest(BaseModel):
+    """Request body for notification cleanup"""
+
+    days: int = Field(default=30, ge=1, le=365)
+
+
+@app.post("/api/notifications/send")
+async def send_notification(request: NotificationSendRequest):
+    """
+    Send a single notification.
+    Task: 1.3.6
+    """
+    try:
+        engine = NotificationEngine(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+        result = await engine.send_notification(
+            user_id=request.user_id,
+            type=request.type,
+            actor_id=request.actor_id,
+            content=request.content,
+            resource_type=request.resource_type,
+            resource_id=request.resource_id,
+            priority=request.priority,
+        )
+
+        if result["status"] == "failed":
+            raise HTTPException(
+                status_code=500, detail=result.get("error", "Failed to send")
+            )
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error sending notification: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/notifications/digest/send")
+async def send_digest(request: NotificationDigestRequest):
+    """
+    Send daily digest to user.
+    Task: 1.3.6
+    """
+    try:
+        engine = NotificationEngine(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+        result = await engine.send_daily_digest(user_id=request.user_id)
+
+        if result["status"] == "failed":
+            raise HTTPException(
+                status_code=500, detail=result.get("error", "Failed to send digest")
+            )
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error sending digest: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/notifications/cleanup")
+async def cleanup_notifications(request: NotificationCleanupRequest):
+    """
+    Cleanup old notifications (admin only).
+    Task: 1.3.6
+    """
+    try:
+        engine = NotificationEngine(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+        result = await engine.cleanup_old_notifications(days=request.days)
+
+        if result["status"] == "failed":
+            raise HTTPException(
+                status_code=500, detail=result.get("error", "Failed to cleanup")
+            )
+
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error cleaning up notifications: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.exception_handler(Exception)
