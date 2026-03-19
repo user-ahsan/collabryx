@@ -94,43 +94,43 @@ export default function SettingsPage() {
 								glass("tabInactive")
 							)}>
 								<TabsTrigger value="profile" className={cn(
-									"justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap data-[state=active]:bg-background/50 data-[state=active]:shadow-sm"
+									"justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap data-[state=active]:bg-background/50 data-[state=active]:shadow-sm focus-visible:outline-2 focus-visible:outline-primary/50"
 								)}>
 									<User className="h-4 w-4 shrink-0" />
 									<span>Profile</span>
 								</TabsTrigger>
 								<TabsTrigger value="skills" className={cn(
-									"justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap data-[state=active]:bg-background/50 data-[state=active]:shadow-sm"
+									"justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap data-[state=active]:bg-background/50 data-[state=active]:shadow-sm focus-visible:outline-2 focus-visible:outline-primary/50"
 								)}>
 									<Code2 className="h-4 w-4 shrink-0" />
 									<span>Skills & Interests</span>
 								</TabsTrigger>
 								<TabsTrigger value="experience" className={cn(
-									"justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap data-[state=active]:bg-background/50 data-[state=active]:shadow-sm"
+									"justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap data-[state=active]:bg-background/50 data-[state=active]:shadow-sm focus-visible:outline-2 focus-visible:outline-primary/50"
 								)}>
 									<Briefcase className="h-4 w-4 shrink-0" />
 									<span>Experience</span>
 								</TabsTrigger>
 								<TabsTrigger value="account" className={cn(
-									"justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap data-[state=active]:bg-background/50 data-[state=active]:shadow-sm"
+									"justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap data-[state=active]:bg-background/50 data-[state=active]:shadow-sm focus-visible:outline-2 focus-visible:outline-primary/50"
 								)}>
 									<Shield className="h-4 w-4 shrink-0" />
 									<span>Account</span>
 								</TabsTrigger>
 								<TabsTrigger value="notifications" className={cn(
-									"justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap data-[state=active]:bg-background/50 data-[state=active]:shadow-sm"
+									"justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap data-[state=active]:bg-background/50 data-[state=active]:shadow-sm focus-visible:outline-2 focus-visible:outline-primary/50"
 								)}>
 									<Bell className="h-4 w-4 shrink-0" />
 									<span>Notifications</span>
 								</TabsTrigger>
 								<TabsTrigger value="privacy" className={cn(
-									"justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap data-[state=active]:bg-background/50 data-[state=active]:shadow-sm"
+									"justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap data-[state=active]:bg-background/50 data-[state=active]:shadow-sm focus-visible:outline-2 focus-visible:outline-primary/50"
 								)}>
 									<Lock className="h-4 w-4 shrink-0" />
 									<span>Privacy</span>
 								</TabsTrigger>
 								<TabsTrigger value="billing" className={cn(
-									"justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap data-[state=active]:bg-background/50 data-[state=active]:shadow-sm"
+									"justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap data-[state=active]:bg-background/50 data-[state=active]:shadow-sm focus-visible:outline-2 focus-visible:outline-primary/50"
 								)}>
 									<CreditCard className="h-4 w-4 shrink-0" />
 									<span>Billing</span>
