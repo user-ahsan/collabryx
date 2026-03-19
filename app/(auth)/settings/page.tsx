@@ -60,12 +60,12 @@ export default function SettingsPage() {
 			<div className="border-b border-white/10">
 				<div className="container max-w-7xl mx-auto px-4 md:px-6 py-4">
 					<div className="flex items-center justify-between">
-						<div>
-							<h1 className="text-2xl md:text-3xl font-bold">Settings</h1>
-							<p className="text-sm text-muted-foreground mt-1">
-								Manage your profile, account preferences, and notifications.
-							</p>
-						</div>
+					<div>
+						<h1 className="text-3xl font-bold">Settings</h1>
+						<p className="text-sm text-muted-foreground mt-2">
+							Manage your profile, account preferences, and notifications.
+						</p>
+					</div>
 						<Button variant="outline" asChild>
 							<Link href="/dashboard">Back to Dashboard</Link>
 						</Button>
