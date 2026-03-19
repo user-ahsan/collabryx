@@ -224,10 +224,14 @@ export async function fetchMatchActivity(
 }> {
   try {
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-    if (!user) {
-      return { data: [], error: new Error("Not authenticated") }
+    if (authError || !user) {
+      logger.app.error("Authentication failed in fetchMatchActivity", authError)
+      return { 
+        data: [], 
+        error: new Error("Authentication failed: " + (authError?.message || "Not authenticated")) 
+      }
     }
 
     let query = supabase
