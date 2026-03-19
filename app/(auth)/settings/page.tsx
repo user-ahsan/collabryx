@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { User, Shield, Bell, CreditCard, Loader2, Code2, Briefcase, Lock } from "lucide-react"
+import { User, Shield, Bell, CreditCard, Loader2, Code2, Briefcase, Lock, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
 import { ProfileSettingsTab } from "@/components/features/settings/profile-settings-tab"
@@ -76,7 +76,12 @@ export default function SettingsPage() {
 			{/* Main Content */}
 			<div className="container max-w-7xl mx-auto px-4 md:px-6 py-6">
 				{error && (
-					<div className="bg-destructive/15 text-destructive text-sm px-4 py-3 rounded-lg mb-6 font-medium">
+					<div
+						className="flex items-center gap-2 rounded-md bg-destructive/10 p-3 text-sm font-medium text-destructive"
+						role="alert"
+						aria-live="polite"
+					>
+						<AlertCircle className="h-4 w-4 shrink-0" />
 						{error}
 					</div>
 				)}
