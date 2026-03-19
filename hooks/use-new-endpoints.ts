@@ -6,6 +6,7 @@
  */
 
 import { useState, useCallback } from 'react';
+import { toast } from 'sonner';
 
 // ============================================================================
 // Content Moderation Hook
@@ -37,7 +38,8 @@ export function useContentModeration() {
 
   const moderate = useCallback(async (
     content: string,
-    contentType: 'post' | 'comment' | 'message' | 'profile' = 'post'
+    contentType: 'post' | 'comment' | 'message' | 'profile' = 'post',
+    showToast = false
   ): Promise<ModerateResponse | null> => {
     setIsModerating(true);
     setError(null);
@@ -55,14 +57,29 @@ export function useContentModeration() {
       });
 
       if (!response.ok) {
-        throw new Error(`Moderation failed: ${response.statusText}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `Moderation failed: ${response.statusText}`);
       }
 
       const data: ModerateResponse = await response.json();
+      
+      if (showToast) {
+        if (data.auto_reject) {
+          toast.error('Content was flagged and cannot be published');
+        } else if (data.flag_for_review) {
+          toast.warning('Content submitted for review');
+        } else {
+          toast.success('Content approved');
+        }
+      }
+      
       return data;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Moderation failed';
       setError(errorMessage);
+      if (showToast) {
+        toast.error(errorMessage);
+      }
       return null;
     } finally {
       setIsModerating(false);
@@ -74,11 +91,19 @@ export function useContentModeration() {
     return result.approved || result.flag_for_review;
   }, []);
 
+  const getActionRequired = useCallback((result: ModerateResponse | null): string => {
+    if (!result) return 'unknown';
+    if (result.auto_reject) return 'rejected';
+    if (result.flag_for_review) return 'review';
+    return 'approved';
+  }, []);
+
   return {
     moderate,
     isModerating,
     error,
     canProceed,
+    getActionRequired,
   };
 }
 
