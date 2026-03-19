@@ -1,11 +1,12 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { Sparkles } from "lucide-react"
+import { Sparkles, Brain, TrendingUp } from "lucide-react"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
 import { GlassCard } from "@/components/shared/glass-card"
+import { getScoreColorClasses, getConfidenceLevel } from "@/lib/services/match-scores"
 
 interface MatchDimension {
     label: string
@@ -19,13 +20,15 @@ interface MatchScoreProps {
     showBreakdown?: boolean
     onClick?: () => void
     className?: string
+    aiConfidence?: number
+    aiExplanation?: string
 }
 
 const defaultDimensions: MatchDimension[] = [
     { label: "Skills", value: 85, color: "bg-blue-500" },
     { label: "Interests", value: 92, color: "bg-green-500" },
-    { label: "Availability", value: 78, color: "bg-purple-500" },
-    { label: "Stage", value: 88, color: "bg-amber-500" },
+    { label: "Goals", value: 78, color: "bg-purple-500" },
+    { label: "Availability", value: 88, color: "bg-amber-500" },
 ]
 
 export function MatchScore({
@@ -33,9 +36,12 @@ export function MatchScore({
     dimensions = defaultDimensions,
     showBreakdown = true,
     onClick,
-    className
+    className,
+    aiConfidence,
+    aiExplanation
 }: MatchScoreProps) {
     const [isExpanded, setIsExpanded] = useState(false)
+    const scoreColors = getScoreColorClasses(overall)
 
     return (
         <GlassCard 
@@ -46,11 +52,11 @@ export function MatchScore({
             {/* Main Score Header */}
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-                    <Sparkles className="h-3 w-3 text-primary" />
+                    <Sparkles className={cn("h-3 w-3", scoreColors.text)} />
                     <span>Match Score</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                    <span className="text-lg font-bold text-primary">{overall}%</span>
+                    <span className={cn("text-lg font-bold", scoreColors.text)}>{overall}%</span>
                 </div>
             </div>
 
@@ -61,15 +67,32 @@ export function MatchScore({
                         initial={{ width: 0 }}
                         animate={{ width: `${overall}%` }}
                         transition={{ duration: 0.6, ease: "easeOut" }}
-                        className={cn(
-                            "h-full rounded-full",
-                            overall >= 90 ? "bg-gradient-to-r from-blue-500 to-blue-400" :
-                            overall >= 75 ? "bg-gradient-to-r from-green-500 to-green-400" :
-                            "bg-gradient-to-r from-amber-500 to-amber-400"
-                        )}
+                        className={cn("h-full rounded-full", scoreColors.progress)}
                     />
                 </div>
             </div>
+
+            {/* AI Confidence Indicator */}
+            {aiConfidence && (
+                <motion.div
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-3 flex items-center justify-between px-2 py-1.5 rounded-md bg-blue-500/5 border border-blue-400/10"
+                >
+                    <div className="flex items-center gap-1.5">
+                        <Brain className="h-3.5 w-3.5 text-blue-400" />
+                        <span className="text-[10px] text-muted-foreground">AI Confidence</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <span className={cn("text-xs font-bold", scoreColors.text)}>
+                            {Math.round(aiConfidence * 100)}%
+                        </span>
+                        <span className="text-[10px] text-muted-foreground/70">
+                            {getConfidenceLevel(aiConfidence)}
+                        </span>
+                    </div>
+                </motion.div>
+            )}
 
             {/* Prominent Toggle Button */}
             <button
@@ -86,7 +109,7 @@ export function MatchScore({
                 )}
             >
                 <span>{isExpanded ? "Hide" : "See"} breakdown</span>
-                <Sparkles className={cn("h-3 w-3 transition-transform", isExpanded && "rotate-180")} />
+                <TrendingUp className={cn("h-3 w-3 transition-transform", isExpanded && "rotate-180")} />
             </button>
 
             {/* Dimension Breakdown - Always visible when expanded */}
@@ -98,28 +121,54 @@ export function MatchScore({
                     transition={{ duration: 0.3 }}
                     className="pt-3 space-y-3 border-t border-blue-400/10 mt-3"
                 >
-                    {dimensions.map((dimension, index) => (
+                    {dimensions.map((dimension, index) => {
+                        const dimColor = dimension.value >= 85 ? "text-green-400" :
+                            dimension.value >= 75 ? "text-blue-400" :
+                            dimension.value >= 65 ? "text-amber-400" : "text-muted-foreground"
+                        
+                        return (
+                            <motion.div
+                                key={dimension.label}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                                className="space-y-1.5"
+                            >
+                                <div className="flex items-center justify-between text-xs">
+                                    <span className="text-muted-foreground">{dimension.label}</span>
+                                    <span className={cn("font-semibold", dimColor)}>{dimension.value}%</span>
+                                </div>
+                                <div className="h-2 w-full bg-blue-950/30 rounded-full overflow-hidden">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${dimension.value}%` }}
+                                        transition={{ duration: 0.4, delay: index * 0.1 }}
+                                        className={cn("h-full rounded-full", dimension.color)}
+                                    />
+                                </div>
+                            </motion.div>
+                        )
+                    })}
+
+                    {/* AI Explanation */}
+                    {aiExplanation && (
                         <motion.div
-                            key={dimension.label}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.05 }}
-                            className="space-y-1.5"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ delay: 0.3 }}
+                            className="mt-4 p-3 rounded-lg bg-blue-500/5 border border-blue-400/10"
                         >
-                            <div className="flex items-center justify-between text-xs">
-                                <span className="text-muted-foreground">{dimension.label}</span>
-                                <span className="font-semibold text-foreground">{dimension.value}%</span>
-                            </div>
-                            <div className="h-2 w-full bg-blue-950/30 rounded-full overflow-hidden">
-                                <motion.div
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${dimension.value}%` }}
-                                    transition={{ duration: 0.4, delay: index * 0.1 }}
-                                    className={cn("h-full rounded-full", dimension.color)}
-                                />
+                            <div className="flex items-start gap-2">
+                                <Brain className="h-4 w-4 text-blue-400 mt-0.5 shrink-0" />
+                                <div className="space-y-1.5">
+                                    <p className="text-[10px] font-medium text-blue-400">AI Analysis</p>
+                                    <p className="text-xs text-muted-foreground leading-relaxed">
+                                        {aiExplanation}
+                                    </p>
+                                </div>
                             </div>
                         </motion.div>
-                    ))}
+                    )}
                 </motion.div>
             )}
         </GlassCard>

@@ -7,10 +7,11 @@ import { MatchCardSkeleton, MatchCardListViewSkeleton } from "@/components/featu
 import { MatchContextHeader } from "@/components/features/matches/match-context-header"
 import { MatchFilters } from "@/components/features/matches/match-filters"
 import { toast } from "sonner"
-import { Users } from "lucide-react"
+import { Users, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { useMatches } from "@/hooks/use-matches-query"
+import { useMatches, useGenerateMatches } from "@/hooks/use-matches-query"
 import { getCache, CACHE_KEYS } from "@/lib/dashboard-cache"
+import { useAuth } from "@/hooks/use-auth"
 
 type ViewMode = "grid" | "list"
 
@@ -32,6 +33,12 @@ interface UIMatch {
 export function MatchesClient() {
     // Fetch matches with React Query
     const { data: matchesData, isPending, error } = useMatches({ limit: 20 })
+    
+    // Match generation mutation
+    const generateMatchesMutation = useGenerateMatches()
+    
+    // Get current user
+    const { user } = useAuth()
 
     // Map to UI format with stable reference, fallback to cache if needed
     const matches: UIMatch[] = useMemo(() => {
@@ -64,6 +71,7 @@ export function MatchesClient() {
         
         return []
     }, [matchesData, error])
+    
     const [preferences, setPreferences] = useState({
         role: "CTO",
         industry: "Fintech",
@@ -78,6 +86,25 @@ export function MatchesClient() {
         toast("Preferences Updated", {
             description: `Looking for ${newPrefs.role} in ${newPrefs.industry}...`,
         })
+    }
+
+    const handleGenerateMatches = async () => {
+        if (!user) {
+            toast.error("Authentication required", {
+                description: "Please log in to generate matches",
+            })
+            return
+        }
+
+        try {
+            await generateMatchesMutation.mutateAsync({
+                userId: user.id,
+                limit: 20,
+            })
+        } catch (error) {
+            // Error already handled by mutation
+            console.error("Match generation failed:", error)
+        }
     }
 
     return (
@@ -130,12 +157,31 @@ export function MatchesClient() {
                         <p className="text-sm md:text-base text-muted-foreground max-w-md mx-auto mb-6">
                             We couldn&apos;t find anyone matching these exact criteria right now. Try broadening your preferences or check back later!
                         </p>
-                        <Button
-                            variant="default"
-                            onClick={() => handleUpdatePreferences({ role: "Any", industry: "Any", type: "Any" })}
-                        >
-                            Reset Preferences
-                        </Button>
+                        <div className="flex gap-3">
+                            <Button
+                                variant="outline"
+                                onClick={() => handleUpdatePreferences({ role: "Any", industry: "Any", type: "Any" })}
+                            >
+                                Reset Preferences
+                            </Button>
+                            <Button
+                                variant="default"
+                                onClick={handleGenerateMatches}
+                                disabled={generateMatchesMutation.isPending}
+                            >
+                                {generateMatchesMutation.isPending ? (
+                                    <>
+                                        <Sparkles className="h-4 w-4 mr-2 animate-spin" />
+                                        Generating...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Sparkles className="h-4 w-4 mr-2" />
+                                        Generate Matches
+                                    </>
+                                )}
+                            </Button>
+                        </div>
                     </div>
                 ) : viewMode === "grid" ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6 lg:gap-8 pb-20">

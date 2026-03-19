@@ -401,36 +401,47 @@ export interface PendingQueueItemWithProfile extends EmbeddingPendingQueue {
 }
 
 // ===========================================
-// TABLE: privacy_settings
+// TABLE: user_analytics
 // ===========================================
-export interface PrivacySetting {
-  id: string;
-  user_id: string;
-  profile_visibility: 'public' | 'friends-only' | 'private';
-  show_email: boolean;
-  show_connections_list: boolean;
-  activity_status_visible: boolean;
-  allow_data_download: boolean;
-  created_at: string;
-  updated_at: string;
+export interface UserAnalytics {
+  user_id: string; // UUID
+  profile_views_count: number;
+  profile_views_last_7_days: number;
+  profile_views_last_30_days: number;
+  post_impressions_count: number;
+  post_reactions_received: number;
+  post_comments_received: number;
+  posts_created_count: number;
+  match_suggestions_count: number;
+  matches_accepted_count: number;
+  match_acceptance_rate: number;
+  high_confidence_matches_count: number;
+  connections_count: number;
+  connection_requests_sent: number;
+  connection_requests_received: number;
+  mutual_connections_avg: number;
+  messages_sent_count: number;
+  messages_received_count: number;
+  conversations_count: number;
+  avg_response_time_minutes: number;
+  ai_sessions_count: number;
+  ai_messages_count: number;
+  sessions_count: number;
+  total_time_spent_minutes: number;
+  last_active?: string; // TIMESTAMPTZ
+  last_active_ip?: string;
+  engagement_score: number;
+  influence_score: number;
+  activity_streak_days: number;
+  created_at: string; // TIMESTAMPTZ
+  updated_at: string; // TIMESTAMPTZ
 }
 
-// ===========================================
-// TABLE: blocked_users
-// ===========================================
-export interface BlockedUser {
-  id: string;
-  blocker_id: string;
-  blocked_id: string;
-  reason?: string;
-  created_at: string;
-}
-
-// Blocked user with profile data for UI
-export interface BlockedUserWithProfile extends BlockedUser {
-  blocked_profile?: {
-    display_name?: string;
-    avatar_url?: string;
-    email?: string;
-  };
+// Activity data for charts
+export interface AnalyticsActivityData {
+  date: string;
+  profile_views: number;
+  matches: number;
+  connections: number;
+  posts: number;
 }
