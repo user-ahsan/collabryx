@@ -21,13 +21,6 @@ RUN uv pip install --no-cache-dir -r requirements.txt
 # Stage 2: Runtime - Minimal production image
 FROM python:3.11-slim-bookworm AS runtime
 
-# Metadata labels for security and maintenance
-LABEL maintainer="Collabryx Team"
-LABEL version="1.0.0"
-LABEL description="Python embedding generation service for Collabryx platform"
-LABEL security.policy="restricted"
-LABEL org.opencontainers.image.source="https://github.com/user-ahsan/collabryx"
-
 WORKDIR /app
 
 # Install security updates and runtime dependencies
@@ -41,17 +34,27 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
 COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/requirements.txt /app/
 
+# Pre-download the model during build (as root to avoid permission issues)
+ENV PATH="/app/.venv/bin:$PATH"
+ENV TRANSFORMERS_CACHE=/app/.cache/huggingface
+RUN mkdir -p /app/.cache/huggingface && \
+    python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')" && \
+    chmod -R 755 /app/.cache/huggingface
+
 # Copy application code
 COPY main.py .
 COPY embedding_generator.py .
 COPY embedding_validator.py .
 COPY rate_limiter.py .
+COPY services/ ./services/
 
 # Create non-root user for security
 RUN useradd --create-home --shell /bin/bash appuser
 
 # Create required directories with proper permissions
-RUN mkdir -p /app/logs /tmp && chown -R appuser:appuser /app /tmp
+RUN mkdir -p /app/logs /tmp && \
+    chown -R appuser:appuser /app /tmp && \
+    chmod -R 755 /app/.cache
 
 # Set ownership before switching user
 RUN chown -R appuser:appuser /app
@@ -65,6 +68,8 @@ USER appuser
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
+ENV TRANSFORMERS_CACHE=/app/.cache/huggingface
+ENV HF_HOME=/app/.cache/huggingface
 
 # Expose port
 EXPOSE 8000

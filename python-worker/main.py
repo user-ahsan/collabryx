@@ -778,6 +778,7 @@ async def health():
 
     # Get disk usage
     disk_usage = shutil.disk_usage("/")
+    disk_percent = (disk_usage.used / disk_usage.total) * 100
 
     # Determine overall status
     status = "healthy"
@@ -786,9 +787,9 @@ async def health():
     elif memory_info.percent > 90:
         status = "warning"
         logger.warning(f"High memory usage: {memory_info.percent:.1f}%")
-    elif disk_usage.percent > 85:
+    elif disk_percent > 85:
         status = "warning"
-        logger.warning(f"High disk usage: {disk_usage.percent:.1f}%")
+        logger.warning(f"High disk usage: {disk_percent:.1f}%")
 
     return {
         "status": status,
@@ -809,7 +810,7 @@ async def health():
                 "vms_mb": round(process_memory.vms / 1024 / 1024, 2),
             },
             "disk": {
-                "percent": disk_usage.percent,
+                "percent": round(disk_percent, 2),
                 "free_gb": round(disk_usage.free / 1024 / 1024 / 1024, 2),
                 "total_gb": round(disk_usage.total / 1024 / 1024 / 1024, 2),
                 "used_gb": round(disk_usage.used / 1024 / 1024 / 1024, 2),
