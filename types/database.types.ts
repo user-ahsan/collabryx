@@ -399,3 +399,49 @@ export interface PendingQueueItemWithProfile extends EmbeddingPendingQueue {
     email?: string;
   };
 }
+
+// ===========================================
+// TABLE: user_analytics
+// ===========================================
+export interface UserAnalytics {
+  user_id: string; // UUID
+  profile_views_count: number;
+  profile_views_last_7_days: number;
+  profile_views_last_30_days: number;
+  post_impressions_count: number;
+  post_reactions_received: number;
+  post_comments_received: number;
+  posts_created_count: number;
+  match_suggestions_count: number;
+  matches_accepted_count: number;
+  match_acceptance_rate: number;
+  high_confidence_matches_count: number;
+  connections_count: number;
+  connection_requests_sent: number;
+  connection_requests_received: number;
+  mutual_connections_avg: number;
+  messages_sent_count: number;
+  messages_received_count: number;
+  conversations_count: number;
+  avg_response_time_minutes: number;
+  ai_sessions_count: number;
+  ai_messages_count: number;
+  sessions_count: number;
+  total_time_spent_minutes: number;
+  last_active?: string; // TIMESTAMPTZ
+  last_active_ip?: string;
+  engagement_score: number;
+  influence_score: number;
+  activity_streak_days: number;
+  created_at: string; // TIMESTAMPTZ
+  updated_at: string; // TIMESTAMPTZ
+}
+
+// Activity data for charts
+export interface AnalyticsActivityData {
+  date: string;
+  profile_views: number;
+  matches: number;
+  connections: number;
+  posts: number;
+}
