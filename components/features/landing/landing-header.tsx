@@ -21,8 +21,10 @@ export const LandingHeader: React.FC = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false)
     const [scrolled, setScrolled] = React.useState(false)
     const [dynamicNav, setDynamicNav] = React.useState<NavigationItem[]>([])
+    const [isMounted, setIsMounted] = React.useState(false)
 
     React.useEffect(() => {
+        setIsMounted(true)
         const handleScroll = () => {
             setScrolled(window.scrollY > 20)
         }
@@ -113,7 +115,7 @@ export const LandingHeader: React.FC = () => {
 
                 {/* Desktop navigation */}
                 <div className="hidden lg:flex lg:gap-x-8">
-                    {dynamicNav.map((item) => (
+                    {isMounted && dynamicNav.map((item) => (
                         <Link
                             key={item.name}
                             href={item.href}
@@ -125,7 +127,7 @@ export const LandingHeader: React.FC = () => {
                                     const selector = item.href.replace(/[^a-zA-Z0-9-_#]/g, '')
                                     const element = document.querySelector(selector);
                                     if (element) {
-if (window && 'lenis' in window) {
+                                        if (typeof window !== 'undefined' && 'lenis' in window) {
                                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                             (window as any).lenis.scrollTo(element);
                                         } else {
@@ -156,7 +158,7 @@ if (window && 'lenis' in window) {
             {mobileMenuOpen && (
                 <div className="lg:hidden">
                     <div className="space-y-2 px-6 pb-6 pt-2">
-                        {dynamicNav.map((item) => (
+                        {isMounted && dynamicNav.map((item) => (
                             <Link
                                 key={item.name}
                                 href={item.href}
@@ -169,9 +171,9 @@ if (window && 'lenis' in window) {
                                         const selector = item.href.replace(/[^a-zA-Z0-9-_#]/g, '')
                                         const element = document.querySelector(selector);
                                         if (element) {
-if (window && 'lenis' in window) {
-                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                            (window as any).lenis.scrollTo(element);
+                                            if (typeof window !== 'undefined' && 'lenis' in window) {
+                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                                (window as any).lenis.scrollTo(element);
                                             } else {
                                                 element.scrollIntoView({ behavior: 'smooth' });
                                             }

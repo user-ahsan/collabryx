@@ -35,7 +35,7 @@ export default function DashboardPage() {
                     
                     {/* Recent Activity Section */}
                     <GlassCard>
-                        <div className="p-4 md:p-5 flex flex-row items-center justify-between space-y-0 border-b border-white/[0.06]">
+                        <div className="p-4 md:p-6 flex flex-row items-center justify-between space-y-0 border-b border-white/[0.06]">
                             <h3 className="text-base font-semibold flex items-center gap-2 text-foreground">
                                 Recent Activity
                             </h3>
@@ -51,7 +51,7 @@ export default function DashboardPage() {
                                 </Link>
                             </Button>
                         </div>
-                        <div className="p-4 md:p-5 pt-3 md:pt-4">
+                        <div className="p-4 md:p-6 pt-3 md:pt-4">
                             <ActivityFeed 
                                 initialLimit={5} 
                                 showViewAll={false}

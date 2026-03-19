@@ -386,7 +386,7 @@ export default function NotificationsPage() {
       {/* Notification List */}
       <div className="space-y-3">
         {filteredNotifications.length === 0 ? (
-          <GlassCard innerClassName="text-center py-16 px-4">
+          <GlassCard innerClassName="text-center py-12 px-4">
             <div className="h-20 w-20 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
               <Bell className="h-10 w-10 text-muted-foreground/50" />
             </div>
