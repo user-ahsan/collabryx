@@ -67,7 +67,12 @@ type RawPost = {
 export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
   data: PostWithAuthor[]
   error: Error | null
+  queryCount?: number
+  duration?: number
 }> {
+  const queryStartTime = Date.now()
+  let queryCount = 0
+  
   try {
     const supabase = createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -77,12 +82,12 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
         message: authError.message,
         stack: authError.stack,
       })
-      return { data: [], error: new Error("Authentication failed. Please log in again.") }
+      return { data: [], error: new Error("Authentication failed. Please log in again."), queryCount: 0 }
     }
 
     if (!user) {
       console.log("No authenticated user - returning empty posts")
-      return { data: [], error: new Error("Please log in to view posts.") }
+      return { data: [], error: new Error("Please log in to view posts."), queryCount: 0 }
     }
 
     console.log("Fetching posts for user:", user.id, "with options:", options)
@@ -143,7 +148,16 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
       throw error
     }
 
+    queryCount++
+    const queryDuration = Date.now() - queryStartTime
+    
     console.log("Posts fetched successfully:", data?.length || 0, "posts")
+    console.log("Query performance:", {
+      queryCount,
+      duration: queryDuration,
+      postsCount: data?.length || 0
+    })
+    
     if (data && data.length > 0) {
       console.log("First post sample:", JSON.stringify(data[0], null, 2))
     }
@@ -169,15 +183,18 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
       time_ago: formatTimeAgo(post.created_at),
     }))
 
-    return { data: mappedPosts, error: null }
+    return { data: mappedPosts, error: null, queryCount, duration: queryDuration }
   } catch (error: any) {
+    const queryDuration = Date.now() - queryStartTime
     console.error("Error fetching posts:", {
       message: error?.message || error,
       stack: error?.stack,
       code: error?.code,
       error: error,
+      queryCount,
+      duration: queryDuration
     })
-    return { data: [], error: error instanceof Error ? error : new Error("Unknown error") }
+    return { data: [], error: error instanceof Error ? error : new Error("Unknown error"), queryCount, duration: queryDuration }
   }
 }
 

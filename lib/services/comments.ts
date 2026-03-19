@@ -64,6 +64,7 @@ export interface FetchCommentsOptions {
 
 /**
  * Fetch comments for a post with optional nested replies
+ * Uses SINGLE query with JOIN instead of N+1 pattern
  * 
  * @param options - Fetch options including postId, limit, and includeReplies
  * @returns Array of comments with author info and nested replies
@@ -73,16 +74,23 @@ export async function fetchComments(
 ): Promise<{
   data: CommentWithAuthor[]
   error: Error | null
+  queryCount?: number
 }> {
+  const queryStartTime = Date.now()
+  let queryCount = 0
+  
   try {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return { data: [], error: new Error("Not authenticated") }
+      return { data: [], error: new Error("Not authenticated"), queryCount }
     }
 
-    // Fetch top-level comments
+    // SINGLE QUERY: Fetch all comments (top-level and replies) with eager loading
+    // This eliminates the N+1 pattern by fetching everything in one query
+    // Previously: 1 query for top-level + N queries for replies + 1 for likes = N+2 queries
+    // Now: 1 query for all comments with nested replies + 1 for likes = 2 queries total
     let query = supabase
       .from("comments")
       .select(`
@@ -92,8 +100,24 @@ export async function fetchComments(
           full_name,
           avatar_url,
           headline
+        ),
+        replies:comments!parent_id (
+          id,
+          post_id,
+          author_id,
+          content,
+          parent_id,
+          like_count,
+          created_at,
+          updated_at,
+          author:profiles (
+            display_name,
+            full_name,
+            avatar_url,
+            headline
+          )
         )
-      `)
+      `, { count: 'exact' })
       .eq("post_id", options.postId)
       .is("parent_id", null)
       .order("created_at", { ascending: true })
@@ -102,11 +126,12 @@ export async function fetchComments(
       query = query.limit(options.limit)
     }
 
+    queryCount++
     const { data: comments, error: commentsError } = await query
 
     if (commentsError) throw commentsError
 
-    // Map comments with author info
+    // Map comments with author info and nested replies
     const mappedComments: CommentWithAuthor[] = (comments || []).map((comment) => ({
       id: comment.id,
       post_id: comment.post_id,
@@ -120,66 +145,86 @@ export async function fetchComments(
       author_avatar: comment.author?.avatar_url || "",
       author_headline: comment.author?.headline,
       time_ago: formatTimeAgo(comment.created_at),
-      replies: [],
+      replies: (comment.replies || []).map((reply: {
+        id: string
+        post_id: string
+        author_id: string
+        content: string
+        parent_id: string | null
+        like_count: number
+        created_at: string
+        updated_at: string
+        author?: {
+          display_name?: string
+          full_name?: string
+          avatar_url?: string
+          headline?: string
+        }
+      }) => ({
+        id: reply.id,
+        post_id: reply.post_id,
+        author_id: reply.author_id,
+        content: reply.content,
+        parent_id: reply.parent_id,
+        like_count: reply.like_count,
+        created_at: reply.created_at,
+        updated_at: reply.updated_at,
+        author_name: reply.author?.display_name || reply.author?.full_name || "Unknown",
+        author_avatar: reply.author?.avatar_url || "",
+        author_headline: reply.author?.headline,
+        time_ago: formatTimeAgo(reply.created_at),
+      })),
     }))
 
-    // Fetch replies if requested
-    if (options.includeReplies !== false) {
-      for (const comment of mappedComments) {
-        const { data: replies } = await supabase
-          .from("comments")
-          .select(`
-            *,
-            author:profiles (
-              display_name,
-              full_name,
-              avatar_url,
-              headline
-            )
-          `)
-          .eq("parent_id", comment.id)
-          .order("created_at", { ascending: true })
+    // Fetch user's likes on ALL comments (top-level and replies) in a SINGLE batch query
+    if (user) {
+      const allCommentIds = [
+        ...mappedComments.map((c) => c.id),
+        ...mappedComments.flatMap((c) => c.replies?.map((r) => r.id) || []),
+      ]
+      
+      if (allCommentIds.length > 0) {
+        const { data: likes } = await supabase
+          .from("comment_likes")
+          .select("comment_id, user_id")
+          .eq("user_id", user)
+          .in("comment_id", allCommentIds)
 
-        if (replies) {
-          comment.replies = replies.map((reply) => ({
-            id: reply.id,
-            post_id: reply.post_id,
-            author_id: reply.author_id,
-            content: reply.content,
-            parent_id: reply.parent_id,
-            like_count: reply.like_count,
-            created_at: reply.created_at,
-            updated_at: reply.updated_at,
-            author_name: reply.author?.display_name || reply.author?.full_name || "Unknown",
-            author_avatar: reply.author?.avatar_url || "",
-            author_headline: reply.author?.headline,
-            time_ago: formatTimeAgo(reply.created_at),
-          }))
-        }
+        const likedCommentIds = new Set(likes?.map((l) => l.comment_id) || [])
+        
+        // Mark likes on top-level comments and replies
+        mappedComments.forEach((comment) => {
+          comment.user_has_liked = likedCommentIds.has(comment.id)
+          // Mark likes on replies
+          comment.replies?.forEach((reply: CommentWithAuthor) => {
+            reply.user_has_liked = likedCommentIds.has(reply.id)
+          })
+        })
       }
     }
 
-    // Fetch user's likes on these comments
-    if (user) {
-      const commentIds = mappedComments.map((c) => c.id)
-      const { data: likes } = await supabase
-        .from("comment_likes")
-        .select("comment_id")
-        .eq("user_id", user.id)
-        .in("comment_id", commentIds)
-
-      const likedCommentIds = new Set(likes?.map((l) => l.comment_id) || [])
-      mappedComments.forEach((comment) => {
-        comment.user_has_liked = likedCommentIds.has(comment.id)
-      })
-    }
-
-    return { data: mappedComments, error: null }
+    const queryDuration = Date.now() - queryStartTime
+    log.info('Comments fetched successfully', {
+      queryCount,
+      duration: queryDuration,
+      commentCount: mappedComments.length,
+      totalReplies: mappedComments.reduce((sum, c) => sum + (c.replies?.length || 0), 0),
+      postId: options.postId
+    })
+    
+    return { data: mappedComments, error: null, queryCount }
   } catch (error) {
+    const queryDuration = Date.now() - queryStartTime
     log.error("Error fetching comments:", error)
+    log.error('Query performance metrics', {
+      queryCount,
+      duration: queryDuration,
+      postId: options.postId
+    })
     return { 
       data: [], 
-      error: error instanceof Error ? error : new Error("[Comments] Failed to fetch comments") 
+      error: error instanceof Error ? error : new Error("[Comments] Failed to fetch comments"),
+      queryCount
     }
   }
 }
