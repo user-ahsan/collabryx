@@ -3,6 +3,7 @@ import type { MatchSuggestion, MatchActivity, MatchPreference } from "@/types/da
 import { executeOptimizedQuery } from "@/lib/database-optimization"
 import { formatInitials } from "@/lib/utils/format-initials"
 import { logger } from "@/lib/logger"
+import { withDatabaseProtection, trackDatabaseOperation } from "@/lib/database-connection-manager"
 
 // ===========================================
 // MATCH SUGGESTIONS SERVICE
@@ -62,49 +63,62 @@ export async function fetchMatches(
     return { data: [], error: new Error("Please log in to view matches.") }
   }
 
-  const { data: queryData, error: queryError } = await executeOptimizedQuery(async () => {
-    let query = supabase
-      .from("match_suggestions")
-      .select(`
-        id,
-        user_id,
-        matched_user_id,
-        match_percentage,
-        reasons,
-        ai_confidence,
-        ai_explanation,
-        status,
-        created_at,
-        expires_at,
-        matched_user:profiles (
-          full_name,
-          display_name,
-          avatar_url,
-          headline
-        )
-      `)
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .order("match_percentage", { ascending: false })
-      .limit(options.limit || 20)
+  const { data: queryData, error: queryError } = await executeOptimizedQuery(
+    async () => {
+      let query = supabase
+        .from("match_suggestions")
+        .select(`
+          id,
+          user_id,
+          matched_user_id,
+          match_percentage,
+          reasons,
+          ai_confidence,
+          ai_explanation,
+          status,
+          created_at,
+          expires_at,
+          matched_user:profiles (
+            full_name,
+            display_name,
+            avatar_url,
+            headline
+          )
+        `)
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .order("match_percentage", { ascending: false })
+        .limit(options.limit || 20)
 
-    if (options.minPercentage) {
-      query = query.gte("match_percentage", options.minPercentage)
+      if (options.minPercentage) {
+        query = query.gte("match_percentage", options.minPercentage)
+      }
+
+      if (options.status) {
+        query = query.eq("status", options.status)
+      }
+
+      const result = await query
+      return result.data as unknown as RawMatch[]
+    },
+    {
+      operationName: 'fetchMatches',
+      maxRetries: 3,
+      timeout: 15000, // 15 second timeout for match queries
     }
-
-    if (options.status) {
-      query = query.eq("status", options.status)
-    }
-
-    const result = await query
-    return result.data as unknown as RawMatch[]
-  })
+  )
 
   // If there's an actual error, log and return it
   if (queryError) {
-    logger.app.error("Failed to fetch matches", queryError)
+    logger.app.error("Failed to fetch matches", {
+      error: queryError.message,
+      userId: user.id,
+    })
+    trackDatabaseOperation(false, queryError)
     return { data: [], error: queryError }
   }
+  
+  trackDatabaseOperation(true)
   
   // If no data but no error, it's not an error - just no matches
   if (!queryData || queryData.length === 0) {
