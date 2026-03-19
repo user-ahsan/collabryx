@@ -445,3 +445,40 @@ export interface AnalyticsActivityData {
   connections: number;
   posts: number;
 }
+
+// ===========================================
+// TABLE: blocked_users
+// ===========================================
+export interface BlockedUser {
+  id: string; // UUID
+  blocker_id: string; // UUID (the user who blocked)
+  blocked_id: string; // UUID (the user who is blocked)
+  reason?: string;
+  created_at: string; // TIMESTAMPTZ
+  updated_at?: string; // TIMESTAMPTZ
+}
+
+// Blocked user with profile data for display
+export interface BlockedUserWithProfile extends BlockedUser {
+  blocked_profile: {
+    id: string;
+    display_name?: string;
+    full_name?: string;
+    avatar_url?: string;
+    headline?: string;
+  };
+}
+
+// ===========================================
+// TABLE: privacy_settings
+// ===========================================
+export interface PrivacySetting {
+  user_id: string; // UUID
+  profile_visibility: 'public' | 'friends-only' | 'private';
+  show_email: boolean;
+  show_connections_list: boolean;
+  activity_status_visible: boolean;
+  allow_data_download: boolean;
+  created_at: string; // TIMESTAMPTZ
+  updated_at?: string; // TIMESTAMPTZ
+}
