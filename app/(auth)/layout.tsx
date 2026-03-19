@@ -30,17 +30,24 @@ function AuthLayoutContent({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         async function checkAuth() {
-            const supabase = createClient()
-            const { data: { session } } = await supabase.auth.getSession()
-            
-            if (!session) {
-                // Clear cache before redirecting to prevent data leakage
+            try {
+                const supabase = createClient()
+                const { data: { session } } = await supabase.auth.getSession()
+                
+                if (!session) {
+                    // Clear cache before redirecting to prevent data leakage
+                    queryClient.clear()
+                    router.push('/login')
+                    return
+                }
+                
+                setIsChecking(false)
+            } catch (error) {
+                console.error('Auth check failed:', error)
+                // On error, clear cache and redirect to login
                 queryClient.clear()
                 router.push('/login')
-                return
             }
-            
-            setIsChecking(false)
         }
         
         checkAuth()
