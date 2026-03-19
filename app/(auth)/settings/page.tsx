@@ -141,9 +141,14 @@ export default function SettingsPage() {
 						{/* Content Area */}
 						<div className="flex-1">
 							{isLoading ? (
-								<div className="flex h-[400px] items-center justify-center text-muted-foreground">
-									<Loader2 className="h-8 w-8 animate-spin" />
-								</div>
+								<Card className={cn("border-none shadow-none", glass("cardInner"))}>
+									<CardContent className="flex min-h-[384px] flex-col items-center justify-center gap-3">
+										<Loader2 className="h-6 w-6 animate-spin text-primary" />
+										<p className="text-sm text-muted-foreground" role="status">
+											Loading settings...
+										</p>
+									</CardContent>
+								</Card>
 							) : (
 								<>
 									<TabsContent value="profile" className="mt-0 space-y-6">
