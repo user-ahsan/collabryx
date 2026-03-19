@@ -32,7 +32,10 @@ export function useMatches(filters?: { limit?: number; minScore?: number }) {
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15,   // 15 minutes
-    retry: 1,
+    retry: 3,
+    retryDelay: (attemptIndex) => {
+      return Math.min(1000 * 2 ** attemptIndex, 10000) // 1s, 2s, 4s, max 10s
+    },
   })
 }
 
