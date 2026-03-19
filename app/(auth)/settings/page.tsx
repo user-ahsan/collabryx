@@ -66,7 +66,7 @@ export default function SettingsPage() {
 							Manage your profile, account preferences, and notifications.
 						</p>
 					</div>
-						<Button variant="outline" asChild>
+						<Button className={cn(glass("buttonGhost"))} asChild>
 							<Link href="/dashboard">Back to Dashboard</Link>
 						</Button>
 					</div>
