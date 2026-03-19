@@ -156,17 +156,17 @@ export default function SettingsPage() {
 								</Card>
 							) : (
 								<>
-									<TabsContent value="profile" className="mt-0 space-y-6">
-										{userId ? <ProfileSettingsTab userId={userId} /> : null}
-									</TabsContent>
+								<TabsContent value="profile" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+									{userId ? <ProfileSettingsTab userId={userId} /> : null}
+								</TabsContent>
 
-									<TabsContent value="skills" className="mt-0 space-y-6">
-										{userId ? <SkillsInterestsSettingsTab userId={userId} /> : null}
-									</TabsContent>
+								<TabsContent value="skills" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+									{userId ? <SkillsInterestsSettingsTab userId={userId} /> : null}
+								</TabsContent>
 
-									<TabsContent value="experience" className="mt-0 space-y-6">
-										{userId ? <ExperienceProjectsSettingsTab userId={userId} /> : null}
-									</TabsContent>
+								<TabsContent value="experience" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+									{userId ? <ExperienceProjectsSettingsTab userId={userId} /> : null}
+								</TabsContent>
 
 								<TabsContent value="account" className="mt-0 space-y-6">
 									<Card className={cn("border-none shadow-none", glass("cardInner"))}>
