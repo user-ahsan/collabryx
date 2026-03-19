@@ -24,12 +24,19 @@ export function useAuth(): UseAuthReturn {
     useEffect(() => {
         // Get initial session
         const getSession = async () => {
-            const {
-                data: { session: currentSession },
-            } = await supabase.auth.getSession()
-            setSession(currentSession)
-            setUser(currentSession?.user ?? null)
-            setIsLoading(false)
+            try {
+                const {
+                    data: { session: currentSession },
+                } = await supabase.auth.getSession()
+                setSession(currentSession)
+                setUser(currentSession?.user ?? null)
+            } catch (error) {
+                console.error('Failed to get auth session:', error)
+                setSession(null)
+                setUser(null)
+            } finally {
+                setIsLoading(false)
+            }
         }
 
         getSession()
@@ -49,13 +56,20 @@ export function useAuth(): UseAuthReturn {
     }, [supabase.auth])
 
     const signOut = useCallback(async () => {
-        await supabase.auth.signOut()
-        
-        // CRITICAL: Clear React Query cache to prevent data leakage between users
-        queryClient.clear()
-        
-        router.push("/login")
-        router.refresh()
+        try {
+            await supabase.auth.signOut()
+            
+            // CRITICAL: Clear React Query cache to prevent data leakage between users
+            queryClient.clear()
+            
+            router.push("/login")
+            router.refresh()
+        } catch (error) {
+            console.error('Failed to sign out:', error)
+            // Still clear cache and redirect even if signOut fails
+            queryClient.clear()
+            router.push("/login")
+        }
     }, [supabase.auth, router, queryClient])
 
     return { user, session, isLoading, signOut }
