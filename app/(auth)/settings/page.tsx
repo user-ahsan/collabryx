@@ -90,61 +90,47 @@ export default function SettingsPage() {
 						{/* Sidebar Navigation */}
 						<div className="md:w-60 shrink-0">
 							<TabsList className={cn(
-								"flex md:flex-col h-auto w-full items-stretch justify-start p-2 gap-2 bg-transparent",
+								"flex md:flex-col h-auto w-full items-stretch justify-start p-2 gap-2",
 								glass("tabInactive")
 							)}>
 								<TabsTrigger value="profile" className={cn(
-									"justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap",
-									glass("tabActive"),
-									glass("tabInactive")
+									"justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap data-[state=active]:bg-background/50 data-[state=active]:shadow-sm"
 								)}>
 									<User className="h-4 w-4 shrink-0" />
 									<span>Profile</span>
 								</TabsTrigger>
 								<TabsTrigger value="skills" className={cn(
-									"justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap",
-									glass("tabActive"),
-									glass("tabInactive")
+									"justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap data-[state=active]:bg-background/50 data-[state=active]:shadow-sm"
 								)}>
 									<Code2 className="h-4 w-4 shrink-0" />
 									<span>Skills & Interests</span>
 								</TabsTrigger>
 								<TabsTrigger value="experience" className={cn(
-									"justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap",
-									glass("tabActive"),
-									glass("tabInactive")
+									"justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap data-[state=active]:bg-background/50 data-[state=active]:shadow-sm"
 								)}>
 									<Briefcase className="h-4 w-4 shrink-0" />
 									<span>Experience</span>
 								</TabsTrigger>
 								<TabsTrigger value="account" className={cn(
-									"justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap",
-									glass("tabActive"),
-									glass("tabInactive")
+									"justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap data-[state=active]:bg-background/50 data-[state=active]:shadow-sm"
 								)}>
 									<Shield className="h-4 w-4 shrink-0" />
 									<span>Account</span>
 								</TabsTrigger>
 								<TabsTrigger value="notifications" className={cn(
-									"justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap",
-									glass("tabActive"),
-									glass("tabInactive")
+									"justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap data-[state=active]:bg-background/50 data-[state=active]:shadow-sm"
 								)}>
 									<Bell className="h-4 w-4 shrink-0" />
 									<span>Notifications</span>
 								</TabsTrigger>
 								<TabsTrigger value="privacy" className={cn(
-									"justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap",
-									glass("tabActive"),
-									glass("tabInactive")
+									"justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap data-[state=active]:bg-background/50 data-[state=active]:shadow-sm"
 								)}>
 									<Lock className="h-4 w-4 shrink-0" />
 									<span>Privacy</span>
 								</TabsTrigger>
 								<TabsTrigger value="billing" className={cn(
-									"justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap",
-									glass("tabActive"),
-									glass("tabInactive")
+									"justify-start gap-2 px-3 py-2 min-h-[44px] transition-all text-sm font-medium rounded-lg whitespace-nowrap data-[state=active]:bg-background/50 data-[state=active]:shadow-sm"
 								)}>
 									<CreditCard className="h-4 w-4 shrink-0" />
 									<span>Billing</span>
