@@ -1,11 +1,82 @@
-import { Feed } from "@/components/features/dashboard/feed"
-import { SuggestionsSidebar } from "@/components/features/dashboard/suggestions-sidebar"
-import { ActivityFeed } from "@/components/features/activity/activity-feed"
+import nextDynamic from 'next/dynamic'
 import { GlassCard } from "@/components/shared/glass-card"
 import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
 import type { Metadata } from "next"
 import Link from "next/link"
+
+// Code-split heavy components with dynamic imports
+// These load on-demand to reduce initial bundle size
+const Feed = nextDynamic(
+  () => import("@/components/features/dashboard/feed").then(mod => ({ default: mod.Feed })),
+  { 
+    loading: () => <FeedSkeleton />,
+    ssr: true 
+  }
+)
+
+const SuggestionsSidebar = nextDynamic(
+  () => import("@/components/features/dashboard/suggestions-sidebar").then(mod => ({ default: mod.SuggestionsSidebar })),
+  { 
+    loading: () => <SuggestionsSkeleton />,
+    ssr: true 
+  }
+)
+
+const ActivityFeed = nextDynamic(
+  () => import("@/components/features/activity/activity-feed").then(mod => ({ default: mod.ActivityFeed })),
+  { 
+    loading: () => <ActivitySkeleton />,
+    ssr: true 
+  }
+)
+
+// Skeleton loaders for better UX during code-split loading
+function FeedSkeleton() {
+  return (
+    <div className="space-y-4">
+      {[1, 2, 3].map(i => (
+        <div key={i} className="glass-card p-6 animate-pulse">
+          <div className="h-4 bg-white/10 rounded w-3/4 mb-4" />
+          <div className="h-3 bg-white/10 rounded w-full mb-2" />
+          <div className="h-3 bg-white/10 rounded w-2/3" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function SuggestionsSkeleton() {
+  return (
+    <div className="glass-card p-5 animate-pulse">
+      <div className="h-5 bg-white/10 rounded w-1/2 mb-4" />
+      {[1, 2, 3].map(i => (
+        <div key={i} className="flex items-center gap-3 mb-4">
+          <div className="h-10 w-10 rounded-full bg-white/10" />
+          <div className="flex-1">
+            <div className="h-4 bg-white/10 rounded w-3/4 mb-2" />
+            <div className="h-3 bg-white/10 rounded w-1/2" />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function ActivitySkeleton() {
+  return (
+    <div className="space-y-3 animate-pulse">
+      {[1, 2, 3, 4].map(i => (
+        <div key={i} className="flex items-center gap-3">
+          <div className="h-8 w-8 rounded-full bg-white/10" />
+          <div className="flex-1">
+            <div className="h-3 bg-white/10 rounded w-3/4" />
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
 
 export const revalidate = 60
 
