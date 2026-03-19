@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 
@@ -29,6 +29,7 @@ export function useMessages(conversationId?: string, currentUserId?: string): Us
     const [messages, setMessages] = useState<Message[]>([])
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const isMountedRef = useRef(false)
 
     const fetchMessages = useCallback(async () => {
         if (!conversationId) {
@@ -47,18 +48,25 @@ export function useMessages(conversationId?: string, currentUserId?: string): Us
                 .limit(50)
 
             if (fetchError) throw fetchError
-            setMessages(data || [])
-            setError(null)
+            if (isMountedRef.current) {
+                setMessages(data || [])
+                setError(null)
+            }
         } catch (err) {
             console.error("Error fetching messages:", err)
-            setError("Failed to load messages")
-            toast.error("Failed to load messages")
+            if (isMountedRef.current) {
+                setError("Failed to load messages")
+                toast.error("Failed to load messages")
+            }
         } finally {
-            setIsLoading(false)
+            if (isMountedRef.current) {
+                setIsLoading(false)
+            }
         }
     }, [conversationId])
 
     useEffect(() => {
+        isMountedRef.current = true
         fetchMessages()
 
         if (!conversationId) return
@@ -75,8 +83,10 @@ export function useMessages(conversationId?: string, currentUserId?: string): Us
                     filter: `conversation_id=eq.${conversationId}`
                 },
                 (payload) => {
-                    const newMessage = payload.new as Message
-                    setMessages(prev => [...prev, newMessage])
+                    if (isMountedRef.current) {
+                        const newMessage = payload.new as Message
+                        setMessages(prev => [...prev, newMessage])
+                    }
                 }
             )
             .on(
@@ -88,17 +98,20 @@ export function useMessages(conversationId?: string, currentUserId?: string): Us
                     filter: `conversation_id=eq.${conversationId}`
                 },
                 (payload) => {
-                    const updatedMessage = payload.new as Message
-                    setMessages(prev =>
-                        prev.map(msg =>
-                            msg.id === updatedMessage.id ? updatedMessage : msg
+                    if (isMountedRef.current) {
+                        const updatedMessage = payload.new as Message
+                        setMessages(prev =>
+                            prev.map(msg =>
+                                msg.id === updatedMessage.id ? updatedMessage : msg
+                            )
                         )
-                    )
+                    }
                 }
             )
             .subscribe()
 
         return () => {
+            isMountedRef.current = false
             supabase.removeChannel(channel)
         }
     }, [conversationId, fetchMessages])
