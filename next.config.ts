@@ -3,6 +3,52 @@ import withBundleAnalyzer from '@next/bundle-analyzer'
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+  // Turbopack config (Next.js 16 default)
+  turbopack: {
+    // Enable code splitting and optimization
+    resolveAlias: {
+      // Optimize large library imports
+      'lucide-react': 'lucide-react/dist/esm/lucide-react',
+    },
+  },
+  // Webpack config for backwards compatibility
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      // Split large vendor chunks
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          ...config.optimization?.splitChunks,
+          chunks: 'all',
+          cacheGroups: {
+            ...config.optimization?.splitChunks?.cacheGroups,
+            // Separate vendor chunks
+            vendors: {
+              test: /[\\/]node_modules[\\/]/,
+              name: 'vendors',
+              chunks: 'all',
+              priority: 20,
+            },
+            // Separate React chunks
+            react: {
+              test: /[\\/]node_modules[\\/](react|react-dom|react-server-dom-webpack)[\\/]/,
+              name: 'react',
+              chunks: 'all',
+              priority: 30,
+            },
+            // Separate UI library chunks
+            ui: {
+              test: /[\\/]node_modules[\\/](@radix-ui|@supabase)[\\/]/,
+              name: 'ui',
+              chunks: 'all',
+              priority: 25,
+            },
+          },
+        },
+      };
+    }
+    return config;
+  },
   images: {
     remotePatterns: [
       {
@@ -20,7 +66,7 @@ const nextConfig: NextConfig = {
   },
   poweredByHeader: false,
   compress: true,
-  productionBrowserSourceMaps: true,
+  productionBrowserSourceMaps: false, // Disable source maps in production to reduce bundle
   // Security headers
   async headers() {
     return [
