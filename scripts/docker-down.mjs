@@ -1,13 +1,8 @@
 #!/usr/bin/env node
 
 /**
- * Docker Down Script - Clean container shutdown
- * 
- * Features:
- * - Stops all containers gracefully
- * - Removes containers and networks
- * - Optional volume cleanup
- * - Shows cleanup summary
+ * Docker Down - Stop Python Worker Service
+ * Simple, clean shutdown
  */
 
 import { execSync } from 'child_process';
@@ -17,159 +12,49 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Configuration
 const CONFIG = {
-  workerDir: path.join(__dirname, '..', 'python-worker'),
-  serviceName: 'embedding-service',
-  imageName: 'python-worker-embedding-service'
+  workerDir: path.join(__dirname, '..', 'python-worker')
 };
 
-// Colors for console output
 const colors = {
   reset: '\x1b[0m',
   red: '\x1b[31m',
   green: '\x1b[32m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m',
   cyan: '\x1b[36m'
 };
 
-function log(message, color = 'reset') {
-  console.log(`${colors[color]}${message}${colors.reset}`);
+function log(msg, color = 'reset') {
+  console.log(`${colors[color]}${msg}${colors.reset}`);
 }
 
-function exec(command, options = {}) {
+function execVerbose(cmd) {
   try {
-    return execSync(command, {
-      encoding: 'utf-8',
-      stdio: 'pipe',
-      ...options
-    });
-  } catch (error) {
-    // Return error output for debugging
-    return error.stdout || error.stderr || error.message;
-  }
-}
-
-function checkDocker() {
-  try {
-    execSync('docker --version', { stdio: 'pipe' });
-    return true;
-  } catch (_error) {
-    log('❌ Docker is not installed or not running', 'red');
-    process.exit(1);
-  }
-}
-
-function getContainerStatus() {
-  try {
-    const status = exec(`cd "${CONFIG.workerDir}" && docker-compose ps`);
-    return status.trim();
-  } catch (_error) {
-    return '';
-  }
-}
-
-function stopContainers() {
-  log('🛑 Stopping containers...', 'cyan');
-  
-  try {
-    const downCommand = `cd "${CONFIG.workerDir}" && docker-compose down`;
-    exec(downCommand, { stdio: 'inherit' });
-    log('✅ Containers stopped', 'green');
-    return true;
-  } catch (_error) {
-    log('❌ Failed to stop containers', 'red');
-    return false;
-  }
-}
-
-function removeOrphanedContainers() {
-  log('🧹 Cleaning up orphaned containers...', 'cyan');
-  
-  try {
-    // Remove stopped containers
-    exec('docker container prune -f', { stdio: 'pipe' });
-    log('✅ Orphaned containers removed', 'green');
-  } catch (_error) {
-    log('⚠️  Warning: Failed to remove orphaned containers', 'yellow');
-  }
-}
-
-function removeUnusedNetworks() {
-  log('🌐 Cleaning up unused networks...', 'cyan');
-  
-  try {
-    exec('docker network prune -f', { stdio: 'pipe' });
-    log('✅ Unused networks removed', 'green');
-  } catch (_error) {
-    log('⚠️  Warning: Failed to remove unused networks', 'yellow');
-  }
-}
-
-function showDiskUsage() {
-  log('📊 Docker disk usage:', 'cyan');
-  
-  try {
-    const usage = exec('docker system df');
-    log(usage, 'blue');
-  } catch (_error) {
-    log('Unable to get disk usage', 'yellow');
+    execSync(cmd, { encoding: 'utf-8', stdio: 'inherit' });
+  } catch {
+    // Ignore errors
   }
 }
 
 function main() {
-  const args = process.argv.slice(2);
-  const clean = args.includes('--clean') || args.includes('-c');
+  log('\n' + '='.repeat(50), 'cyan');
+  log('🛑 Stopping Collabryx Worker', 'cyan');
+  log('='.repeat(50), 'cyan');
   
-  log('\n' + '='.repeat(60), 'cyan');
-  log('🐳 Docker Down - Python Worker Embedding Service', 'cyan');
-  log('='.repeat(60) + '\n', 'cyan');
+  const clean = process.argv.includes('--clean') || process.argv.includes('-c');
   
-  // Check Docker
-  checkDocker();
-  
-  // Show current status
-  const status = getContainerStatus();
-  if (status) {
-    log('Current container status:', 'blue');
-    log(status + '\n', 'blue');
+  if (clean) {
+    log('\n🧹 Full cleanup (containers + volumes)...', 'cyan');
+    execVerbose(`cd "${CONFIG.workerDir}" && docker-compose down -v`);
   } else {
-    log('⚠️  No containers running\n', 'yellow');
+    log('\n⏹️  Stopping containers...', 'cyan');
+    execVerbose(`cd "${CONFIG.workerDir}" && docker-compose down`);
   }
   
-  // Stop containers
-  stopContainers();
-  
-  // Optional cleanup
-  if (clean) {
-    log('\n🧹 Performing deep cleanup...\n', 'yellow');
-    removeOrphanedContainers();
-    removeUnusedNetworks();
-    showDiskUsage();
-  }
-  
-  // Final status
-  log('\n' + '='.repeat(60), 'green');
-  log('✅ Docker containers stopped successfully', 'green');
-  log('='.repeat(60) + '\n', 'green');
-  
-  if (clean) {
-    log('💡 Tip: Run "npm run docker:up" to restart the service', 'cyan');
-  }
-  
+  log('\n✅ Stopped', 'green');
+  log('\n💡 Commands:', 'cyan');
+  log('   Start: npm run docker:up', 'cyan');
+  log('   Rebuild: npm run docker:rebuild', 'cyan');
   log('');
 }
-
-// Handle errors
-process.on('uncaughtException', (error) => {
-  log(`\n❌ Fatal error: ${error.message}`, 'red');
-  process.exit(1);
-});
-
-process.on('SIGINT', () => {
-  log('\n\n⚠️  Process interrupted by user', 'yellow');
-  process.exit(0);
-});
 
 main();
