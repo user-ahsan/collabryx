@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
 import { Skeleton } from "@/components/ui/skeleton"
 import { toast } from "sonner"
+import { logger } from "@/lib/logger"
 import { getCache, setCache, CACHE_KEYS } from "@/lib/dashboard-cache"
 import { fetchMatches } from "@/lib/services/matches"
 import { TOAST_MESSAGES, TOAST_IDS } from "@/lib/constants/toast-messages"
@@ -106,11 +107,17 @@ export function SuggestionsSidebar({ className }: MatchIntelligencePanelProps) {
                 setMatches(mapped)
                 setCache(CACHE_KEYS.MATCHES, mapped)
             }
-        } catch {
+        } catch (error) {
+            logger.app.error('Failed to fetch matches', {
+                error: error instanceof Error ? error.message : String(error),
+                limit: 5
+            })
             const cached = getCache<UIMatchSuggestion[]>(CACHE_KEYS.MATCHES)
             if (cached) {
                 setMatches(cached)
                 toast.info(TOAST_MESSAGES.MATCHES.CACHE, { id: TOAST_IDS.MATCHES })
+            } else {
+                toast.error('Unable to load matches')
             }
         } finally {
             setIsLoading(false)
