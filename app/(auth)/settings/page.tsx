@@ -167,23 +167,23 @@ export default function SettingsPage() {
 												</CardDescription>
 											</CardHeader>
 											<CardContent className="space-y-4 px-0 pb-0">
-												<div className="space-y-2">
-													<div className="flex justify-between items-center">
-														<Label htmlFor="email">Email address</Label>
-														<span className="text-xs text-muted-foreground italic">
-															Unchangeable
-														</span>
-													</div>
-													<Input
-														id="email"
-														value={email}
-														disabled
-														className={cn(
-															"opacity-70 cursor-not-allowed",
-															glass("input")
-														)}
-													/>
+											<div className="space-y-2">
+												<div className="flex justify-between items-center">
+													<Label htmlFor="email">Email address</Label>
+													<span className="text-xs text-muted-foreground italic">
+														Unchangeable
+													</span>
 												</div>
+												<Input
+													id="email"
+													value={email}
+													disabled
+													className={cn(
+														"disabled:opacity-100 disabled:text-muted-foreground/80 cursor-not-allowed",
+														glass("input")
+													)}
+												/>
+											</div>
 												<div className="space-y-2">
 													<Label htmlFor="new-password">New Password</Label>
 													<Input
