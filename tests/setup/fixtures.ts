@@ -34,6 +34,7 @@ export const mockPost: Post = {
   reaction_count: 0,
   comment_count: 0,
   share_count: 0,
+  version: 1,
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 }
