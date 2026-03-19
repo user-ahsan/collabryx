@@ -243,8 +243,8 @@ export default function SettingsPage() {
 								<TabsContent value="billing" className="mt-0">
 									<Card className={cn("border-none shadow-none", glass("cardInner"))}>
 										<CardContent className="pt-6 text-center text-muted-foreground">
-												<CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
-												<p className="font-medium">Billing & Subscription</p>
+											<CreditCard className="h-8 w-8 mx-auto mb-3 opacity-50" />
+											<p className="font-medium">Billing & Subscription</p>
 												<p className="text-sm mt-1">
 													Manage your subscription, payment methods, and invoices.
 												</p>
