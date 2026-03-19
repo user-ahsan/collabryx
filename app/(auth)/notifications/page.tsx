@@ -180,11 +180,12 @@ function NotificationListItem({
       <Button
         variant="ghost"
         size="icon"
-        className="h-9 w-9 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-muted-foreground hover:text-destructive"
+        className="h-11 w-11 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-muted-foreground hover:text-destructive focus-visible:opacity-100"
         onClick={(e) => {
           e.stopPropagation()
           onDismiss?.()
         }}
+        aria-label="Dismiss notification"
       >
         <Trash2 className="h-4 w-4" />
       </Button>
@@ -331,10 +332,10 @@ export default function NotificationsPage() {
             return (
               <Button
                 key={tab.id}
-                variant={activeTab === tab.id ? "default" : "outline"}
+                variant={activeTab === tab.id ? "secondary" : "outline"}
                 size="sm"
                 className={cn(
-                  "h-9 px-4 text-sm font-medium gap-1.5",
+                  "h-11 px-4 text-sm font-medium gap-1.5",
                   activeTab === tab.id
                     ? "bg-primary text-primary-foreground"
                     : "bg-background text-muted-foreground hover:bg-muted"
