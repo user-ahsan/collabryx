@@ -100,9 +100,16 @@ export async function fetchMatches(
     return result.data as unknown as RawMatch[]
   })
 
-  if (queryError || !queryData) {
+  // If there's an actual error, log and return it
+  if (queryError) {
     logger.app.error("Failed to fetch matches", queryError)
-    return { data: [], error: queryError || new Error("No data returned") }
+    return { data: [], error: queryError }
+  }
+  
+  // If no data but no error, it's not an error - just no matches
+  if (!queryData || queryData.length === 0) {
+    logger.app.warn("No matches found", { userId: user.id })
+    return { data: [], error: null }
   }
 
   const mappedMatches: MatchSuggestionWithProfile[] = (queryData || []).map((match) => ({
