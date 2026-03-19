@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
-import { UserPlus } from "lucide-react"
+import { UserPlus, Sparkles, Brain } from "lucide-react"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { WhyMatchModal } from "./why-match-modal"
@@ -16,6 +16,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
 import { formatInitials } from "@/lib/utils/format-initials"
+import { getScoreColorClasses, formatConfidence } from "@/lib/services/match-scores"
 
 interface MatchCardProps {
     match: {
@@ -33,6 +34,8 @@ interface MatchCardProps {
             type: "complementary" | "shared" | "similar"
             text: string
         }[]
+        aiConfidence?: number
+        aiExplanation?: string
     }
     index?: number
 }
@@ -51,6 +54,8 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
 
     const isStrongMatch = match.compatibility >= 90
     const isLowMatch = match.compatibility < 80
+    const scoreColors = getScoreColorClasses(match.compatibility)
+    const hasHighConfidence = (match.aiConfidence || 0) >= 0.8
 
     // Combine location and availability for a clean subtitle
     const subtitleParts = []
@@ -106,15 +111,40 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
                             </div>
 
                             {/* Match Score - Top Right */}
-                            <div
-                                className="shrink-0 z-10 flex items-center justify-center p-1 -mr-1 -mt-1 cursor-pointer hover:bg-white/5 rounded-md transition-colors min-h-[44px] min-w-[44px]"
-                                onClick={(e) => {
-                                    e.stopPropagation()
-                                    setWhyModalOpen(true)
-                                }}
-                            >
-                                <MatchScoreCompact overall={match.compatibility} />
-                            </div>
+                            <TooltipProvider delayDuration={300}>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <div
+                                            className="shrink-0 z-10 flex items-center justify-center p-1 -mr-1 -mt-1 cursor-pointer hover:bg-white/5 rounded-md transition-colors min-h-[44px] min-w-[44px]"
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                setWhyModalOpen(true)
+                                            }}
+                                        >
+                                            <MatchScoreCompact overall={match.compatibility} />
+                                        </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="left" className={cn("max-w-[220px]", scoreColors.bg, scoreColors.border)}>
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-2">
+                                                <Sparkles className={cn("h-4 w-4", scoreColors.text)} />
+                                                <span className={cn("text-xs font-bold", scoreColors.text)}>
+                                                    {match.compatibility}% Match
+                                                </span>
+                                            </div>
+                                            {match.aiConfidence && (
+                                                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+                                                    <Brain className="h-3 w-3" />
+                                                    <span>AI Confidence: {formatConfidence(match.aiConfidence)}</span>
+                                                </div>
+                                            )}
+                                            <p className="text-[10px] text-muted-foreground/80">
+                                                Click to see detailed breakdown
+                                            </p>
+                                        </div>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                         </div>
 
                         {/* Location / Availability Subtitle */}
@@ -131,6 +161,21 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
 
                         {/* Minimalist Tags (2 skills, 1 insight) */}
                         <div className="flex flex-col gap-2 mb-auto">
+                            {/* AI Confidence Badge for High-Confidence Matches */}
+                            {hasHighConfidence && (
+                                <div className="flex items-center gap-1.5 mb-1">
+                                    <div className={cn(
+                                        "flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium backdrop-blur-sm border",
+                                        scoreColors.bg,
+                                        scoreColors.text,
+                                        scoreColors.border
+                                    )}>
+                                        <Sparkles className="h-3 w-3" />
+                                        <span>AI-Powered Match</span>
+                                    </div>
+                                </div>
+                            )}
+
                             {match.insights && match.insights.length > 0 && (
                                 <div className="flex flex-wrap gap-1">
                                     <MatchReasonBadge
