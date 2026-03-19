@@ -3,6 +3,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import OpenAI from "openai";
 import Anthropic from "@anthropic-ai/sdk";
+import { validateCSRFRequest, requiresCSRF } from "@/lib/csrf";
 
 export const runtime = "edge"
 export const dynamic = "force-dynamic"
@@ -35,6 +36,25 @@ function getProvider(): 'openai' | 'anthropic' {
 }
 
 export async function POST(request: NextRequest) {
+  // Validate CSRF token for security
+  const csrfToken = request.headers.get('x-csrf-token');
+  const cookieToken = request.cookies.get('csrf_token')?.value || null;
+  
+  if (requiresCSRF(request.method)) {
+    const isValid = await validateCSRFRequest(csrfToken, cookieToken);
+    if (!isValid) {
+      console.warn('⚠️ CSRF validation failed:', {
+        hasHeaderToken: !!csrfToken,
+        hasCookieToken: !!cookieToken,
+        path: request.url,
+      });
+      return NextResponse.json(
+        { success: false, error: "Invalid CSRF token" },
+        { status: 403 }
+      );
+    }
+  }
+  
   const supabase = await createClient()
   
   // Get current user
@@ -208,7 +228,7 @@ export async function OPTIONS() {
     headers: {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Authorization, Content-Type",
+      "Access-Control-Allow-Headers": "Authorization, Content-Type, X-CSRF-Token",
     },
   })
 }

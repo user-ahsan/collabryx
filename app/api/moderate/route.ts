@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getBackendConfig } from "@/lib/config/backend";
+import { validateCSRFRequest, requiresCSRF } from "@/lib/csrf";
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +32,25 @@ export interface ModerateResponse {
 }
 
 export async function POST(request: NextRequest) {
+  // Validate CSRF token for security
+  const csrfToken = request.headers.get('x-csrf-token');
+  const cookieToken = request.cookies.get('csrf_token')?.value || null;
+  
+  if (requiresCSRF(request.method)) {
+    const isValid = await validateCSRFRequest(csrfToken, cookieToken);
+    if (!isValid) {
+      console.warn('⚠️ CSRF validation failed:', {
+        hasHeaderToken: !!csrfToken,
+        hasCookieToken: !!cookieToken,
+        path: request.url,
+      });
+      return NextResponse.json(
+        { error: "Invalid CSRF token" },
+        { status: 403 }
+      );
+    }
+  }
+  
   const supabase = await createClient();
   
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -175,7 +195,7 @@ export async function OPTIONS() {
     headers: {
       "Access-Control-Allow-Origin": "*",
       "Access-Control-Allow-Methods": "POST, OPTIONS",
-      "Access-Control-Allow-Headers": "Authorization, Content-Type",
+      "Access-Control-Allow-Headers": "Authorization, Content-Type, X-CSRF-Token",
     },
   });
 }
