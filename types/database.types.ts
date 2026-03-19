@@ -399,3 +399,38 @@ export interface PendingQueueItemWithProfile extends EmbeddingPendingQueue {
     email?: string;
   };
 }
+
+// ===========================================
+// TABLE: privacy_settings
+// ===========================================
+export interface PrivacySetting {
+  id: string;
+  user_id: string;
+  profile_visibility: 'public' | 'friends-only' | 'private';
+  show_email: boolean;
+  show_connections_list: boolean;
+  activity_status_visible: boolean;
+  allow_data_download: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+// ===========================================
+// TABLE: blocked_users
+// ===========================================
+export interface BlockedUser {
+  id: string;
+  blocker_id: string;
+  blocked_id: string;
+  reason?: string;
+  created_at: string;
+}
+
+// Blocked user with profile data for UI
+export interface BlockedUserWithProfile extends BlockedUser {
+  blocked_profile?: {
+    display_name?: string;
+    avatar_url?: string;
+    email?: string;
+  };
+}
