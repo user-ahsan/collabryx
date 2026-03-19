@@ -66,7 +66,7 @@ export default function SettingsPage() {
 							Manage your profile, account preferences, and notifications.
 						</p>
 					</div>
-						<Button className={cn(glass("buttonGhost"))} asChild>
+						<Button className={cn(glass("buttonGhost"), "active:scale-[0.98] transition-transform")} asChild>
 							<Link href="/dashboard">Back to Dashboard</Link>
 						</Button>
 					</div>
@@ -95,7 +95,7 @@ export default function SettingsPage() {
 						{/* Sidebar Navigation */}
 						<div className="md:w-60 shrink-0">
 							<TabsList className={cn(
-								"flex md:flex-col h-auto w-full items-stretch justify-start p-2 gap-2",
+								"flex md:flex-col h-auto w-full items-stretch justify-start p-2 gap-2 transition-all duration-200",
 								glass("tabInactive")
 							)}>
 								<TabsTrigger value="profile" className={cn(
@@ -205,9 +205,9 @@ export default function SettingsPage() {
 													)}
 												/>
 												</div>
-												<Button className={cn("mt-2", glass("buttonPrimary"), glass("buttonPrimaryGlow"))}>
-													Change Password
-												</Button>
+											<Button className={cn("mt-2 active:scale-[0.98] transition-transform", glass("buttonPrimary"), glass("buttonPrimaryGlow"))}>
+												Change Password
+											</Button>
 											</CardContent>
 										</Card>
 									<Separator className={glass("divider")} />
