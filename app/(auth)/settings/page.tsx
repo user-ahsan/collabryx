@@ -158,15 +158,15 @@ export default function SettingsPage() {
 										{userId ? <ExperienceProjectsSettingsTab userId={userId} /> : null}
 									</TabsContent>
 
-									<TabsContent value="account" className="mt-0 space-y-6">
-										<Card className={cn("border-none shadow-none bg-transparent")}>
-											<CardHeader className="px-0 pt-0">
-												<CardTitle>Account Security</CardTitle>
-												<CardDescription>
-													Manage your password and security settings.
-												</CardDescription>
-											</CardHeader>
-											<CardContent className="space-y-4 px-0 pb-0">
+								<TabsContent value="account" className="mt-0 space-y-6">
+									<Card className={cn("border-none shadow-none", glass("cardInner"))}>
+										<CardHeader className="pt-0">
+											<CardTitle className="text-base font-semibold">Account Security</CardTitle>
+											<CardDescription className="text-sm">
+												Manage your password and security settings.
+											</CardDescription>
+										</CardHeader>
+										<CardContent className="space-y-4 pb-0">
 											<div className="space-y-2">
 												<div className="flex justify-between items-center">
 													<Label htmlFor="email">Email address</Label>
@@ -200,14 +200,14 @@ export default function SettingsPage() {
 												</Button>
 											</CardContent>
 										</Card>
-										<Separator className={glass("divider")} />
-										<Card className={cn("border-none shadow-none bg-transparent")}>
-											<CardHeader className="px-0 pt-4">
-												<CardTitle className="text-red-500 font-semibold">
-													Danger Zone
-												</CardTitle>
-											</CardHeader>
-											<CardContent className="px-0 pb-0">
+									<Separator className={glass("divider")} />
+									<Card className={cn("border-none shadow-none", glass("cardInner"))}>
+										<CardHeader className="pt-4">
+											<CardTitle className="text-base text-red-500 font-semibold">
+												Danger Zone
+											</CardTitle>
+										</CardHeader>
+										<CardContent className="pb-0">
 												<Button
 													variant="destructive"
 													className={glass("buttonSecondaryGlow")}
@@ -230,9 +230,9 @@ export default function SettingsPage() {
 										{userId ? <BlockedUsersList userId={userId} /> : null}
 									</TabsContent>
 
-									<TabsContent value="billing" className="mt-0">
-										<Card className={cn("border-none shadow-none bg-transparent")}>
-											<CardContent className="pt-6 text-center text-muted-foreground px-0">
+								<TabsContent value="billing" className="mt-0">
+									<Card className={cn("border-none shadow-none", glass("cardInner"))}>
+										<CardContent className="pt-6 text-center text-muted-foreground">
 												<CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
 												<p className="font-medium">Billing & Subscription</p>
 												<p className="text-sm mt-1">
