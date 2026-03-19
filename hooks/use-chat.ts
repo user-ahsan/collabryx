@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
@@ -35,6 +35,7 @@ export function useChat(): UseChatReturn {
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
+    const isMountedRef = useRef(false)
     const router = useRouter()
 
     const fetchConversations = useCallback(async () => {
@@ -42,7 +43,9 @@ export function useChat(): UseChatReturn {
             const supabase = createClient()
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) {
-                setError("Not authenticated")
+                if (isMountedRef.current) {
+                    setError("Not authenticated")
+                }
                 return
             }
 
@@ -66,18 +69,25 @@ export function useChat(): UseChatReturn {
                 other_user: conv.other_user
             }))
 
-            setConversations(mapped)
-            setError(null)
+            if (isMountedRef.current) {
+                setConversations(mapped)
+                setError(null)
+            }
         } catch (err) {
             console.error("Error fetching conversations:", err)
-            setError("Failed to load conversations")
-            toast.error("Failed to load conversations")
+            if (isMountedRef.current) {
+                setError("Failed to load conversations")
+                toast.error("Failed to load conversations")
+            }
         } finally {
-            setIsLoading(false)
+            if (isMountedRef.current) {
+                setIsLoading(false)
+            }
         }
     }, [])
 
     useEffect(() => {
+        isMountedRef.current = true
         fetchConversations()
 
         const supabase = createClient()
@@ -91,12 +101,15 @@ export function useChat(): UseChatReturn {
                     table: "conversations"
                 },
                 () => {
-                    fetchConversations()
+                    if (isMountedRef.current) {
+                        fetchConversations()
+                    }
                 }
             )
             .subscribe()
 
         return () => {
+            isMountedRef.current = false
             supabase.removeChannel(channel)
         }
     }, [fetchConversations])
