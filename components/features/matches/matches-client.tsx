@@ -7,15 +7,15 @@ import { MatchCardSkeleton, MatchCardListViewSkeleton } from "@/components/featu
 import { MatchContextHeader } from "@/components/features/matches/match-context-header"
 import { MatchFilters } from "@/components/features/matches/match-filters"
 import { toast } from "sonner"
-import { Users, Sparkles } from "lucide-react"
+import { Users, Sparkles, AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useMatches, useGenerateMatches } from "@/hooks/use-matches-query"
 import { getCache, CACHE_KEYS } from "@/lib/dashboard-cache"
 import { useAuth } from "@/hooks/use-auth"
+import { logger } from "@/lib/logger"
 
 type ViewMode = "grid" | "list"
 
-// UI-compatible match type for component
 interface UIMatch {
     id: string
     name: string
@@ -30,19 +30,74 @@ interface UIMatch {
     insights: Array<{ type: "complementary" | "shared" | "similar"; text: string }>
 }
 
+interface MatchCardErrorBoundaryProps {
+    children: React.ReactNode
+    matchId: string
+}
+
+function MatchCardErrorBoundary({ children, matchId }: MatchCardErrorBoundaryProps) {
+    const [hasError, setHasError] = useState(false)
+    try {
+        if (hasError) {
+            return (
+                <div className="p-4 rounded-lg border border-destructive/20 bg-destructive/5 text-center">
+                    <AlertTriangle className="h-5 w-5 text-destructive mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">Unable to load this match</p>
+                </div>
+            )
+        }
+        return <>{children}</>
+    } catch (error) {
+        logger.app.error("Failed to render match card", {
+            matchId,
+            error: error instanceof Error ? error.message : String(error),
+        })
+        setHasError(true)
+        return null
+    }
+}
+
+function renderMatchCard(match: UIMatch, index: number, viewMode: ViewMode) {
+    try {
+        const card = viewMode === "grid" 
+            ? <MatchCard match={match} index={index} />
+            : <MatchCardListView match={match} index={index} />
+        return (
+            <div
+                key={match.id}
+                style={{ 
+                    animationDelay: `${index * (viewMode === "grid" ? 75 : 50)}ms`,
+                    animationFillMode: 'backwards'
+                }}
+            >
+                <MatchCardErrorBoundary matchId={match.id}>
+                    {card}
+                </MatchCardErrorBoundary>
+            </div>
+        )
+    } catch (error) {
+        logger.app.error("Failed to render match card", {
+            matchId: match.id,
+            error: error instanceof Error ? error.message : String(error),
+        })
+        return (
+            <div
+                key={match.id}
+                className="p-4 rounded-lg border border-destructive/20 bg-destructive/5 text-center"
+            >
+                <AlertTriangle className="h-5 w-5 text-destructive mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">Unable to load this match</p>
+            </div>
+        )
+    }
+}
+
 export function MatchesClient() {
-    // Fetch matches with React Query
     const { data: matchesData, isPending, error } = useMatches({ limit: 20 })
-    
-    // Match generation mutation
     const generateMatchesMutation = useGenerateMatches()
-    
-    // Get current user
     const { user } = useAuth()
 
-    // Map to UI format with stable reference, fallback to cache if needed
     const matches: UIMatch[] = useMemo(() => {
-        // If we have data from React Query, use it
         if (matchesData && matchesData.length > 0) {
             return matchesData.map((match) => ({
                 id: match.id,
@@ -60,15 +115,12 @@ export function MatchesClient() {
                 ],
             }))
         }
-        
-        // If error and no data, try cache
         if (error) {
             const cached = getCache<UIMatch[]>(CACHE_KEYS.MATCHES)
             if (cached) {
                 return cached
             }
         }
-        
         return []
     }, [matchesData, error])
     
@@ -77,12 +129,10 @@ export function MatchesClient() {
         industry: "Fintech",
         type: "Startup"
     })
-
     const [viewMode, setViewMode] = useState<ViewMode>("grid")
 
     const handleUpdatePreferences = (newPrefs: { role: string; industry: string; type: string }) => {
         setPreferences(newPrefs)
-        // Simulate "finding people" logic
         toast("Preferences Updated", {
             description: `Looking for ${newPrefs.role} in ${newPrefs.industry}...`,
         })
@@ -95,14 +145,12 @@ export function MatchesClient() {
             })
             return
         }
-
         try {
             await generateMatchesMutation.mutateAsync({
                 userId: user.id,
                 limit: 20,
             })
         } catch (error) {
-            // Error already handled by mutation
             console.error("Match generation failed:", error)
         }
     }
@@ -110,20 +158,15 @@ export function MatchesClient() {
     return (
         <div className="w-full min-h-screen bg-background">
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 lg:py-8 max-w-[1400px]">
-                {/* Header Section */}
                 <MatchContextHeader
                     preferences={preferences}
                     onUpdatePreferences={handleUpdatePreferences}
                     matchCount={matches.length}
                 />
-
-                {/* Filter Bar */}
                 <MatchFilters
                     viewMode={viewMode}
                     onViewModeChange={setViewMode}
                 />
-
-                {/* Grid or List Layout */}
                 {isPending ? (
                     viewMode === "grid" ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6 lg:gap-8 pb-20">
@@ -185,45 +228,15 @@ export function MatchesClient() {
                     </div>
                 ) : viewMode === "grid" ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6 lg:gap-8 pb-20">
-                        {matches.map((match, index) => (
-                            <div
-                                key={match.id}
-                                style={{ 
-                                    animationDelay: `${index * 75}ms`,
-                                    animationFillMode: 'backwards'
-                                }}
-                            >
-                                <MatchCard match={match} index={index} />
-                            </div>
-                        ))}
+                        {matches.map((match, index) => renderMatchCard(match, index, viewMode))}
                     </div>
                 ) : viewMode === "list" ? (
                     <div className="flex flex-col gap-4 md:gap-6 pb-20">
-                        {matches.map((match, index) => (
-                            <div
-                                key={match.id}
-                                style={{ 
-                                    animationDelay: `${index * 50}ms`,
-                                    animationFillMode: 'backwards'
-                                }}
-                            >
-                                <MatchCardListView match={match} index={index} />
-                            </div>
-                        ))}
+                        {matches.map((match, index) => renderMatchCard(match, index, viewMode))}
                     </div>
                 ) : (
                     <div className="flex flex-col gap-4 pb-20">
-                        {matches.map((match, index) => (
-                            <div
-                                key={match.id}
-                                style={{ 
-                                    animationDelay: `${index * 50}ms`,
-                                    animationFillMode: 'backwards'
-                                }}
-                            >
-                                <MatchCardListView match={match} index={index} />
-                            </div>
-                        ))}
+                        {matches.map((match, index) => renderMatchCard(match, index, viewMode))}
                     </div>
                 )}
             </div>
