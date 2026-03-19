@@ -43,7 +43,7 @@ export function BlockedUsersList({ userId }: BlockedUsersListProps) {
     const [isUnblocking, setIsUnblocking] = useState<string | null>(null)
     const [blockedUsers, setBlockedUsers] = useState<BlockedUserWithProfile[]>([])
     const [searchQuery, setSearchQuery] = useState("")
-    const [searchResults, setSearchResults] = useState<Array<{ id: string; display_name: string | null; email: string; avatar_url: string | null }>>([])
+    const [searchResults, setSearchResults] = useState<Array<{ id: string; display_name: string | null; full_name: string | undefined; headline: string | undefined; avatar_url: string | null }>>([])
     const [isSearchOpen, setIsSearchOpen] = useState(false)
     const [confirmBlockUser, setConfirmBlockUser] = useState<{ id: string; name: string } | null>(null)
 
@@ -65,9 +65,11 @@ export function BlockedUsersList({ userId }: BlockedUsersListProps) {
                         reason: 'Spam',
                         created_at: new Date().toISOString(),
                         blocked_profile: {
+                            id: 'user-2',
                             display_name: 'Spam Bot',
                             avatar_url: undefined,
-                            email: 'spam@example.com'
+                            headline: 'Spam account',
+                            full_name: undefined
                         }
                     }
                 ])
@@ -83,9 +85,11 @@ export function BlockedUsersList({ userId }: BlockedUsersListProps) {
                     reason,
                     created_at,
                     blocked_profile:profiles!blocked_id (
+                        id,
                         display_name,
+                        full_name,
                         avatar_url,
-                        email
+                        headline
                     )
                 `)
                 .eq('blocker_id', userId)
@@ -120,17 +124,17 @@ export function BlockedUsersList({ userId }: BlockedUsersListProps) {
             if (process.env.NODE_ENV === 'development') {
                 await new Promise(resolve => setTimeout(resolve, 300))
                 setSearchResults([
-                    { id: 'user-3', display_name: 'Test User', email: 'test@example.com', avatar_url: null },
-                    { id: 'user-4', display_name: 'Another User', email: 'another@example.com', avatar_url: null }
+                    { id: 'user-3', display_name: 'Test User', headline: 'Software Developer', avatar_url: null, full_name: undefined },
+                    { id: 'user-4', display_name: 'Another User', headline: 'Designer', avatar_url: null, full_name: undefined }
                 ])
                 return
             }
 
             const { data, error } = await supabase
                 .from('profiles')
-                .select('id, display_name, email, avatar_url')
+                .select('id, display_name, full_name, headline, avatar_url')
                 .ilike('display_name', `%${query}%`)
-                .or(`email.ilike.%${query}%`)
+                .or(`full_name.ilike.%${query}%`)
                 .neq('id', userId)
                 .limit(5)
 
@@ -173,9 +177,11 @@ export function BlockedUsersList({ userId }: BlockedUsersListProps) {
                         reason: undefined,
                         created_at: new Date().toISOString(),
                         blocked_profile: {
+                            id: userToBlock.id,
                             display_name: userToBlock.name,
                             avatar_url: undefined,
-                            email: ''
+                            headline: undefined,
+                            full_name: undefined
                         }
                     }
                 ])
@@ -294,11 +300,11 @@ export function BlockedUsersList({ userId }: BlockedUsersListProps) {
                                                 {searchResults.map((user) => (
                                                     <CommandItem
                                                         key={user.id}
-                                                        value={user.display_name || user.email}
+                                                        value={user.display_name || user.full_name || ''}
                                                         onSelect={() => {
                                                             setConfirmBlockUser({
                                                                 id: user.id,
-                                                                name: user.display_name || user.email
+                                                                name: user.display_name || user.full_name || 'User'
                                                             })
                                                         }}
                                                         className="flex items-center justify-between"
@@ -307,16 +313,18 @@ export function BlockedUsersList({ userId }: BlockedUsersListProps) {
                                                             <Avatar className="h-8 w-8">
                                                                 <AvatarImage src={user.avatar_url || undefined} />
                                                                 <AvatarFallback className="text-xs">
-                                                                    {formatInitials(user.display_name || user.email)}
+                                                                    {formatInitials(user.display_name || user.full_name || 'User')}
                                                                 </AvatarFallback>
                                                             </Avatar>
                                                             <div>
                                                                 <p className="text-sm font-medium">
                                                                     {user.display_name || 'Unnamed User'}
                                                                 </p>
-                                                                <p className="text-xs text-muted-foreground">
-                                                                    {user.email}
-                                                                </p>
+                                                                {user.headline && (
+                                                                    <p className="text-xs text-muted-foreground">
+                                                                        {user.headline}
+                                                                    </p>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     </CommandItem>
@@ -400,7 +408,7 @@ export function BlockedUsersList({ userId }: BlockedUsersListProps) {
                                             <AvatarFallback>
                                                 {formatInitials(
                                                     blocked.blocked_profile?.display_name || 
-                                                    blocked.blocked_profile?.email ||
+                                                    blocked.blocked_profile?.full_name ||
                                                     'User'
                                                 )}
                                             </AvatarFallback>
@@ -409,9 +417,11 @@ export function BlockedUsersList({ userId }: BlockedUsersListProps) {
                                             <p className="text-sm font-medium">
                                                 {blocked.blocked_profile?.display_name || 'Unnamed User'}
                                             </p>
-                                            <p className="text-xs text-muted-foreground">
-                                                {blocked.blocked_profile?.email || ''}
-                                            </p>
+                                            {blocked.blocked_profile?.headline && (
+                                                <p className="text-xs text-muted-foreground">
+                                                    {blocked.blocked_profile.headline}
+                                                </p>
+                                            )}
                                             {blocked.reason && (
                                                 <p className="text-xs text-muted-foreground mt-1">
                                                     Reason: {blocked.reason}
