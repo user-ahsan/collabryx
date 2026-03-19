@@ -267,8 +267,16 @@ export async function fetchMatchActivity(
 
     return { data: mappedActivities, error: null }
   } catch (error) {
-    logger.app.error("Failed to fetch match activity", error)
-    return { data: [], error: error instanceof Error ? error : new Error("Unknown error") }
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : typeof error === 'object' && error !== null
+        ? JSON.stringify(error)
+        : String(error)
+    
+    logger.app.error("Failed to fetch match activity", { 
+      error: errorMessage 
+    })
+    return { data: [], error: new Error(errorMessage) }
   }
 }
 
