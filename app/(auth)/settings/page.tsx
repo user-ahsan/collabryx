@@ -168,7 +168,7 @@ export default function SettingsPage() {
 									{userId ? <ExperienceProjectsSettingsTab userId={userId} /> : null}
 								</TabsContent>
 
-								<TabsContent value="account" className="mt-0 space-y-6">
+								<TabsContent value="account" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
 									<Card className={cn("border-none shadow-none", glass("cardInner"))}>
 										<CardHeader className="pt-0">
 											<CardTitle className="text-base font-semibold">Account Security</CardTitle>
@@ -231,16 +231,16 @@ export default function SettingsPage() {
 										</Card>
 									</TabsContent>
 
-									<TabsContent value="notifications" className="mt-0">
-										{userId ? <NotificationPreferencesForm userId={userId} /> : null}
-									</TabsContent>
+								<TabsContent value="notifications" className="mt-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
+									{userId ? <NotificationPreferencesForm userId={userId} /> : null}
+								</TabsContent>
 
-									<TabsContent value="privacy" className="mt-0 space-y-6">
-										{userId ? <PrivacySettingsForm userId={userId} /> : null}
-										{userId ? <BlockedUsersList userId={userId} /> : null}
-									</TabsContent>
+								<TabsContent value="privacy" className="mt-0 space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+									{userId ? <PrivacySettingsForm userId={userId} /> : null}
+									{userId ? <BlockedUsersList userId={userId} /> : null}
+								</TabsContent>
 
-								<TabsContent value="billing" className="mt-0">
+								<TabsContent value="billing" className="mt-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
 									<Card className={cn("border-none shadow-none", glass("cardInner"))}>
 										<CardContent className="pt-6 text-center text-muted-foreground">
 											<CreditCard className="h-8 w-8 mx-auto mb-3 opacity-50" />
