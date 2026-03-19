@@ -186,14 +186,14 @@ export default function SettingsPage() {
 											</div>
 												<div className="space-y-2">
 													<Label htmlFor="new-password">New Password</Label>
-													<Input
-														id="new-password"
-														type="password"
-														className={cn(
-															"focus:border-primary/50",
-															glass("input")
-														)}
-													/>
+												<Input
+													id="new-password"
+													type="password"
+													className={cn(
+														"focus-visible:border-primary focus-visible:ring-primary/20",
+														glass("input")
+													)}
+												/>
 												</div>
 												<Button className={cn("mt-2", glass("buttonPrimary"), glass("buttonPrimaryGlow"))}>
 													Change Password
