@@ -42,11 +42,16 @@ export function MatchActivityCard({
             } else {
                 setActivities([])
             }
-        } catch {
+        } catch (error) {
+            console.error("Failed to fetch match activities", {
+                error: error instanceof Error ? error.message : String(error)
+            })
             const cached = getCache<MatchActivityWithUser[]>(CACHE_KEYS.MATCH_ACTIVITY)
             if (cached) {
                 setActivities(cached)
                 toast.info(TOAST_MESSAGES.ACTIVITY.CACHE, { id: TOAST_IDS.ACTIVITY })
+            } else {
+                toast.error("Unable to load activities")
             }
         } finally {
             setIsFetching(false)
@@ -128,4 +133,3 @@ export function MatchActivityCard({
         </GlassCard>
     )
 }
-
