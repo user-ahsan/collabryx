@@ -1940,6 +1940,8 @@ CREATE POLICY "Service role can create conversations" ON public.conversations FO
 
 CREATE POLICY "Users can update own conversations" ON public.conversations FOR UPDATE USING (participant_1 = (SELECT auth.uid()) OR participant_2 = (SELECT auth.uid()));
 
+CREATE POLICY "Users can delete own conversations" ON public.conversations FOR DELETE USING (participant_1 = (SELECT auth.uid()) OR participant_2 = (SELECT auth.uid()));
+
 -- --------------------------------------------
 -- MESSAGES RLS
 -- --------------------------------------------
@@ -1948,6 +1950,10 @@ CREATE POLICY "Users can view conversation messages" ON public.messages
 
 CREATE POLICY "Users can send messages" ON public.messages
     FOR INSERT WITH CHECK ((SELECT auth.uid()) = sender_id AND EXISTS (SELECT 1 FROM public.conversations c WHERE c.id = messages.conversation_id AND (c.participant_1 = (SELECT auth.uid()) OR c.participant_2 = (SELECT auth.uid()))));
+
+CREATE POLICY "Users can update own messages" ON public.messages FOR UPDATE USING ((SELECT auth.uid()) = sender_id);
+
+CREATE POLICY "Users can delete own messages" ON public.messages FOR DELETE USING ((SELECT auth.uid()) = sender_id);
 
 -- --------------------------------------------
 -- NOTIFICATIONS RLS
