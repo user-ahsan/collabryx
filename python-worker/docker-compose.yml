@@ -38,23 +38,6 @@ services:
       timeout: 5s
       retries: 3
       start_period: 60s
-    deploy:
-      replicas: 2
-      update_config:
-        parallelism: 1
-        delay: 30s
-        order: start-first
-      rollback_config:
-        parallelism: 1
-        delay: 30s
-        order: stop-first
-      resources:
-        limits:
-          cpus: '2.0'
-          memory: 3G
-        reservations:
-          cpus: '1.0'
-          memory: 1G
     networks:
       - collabryx-network
 
