@@ -81,3 +81,45 @@ export function validateRegister(
 
   return { success: true, data: result.data }
 }
+
+/**
+ * Validates password reset data with Zod schema
+ * Returns { success: true, data } or { success: false, errors }
+ */
+export function validateResetPassword(
+  rawData: unknown
+): { success: true; data: ResetPasswordData } | { success: false; errors: string[] } {
+  const result = resetPasswordSchema.safeParse(rawData)
+
+  if (!result.success) {
+    const errors = result.error.issues.map((err) => err.message)
+    return { success: false, errors }
+  }
+
+  return { success: true, data: result.data }
+}
+
+/**
+ * Password strength requirements for UI validation
+ */
+export const passwordRequirements = [
+  { label: "At least 8 characters", regex: /.{8,}/ },
+  { label: "Contains uppercase letter", regex: /[A-Z]/ },
+  { label: "Contains lowercase letter", regex: /[a-z]/ },
+  { label: "Contains number", regex: /[0-9]/ },
+  { label: "Contains special character", regex: /[^A-Za-z0-9]/ },
+]
+
+/**
+ * Calculate password strength score (0-100)
+ */
+export function calculatePasswordStrength(password: string): number {
+  let strength = 0
+  if (password.length >= 8) strength += 20
+  if (password.length >= 12) strength += 10
+  if (/[A-Z]/.test(password)) strength += 20
+  if (/[a-z]/.test(password)) strength += 20
+  if (/[0-9]/.test(password)) strength += 15
+  if (/[^A-Za-z0-9]/.test(password)) strength += 15
+  return Math.min(strength, 100)
+}
