@@ -23,14 +23,21 @@ export default async function PostPage({ params }: { params: Promise<{ id: strin
         notFound()
     }
     
+    // Guard clause for missing profile data
+    if (!post.profiles) {
+        notFound()
+    }
+    
     const formattedPost = {
         id: parseInt(post.id),
-        author: post.profiles.full_name || 'Unknown User',
-        role: post.profiles.headline || 'User',
+        author: post.profiles.full_name ?? 'Unknown User',
+        role: post.profiles.headline ?? 'User',
         time: new Date(post.created_at).toLocaleDateString(),
         content: post.content,
-        avatar: post.profiles.avatar_url || '',
-        initials: post.profiles.full_name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'U',
+        avatar: post.profiles.avatar_url ?? '',
+        initials: post.profiles.full_name
+            ? post.profiles.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase()
+            : 'U',
         hasMedia: !!post.media_url,
         mediaType: post.media_type as 'image' | 'video' | undefined,
         mediaUrl: post.media_url || undefined,

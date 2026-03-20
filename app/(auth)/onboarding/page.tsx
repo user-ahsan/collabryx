@@ -74,7 +74,7 @@ const STEPS = [
 ]
 
 const transition = {
-    duration: 0.4,
+    duration: 0.3,
     ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number]
 }
 

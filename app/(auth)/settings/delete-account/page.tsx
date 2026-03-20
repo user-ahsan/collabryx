@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic"
 export default function DeleteAccountPage() {
     return (
         <AuthLayout>
-            <div className="w-full relative min-h-[350px] sm:min-h-[400px] py-4">
+            <div className="w-full relative min-h-[22rem] sm:min-h-[26rem] py-4">
                 <div className="text-left space-y-6 mb-8">
                     <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Delete Account</h1>
                     <p className="text-muted-foreground text-base sm:text-lg">
