@@ -43,6 +43,9 @@ export async function proxy(request: NextRequest) {
                     )
                 },
             },
+            auth: {
+                storageKey: 'supabase.auth.token',
+            },
         }
     )
 
@@ -60,7 +63,7 @@ export async function proxy(request: NextRequest) {
     const protectedRoutes = [
         "/dashboard", "/assistant", "/matches", "/messages",
         "/my-profile", "/notifications", "/post", "/profile",
-        "/requests", "/settings", "/auth-sync"
+        "/requests", "/settings"
     ]
 
     let isAuthRoute = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route))

@@ -53,16 +53,7 @@ function AuthLayoutContent({ children }: { children: React.ReactNode }) {
         checkAuth()
     }, [router, queryClient])
 
-    useEffect(() => {
-        if (isReady) {
-            console.log('✅ Login data loaded:', {
-                posts: '✓',
-                matches: '✓',
-                profile: '✓',
-                notifications: '✓',
-            })
-        }
-    }, [isReady])
+
 
     if (isChecking) {
         return (

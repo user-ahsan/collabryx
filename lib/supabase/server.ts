@@ -41,6 +41,7 @@ export async function createClient() {
                 // P1-04: Session timeout configuration (7 days)
                 flowType: 'pkce',
                 autoRefreshToken: true,
+                storageKey: 'supabase.auth.token',
             },
         }
     )
