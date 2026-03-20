@@ -14,7 +14,6 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { useSidebar } from "@/components/shared/sidebar-context"
-import { useSettings } from "@/hooks/use-settings"
 import { NotificationsWidget } from "@/components/features/dashboard/notifications-widget"
 import {
     LayoutDashboard,
@@ -45,8 +44,6 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
     const sidebarContext = useSidebar()
     const isCollapsed = isMobile ? false : sidebarContext.isCollapsed
     const toggleSidebar = sidebarContext.toggleSidebar
-
-    const { openSettings } = useSettings()
 
     const [showTooltips, setShowTooltips] = React.useState(false)
 
@@ -286,10 +283,12 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
 
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <Button onClick={() => openSettings('profile')} variant="ghost" size="icon" className="h-10 w-10 hover:bg-muted/80 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
-                                            <Settings className="h-4 w-4" />
-                                            <span className="sr-only">Settings</span>
-                                        </Button>
+                                        <Link href="/settings">
+                                            <Button variant="ghost" size="icon" className="h-10 w-10 hover:bg-muted/80 rounded-lg text-muted-foreground hover:text-foreground transition-colors">
+                                                <Settings className="h-4 w-4" />
+                                                <span className="sr-only">Settings</span>
+                                            </Button>
+                                        </Link>
                                     </TooltipTrigger>
                                     <TooltipContent>Settings</TooltipContent>
                                 </Tooltip>
@@ -318,10 +317,12 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
 
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button onClick={() => openSettings('profile')} variant="ghost" size="icon" className="h-10 w-10 hover:bg-muted rounded-xl text-muted-foreground hover:text-foreground">
-                                        <Settings className="h-4 w-4" />
-                                        <span className="sr-only">Settings</span>
-                                    </Button>
+                                    <Link href="/settings">
+                                        <Button variant="ghost" size="icon" className="h-10 w-10 hover:bg-muted rounded-xl text-muted-foreground hover:text-foreground">
+                                            <Settings className="h-4 w-4" />
+                                            <span className="sr-only">Settings</span>
+                                        </Button>
+                                    </Link>
                                 </TooltipTrigger>
                                 {showTooltips && <TooltipContent side="right">Settings</TooltipContent>}
                             </Tooltip>
