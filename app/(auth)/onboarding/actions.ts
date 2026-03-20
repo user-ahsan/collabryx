@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { completeTestUserOnboarding, isDevelopmentMode } from "@/lib/services/development"
+import { cookies } from "next/headers"
 
 interface OnboardingData {
     fullName: string;
@@ -23,95 +24,113 @@ interface OnboardingData {
 }
 
 export async function completeOnboarding(data: OnboardingData, completionPercentage: number) {
+    const cookieStore = await cookies()
     const supabase = await createClient()
     let userId: string | null = null
     
     console.log('🎯 Starting onboarding completion flow...');
     
-    // STEP 1: Attempt to refresh session (handles expired tokens)
-    console.log('🔄 Attempting to refresh session...');
-    try {
-        await supabase.auth.refreshSession()
-    } catch (refreshError) {
-        // Refresh can fail if token is too old, continue to session check
-        console.log('⚠️ Session refresh failed (expected for expired sessions):', 
-            refreshError instanceof Error ? refreshError.message : 'Unknown error');
-    }
+    // Debug: Check incoming cookies
+    const allCookies = cookieStore.getAll()
+    const authCookies = allCookies.filter(c => c.name.includes('auth') || c.name.includes('token'))
+    console.log('🍪 Auth cookies found:', authCookies.map(c => ({
+        name: c.name,
+        hasValue: !!c.value,
+        valueLength: c.value?.length || 0
+    })));
     
-    // STEP 2: Try getSession FIRST (more reliable in server actions)
-    console.log('📋 Checking session...');
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+    // STEP 1: Get session FIRST (before any refresh attempts)
+    console.log('📋 Checking initial session...');
+    let { data: sessionData, error: sessionError } = await supabase.auth.getSession()
     
     // Log session details for debugging
-    console.log('🔍 Session check:', {
+    console.log('🔍 Initial session check:', {
         hasSession: !!sessionData?.session,
         hasUser: !!sessionData?.session?.user,
         userId: sessionData?.session?.user?.id,
         email: sessionData?.session?.user?.email,
-        emailConfirmed: !!sessionData?.session?.user?.email_confirmed_at,
+        expiresAt: sessionData?.session?.expires_at 
+            ? new Date(sessionData.session.expires_at * 1000).toISOString()
+            : 'N/A',
         sessionError: sessionError?.message
     });
     
+    // STEP 2: If no session or expired, try to refresh
+    if (!sessionData?.session || !sessionData.session.user) {
+        console.log('⚠️ No valid session found, attempting refresh...');
+        try {
+            const refreshResult = await supabase.auth.refreshSession()
+            console.log('🔄 Refresh result:', {
+                success: !refreshResult.error,
+                error: refreshResult.error?.message
+            });
+            
+            // CRITICAL: Get session AGAIN after refresh
+            if (!refreshResult.error) {
+                const freshResult = await supabase.auth.getSession()
+                sessionData = freshResult.data
+                sessionError = freshResult.error
+                
+                console.log('🔍 Post-refresh session check:', {
+                    hasSession: !!sessionData?.session,
+                    hasUser: !!sessionData?.session?.user,
+                    userId: sessionData?.session?.user?.id,
+                    sessionError: sessionError?.message
+                });
+            }
+        } catch (refreshError) {
+            console.log('❌ Refresh failed:', 
+                refreshError instanceof Error ? refreshError.message : 'Unknown error');
+        }
+    }
+    
+    // STEP 3: Use session if we have it
     if (sessionData?.session?.user) {
-        // Session is valid, use it
         userId = sessionData.session.user.id
         console.log('✅ Session-based auth successful:', userId);
     } else {
-        // STEP 3: Fallback to getUser (for edge cases)
-        console.log('⚠️ No session found, trying getUser() as fallback...');
+        // STEP 4: Last resort - getUser() (usually fails without session)
+        console.log('⚠️ No session after refresh, trying getUser() as last resort...');
         const { data: userData, error: userError } = await supabase.auth.getUser()
-        
-        console.log('🔍 getUser() result:', {
-            hasUser: !!userData?.user,
-            userId: userData?.user?.id,
-            error: userError?.message
-        });
         
         if (userData?.user) {
             userId = userData.user.id
-            console.log('✅ getUser() fallback successful:', userId);
+            console.log('✅ getUser() succeeded:', userId);
         } else {
-            // STEP 4: Handle specific error cases
+            // STEP 5: Handle specific error cases
             const errorMessage = userError?.message || sessionError?.message || 'Unknown authentication error'
-            console.error('❌ Authentication failed:', {
+            console.error('❌ All auth methods failed:', {
                 sessionError: sessionError?.message,
                 userError: userError?.message,
                 fullError: errorMessage
             });
             
-            // Check if it's an email confirmation issue (allow onboarding)
+            // Check if it's an email confirmation issue
             if (errorMessage.includes("Email not confirmed") || errorMessage.includes("not confirmed")) {
-                console.log('📧 User email not verified, but allowing onboarding to proceed');
-                // Try one more time with just the session
-                const { data: finalSession } = await supabase.auth.getSession()
-                if (finalSession?.session?.user) {
-                    userId = finalSession.session.user.id
-                    console.log('✅ Allowing onboarding for unverified user:', userId);
-                }
+                console.log('📧 Email not verified - this should have been handled by getSession()');
+                // getSession() should work even with unverified email
+                // If we're here, there's truly no session
             }
             
-            // If still no user, throw detailed error
-            if (!userId) {
-                const detailedError = new Error(
-                    "Your session has expired. This can happen if:\n" +
-                    "- You've been inactive for too long\n" +
-                    "- You're using incognito mode with strict cookie settings\n" +
-                    "- Your browser blocked authentication cookies\n\n" +
-                    "Please try logging in again, or use a regular browser window."
-                )
-                // Add error code for frontend handling
-                Object.assign(detailedError, { code: 'AUTH_SESSION_MISSING' })
-                throw detailedError
-            }
+            // Provide actionable error
+            throw new Error(
+                "Your session has expired or was not found. This can happen if:\n" +
+                "- You've been inactive for too long\n" +
+                "- You're using incognito mode with strict cookie settings\n" +
+                "- Your browser blocked authentication cookies\n" +
+                "- The session expired during onboarding\n\n" +
+                "Please try logging in again, or use a regular browser window.\n" +
+                "If the problem persists, clear your browser cookies and try again."
+            )
         }
     }
-
-    // Safety check - should never reach here without userId
+    
+    // Safety check
     if (!userId) {
         throw new Error("Unable to verify user authentication. Please log in again.")
     }
     
-    // Capture userEmail from sessionData (available from getSession)
+    // Get email from session
     const userEmail = sessionData?.session?.user?.email
     if (!userEmail) {
         throw new Error("Your account doesn't have an email address. Please contact support.")
