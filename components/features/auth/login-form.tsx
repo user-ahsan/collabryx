@@ -88,6 +88,7 @@ export function LoginForm() {
     }, [isDev, devCredentials, form])
 
     const onLoginSubmit = async (data: z.infer<typeof loginSchema>) => {
+        console.log('[LoginForm] Submit handler called with data:', { email: data.email })
         setIsLoading(true)
         
         // Check if Supabase is configured
@@ -95,6 +96,7 @@ export function LoginForm() {
         const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
         
         if (!supabaseUrl || !supabaseKey) {
+            console.error('[LoginForm] Supabase not configured')
             toast.error("Authentication service is not configured. Please contact support.")
             setIsLoading(false)
             // Redirect to home page with error
@@ -105,6 +107,7 @@ export function LoginForm() {
         }
         
         try {
+            console.log('[LoginForm] Attempting Supabase login...')
             const { error } = await supabase.auth.signInWithPassword({
                 email: data.email,
                 password: data.password,
@@ -112,17 +115,27 @@ export function LoginForm() {
             setIsLoading(false)
 
             if (error) {
+                console.error('[LoginForm] Login error:', error.message)
                 toast.error(error.message)
                 return
             }
 
+            console.log('[LoginForm] Login successful, redirecting...')
             toast.success("Welcome back!")
             window.location.assign("/auth-sync")
         } catch (err) {
-            console.error('Login error:', err)
+            console.error('[LoginForm] Login exception:', err)
             toast.error("An unexpected error occurred. Please try again.")
             setIsLoading(false)
         }
+    }
+
+    // Wrapper handler to ensure preventDefault is called
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault()
+        console.log('[LoginForm] Form submit event prevented, calling validation...')
+        // Trigger react-hook-form validation and submission
+        await form.handleSubmit(onLoginSubmit)(e)
     }
 
     const handleSocialLogin = async (provider: "google" | "github" | "apple") => {
@@ -203,7 +216,7 @@ export function LoginForm() {
                         </div>
                     )}
                     <form 
-                        onSubmit={form.handleSubmit(onLoginSubmit)} 
+                        onSubmit={handleSubmit} 
                         className="space-y-4"
                         aria-labelledby="login-heading"
                         noValidate
