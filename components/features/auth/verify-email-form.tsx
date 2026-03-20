@@ -10,6 +10,7 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
 import { useRouter } from "next/navigation"
+import { devLog, logEmailVerificationStatus, logRedirectDecision, isDebugEnabled } from "@/lib/services/development"
 
 type VerificationStatus = "loading" | "verified" | "error" | "pending"
 
@@ -23,10 +24,18 @@ export function VerifyEmailForm() {
 
     React.useEffect(() => {
         const checkEmailVerification = async () => {
+            const stopTimer = performance.now()
+            
             try {
+                devLog("auth", "Starting email verification check")
+                
                 const { data: { user }, error } = await supabase.auth.getUser()
 
                 if (error) {
+                    devLog("auth", "Email verification failed - getUser error", {
+                        errorCode: error.code,
+                        errorMessage: error.message,
+                    })
                     setStatus("error")
                     setMessage("Invalid or expired verification link. Please request a new verification email.")
                     return
@@ -35,21 +44,43 @@ export function VerifyEmailForm() {
                 if (user) {
                     setUserEmail(user.email || "")
 
+                    // Log email verification status
+                    logEmailVerificationStatus(user.email, user.email_confirmed_at, "verify-email-form")
+
                     // Check if email is verified
                     if (user.email_confirmed_at) {
+                        devLog("auth", "Email is verified - scheduling redirect", {
+                            email: user.email,
+                            confirmedAt: user.email_confirmed_at,
+                            redirectDelay: 2000,
+                        })
                         setStatus("verified")
 
                         // Redirect to onboarding or dashboard
                         setTimeout(() => {
+                            logRedirectDecision("/verify-email", "/onboarding", "Email verification successful")
                             router.push("/onboarding")
                         }, 2000)
                     } else {
+                        devLog("auth", "Email is NOT verified - showing pending state", {
+                            email: user.email,
+                            emailConfirmedAt: null,
+                        })
                         setStatus("pending")
                         setMessage("Your email is not yet verified. Please check your inbox.")
                     }
                 }
+                
+                // Log performance
+                const duration = performance.now() - stopTimer
+                if (isDebugEnabled()) {
+                    devLog("perf", "Email verification check completed", { durationMs: duration.toFixed(2) })
+                }
             } catch (err) {
                 console.error("Email verification error:", err)
+                devLog("auth", "Email verification error - unexpected exception", {
+                    error: err instanceof Error ? err.message : "Unknown error",
+                })
                 setStatus("error")
                 setMessage("An unexpected error occurred. Please try again.")
             }
@@ -59,6 +90,7 @@ export function VerifyEmailForm() {
     }, [supabase.auth, router])
 
     const handleResendEmail = async () => {
+        devLog("auth", "Resending verification email", { email: userEmail })
         setIsResending(true)
 
         try {
@@ -68,12 +100,22 @@ export function VerifyEmailForm() {
             })
 
             if (error) {
+                devLog("auth", "Resend email failed", {
+                    email: userEmail,
+                    errorCode: error.code,
+                    errorMessage: error.message,
+                })
                 setMessage(error.message)
             } else {
+                devLog("auth", "Verification email resent successfully", { email: userEmail })
                 setMessage("Verification email resent! Please check your inbox.")
             }
         } catch (err) {
             console.error("Resend email error:", err)
+            devLog("auth", "Resend email error - unexpected exception", {
+                email: userEmail,
+                error: err instanceof Error ? err.message : "Unknown error",
+            })
             setMessage("Failed to resend verification email. Please try again.")
         } finally {
             setIsResending(false)
