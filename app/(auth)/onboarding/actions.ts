@@ -27,6 +27,8 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
     let userData = null
     let userError = null
     
+    console.log('🎯 Starting onboarding completion flow...');
+    
     // Try to get user - allow unverified users
     const getUserResult = await supabase.auth.getUser()
     userData = getUserResult.data
@@ -34,18 +36,22 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
 
     // If user verification failed due to email not confirmed, get user from session instead
     if (userError && (userError.message.includes("Email not confirmed") || userError.message.includes("not confirmed"))) {
+        console.log('📧 User email not verified, using session-based auth for onboarding');
         const { data: sessionData } = await supabase.auth.getSession()
         if (sessionData?.session?.user) {
             userData = { user: sessionData.session.user }
             userError = null
+            console.log('✅ Session-based auth successful for unverified user:', userData.user.id);
         }
     }
 
     if (userError || !userData?.user) {
+        console.error('❌ Authentication failed:', userError);
         throw new Error("Unable to verify user authentication. Please log in again.")
     }
 
     const userId = userData.user.id
+    console.log('✅ User authenticated for onboarding:', userId);
 
     // Check if onboarding already completed
     const { data: existingProfile } = await supabase
@@ -170,7 +176,9 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
     }
 
     // RELIABLE: Queue embedding request in database FIRST (source of truth)
+    let embeddingQueuedInDb = false;
     try {
+        console.log('📝 Queueing embedding request for user:', userId);
         const { data: queueData, error: queueError } = await supabase
             .rpc('queue_embedding_request', {
                 p_user_id: userId,
@@ -178,14 +186,21 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
             });
         
         if (queueError) {
-            console.error('Failed to queue embedding:', queueError);
-            // Don't fail onboarding, but log for monitoring
-            // Background processor will handle it from the queue
+            // Check if it's a duplicate error (already queued)
+            if (queueError.code === '23505' || queueError.message?.includes('already pending')) {
+                console.log('⚠️ Embedding already queued for user:', userId);
+                embeddingQueuedInDb = true; // Still considered queued
+            } else {
+                console.error('❌ Failed to queue embedding in DB:', queueError);
+                // Don't fail onboarding, but log for monitoring
+                // Background processor will handle it from the queue
+            }
         } else {
-            console.log('Embedding queued successfully in DB:', queueData);
+            console.log('✅ Embedding queued successfully in DB:', queueData);
+            embeddingQueuedInDb = true;
         }
     } catch (error) {
-        console.error('Embedding queue exception:', error);
+        console.error('❌ Embedding queue exception:', error);
         // Continue - DB queue is reliable, API trigger is best-effort
     }
     
@@ -198,7 +213,8 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
         
-        await fetch(`${appUrl}/api/embeddings/generate`, {
+        console.log('🚀 Triggering embedding API for user:', userId);
+        const response = await fetch(`${appUrl}/api/embeddings/generate`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ user_id: userId }),
@@ -206,18 +222,27 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
         });
         
         clearTimeout(timeoutId);
-        console.log('Embedding API trigger successful');
-        embeddingTriggered = true
+        
+        if (response.ok) {
+            console.log('✅ Embedding API trigger successful');
+            embeddingTriggered = true;
+        } else {
+            const errorText = await response.text();
+            console.warn('⚠️ Embedding API returned non-OK status:', response.status, errorText);
+            embeddingError = `API returned ${response.status}: ${errorText}`;
+            // Don't fail - DB queue will handle it
+        }
     } catch (error) {
         // Already queued in DB, background processor will handle
         embeddingError = error instanceof Error ? error.message : 'Unknown error';
-        console.error('Embedding API trigger failed (DB queue will handle):', embeddingError);
+        console.error('❌ Embedding API trigger failed (DB queue will handle):', embeddingError);
     }
 
     return { 
         success: true, 
         userId, 
         embeddingQueued: embeddingTriggered,
+        embeddingQueuedInDb: embeddingQueuedInDb, // DB queue is the reliable source
         embeddingError: embeddingError // Return error for monitoring
     }
 }
