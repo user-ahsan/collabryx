@@ -3,12 +3,12 @@
 import * as React from "react"
 import { Check, X, Plus } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 import { Input } from "@/components/ui/input"
 import {
   Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
   CommandSeparator,
@@ -130,7 +130,10 @@ export function InlineSearchableCombobox({
     <div className={cn("w-full space-y-3", className)}>
       {/* Selected items */}
       {selected.length > 0 && (
-        <div className="flex flex-wrap gap-2 min-h-[40px] p-2 rounded-md border border-border bg-background/50">
+        <div className={cn(
+          "flex flex-wrap gap-2 min-h-[40px] p-2 rounded-lg",
+          glass("subtle")
+        )}>
           {selectedOptions.map(option => (
             <Badge
               key={option.id}
@@ -158,13 +161,19 @@ export function InlineSearchableCombobox({
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={searchPlaceholder}
-          className="h-12 bg-background/80 backdrop-blur-xl border border-border/60 focus:border-primary/50 focus:bg-accent/50 transition-all duration-300 text-base pr-12"
+          className={cn(
+            "h-12 text-base pr-12 transition-all duration-300",
+            glass("input")
+          )}
         />
         {allowCustom && onAddCustom && search.trim() && (
           <button
             type="button"
             onClick={handleAddCustom}
-            className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+            className={cn(
+              "absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors",
+              glass("buttonPrimary")
+            )}
             title="Add custom option"
           >
             <Plus className="w-4 h-4" />
@@ -175,24 +184,65 @@ export function InlineSearchableCombobox({
       {/* Results Dropdown */}
       {search && (
         <div 
-          className="relative w-full overflow-hidden rounded-xl border border-border/60 bg-card/80 backdrop-blur-xl shadow-lg"
+          className={cn(
+            "relative w-full overflow-hidden rounded-xl shadow-lg",
+            glass("overlay")
+          )}
           style={{ maxHeight: `${maxHeight}px` }}
         >
           <Command shouldFilter={false} className="w-full">
-            <CommandList className="max-h-full">
-              <ScrollArea className="h-full">
-                <CommandEmpty>{emptyMessage}</CommandEmpty>
-                {Object.entries(filteredGroups).map(([category, categoryOptions]) => (
-                  <React.Fragment key={category}>
-                    {showCategories && Object.keys(filteredGroups).length > 1 && (
-                      <>
-                        <CommandGroup heading={category}>
+            <CommandList className="h-full">
+              <ScrollArea className="h-full" type="always">
+                <div className="min-h-fit">
+                  <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">
+                    {emptyMessage}
+                  </CommandEmpty>
+                  {Object.entries(filteredGroups).map(([category, categoryOptions]) => (
+                    <React.Fragment key={category}>
+                      {showCategories && Object.keys(filteredGroups).length > 1 && (
+                        <>
+                          <CommandGroup heading={category}>
+                            {categoryOptions.map(option => (
+                              <CommandItem
+                                key={option.id}
+                                value={option.id}
+                                onSelect={() => handleSelect(option.id)}
+                                className={cn(
+                                  "gap-2 cursor-pointer py-3 aria-selected:bg-primary/10 aria-selected:text-primary",
+                                  glass("dropdownItem")
+                                )}
+                              >
+                                <div className={cn(
+                                  "flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                                  selected.includes(option.id)
+                                    ? "bg-primary text-primary-foreground"
+                                    : "opacity-50 [&_svg]:invisible"
+                                )}>
+                                  <Check className="w-3.5 h-3.5" />
+                                </div>
+                                <div className="flex flex-col flex-1 min-w-0">
+                                  <span className="text-sm font-medium truncate">{option.label}</span>
+                                  {option.description && (
+                                    <span className="text-xs text-muted-foreground truncate">{option.description}</span>
+                                  )}
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                          <CommandSeparator className={cn("my-1", glass("divider"))} />
+                        </>
+                      )}
+                      {!showCategories && (
+                        <CommandGroup>
                           {categoryOptions.map(option => (
                             <CommandItem
                               key={option.id}
                               value={option.id}
                               onSelect={() => handleSelect(option.id)}
-                              className="gap-2 cursor-pointer py-3 aria-selected:bg-primary/10 aria-selected:text-primary"
+                              className={cn(
+                                "gap-2 cursor-pointer py-3 aria-selected:bg-primary/10 aria-selected:text-primary",
+                                glass("dropdownItem")
+                              )}
                             >
                               <div className={cn(
                                 "flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
@@ -202,47 +252,19 @@ export function InlineSearchableCombobox({
                               )}>
                                 <Check className="w-3.5 h-3.5" />
                               </div>
-                              <div className="flex flex-col">
-                                <span className="text-sm font-medium">{option.label}</span>
+                              <div className="flex flex-col flex-1 min-w-0">
+                                <span className="text-sm font-medium truncate">{option.label}</span>
                                 {option.description && (
-                                  <span className="text-xs text-muted-foreground">{option.description}</span>
+                                  <span className="text-xs text-muted-foreground truncate">{option.description}</span>
                                 )}
                               </div>
                             </CommandItem>
                           ))}
                         </CommandGroup>
-                        <CommandSeparator />
-                      </>
-                    )}
-                    {!showCategories && (
-                      <CommandGroup>
-                        {categoryOptions.map(option => (
-                          <CommandItem
-                            key={option.id}
-                            value={option.id}
-                            onSelect={() => handleSelect(option.id)}
-                            className="gap-2 cursor-pointer py-3 aria-selected:bg-primary/10 aria-selected:text-primary"
-                          >
-                            <div className={cn(
-                              "flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                              selected.includes(option.id)
-                                ? "bg-primary text-primary-foreground"
-                                : "opacity-50 [&_svg]:invisible"
-                            )}>
-                              <Check className="w-3.5 h-3.5" />
-                            </div>
-                            <div className="flex flex-col">
-                              <span className="text-sm font-medium">{option.label}</span>
-                              {option.description && (
-                                <span className="text-xs text-muted-foreground">{option.description}</span>
-                              )}
-                            </div>
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    )}
-                  </React.Fragment>
-                ))}
+                      )}
+                    </React.Fragment>
+                  ))}
+                </div>
               </ScrollArea>
             </CommandList>
           </Command>
