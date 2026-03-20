@@ -24,33 +24,99 @@ interface OnboardingData {
 
 export async function completeOnboarding(data: OnboardingData, completionPercentage: number) {
     const supabase = await createClient()
-    let userData = null
-    let userError = null
+    let userId: string | null = null
     
     console.log('🎯 Starting onboarding completion flow...');
     
-    // Try to get user - allow unverified users
-    const getUserResult = await supabase.auth.getUser()
-    userData = getUserResult.data
-    userError = getUserResult.error
-
-    // If user verification failed due to email not confirmed, get user from session instead
-    if (userError && (userError.message.includes("Email not confirmed") || userError.message.includes("not confirmed"))) {
-        console.log('📧 User email not verified, using session-based auth for onboarding');
-        const { data: sessionData } = await supabase.auth.getSession()
-        if (sessionData?.session?.user) {
-            userData = { user: sessionData.session.user }
-            userError = null
-            console.log('✅ Session-based auth successful for unverified user:', userData.user.id);
+    // STEP 1: Attempt to refresh session (handles expired tokens)
+    console.log('🔄 Attempting to refresh session...');
+    try {
+        await supabase.auth.refreshSession()
+    } catch (refreshError) {
+        // Refresh can fail if token is too old, continue to session check
+        console.log('⚠️ Session refresh failed (expected for expired sessions):', 
+            refreshError instanceof Error ? refreshError.message : 'Unknown error');
+    }
+    
+    // STEP 2: Try getSession FIRST (more reliable in server actions)
+    console.log('📋 Checking session...');
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+    
+    // Log session details for debugging
+    console.log('🔍 Session check:', {
+        hasSession: !!sessionData?.session,
+        hasUser: !!sessionData?.session?.user,
+        userId: sessionData?.session?.user?.id,
+        email: sessionData?.session?.user?.email,
+        emailConfirmed: !!sessionData?.session?.user?.email_confirmed_at,
+        sessionError: sessionError?.message
+    });
+    
+    if (sessionData?.session?.user) {
+        // Session is valid, use it
+        userId = sessionData.session.user.id
+        console.log('✅ Session-based auth successful:', userId);
+    } else {
+        // STEP 3: Fallback to getUser (for edge cases)
+        console.log('⚠️ No session found, trying getUser() as fallback...');
+        const { data: userData, error: userError } = await supabase.auth.getUser()
+        
+        console.log('🔍 getUser() result:', {
+            hasUser: !!userData?.user,
+            userId: userData?.user?.id,
+            error: userError?.message
+        });
+        
+        if (userData?.user) {
+            userId = userData.user.id
+            console.log('✅ getUser() fallback successful:', userId);
+        } else {
+            // STEP 4: Handle specific error cases
+            const errorMessage = userError?.message || sessionError?.message || 'Unknown authentication error'
+            console.error('❌ Authentication failed:', {
+                sessionError: sessionError?.message,
+                userError: userError?.message,
+                fullError: errorMessage
+            });
+            
+            // Check if it's an email confirmation issue (allow onboarding)
+            if (errorMessage.includes("Email not confirmed") || errorMessage.includes("not confirmed")) {
+                console.log('📧 User email not verified, but allowing onboarding to proceed');
+                // Try one more time with just the session
+                const { data: finalSession } = await supabase.auth.getSession()
+                if (finalSession?.session?.user) {
+                    userId = finalSession.session.user.id
+                    console.log('✅ Allowing onboarding for unverified user:', userId);
+                }
+            }
+            
+            // If still no user, throw detailed error
+            if (!userId) {
+                const detailedError = new Error(
+                    "Your session has expired. This can happen if:\n" +
+                    "- You've been inactive for too long\n" +
+                    "- You're using incognito mode with strict cookie settings\n" +
+                    "- Your browser blocked authentication cookies\n\n" +
+                    "Please try logging in again, or use a regular browser window."
+                )
+                // Add error code for frontend handling
+                Object.assign(detailedError, { code: 'AUTH_SESSION_MISSING' })
+                throw detailedError
+            }
         }
     }
 
-    if (userError || !userData?.user) {
-        console.error('❌ Authentication failed:', userError);
+    // Safety check - should never reach here without userId
+    if (!userId) {
         throw new Error("Unable to verify user authentication. Please log in again.")
     }
-
-    const userId = userData.user.id
+    
+    // Capture userEmail from sessionData (available from getSession)
+    const userEmail = sessionData?.session?.user?.email
+    if (!userEmail) {
+        throw new Error("Your account doesn't have an email address. Please contact support.")
+    }
+    
     console.log('✅ User authenticated for onboarding:', userId);
 
     // Check if onboarding already completed
@@ -66,7 +132,7 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
     }
 
     // In development mode with test user, use the development service
-    if (isDevelopmentMode() && userData.user.email === "test123@collabryx.com") {
+    if (isDevelopmentMode() && userEmail === "test123@collabryx.com") {
         const result = await completeTestUserOnboarding()
         if (!result.success) {
             throw new Error(result.error?.message || "Failed to complete onboarding in development mode.")
@@ -76,10 +142,6 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
     }
 
     // 1. Update Profile
-    const userEmail = userData.user.email
-    if (!userEmail) {
-        throw new Error("Your account doesn't have an email address. Please contact support.")
-    }
     
     let profileError = null
     try {
