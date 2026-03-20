@@ -103,6 +103,21 @@ export async function POST(request: NextRequest) {
         .select()
         .single()
       sessionId = session?.id
+    } else {
+      // Verify session ownership when session_id is provided
+      const { data: existingSession, error: sessionError } = await supabase
+        .from('ai_mentor_sessions')
+        .select('id')
+        .eq('id', session_id)
+        .eq('user_id', user.id)
+        .single()
+
+      if (sessionError || !existingSession) {
+        return NextResponse.json(
+          { success: false, error: "Session not found or access denied" },
+          { status: 404 }
+        )
+      }
     }
 
     // Save user message

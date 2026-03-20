@@ -323,6 +323,19 @@ export async function getSessionHistory(sessionId: string) {
     return { error: new Error('Unauthorized') }
   }
 
+  // Verify session ownership
+  const { data: session, error: sessionError } = await supabase
+    .from('ai_mentor_sessions')
+    .select('id')
+    .eq('id', sessionId)
+    .eq('user_id', user.id)
+    .single()
+
+  if (sessionError || !session) {
+    return { error: new Error('Session not found or access denied') }
+  }
+
+  // Fetch messages (session ownership verified)
   const { data, error } = await supabase
     .from('ai_mentor_messages')
     .select('*')
