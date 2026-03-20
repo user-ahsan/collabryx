@@ -2,76 +2,44 @@
 
 import { createClient } from '@/lib/supabase/server'
 import type { AuditLogInput } from '@/types/actions'
+import { 
+  logAuditEvent as logAudit,
+  withAudit as withAuditWrapper,
+  logAuthEvent as logAuth,
+  logDataModification as logDataMod,
+  logProfileUpdate,
+  logAdminAction,
+  logFailedLogin,
+} from '@/lib/audit-logger'
 
 // ===========================================
-// AUDIT LOGGING SERVER ACTIONS
+// AUDIT LOGGING SERVER ACTIONS (P1-03)
+// Backwards compatible wrappers for new audit logger
 // ===========================================
 
 /**
- * Log an audit event
+ * Log an audit event (legacy wrapper)
  */
 export async function logAuditEvent(input: AuditLogInput) {
-  const supabase = await createClient()
-  
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  if (authError || !user) {
-    return { error: 'Unauthorized' }
-  }
-
-  const { error } = await supabase
-    .from('audit_logs')
-    .insert({
-      user_id: user.id,
-      action: input.action,
-      resource_type: input.resource_type,
-      resource_id: input.resource_id,
-      details: input.details,
-      ip_address: null, // Would need to be passed from request context
-      user_agent: null,
-    })
-
-  if (error) {
-    console.error('Failed to log audit event:', error)
-    return { error: 'Failed to log audit event' }
-  }
-
-  return { success: true }
+  return logAudit(input)
 }
 
 /**
- * With Audit wrapper - automatically logs success/failure of actions
+ * With Audit wrapper - automatically logs success/failure of actions (legacy wrapper)
  */
 export async function withAudit<T>(
   action: () => Promise<T>,
   eventType: string,
   userId: string
 ): Promise<T> {
-  try {
-    const result = await action()
-    await logAuditEvent({
-      action: eventType,
-      resource_type: 'user_action',
-      details: { success: true, user_id: userId },
-    })
-    return result
-  } catch (error) {
-    await logAuditEvent({
-      action: `${eventType}_failed`,
-      resource_type: 'user_action',
-      details: { error: error instanceof Error ? error.message : 'Unknown', user_id: userId },
-    })
-    throw error
-  }
+  return withAuditWrapper(action, eventType as any, { userId })
 }
 
 /**
  * Log authentication event
  */
-export async function logAuthEvent(eventType: 'login' | 'logout' | 'password_reset' | 'signup') {
-  return logAuditEvent({
-    action: `auth_${eventType}`,
-    resource_type: 'authentication',
-  })
+export async function logAuthEvent(eventType: 'login' | 'logout' | 'password_reset' | 'signup' | 'password_change') {
+  return logAuth(eventType)
 }
 
 /**
@@ -83,10 +51,36 @@ export async function logDataModification(
   action: 'create' | 'update' | 'delete',
   details?: Record<string, unknown>
 ) {
-  return logAuditEvent({
-    action: `data_${action}`,
-    resource_type: resourceType,
-    resource_id: resourceId,
-    details,
-  })
+  return logDataMod(resourceType, resourceId, action, details)
+}
+
+/**
+ * Log profile update (P1-03)
+ */
+export async function logProfileUpdateAction(
+  updatedFields: string[],
+  details?: Record<string, unknown>
+) {
+  return logProfileUpdate(updatedFields, details)
+}
+
+/**
+ * Log admin action (P1-03)
+ */
+export async function logAdminActionWrapper(
+  actionType: string,
+  targetUserId?: string,
+  details?: Record<string, unknown>
+) {
+  return logAdminAction(actionType, targetUserId, details)
+}
+
+/**
+ * Log failed login attempt (P1-03)
+ */
+export async function logFailedLoginAttempt(
+  email: string,
+  reason: string
+) {
+  return logFailedLogin(email, reason)
 }
