@@ -1,0 +1,85 @@
+# P1-31: Auto-scaling configuration for Python worker
+# Docker Compose scaling with resource limits and health checks
+
+version: '3.8'
+
+services:
+  # Python Embedding Worker - Scalable service
+  embedding-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: collabryx-embedding-worker:latest
+    deploy:
+      replicas: 2
+      update_config:
+        parallelism: 1
+        delay: 10s
+        order: start-first
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+        order: stop-first
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    environment:
+      - NODE_ENV=production
+      - PYTHONUNBUFFERED=1
+      - TRANSFORMERS_CACHE=/app/.cache/huggingface
+      - HF_HOME=/app/.cache/huggingface
+    env_file:
+      - .env
+    volumes:
+      - model-cache:/app/.cache/huggingface
+      - worker-logs:/app/logs
+    networks:
+      - collabryx-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "7"
+        compress: "true"
+
+  # Worker behind load balancer
+  worker-lb:
+    image: nginx:alpine
+    ports:
+      - "8000:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - embedding-worker
+    networks:
+      - collabryx-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+
+volumes:
+  model-cache:
+    driver: local
+  worker-logs:
+    driver: local
+
+networks:
+  collabryx-network:
+    driver: bridge

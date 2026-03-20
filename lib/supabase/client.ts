@@ -1,4 +1,5 @@
 import { createBrowserClient } from "@supabase/ssr"
+import { getSupabasePoolConfig } from '@/lib/config/database'
 
 export function createClient() {
     return createBrowserClient(
@@ -12,6 +13,8 @@ export function createClient() {
                 detectSessionInUrl: true,
                 storageKey: 'supabase.auth.token',
             },
+            // P1-11: Database connection pooling configuration
+            db: getSupabasePoolConfig(),
         }
     )
 }
