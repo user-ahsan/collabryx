@@ -77,15 +77,16 @@ export function StepExperience({}: StepExperienceProps) {
         {/* Experiences Section */}
         <div>
           <div className="flex items-center justify-between mb-4 border-b border-border/20 pb-3">
-            <h3 className="text-sm font-semibold text-foreground">Experiences (Optional)</h3>
+            <h3 id="experiences-heading" className="text-sm font-semibold text-foreground">Experiences (Optional)</h3>
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onClick={() => appendExp({ title: "", company: "", description: "" })}
               className="gap-2 h-9 px-3 hover:bg-primary/10 hover:text-primary transition-colors"
+              aria-label="Add a new experience"
             >
-              <Plus className="w-4 h-4" /> 
+              <Plus className="w-4 h-4" aria-hidden="true" /> 
               <span className="hidden sm:inline">Add Experience</span>
               <span className="sm:hidden">Add</span>
             </Button>
@@ -110,8 +111,9 @@ export function StepExperience({}: StepExperienceProps) {
                   size="icon"
                   className="absolute top-3 right-3 h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors z-20"
                   onClick={() => removeExp(index)}
+                  aria-label={`Remove experience ${index + 1}`}
                 >
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-4 h-4" aria-hidden="true" />
                 </Button>
 
                 <div className="space-y-4">
@@ -190,7 +192,7 @@ export function StepExperience({}: StepExperienceProps) {
         <div>
           <div className="flex items-center justify-between mb-4 border-b border-border/20 pb-3">
             <div>
-              <h3 className="text-sm font-semibold text-foreground">Portfolio & Links (Optional)</h3>
+              <h3 id="links-heading" className="text-sm font-semibold text-foreground">Portfolio & Links (Optional)</h3>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Add your work experience and portfolio links.
               </p>
@@ -202,13 +204,15 @@ export function StepExperience({}: StepExperienceProps) {
                   variant="outline"
                   size="sm"
                   className="gap-2 h-9 px-3"
+                  aria-label="Add a new portfolio link"
+                  aria-expanded="false"
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-4 h-4" aria-hidden="true" />
                   <span className="hidden sm:inline">Add Link</span>
                   <span className="sm:hidden">Add</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className={cn("w-56", glass("dropdown"))}>
+              <DropdownMenuContent align="end" className={cn("w-56", glass("dropdown"))} role="menu">
                 {LINK_PLATFORMS.map((platform) => (
                   <DropdownMenuItem
                     key={platform.id}
@@ -217,8 +221,9 @@ export function StepExperience({}: StepExperienceProps) {
                       glass("dropdownItem")
                     )}
                     onClick={() => appendLink({ platform: platform.id, url: "" })}
+                    role="menuitem"
                   >
-                    <platform.icon className="w-4 h-4 text-muted-foreground" />
+                    <platform.icon className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
                     <span className="text-sm">{platform.label}</span>
                   </DropdownMenuItem>
                 ))}
@@ -275,8 +280,9 @@ export function StepExperience({}: StepExperienceProps) {
                     size="icon"
                     className="h-10 w-10 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
                     onClick={() => removeLink(index)}
+                    aria-label={`Remove ${platform.label} link`}
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4" aria-hidden="true" />
                   </Button>
                 </div>
               )

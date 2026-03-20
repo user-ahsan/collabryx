@@ -127,26 +127,32 @@ export function InlineSearchableCombobox({
   const selectedOptions = options.filter(opt => selected.includes(opt.id))
 
   return (
-    <div className={cn("w-full space-y-3", className)}>
+    <div className={cn("w-full space-y-3", className)} role="group">
       {/* Selected items */}
       {selected.length > 0 && (
-        <div className={cn(
-          "flex flex-wrap gap-2 min-h-[40px] p-2 rounded-lg",
-          glass("subtle")
-        )}>
+        <div 
+          className={cn(
+            "flex flex-wrap gap-2 min-h-[40px] p-2 rounded-lg",
+            glass("subtle")
+          )}
+          role="list"
+          aria-label="Selected options"
+        >
           {selectedOptions.map(option => (
             <Badge
               key={option.id}
               variant="secondary"
               className="px-3 py-1 text-sm gap-1.5 bg-primary/10 hover:bg-primary/20 text-primary border-none"
+              role="listitem"
             >
               {option.label}
               <button
                 type="button"
                 onClick={(e) => handleRemove(option.id, e)}
                 className="p-0.5 rounded-full hover:bg-primary/20 transition-colors"
+                aria-label={`Remove ${option.label}`}
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
             </Badge>
           ))}
@@ -165,6 +171,9 @@ export function InlineSearchableCombobox({
             "h-12 text-base pr-12 transition-all duration-300",
             glass("input")
           )}
+          aria-autocomplete="list"
+          aria-controls="combobox-dropdown"
+          aria-expanded={!!search}
         />
         {allowCustom && onAddCustom && search.trim() && (
           <button
@@ -174,9 +183,10 @@ export function InlineSearchableCombobox({
               "absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors",
               glass("buttonPrimary")
             )}
+            aria-label="Add custom option"
             title="Add custom option"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4" aria-hidden="true" />
           </button>
         )}
       </div>
@@ -184,17 +194,20 @@ export function InlineSearchableCombobox({
       {/* Results Dropdown */}
       {search && (
         <div 
+          id="combobox-dropdown"
           className={cn(
             "relative w-full overflow-hidden rounded-xl shadow-lg",
             glass("overlay")
           )}
           style={{ maxHeight: `${maxHeight}px` }}
+          role="listbox"
+          aria-label="Available options"
         >
           <Command shouldFilter={false} className="w-full">
-            <CommandList className="h-full">
+            <CommandList className="h-full" role="presentation">
               <ScrollArea className="h-full" type="always">
                 <div className="min-h-fit">
-                  <CommandEmpty className="py-6 text-center text-sm text-muted-foreground">
+                  <CommandEmpty className="py-6 text-center text-sm text-muted-foreground" role="status">
                     {emptyMessage}
                   </CommandEmpty>
                   {Object.entries(filteredGroups).map(([category, categoryOptions]) => (
@@ -211,13 +224,15 @@ export function InlineSearchableCombobox({
                                   "gap-2 cursor-pointer py-3 aria-selected:bg-primary/10 aria-selected:text-primary",
                                   glass("dropdownItem")
                                 )}
+                                role="option"
+                                aria-selected={selected.includes(option.id)}
                               >
                                 <div className={cn(
                                   "flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
                                   selected.includes(option.id)
                                     ? "bg-primary text-primary-foreground"
                                     : "opacity-50 [&_svg]:invisible"
-                                )}>
+                                )} aria-hidden="true">
                                   <Check className="w-3.5 h-3.5" />
                                 </div>
                                 <div className="flex flex-col flex-1 min-w-0">
@@ -243,13 +258,15 @@ export function InlineSearchableCombobox({
                                 "gap-2 cursor-pointer py-3 aria-selected:bg-primary/10 aria-selected:text-primary",
                                 glass("dropdownItem")
                               )}
+                              role="option"
+                              aria-selected={selected.includes(option.id)}
                             >
                               <div className={cn(
                                 "flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
                                 selected.includes(option.id)
                                   ? "bg-primary text-primary-foreground"
                                   : "opacity-50 [&_svg]:invisible"
-                              )}>
+                              )} aria-hidden="true">
                                 <Check className="w-3.5 h-3.5" />
                               </div>
                               <div className="flex flex-col flex-1 min-w-0">

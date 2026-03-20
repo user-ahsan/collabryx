@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback } from "react"
 import { useForm, FormProvider } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Loader2, ArrowRight, ArrowLeft, User, Code2, Target, Briefcase, Sparkles } from "lucide-react"
@@ -99,6 +99,7 @@ export default function OnboardingPage() {
     const [isEmailVerified, setIsEmailVerified] = useState<boolean | null>(null)
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
     const router = useRouter()
+    const shouldReduceMotion = useReducedMotion()
 
     const methods = useForm<OnboardingFormValues>({
         resolver: zodResolver(combinedSchema),
@@ -514,20 +515,32 @@ export default function OnboardingPage() {
 
     return (
         <div className="min-h-screen bg-background relative flex items-center justify-center overflow-hidden">
+            {/* Skip link for keyboard users */}
+            <a 
+                href="#onboarding-main-content" 
+                className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-md"
+            >
+                Skip to main content
+            </a>
+            
             {/* Background */}
-            <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:50px_50px]" />
+            <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:50px_50px]" aria-hidden="true" />
 
             {/* Main Card */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
+                transition={{ duration: shouldReduceMotion ? 0 : 0.5, ease: "easeOut" }}
                 className="w-full max-w-3xl relative z-10 p-4 sm:p-6 lg:p-8"
             >
                 {/* Email Verification Warning */}
                 {isEmailVerified === false && (
-                    <div className="mb-4 p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-start gap-3">
-                        <div className="p-2 rounded-full bg-amber-500/20 flex items-center justify-center">
+                    <div 
+                        className="mb-4 p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-start gap-3" 
+                        role="alert"
+                        aria-live="polite"
+                    >
+                        <div className="p-2 rounded-full bg-amber-500/20 flex items-center justify-center" aria-hidden="true">
                             <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                             </svg>
@@ -562,55 +575,66 @@ export default function OnboardingPage() {
                                     }
                                 }}
                                 className="space-y-8 flex flex-col"
+                                aria-label="Onboarding form"
                             >
-                                <AnimatePresence mode="wait">
+                                {/* Live region for step changes and announcements */}
+                                <div 
+                                    id="onboarding-main-content"
+                                    className="sr-only" 
+                                    aria-live="polite" 
+                                    aria-atomic="true"
+                                >
+                                    {currentStep > 0 && `Step ${currentStep} of ${STEPS.length - 1}: ${STEPS[currentStep]?.title}`}
+                                </div>
+                                
+                                <AnimatePresence mode="wait" initial={false}>
                                     {currentStep === 0 ? (
                                         <motion.div
                                             key="welcome"
                                             initial={{ opacity: 0 }}
                                             animate={{ opacity: 1 }}
                                             exit={{ opacity: 0 }}
-                                            transition={{ duration: 0.3 }}
+                                            transition={{ duration: shouldReduceMotion ? 0 : 0.3 }}
                                         >
                                             <StepWelcome onNext={handleNext} />
                                         </motion.div>
                                     ) : currentStep === 1 ? (
                                         <motion.div
                                             key="step1"
-                                            initial={{ opacity: 0, x: 20 }}
+                                            initial={{ opacity: 0, x: shouldReduceMotion ? 0 : 20 }}
                                             animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, x: -20 }}
-                                            transition={transition}
+                                            exit={{ opacity: 0, x: shouldReduceMotion ? 0 : -20 }}
+                                            transition={shouldReduceMotion ? { duration: 0 } : transition}
                                         >
                                             <StepBasicInfo userName={userName} />
                                         </motion.div>
                                     ) : currentStep === 2 ? (
                                         <motion.div
                                             key="step2"
-                                            initial={{ opacity: 0, x: 20 }}
+                                            initial={{ opacity: 0, x: shouldReduceMotion ? 0 : 20 }}
                                             animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, x: -20 }}
-                                            transition={transition}
+                                            exit={{ opacity: 0, x: shouldReduceMotion ? 0 : -20 }}
+                                            transition={shouldReduceMotion ? { duration: 0 } : transition}
                                         >
                                             <StepSkills />
                                         </motion.div>
                                     ) : currentStep === 3 ? (
                                         <motion.div
                                             key="step3"
-                                            initial={{ opacity: 0, x: 20 }}
+                                            initial={{ opacity: 0, x: shouldReduceMotion ? 0 : 20 }}
                                             animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, x: -20 }}
-                                            transition={transition}
+                                            exit={{ opacity: 0, x: shouldReduceMotion ? 0 : -20 }}
+                                            transition={shouldReduceMotion ? { duration: 0 } : transition}
                                         >
                                             <StepInterestsAndGoals />
                                         </motion.div>
                                     ) : (
                                         <motion.div
                                             key="step4"
-                                            initial={{ opacity: 0, x: 20 }}
+                                            initial={{ opacity: 0, x: shouldReduceMotion ? 0 : 20 }}
                                             animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, x: -20 }}
-                                            transition={transition}
+                                            exit={{ opacity: 0, x: shouldReduceMotion ? 0 : -20 }}
+                                            transition={shouldReduceMotion ? { duration: 0 } : transition}
                                         >
                                             <StepExperience onSkip={handleSkipExperience} />
                                         </motion.div>
@@ -619,15 +643,16 @@ export default function OnboardingPage() {
 
                                 {/* Navigation */}
                                 {currentStep > 0 && (
-                                    <div className="flex items-center justify-between pt-6 border-t border-border/20">
+                                    <div className="flex items-center justify-between pt-6 border-t border-border/20" role="navigation" aria-label="Form navigation">
                                         <Button
                                             type="button"
                                             variant="ghost"
                                             onClick={handleBack}
                                             disabled={currentStep <= 1 || isSubmitting}
                                             className={currentStep <= 1 ? "invisible" : ""}
+                                            aria-label="Go to previous step"
                                         >
-                                            <ArrowLeft className="w-4 h-4 mr-2" />
+                                            <ArrowLeft className="w-4 h-4 mr-2" aria-hidden="true" />
                                             Back
                                         </Button>
 
@@ -639,9 +664,10 @@ export default function OnboardingPage() {
                                                 onClick={handleSkipExperience}
                                                 disabled={isSubmitting}
                                                 className="min-w-[120px] border-primary/20 text-primary hover:bg-primary/10"
+                                                aria-label="Skip experience step and complete profile"
                                             >
                                                 {isSubmitting ? (
-                                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                    <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" />
                                                 ) : (
                                                     "Skip & Complete"
                                                 )}
@@ -655,7 +681,7 @@ export default function OnboardingPage() {
                                                 >
                                                     {isSubmitting ? (
                                                         <>
-                                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                            <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" />
                                                             Completing...
                                                         </>
                                                     ) : (
@@ -668,13 +694,14 @@ export default function OnboardingPage() {
                                                     onClick={handleNext}
                                                     disabled={isSubmitting}
                                                     className="min-w-[140px]"
+                                                    aria-label="Go to next step"
                                                 >
                                                     {isSubmitting ? (
-                                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" aria-hidden="true" />
                                                     ) : (
                                                         <>
                                                             Next Step
-                                                            <ArrowRight className="w-4 h-4 ml-2" />
+                                                            <ArrowRight className="w-4 h-4 ml-2" aria-hidden="true" />
                                                         </>
                                                     )}
                                                 </Button>
@@ -686,13 +713,13 @@ export default function OnboardingPage() {
                             
                         {/* Loading Dialog */}
                         <Dialog open={isSubmitting}>
-                            <DialogContent className="sm:max-w-md">
+                            <DialogContent className="sm:max-w-md" role="dialog" aria-modal="true" aria-labelledby="dialog-title" aria-describedby="dialog-description">
                                 <DialogHeader>
-                                    <DialogTitle className="flex items-center gap-3">
-                                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                                    <DialogTitle id="dialog-title" className="flex items-center gap-3">
+                                        <Loader2 className="w-6 h-6 animate-spin text-primary" aria-hidden="true" />
                                         Completing Your Profile
                                     </DialogTitle>
-                                    <DialogDescription className="pt-2">
+                                    <DialogDescription id="dialog-description" className="pt-2">
                                         {completionPercentage === 90 
                                             ? "Setting up your profile with basic information..."
                                             : "Setting up your complete profile with all details..."
@@ -700,14 +727,21 @@ export default function OnboardingPage() {
                                         {" Your AI embedding is being generated."}
                                     </DialogDescription>
                                 </DialogHeader>
-                                <div className="space-y-4 py-4">
+                                <div className="space-y-4 py-4" role="status" aria-live="polite">
                                     {/* Progress Bar */}
                                     <div className="space-y-2">
                                         <div className="flex items-center justify-between text-sm">
-                                            <span className="text-muted-foreground">Overall Progress</span>
-                                            <span className="font-medium text-primary">{completionPercentage}%</span>
+                                            <span className="text-muted-foreground" id="progress-label">Overall Progress</span>
+                                            <span className="font-medium text-primary" aria-live="polite">{completionPercentage}%</span>
                                         </div>
-                                        <div className="h-3 bg-secondary rounded-full overflow-hidden">
+                                        <div 
+                                            className="h-3 bg-secondary rounded-full overflow-hidden"
+                                            role="progressbar"
+                                            aria-valuenow={completionPercentage}
+                                            aria-valuemin={0}
+                                            aria-valuemax={100}
+                                            aria-labelledby="progress-label"
+                                        >
                                             <div 
                                                 className="h-full bg-gradient-to-r from-primary via-primary/90 to-primary/80 transition-all duration-700 ease-in-out" 
                                                 style={{ width: `${completionPercentage}%` }} 

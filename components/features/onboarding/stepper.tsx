@@ -17,16 +17,24 @@ interface StepperProps {
 
 export function Stepper({ steps, currentStep }: StepperProps) {
     return (
-        <div className="w-full max-w-lg mx-auto relative pt-2 pb-6">
+        <div 
+            className="w-full max-w-lg mx-auto relative pt-2 pb-6" 
+            role="navigation" 
+            aria-label="Progress through onboarding steps"
+        >
             {/* Stepper items - higher z-index to appear above lines */}
-            <div className="flex items-start justify-between relative z-20">
+            <div className="flex items-start justify-between relative z-20" role="list">
                 {steps.map((step, index) => {
                     const isCompleted = currentStep > index
                     const isCurrent = currentStep === index
                     const Icon = step.icon
 
                     return (
-                        <div key={step.id} className="flex flex-col items-center">
+                        <div 
+                            key={step.id} 
+                            className="flex flex-col items-center" 
+                            role="listitem"
+                        >
                             <motion.div
                                 initial={false}
                                 animate={{
@@ -39,9 +47,11 @@ export function Stepper({ steps, currentStep }: StepperProps) {
                                         isCurrent ? "border-primary text-primary shadow-[0_0_20px_rgba(59,130,246,0.5)]" :
                                             glass("subtle") + " text-muted-foreground"
                                 )}
+                                aria-current={isCurrent ? "step" : undefined}
+                                aria-label={`${step.title} ${isCompleted ? "(completed)" : isCurrent ? "(current step)" : ""}`}
                             >
-                                {isCompleted && <Check className="w-5 h-5 md:w-6 md:h-6" />}
-                                {!isCompleted && Icon && <Icon className="w-4 h-4 md:w-5 md:h-5" />}
+                                {isCompleted && <Check className="w-5 h-5 md:w-6 md:h-6" aria-hidden="true" />}
+                                {!isCompleted && Icon && <Icon className="w-4 h-4 md:w-5 md:h-5" aria-hidden="true" />}
                                 {!isCompleted && !Icon && <span className="text-sm">{index + 1}</span>}
                             </motion.div>
                             <span
@@ -49,6 +59,7 @@ export function Stepper({ steps, currentStep }: StepperProps) {
                                     "mt-3 text-xs md:text-sm font-medium text-center max-w-[80px] leading-tight transition-colors duration-300",
                                     isCurrent ? "text-foreground font-semibold" : "text-muted-foreground"
                                 )}
+                                aria-hidden="true"
                             >
                                 {step.title}
                             </span>

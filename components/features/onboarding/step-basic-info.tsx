@@ -61,15 +61,18 @@ export function StepBasicInfo({ userName, onNameExtracted }: StepBasicInfoProps)
     return (
         <div className="space-y-6">
             <div className="space-y-2 text-center md:text-left">
-                <h2 className="text-3xl font-bold tracking-tight text-foreground">
+                <h2 id="step-heading" className="text-3xl font-bold tracking-tight text-foreground">
                     Hey{userName ? ` ${userName}` : ''}! 👋
                 </h2>
                 <p className="text-base text-muted-foreground">Kindly fill in the following to complete your profile.</p>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4" aria-labelledby="step-heading">
                 <div className="grid gap-2">
-                    <Label htmlFor="fullName" className="text-sm font-semibold text-foreground">Full Name</Label>
+                    <Label htmlFor="fullName" className="text-sm font-semibold text-foreground">
+                        Full Name <span className="text-destructive" aria-hidden="true">*</span>
+                        <span className="sr-only">(required)</span>
+                    </Label>
                     <Input
                         id="fullName"
                         defaultValue={userName}
@@ -87,16 +90,24 @@ export function StepBasicInfo({ userName, onNameExtracted }: StepBasicInfoProps)
                         })}
                         className={cn(
                             "h-11 text-sm",
-                            glass("input")
+                            glass("input"),
+                            errors.fullName && "border-destructive focus:border-destructive"
                         )}
+                        aria-required="true"
+                        aria-invalid={!!errors.fullName}
+                        aria-describedby={errors.fullName ? "fullName-error" : undefined}
                     />
                     {errors.fullName?.message && (
-                        <p className="text-xs text-destructive font-medium">{errors.fullName.message as string}</p>
+                        <p id="fullName-error" className="text-xs text-destructive font-medium" role="alert">
+                            {errors.fullName.message as string}
+                        </p>
                     )}
                 </div>
 
                 <div className="grid gap-2">
-                    <Label htmlFor="displayName" className="text-sm font-semibold text-foreground">Display Name <span className="text-muted-foreground font-normal">(Optional)</span></Label>
+                    <Label htmlFor="displayName" className="text-sm font-semibold text-foreground">
+                        Display Name <span className="text-muted-foreground font-normal">(Optional)</span>
+                    </Label>
                     <Input
                         id="displayName"
                         placeholder="johndoe"
@@ -112,16 +123,25 @@ export function StepBasicInfo({ userName, onNameExtracted }: StepBasicInfoProps)
                         })}
                         className={cn(
                             "h-11 text-sm",
-                            glass("input")
+                            glass("input"),
+                            errors.displayName && "border-destructive focus:border-destructive"
                         )}
+                        aria-invalid={!!errors.displayName}
+                        aria-describedby={errors.displayName ? "displayName-error" : "displayName-hint"}
                     />
+                    <p id="displayName-hint" className="sr-only">Display name can only contain lowercase letters, numbers, and underscores</p>
                     {errors.displayName?.message && (
-                        <p className="text-xs text-destructive font-medium">{errors.displayName.message as string}</p>
+                        <p id="displayName-error" className="text-xs text-destructive font-medium" role="alert">
+                            {errors.displayName.message as string}
+                        </p>
                     )}
                 </div>
 
                 <div className="grid gap-2">
-                    <Label htmlFor="headline" className="text-sm font-semibold text-foreground">Headline</Label>
+                    <Label htmlFor="headline" className="text-sm font-semibold text-foreground">
+                        Headline <span className="text-destructive" aria-hidden="true">*</span>
+                        <span className="sr-only">(required)</span>
+                    </Label>
                     <Input
                         id="headline"
                         placeholder="e.g. Full Stack Developer @ TechStart"
@@ -143,11 +163,18 @@ export function StepBasicInfo({ userName, onNameExtracted }: StepBasicInfoProps)
                         })}
                         className={cn(
                             "h-11 text-sm",
-                            glass("input")
+                            glass("input"),
+                            errors.headline && "border-destructive focus:border-destructive"
                         )}
+                        aria-required="true"
+                        aria-invalid={!!errors.headline}
+                        aria-describedby={errors.headline ? "headline-error" : "headline-hint"}
                     />
+                    <p id="headline-hint" className="sr-only">Headline must be at least 5 characters and can only contain letters, numbers, and basic punctuation</p>
                     {errors.headline?.message && (
-                        <p className="text-xs text-destructive font-medium">{errors.headline.message as string}</p>
+                        <p id="headline-error" className="text-xs text-destructive font-medium" role="alert">
+                            {errors.headline.message as string}
+                        </p>
                     )}
                 </div>
 
@@ -165,6 +192,7 @@ export function StepBasicInfo({ userName, onNameExtracted }: StepBasicInfoProps)
                             "h-11 text-sm",
                             glass("input")
                         )}
+                        aria-describedby="location-hint"
                         onBlur={(e) => {
                             const value = e.target.value
                             if (value) {
@@ -176,6 +204,7 @@ export function StepBasicInfo({ userName, onNameExtracted }: StepBasicInfoProps)
                             }
                         }}
                     />
+                    <p id="location-hint" className="text-xs text-muted-foreground">Format: City, State or City, Country</p>
                 </div>
             </div>
         </div>

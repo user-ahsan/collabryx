@@ -39,7 +39,7 @@ export function StepInterestsAndGoals() {
   return (
     <div className="space-y-6">
       <div className="space-y-2 text-center md:text-left">
-        <h2 className="text-3xl font-bold tracking-tight text-foreground">Interests & Goals</h2>
+        <h2 id="step-heading" className="text-3xl font-bold tracking-tight text-foreground">Interests & Goals</h2>
         <p className="text-base text-muted-foreground">What industries do you care about, and what are you here to do?</p>
       </div>
 
@@ -51,13 +51,13 @@ export function StepInterestsAndGoals() {
           const currentGoals = field.value || []
 
           return (
-            <div className="space-y-4">
+            <div className="space-y-4" aria-labelledby="step-heading">
               <div className="space-y-1.5">
-                <Label className="text-sm font-semibold text-foreground">Collaboration Goals <span className="text-muted-foreground font-normal">(Optional)</span></Label>
-                <p className="text-sm text-muted-foreground">Select all that apply from our comprehensive list.</p>
+                <Label htmlFor="goals-combobox" className="text-sm font-semibold text-foreground">Collaboration Goals <span className="text-muted-foreground font-normal">(Optional)</span></Label>
+                <p id="goals-hint" className="text-sm text-muted-foreground">Select all that apply from our comprehensive list.</p>
               </div>
               {typeof errors.goals?.message === "string" && (
-                <p className="text-xs text-destructive font-medium">{errors.goals.message}</p>
+                <p id="goals-error" className="text-xs text-destructive font-medium" role="alert">{errors.goals.message}</p>
               )}
 
               <InlineSearchableCombobox
@@ -69,6 +69,8 @@ export function StepInterestsAndGoals() {
                 maxHeight={350}
                 allowCustom={false}
                 showCategories={true}
+                className="goals-combobox"
+                aria-describedby={typeof errors.goals?.message === "string" ? "goals-error" : "goals-hint"}
               />
 
               <div className={cn(
@@ -94,8 +96,11 @@ export function StepInterestsAndGoals() {
           return (
             <div className="space-y-4 pt-6 border-t border-border/20">
               <div className="space-y-1.5">
-                <Label className="text-sm font-semibold text-foreground">Your Interests / Industries</Label>
-                <p className="text-sm text-muted-foreground">Select industries you&apos;re interested in or working in.</p>
+                <Label htmlFor="interests-combobox" className="text-sm font-semibold text-foreground">
+                  Your Interests / Industries <span className="text-destructive" aria-hidden="true">*</span>
+                  <span className="sr-only">(required)</span>
+                </Label>
+                <p id="interests-hint" className="text-sm text-muted-foreground">Select industries you&apos;re interested in or working in.</p>
               </div>
               
               <InlineSearchableCombobox
@@ -112,6 +117,9 @@ export function StepInterestsAndGoals() {
                   }
                 }}
                 showCategories={true}
+                className="interests-combobox"
+                aria-required="true"
+                aria-describedby="interests-hint"
               />
 
               <div className={cn(

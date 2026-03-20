@@ -26,7 +26,7 @@ export function StepSkills() {
   return (
     <div className="space-y-6">
       <div className="space-y-2 text-center md:text-left">
-        <h2 className="text-3xl font-bold tracking-tight text-foreground">Your Skills</h2>
+        <h2 id="step-heading" className="text-3xl font-bold tracking-tight text-foreground">Your Skills</h2>
         <p className="text-base text-muted-foreground">Add your skills to help us match you with the right opportunities. Select from our comprehensive list or add custom skills.</p>
       </div>
 
@@ -37,9 +37,12 @@ export function StepSkills() {
           const skills = field.value || []
 
           return (
-            <div className="space-y-4">
+            <div className="space-y-4" aria-labelledby="step-heading">
               <div className="grid gap-2">
-                <Label htmlFor="skills" className="text-sm font-semibold text-foreground">Add Skills</Label>
+                <Label htmlFor="skills-combobox" className="text-sm font-semibold text-foreground">
+                  Add Skills <span className="text-destructive" aria-hidden="true">*</span>
+                  <span className="sr-only">(required)</span>
+                </Label>
                 <InlineSearchableCombobox
                   options={skillOptions}
                   selected={skills}
@@ -54,9 +57,15 @@ export function StepSkills() {
                     }
                   }}
                   showCategories={true}
+                  className="skills-combobox"
+                  aria-required="true"
+                  aria-invalid={!!errors.skills}
+                  aria-describedby={typeof errors.skills?.message === "string" ? "skills-error" : "skills-hint"}
                 />
                 {typeof errors.skills?.message === "string" && (
-                  <p className="text-xs text-destructive font-medium">{errors.skills.message}</p>
+                  <p id="skills-error" className="text-xs text-destructive font-medium" role="alert">
+                    {errors.skills.message}
+                  </p>
                 )}
               </div>
 
@@ -64,7 +73,7 @@ export function StepSkills() {
                 "p-4 rounded-lg",
                 glass("subtle")
               )}>
-                <p className="text-sm text-muted-foreground">
+                <p id="skills-hint" className="text-sm text-muted-foreground">
                   💡 <strong>Tip:</strong> You can select from our list of 1000+ skills across all categories including technical, trades, services, creative, and more. Or type to add custom skills not in the list.
                 </p>
               </div>
