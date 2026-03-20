@@ -128,16 +128,34 @@ export async function POST(request: NextRequest) {
   
   const supabase = await createClient();
   
+  // Get user - allow unverified emails for onboarding flow
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   
-  if (authError || !user) {
+  // If user verification failed due to email not confirmed, get user from session instead
+  let authenticatedUserId: string;
+  if (authError && (authError.message.includes("Email not confirmed") || authError.message.includes("not confirmed"))) {
+    // For onboarding, allow unverified users - get user from session
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (sessionData?.session?.user) {
+      authenticatedUserId = sessionData.session.user.id;
+      console.log('📧 Unverified user allowed for embedding generation:', authenticatedUserId);
+    } else {
+      return NextResponse.json(
+        { success: false, error: "Unauthorized - no valid session" },
+        { status: 401 }
+      );
+    }
+  } else if (authError || !user) {
     return NextResponse.json(
       { success: false, error: "Unauthorized" },
       { status: 401 }
     );
+  } else {
+    authenticatedUserId = user.id;
   }
 
-  let userId = user.id;
+  // Declare userId at function scope so it's accessible in catch block
+  let userId: string = authenticatedUserId;
 
   try {
     const body = await request.json().catch(() => ({}));
@@ -156,8 +174,11 @@ export async function POST(request: NextRequest) {
     
     const targetUserId = validationResult.data.user_id;
     
-    userId = targetUserId || user.id;
-    if (userId !== user.id) {
+    // Use target user ID if provided, otherwise use authenticated user ID
+    userId = targetUserId || authenticatedUserId;
+    
+    // Security check: users can only generate embeddings for themselves
+    if (userId !== authenticatedUserId) {
       return NextResponse.json(
         { success: false, error: "Cannot generate embedding for other users" },
         { status: 403 }
