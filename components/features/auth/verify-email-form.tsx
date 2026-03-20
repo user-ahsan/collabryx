@@ -10,7 +10,7 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
 import { useRouter } from "next/navigation"
-import { devLog, logEmailVerificationStatus, logRedirectDecision, isDebugEnabled } from "@/lib/services/development"
+import { devLog, logEmailVerificationStatus, logRedirectDecision, isDebugEnabled, isDevelopmentMode } from "@/lib/services/development"
 
 type VerificationStatus = "loading" | "verified" | "error" | "pending"
 
@@ -25,14 +25,18 @@ export function VerifyEmailForm() {
     React.useEffect(() => {
         const checkEmailVerification = async () => {
             const stopTimer = performance.now()
+            devLog("auth", "=== EMAIL VERIFICATION CHECK STARTED ===", {
+                isDevelopmentMode: isDevelopmentMode(),
+                debugEnabled: isDebugEnabled(),
+            })
             
             try {
-                devLog("auth", "Starting email verification check")
+                devLog("auth", "Fetching current user")
                 
                 const { data: { user }, error } = await supabase.auth.getUser()
 
                 if (error) {
-                    devLog("auth", "Email verification failed - getUser error", {
+                    devLog("auth", "❌ Email verification failed - getUser error", {
                         errorCode: error.code,
                         errorMessage: error.message,
                     })
@@ -44,27 +48,40 @@ export function VerifyEmailForm() {
                 if (user) {
                     setUserEmail(user.email || "")
 
-                    // Log email verification status
+                    // Log email verification status with detailed info
                     logEmailVerificationStatus(user.email, user.email_confirmed_at, "verify-email-form")
+                    
+                    // CRITICAL: Only redirect if email_confirmed_at is actually set (truthy)
+                    const isEmailConfirmed = !!user.email_confirmed_at
+                    
+                    devLog("auth", "Email verification status evaluation", {
+                        email: user.email,
+                        emailConfirmedAt: user.email_confirmed_at,
+                        isEmailConfirmed,
+                        willRedirect: isEmailConfirmed,
+                    })
 
-                    // Check if email is verified
-                    if (user.email_confirmed_at) {
-                        devLog("auth", "Email is verified - scheduling redirect", {
+                    // Check if email is verified - MUST be truthy, not just exist
+                    if (isEmailConfirmed) {
+                        devLog("auth", "✅ Email is CONFIRMED - scheduling redirect", {
                             email: user.email,
                             confirmedAt: user.email_confirmed_at,
                             redirectDelay: 2000,
+                            destination: "/onboarding",
                         })
                         setStatus("verified")
 
-                        // Redirect to onboarding or dashboard
+                        // Redirect to onboarding or dashboard after 2 second delay
                         setTimeout(() => {
                             logRedirectDecision("/verify-email", "/onboarding", "Email verification successful")
+                            devLog("auth", "🚀 Executing redirect to /onboarding")
                             router.push("/onboarding")
                         }, 2000)
                     } else {
-                        devLog("auth", "Email is NOT verified - showing pending state", {
+                        devLog("auth", "⚠️ Email is NOT confirmed - showing pending state", {
                             email: user.email,
-                            emailConfirmedAt: null,
+                            emailConfirmedAt: user.email_confirmed_at,
+                            isConfirmed: isEmailConfirmed,
                         })
                         setStatus("pending")
                         setMessage("Your email is not yet verified. Please check your inbox.")
@@ -74,11 +91,11 @@ export function VerifyEmailForm() {
                 // Log performance
                 const duration = performance.now() - stopTimer
                 if (isDebugEnabled()) {
-                    devLog("perf", "Email verification check completed", { durationMs: duration.toFixed(2) })
+                    devLog("perf", "⏱️ Email verification check completed", { durationMs: duration.toFixed(2) })
                 }
             } catch (err) {
                 console.error("Email verification error:", err)
-                devLog("auth", "Email verification error - unexpected exception", {
+                devLog("auth", "❌ Email verification error - unexpected exception", {
                     error: err instanceof Error ? err.message : "Unknown error",
                 })
                 setStatus("error")
@@ -129,6 +146,15 @@ export function VerifyEmailForm() {
 
     return (
         <div className="w-full relative min-h-[350px] sm:min-h-[400px]">
+            {/* DEV MODE Indicator */}
+            {isDevelopmentMode() && isDebugEnabled() && (
+                <div className="absolute top-2 right-2 z-50">
+                    <div className="px-2 py-1 text-xs font-semibold bg-amber-500/90 text-black rounded-md shadow-lg">
+                        DEV MODE
+                    </div>
+                </div>
+            )}
+            
             <div className="relative z-10 py-4">
                 <motion.div
                     initial={{ opacity: 0, y: 10 }}
@@ -244,6 +270,35 @@ export function VerifyEmailForm() {
                             {message && (
                                 <Alert className={cn(glass("subtle"))}>
                                     <AlertDescription>{message}</AlertDescription>
+                                </Alert>
+                            )}
+
+                            {/* DEV MODE: Debug Info Panel */}
+                            {isDevelopmentMode() && isDebugEnabled() && (
+                                <Alert className={cn(glass("overlay"), "border-amber-500/30")}>
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-2 text-sm font-semibold text-amber-600 dark:text-amber-400">
+                                            <AlertCircle className="h-4 w-4" />
+                                            Debug Info (Dev Mode)
+                                        </div>
+                                        <div className="text-xs space-y-1 font-mono">
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Email:</span>
+                                                <span className="text-foreground">{userEmail || "N/A"}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Status:</span>
+                                                <span className="text-amber-600 dark:text-amber-400">PENDING</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-muted-foreground">Confirmed:</span>
+                                                <span className="text-red-600">NO</span>
+                                            </div>
+                                        </div>
+                                        <div className="pt-2 text-xs text-muted-foreground">
+                                            💡 Check console for detailed logs (prefix: [DEV:AUTH])
+                                        </div>
+                                    </div>
                                 </Alert>
                             )}
 

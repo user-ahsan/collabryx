@@ -19,6 +19,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import { createClient } from "@/lib/supabase/client"
+import { devLog, logRedirectDecision, isDevelopmentMode } from "@/lib/services/development"
 
 import { toast } from "sonner"
 import Link from "next/link"
@@ -62,6 +63,7 @@ export function RegisterForm() {
     })
 
     const onSignupSubmit = async (data: z.infer<typeof signupSchema>) => {
+        devLog("auth", "Signup initiated", { email: data.email })
         setIsLoading(true)
         
         // Check if Supabase is configured
@@ -69,6 +71,10 @@ export function RegisterForm() {
         const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
         
         if (!supabaseUrl || !supabaseKey) {
+            devLog("auth", "Signup failed - Supabase not configured", { 
+                hasUrl: !!supabaseUrl, 
+                hasKey: !!supabaseKey 
+            })
             toast.error("Authentication service is not configured. Please contact support.")
             setIsLoading(false)
             // Redirect to home page with error
@@ -79,26 +85,52 @@ export function RegisterForm() {
         }
         
         try {
+            const origin = typeof window !== 'undefined' ? window.location.origin : ''
+            const redirectTo = `${origin}/auth-sync`
+            
+            devLog("auth", "Calling supabase.auth.signUp", {
+                email: data.email,
+                redirectTo,
+                isDevelopment: isDevelopmentMode(),
+            })
+            
             const { error } = await supabase.auth.signUp({
                 email: data.email,
                 password: data.password,
                 options: {
-                    emailRedirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth-sync`,
+                    emailRedirectTo: redirectTo,
                 },
             })
+            
             setIsLoading(false)
 
             if (error) {
+                devLog("auth", "Signup failed - Supabase error", {
+                    email: data.email,
+                    errorCode: error.code,
+                    errorMessage: error.message,
+                })
                 toast.error(error.message)
                 return
             }
 
+            // Success - log and redirect
+            devLog("auth", "Signup successful - account created", {
+                email: data.email,
+                redirectingTo: "/verify-email",
+            })
+            logRedirectDecision("/register", "/verify-email", "Account created, email verification required")
+            
             // Don't redirect - show success message and let user check email
             toast.success("Account created! Please check your email to verify your account.")
             // Redirect to a verification page or show verification UI
             window.location.assign("/verify-email")
         } catch (err) {
             console.error('Signup error:', err)
+            devLog("auth", "Signup failed - unexpected exception", {
+                email: data.email,
+                error: err instanceof Error ? err.message : "Unknown error",
+            })
             toast.error("An unexpected error occurred. Please try again.")
             setIsLoading(false)
         }
