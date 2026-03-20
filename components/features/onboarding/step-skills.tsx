@@ -5,6 +5,8 @@ import { useFormContext, Controller } from "react-hook-form"
 import { Label } from "@/components/ui/label"
 import { InlineSearchableCombobox, ComboboxOption } from "@/components/ui/inline-searchable-combobox"
 import { skillsDatabase, type Skill } from "@/lib/data/skills-database"
+import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 
 export function StepSkills() {
   const { control, formState: { errors } } = useFormContext()
@@ -22,10 +24,10 @@ export function StepSkills() {
   )
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="space-y-2 text-center md:text-left">
-        <h2 className="text-3xl font-bold tracking-tight">Your Skills</h2>
-        <p className="text-lg text-muted-foreground">Add your skills to help us match you with the right opportunities. Select from our comprehensive list or add custom skills.</p>
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">Your Skills</h2>
+        <p className="text-base text-muted-foreground">Add your skills to help us match you with the right opportunities. Select from our comprehensive list or add custom skills.</p>
       </div>
 
       <Controller
@@ -35,9 +37,9 @@ export function StepSkills() {
           const skills = field.value || []
 
           return (
-            <div className="space-y-5">
-              <div className="grid gap-2.5">
-                <Label htmlFor="skills" className="text-base font-medium">Add Skills</Label>
+            <div className="space-y-4">
+              <div className="grid gap-2">
+                <Label htmlFor="skills" className="text-sm font-semibold text-foreground">Add Skills</Label>
                 <InlineSearchableCombobox
                   options={skillOptions}
                   selected={skills}
@@ -54,11 +56,14 @@ export function StepSkills() {
                   showCategories={true}
                 />
                 {typeof errors.skills?.message === "string" && (
-                  <p className="text-sm text-destructive">{errors.skills.message}</p>
+                  <p className="text-xs text-destructive font-medium">{errors.skills.message}</p>
                 )}
               </div>
 
-              <div className="p-4 rounded-lg bg-muted/50 border border-border">
+              <div className={cn(
+                "p-4 rounded-lg",
+                glass("subtle")
+              )}>
                 <p className="text-sm text-muted-foreground">
                   💡 <strong>Tip:</strong> You can select from our list of 1000+ skills across all categories including technical, trades, services, creative, and more. Or type to add custom skills not in the list.
                 </p>

@@ -17,6 +17,7 @@ import {
 import { InlineSearchableCombobox, ComboboxOption } from "@/components/ui/inline-searchable-combobox"
 import { jobTitlesDatabase } from "@/lib/data/job-titles-database"
 import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 
 const LINK_PLATFORMS = [
   { id: "github", label: "GitHub", icon: Github },
@@ -55,49 +56,56 @@ export function StepExperience({}: StepExperienceProps) {
   )
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="space-y-2 text-center md:text-left">
-        <h2 className="text-3xl font-bold tracking-tight">Experience & Projects</h2>
-        <p className="text-lg text-muted-foreground">Add your experiences and link your portfolios.</p>
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">Experience & Projects</h2>
+        <p className="text-base text-muted-foreground">Add your experiences and link your portfolios.</p>
       </div>
 
-      <div className="space-y-10">
+      <div className="space-y-8">
         {/* Experiences Section */}
         <div>
-          <div className="flex items-center justify-between mb-5 border-b border-border/10 pb-3">
-            <h3 className="font-semibold text-lg">Experiences (Optional)</h3>
+          <div className="flex items-center justify-between mb-4 border-b border-border/20 pb-3">
+            <h3 className="text-sm font-semibold text-foreground">Experiences (Optional)</h3>
             <Button
               type="button"
               variant="ghost"
               size="sm"
               onClick={() => appendExp({ title: "", company: "", description: "" })}
-              className="gap-2 h-10 px-4 hover:bg-primary/10 hover:text-primary transition-colors"
+              className="gap-2 h-9 px-3 hover:bg-primary/10 hover:text-primary transition-colors"
             >
-              <Plus className="w-5 h-5" /> Add Experience
+              <Plus className="w-4 h-4" /> 
+              <span className="hidden sm:inline">Add Experience</span>
+              <span className="sm:hidden">Add</span>
             </Button>
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             {expFields.length === 0 && (
-              <p className="text-base text-muted-foreground text-center py-6 bg-white/5 rounded-lg border border-white/5 border-dashed">
-                No experiences added yet. Click &quot;Add Experience&quot; to begin.
-              </p>
+              <div className={cn(
+                "text-center py-8 rounded-lg border border-dashed",
+                glass("subtle")
+              )}>
+                <p className="text-sm text-muted-foreground">
+                  No experiences added yet. Click &quot;Add Experience&quot; to begin.
+                </p>
+              </div>
             )}
             {expFields.map((field, index) => (
-              <GlassCard key={field.id} className="relative transition-all duration-300 border-border/10 p-5 sm:p-6">
+              <GlassCard key={field.id} className="relative transition-all duration-300 p-4 sm:p-5" innerClassName="relative z-10">
                 <Button
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="absolute top-4 right-4 h-9 w-9 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors z-10"
+                  className="absolute top-3 right-3 h-8 w-8 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors z-20"
                   onClick={() => removeExp(index)}
                 >
-                  <Trash2 className="w-5 h-5" />
+                  <Trash2 className="w-4 h-4" />
                 </Button>
 
-                <div className="space-y-5">
-                  <div className="grid gap-2.5">
-                    <Label htmlFor={`experiences.${index}.title`} className="text-base font-medium">Job Title / Role</Label>
+                <div className="space-y-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor={`experiences.${index}.title`} className="text-sm font-semibold text-foreground">Job Title / Role</Label>
                     <Controller
                       control={control}
                       name={`experiences.${index}.title` as const}
@@ -114,12 +122,13 @@ export function StepExperience({}: StepExperienceProps) {
                             titleField.onChange(customTitle)
                           }}
                           showCategories={true}
+                          className="w-full"
                         />
                       )}
                     />
                   </div>
-                  <div className="grid gap-2.5">
-                    <Label htmlFor={`experiences.${index}.company`} className="text-base font-medium">Company / Organization</Label>
+                  <div className="grid gap-2">
+                    <Label htmlFor={`experiences.${index}.company`} className="text-sm font-semibold text-foreground">Company / Organization</Label>
                     <Input
                       id={`experiences.${index}.company`}
                       placeholder="e.g. TechStart Inc."
@@ -131,20 +140,24 @@ export function StepExperience({}: StepExperienceProps) {
                         }
                       })}
                       className={cn(
-                        "h-12 bg-background border-border focus:border-primary/50 focus:bg-accent/50 transition-all duration-300 text-base",
+                        "h-11 text-sm",
+                        glass("input"),
                         (errors.experiences as any)?.[index]?.company && "border-destructive focus:border-destructive"
                       )}
                     />
                     {(errors.experiences as any)?.[index]?.company && (
-                      <p className="text-sm text-destructive">{(errors.experiences as any)[index]?.company?.message as string}</p>
+                      <p className="text-xs text-destructive font-medium">{(errors.experiences as any)[index]?.company?.message as string}</p>
                     )}
                   </div>
-                  <div className="grid gap-2.5">
-                    <Label htmlFor={`experiences.${index}.description`} className="text-base font-medium">Description <span className="text-muted-foreground font-normal">(Optional)</span></Label>
+                  <div className="grid gap-2">
+                    <Label htmlFor={`experiences.${index}.description`} className="text-sm font-semibold text-foreground">Description <span className="text-muted-foreground font-normal">(Optional)</span></Label>
                     <Textarea
                       id={`experiences.${index}.description`}
                       placeholder="What did you do? (Optional)"
-                      className="resize-none min-h-[100px] bg-background border-border focus:border-primary/50 focus:bg-accent/50 transition-all duration-300 text-base"
+                      className={cn(
+                        "resize-none min-h-[80px] text-sm",
+                        glass("input")
+                      )}
                       {...register(`experiences.${index}.description`, {
                         maxLength: {
                           value: 2000,
@@ -153,7 +166,7 @@ export function StepExperience({}: StepExperienceProps) {
                       })}
                     />
                     {(errors.experiences as any)?.[index]?.description && (
-                      <p className="text-sm text-destructive">{(errors.experiences as any)[index]?.description?.message as string}</p>
+                      <p className="text-xs text-destructive font-medium">{(errors.experiences as any)[index]?.description?.message as string}</p>
                     )}
                   </div>
                 </div>
@@ -164,10 +177,10 @@ export function StepExperience({}: StepExperienceProps) {
 
         {/* Portfolios / Links Section */}
         <div>
-          <div className="flex items-center justify-between mb-5 border-b border-border/10 pb-3">
+          <div className="flex items-center justify-between mb-4 border-b border-border/20 pb-3">
             <div>
-              <h3 className="font-semibold text-lg">Portfolio & Links (Optional)</h3>
-              <p className="text-sm text-muted-foreground mt-1">
+              <h3 className="text-sm font-semibold text-foreground">Portfolio & Links (Optional)</h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
                 Add your work experience and portfolio links.
               </p>
             </div>
@@ -175,34 +188,43 @@ export function StepExperience({}: StepExperienceProps) {
               <DropdownMenuTrigger asChild>
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
-                  className="gap-2 h-10 px-4 bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 hover:text-primary transition-all duration-300"
+                  className="gap-2 h-9 px-3"
                 >
-                  <Plus className="w-5 h-5" />
-                  Add Link
+                  <Plus className="w-4 h-4" />
+                  <span className="hidden sm:inline">Add Link</span>
+                  <span className="sm:hidden">Add</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-background/80 backdrop-blur-xl border-white/10">
+              <DropdownMenuContent align="end" className={cn("w-56", glass("dropdown"))}>
                 {LINK_PLATFORMS.map((platform) => (
                   <DropdownMenuItem
                     key={platform.id}
-                    className="gap-3 cursor-pointer hover:bg-white/5 transition-colors py-3"
+                    className={cn(
+                      "gap-3 cursor-pointer py-2.5",
+                      glass("dropdownItem")
+                    )}
                     onClick={() => appendLink({ platform: platform.id, url: "" })}
                   >
-                    <platform.icon className="w-5 h-5 text-muted-foreground" />
-                    <span className="text-base">{platform.label}</span>
+                    <platform.icon className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-sm">{platform.label}</span>
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
 
-          <div className="space-y-5">
+          <div className="space-y-3">
             {linkFields.length === 0 && (
-              <p className="text-base text-muted-foreground text-center py-6 bg-white/5 rounded-lg border border-white/5 border-dashed">
-                No links added yet. Click &quot;Add Link&quot; to begin.
-              </p>
+              <div className={cn(
+                "text-center py-8 rounded-lg border border-dashed",
+                glass("subtle")
+              )}>
+                <p className="text-sm text-muted-foreground">
+                  No links added yet. Click &quot;Add Link&quot; to begin.
+                </p>
+              </div>
             )}
             {linkFields.map((field, index) => {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -214,32 +236,38 @@ export function StepExperience({}: StepExperienceProps) {
               const currentError = (errors.links as any)?.[index]?.url?.message
 
               return (
-                <div key={field.id} className="flex gap-3 items-start relative group">
+                <div key={field.id} className="flex gap-2 items-start relative group">
                   <input type="hidden" {...register(`links.${index}.platform` as const)} defaultValue={platformId} />
-                  <div className="flex-1 grid gap-2.5">
+                  <div className="flex-1 grid gap-2">
                     <div className="relative flex items-center">
-                      <div className="absolute left-4 flex items-center justify-center p-2 bg-white/5 rounded-md border border-white/5">
-                        <Icon className="w-5 h-5 text-muted-foreground" />
+                      <div className={cn(
+                        "absolute left-3 flex items-center justify-center p-1.5 rounded-md",
+                        glass("subtle")
+                      )}>
+                        <Icon className="w-4 h-4 text-muted-foreground" />
                       </div>
                       <Input
                         id={`links.${index}.url`}
                         placeholder={`https://${platform.id}.com/username`}
                         {...register(`links.${index}.url`)}
-                        className="h-12 pl-14 bg-background border-border focus:border-primary/50 focus:bg-accent/50 transition-all duration-300 text-base"
+                        className={cn(
+                          "h-11 text-sm pl-11",
+                          glass("input")
+                        )}
                       />
                     </div>
                     {typeof currentError === "string" && (
-                      <p className="text-sm text-destructive">{currentError}</p>
+                      <p className="text-xs text-destructive font-medium">{currentError}</p>
                     )}
                   </div>
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="h-12 w-12 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                    className="h-10 w-10 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
                     onClick={() => removeLink(index)}
                   >
-                    <Trash2 className="w-5 h-5" />
+                    <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               )

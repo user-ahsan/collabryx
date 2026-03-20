@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label"
 import { InlineSearchableCombobox, ComboboxOption } from "@/components/ui/inline-searchable-combobox"
 import { collaborationGoals } from "@/lib/data/collaboration-goals"
 import { industriesDatabase } from "@/lib/data/industries-database"
+import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 
 export function StepInterestsAndGoals() {
   const { control, formState: { errors } } = useFormContext()
@@ -35,10 +37,10 @@ export function StepInterestsAndGoals() {
   )
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="space-y-2 text-center md:text-left">
-        <h2 className="text-3xl font-bold tracking-tight">Interests & Goals</h2>
-        <p className="text-lg text-muted-foreground">What industries do you care about, and what are you here to do?</p>
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">Interests & Goals</h2>
+        <p className="text-base text-muted-foreground">What industries do you care about, and what are you here to do?</p>
       </div>
 
       {/* Collaboration Goals */}
@@ -49,13 +51,13 @@ export function StepInterestsAndGoals() {
           const currentGoals = field.value || []
 
           return (
-            <div className="space-y-5 pt-2">
-              <div className="space-y-1">
-                <Label className="font-semibold text-lg">Collaboration Goals <span className="text-muted-foreground font-normal">(Optional)</span></Label>
-                <p className="text-base text-muted-foreground">Select all that apply from our comprehensive list.</p>
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-semibold text-foreground">Collaboration Goals <span className="text-muted-foreground font-normal">(Optional)</span></Label>
+                <p className="text-sm text-muted-foreground">Select all that apply from our comprehensive list.</p>
               </div>
               {typeof errors.goals?.message === "string" && (
-                <p className="text-sm text-destructive pb-1">{errors.goals.message}</p>
+                <p className="text-xs text-destructive font-medium">{errors.goals.message}</p>
               )}
 
               <InlineSearchableCombobox
@@ -69,9 +71,12 @@ export function StepInterestsAndGoals() {
                 showCategories={true}
               />
 
-              <div className="p-4 rounded-lg bg-muted/50 border border-border">
+              <div className={cn(
+                "p-4 rounded-lg",
+                glass("subtle")
+              )}>
                 <p className="text-sm text-muted-foreground">
-                  💡 <strong>Tip:</strong> Select goals that match what you're looking for - from finding co-founders to networking, mentorship, freelance work, and more.
+                  💡 <strong>Tip:</strong> Select goals that match what you&apos;re looking for - from finding co-founders to networking, mentorship, freelance work, and more.
                 </p>
               </div>
             </div>
@@ -87,9 +92,11 @@ export function StepInterestsAndGoals() {
           const currentInterests = field.value || []
 
           return (
-            <div className="space-y-5 pt-8 border-t border-border/10">
-              <Label className="font-semibold text-lg">Your Interests / Industries</Label>
-              <p className="text-base text-muted-foreground">Select industries you're interested in or working in.</p>
+            <div className="space-y-4 pt-6 border-t border-border/20">
+              <div className="space-y-1.5">
+                <Label className="text-sm font-semibold text-foreground">Your Interests / Industries</Label>
+                <p className="text-sm text-muted-foreground">Select industries you're interested in or working in.</p>
+              </div>
               
               <InlineSearchableCombobox
                 options={industryOptions}
@@ -107,7 +114,10 @@ export function StepInterestsAndGoals() {
                 showCategories={true}
               />
 
-              <div className="p-4 rounded-lg bg-muted/50 border border-border">
+              <div className={cn(
+                "p-4 rounded-lg",
+                glass("subtle")
+              )}>
                 <p className="text-sm text-muted-foreground">
                   💡 <strong>Tip:</strong> Choose from 500+ industries including tech, healthcare, trades (plumber, electrician), services, and more. Or add custom industries.
                 </p>

@@ -47,17 +47,17 @@ export function StepBasicInfo({ userName, onNameExtracted }: StepBasicInfoProps)
     const locationRegister = register("location")
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-6">
             <div className="space-y-2 text-center md:text-left">
-                <h2 className="text-3xl font-bold tracking-tight">
+                <h2 className="text-3xl font-bold tracking-tight text-foreground">
                     Hey{userName ? ` ${userName}` : ''}! 👋
                 </h2>
-                <p className="text-lg text-muted-foreground">Kindly fill in the following to complete your profile.</p>
+                <p className="text-base text-muted-foreground">Kindly fill in the following to complete your profile.</p>
             </div>
 
-            <div className="space-y-5">
-                <div className="grid gap-2.5">
-                    <Label htmlFor="fullName" className="text-base font-medium">Full Name</Label>
+            <div className="space-y-4">
+                <div className="grid gap-2">
+                    <Label htmlFor="fullName" className="text-sm font-semibold text-foreground">Full Name</Label>
                     <Input
                         id="fullName"
                         defaultValue={userName}
@@ -74,17 +74,17 @@ export function StepBasicInfo({ userName, onNameExtracted }: StepBasicInfoProps)
                             }
                         })}
                         className={cn(
-                            "h-12 text-base transition-all duration-300",
+                            "h-11 text-sm",
                             glass("input")
                         )}
                     />
                     {errors.fullName?.message && (
-                        <p className="text-sm text-destructive">{errors.fullName.message as string}</p>
+                        <p className="text-xs text-destructive font-medium">{errors.fullName.message as string}</p>
                     )}
                 </div>
 
-                <div className="grid gap-2.5">
-                    <Label htmlFor="displayName" className="text-base font-medium">Display Name <span className="text-muted-foreground font-normal">(Optional)</span></Label>
+                <div className="grid gap-2">
+                    <Label htmlFor="displayName" className="text-sm font-semibold text-foreground">Display Name <span className="text-muted-foreground font-normal">(Optional)</span></Label>
                     <Input
                         id="displayName"
                         placeholder="johndoe"
@@ -99,17 +99,17 @@ export function StepBasicInfo({ userName, onNameExtracted }: StepBasicInfoProps)
                             }
                         })}
                         className={cn(
-                            "h-12 text-base transition-all duration-300",
+                            "h-11 text-sm",
                             glass("input")
                         )}
                     />
                     {errors.displayName?.message && (
-                        <p className="text-sm text-destructive">{errors.displayName.message as string}</p>
+                        <p className="text-xs text-destructive font-medium">{errors.displayName.message as string}</p>
                     )}
                 </div>
 
-                <div className="grid gap-2.5">
-                    <Label htmlFor="headline" className="text-base font-medium">Headline</Label>
+                <div className="grid gap-2">
+                    <Label htmlFor="headline" className="text-sm font-semibold text-foreground">Headline</Label>
                     <Input
                         id="headline"
                         placeholder="e.g. Full Stack Developer @ TechStart"
@@ -130,17 +130,17 @@ export function StepBasicInfo({ userName, onNameExtracted }: StepBasicInfoProps)
                             }
                         })}
                         className={cn(
-                            "h-12 text-base transition-all duration-300",
+                            "h-11 text-sm",
                             glass("input")
                         )}
                     />
                     {errors.headline?.message && (
-                        <p className="text-sm text-destructive">{errors.headline.message as string}</p>
+                        <p className="text-xs text-destructive font-medium">{errors.headline.message as string}</p>
                     )}
                 </div>
 
-                <div className="grid gap-2.5">
-                    <Label htmlFor="location" className="text-base font-medium">Location <span className="text-muted-foreground font-normal">(Optional)</span></Label>
+                <div className="grid gap-2">
+                    <Label htmlFor="location" className="text-sm font-semibold text-foreground">Location <span className="text-muted-foreground font-normal">(Optional)</span></Label>
                     <Input
                         id="location"
                         placeholder="e.g. San Francisco, CA"
@@ -150,7 +150,7 @@ export function StepBasicInfo({ userName, onNameExtracted }: StepBasicInfoProps)
                             locationInputRef.current = e
                         }}
                         className={cn(
-                            "h-12 text-base transition-all duration-300",
+                            "h-11 text-sm",
                             glass("input")
                         )}
                         onBlur={(e) => {
