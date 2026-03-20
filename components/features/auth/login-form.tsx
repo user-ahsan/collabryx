@@ -35,19 +35,34 @@ export function LoginForm() {
     const [isLoading, setIsLoading] = React.useState(false)
     const [showProviderDialog, setShowProviderDialog] = React.useState(false)
     const [providerToShow, setProviderToShow] = React.useState<"google" | "github" | "apple" | null>(null)
+    const [isDev, setIsDev] = React.useState(false)
+    const [devCredentials, setDevCredentials] = React.useState({ email: "", password: "" })
     const supabase = createClient()
 
-    // Pre-populate test credentials in development mode
-    const isDev = isDevelopmentMode()
-    const devCredentials = isDev ? getDevelopmentCredentials() : { email: "", password: "" }
+    // Pre-populate test credentials in development mode (client-side only)
+    React.useEffect(() => {
+        const dev = isDevelopmentMode()
+        setIsDev(dev)
+        if (dev) {
+            setDevCredentials(getDevelopmentCredentials())
+        }
+    }, [])
 
     const form = useForm<z.infer<typeof loginSchema>>({
         resolver: zodResolver(loginSchema),
         defaultValues: { 
-            email: isDev ? devCredentials.email : "", 
-            password: isDev ? devCredentials.password : "" 
+            email: "", 
+            password: "" 
         },
     })
+
+    // Set values after mount to avoid hydration mismatch
+    React.useEffect(() => {
+        if (isDev && devCredentials.email) {
+            form.setValue("email", devCredentials.email)
+            form.setValue("password", devCredentials.password)
+        }
+    }, [isDev, devCredentials, form])
 
     const onLoginSubmit = async (data: z.infer<typeof loginSchema>) => {
         setIsLoading(true)

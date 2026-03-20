@@ -82,6 +82,9 @@ export function RegisterForm() {
             const { error } = await supabase.auth.signUp({
                 email: data.email,
                 password: data.password,
+                options: {
+                    emailRedirectTo: `${typeof window !== 'undefined' ? window.location.origin : ''}/auth-sync`,
+                },
             })
             setIsLoading(false)
 
@@ -90,8 +93,10 @@ export function RegisterForm() {
                 return
             }
 
-            toast.success("Account created! Redirecting...")
-            window.location.assign("/auth-sync")
+            // Don't redirect - show success message and let user check email
+            toast.success("Account created! Please check your email to verify your account.")
+            // Redirect to a verification page or show verification UI
+            window.location.assign("/verify-email")
         } catch (err) {
             console.error('Signup error:', err)
             toast.error("An unexpected error occurred. Please try again.")
