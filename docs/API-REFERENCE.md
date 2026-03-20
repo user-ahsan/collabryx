@@ -13,10 +13,19 @@ Complete API documentation for Collabryx backend services.
 - [Authentication Endpoints](#authentication-endpoints)
 - [Chat Endpoints](#chat-endpoints)
 - [Embedding Endpoints](#embedding-endpoints)
+- [Activity Tracking Endpoints](#activity-tracking-endpoints)
+- [Match Generation Endpoints](#match-generation-endpoints)
+- [Notification Endpoints](#notification-endpoints)
+- [Content Moderation Endpoints](#content-moderation-endpoints)
+- [AI Mentor Endpoints](#ai-mentor-endpoints)
+- [Analytics Endpoints](#analytics-endpoints)
+- [Upload Endpoints](#upload-endpoints)
+- [Health Check Endpoints](#health-check-endpoints)
 - [Server Actions](#server-actions)
 - [Edge Functions](#edge-functions)
 - [Rate Limits](#rate-limits)
 - [Error Codes](#error-codes)
+- [Standard Error Response Format](#standard-error-response-format)
 - [Response Formats](#response-formats)
 
 ---
@@ -339,6 +348,983 @@ Access-Control-Allow-Headers: Content-Type, Authorization
 
 ---
 
+## Activity Tracking Endpoints
+
+### Track Profile View
+
+Track when a user views another user's profile.
+
+**Endpoint:** `POST /api/activity/track/view`
+
+**Authentication:** Required (user must be logged in)
+
+**Request Body:**
+```typescript
+{
+  viewed_user_id: string  // UUID of the user whose profile was viewed
+}
+```
+
+**Example:**
+```typescript
+const response = await fetch('/api/activity/track/view', {
+  method: 'POST',
+  headers: { 
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+    'X-CSRF-Token': csrfToken
+  },
+  body: JSON.stringify({
+    viewed_user_id: 'user-456'
+  })
+})
+
+const result = await response.json()
+// { success: true, data: { activity_id: '...', viewer_id: '...', viewed_user_id: '...', timestamp: '...' } }
+```
+
+**Response:**
+```typescript
+{
+  success: boolean,
+  message?: string,
+  data?: {
+    activity_id: string,
+    viewer_id: string,
+    viewed_user_id: string,
+    timestamp: string,        // ISO 8601
+    backend_mode: string
+  },
+  error?: string,
+  circuit_breaker_state?: 'closed' | 'open' | 'half-open'
+}
+```
+
+**Status Codes:**
+| Code | Description |
+|------|-------------|
+| 200 | Success |
+| 400 | Invalid request body or self-view attempt |
+| 401 | Unauthorized |
+| 403 | Invalid CSRF token |
+| 404 | Viewed user not found |
+| 429 | Rate limit exceeded |
+| 503 | Backend service unavailable |
+
+**Rate Limit:** 30 requests per hour per user
+
+---
+
+### Track Match Building Activity
+
+Track user actions during match building (like, pass, super-like).
+
+**Endpoint:** `POST /api/activity/track/build`
+
+**Authentication:** Required
+
+**Request Body:**
+```typescript
+{
+  matched_user_id: string,              // UUID of the matched user
+  action: 'like' | 'pass' | 'super-like'
+}
+```
+
+**Example:**
+```typescript
+const response = await fetch('/api/activity/track/build', {
+  method: 'POST',
+  headers: { 
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+    'X-CSRF-Token': csrfToken
+  },
+  body: JSON.stringify({
+    matched_user_id: 'user-789',
+    action: 'like'
+  })
+})
+```
+
+**Response:**
+```typescript
+{
+  success: boolean,
+  message?: string,
+  data?: {
+    activity_id: string,
+    user_id: string,
+    matched_user_id: string,
+    action: 'like' | 'pass' | 'super-like',
+    timestamp: string,
+    backend_mode: string
+  },
+  error?: string,
+  circuit_breaker_state?: string
+}
+```
+
+**Status Codes:**
+| Code | Description |
+|------|-------------|
+| 200 | Success |
+| 400 | Invalid request or self-match attempt |
+| 401 | Unauthorized |
+| 403 | Invalid CSRF token |
+| 404 | Matched user not found |
+| 429 | Rate limit exceeded |
+| 503 | Backend unavailable |
+
+**Rate Limit:** 50 requests per hour per user
+
+---
+
+### Get Activity Feed
+
+Retrieve the user's activity feed (match activities, notifications).
+
+**Endpoint:** `GET /api/activity/feed`
+
+**Authentication:** Required
+
+**Query Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `limit` | number | ❌ No | Max activities to return (default: 20) |
+| `offset` | number | ❌ No | Pagination offset (default: 0) |
+
+**Example:**
+```typescript
+const response = await fetch('/api/activity/feed?limit=20&offset=0', {
+  headers: { 'Authorization': `Bearer ${token}` }
+})
+
+const result = await response.json()
+```
+
+**Response:**
+```typescript
+{
+  data: Array<{
+    id: string,
+    type: string,
+    activity: string,
+    match_percentage?: number,
+    created_at: string,
+    is_read: boolean,
+    actor: {
+      id: string,
+      name: string,
+      avatar?: string,
+      headline?: string
+    }
+  }>,
+  count: number,
+  hasMore: boolean
+}
+```
+
+**Status Codes:**
+| Code | Description |
+|------|-------------|
+| 200 | Success |
+| 401 | Unauthorized |
+| 500 | Internal server error |
+
+---
+
+## Match Generation Endpoints
+
+### Generate Matches
+
+Generate match suggestions for a user.
+
+**Endpoint:** `POST /api/matches/generate`
+
+**Authentication:** Required
+
+**Request Body:**
+```typescript
+{
+  user_id?: string,       // Optional, defaults to authenticated user
+  limit?: number,         // 1-100 (default: 20)
+  min_score?: number      // 0-100 (default: 50)
+}
+```
+
+**Example:**
+```typescript
+const response = await fetch('/api/matches/generate', {
+  method: 'POST',
+  headers: { 
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+    'X-CSRF-Token': csrfToken
+  },
+  body: JSON.stringify({
+    limit: 10,
+    min_score: 60
+  })
+})
+```
+
+**Response:**
+```typescript
+{
+  success: boolean,
+  message?: string,
+  data?: {
+    user_id: string,
+    matches_generated: number,
+    status: 'queued' | 'processing' | 'completed' | 'failed',
+    backend_mode: string,
+    suggestions?: Array<{
+      matched_user_id: string,
+      match_percentage: number,
+      reasons: string[],
+      ai_confidence?: number
+    }>
+  },
+  error?: string,
+  circuit_breaker_state?: string
+}
+```
+
+**Status Codes:**
+| Code | Description |
+|------|-------------|
+| 200 | Success |
+| 400 | Onboarding not completed or embedding not ready |
+| 401 | Unauthorized |
+| 403 | Cannot generate for other users |
+| 429 | Rate limit exceeded |
+| 503 | Backend unavailable |
+
+**Rate Limit:** 10 requests per hour per user
+
+**Prerequisites:**
+- User must have completed onboarding
+- User must have a generated vector embedding
+
+---
+
+### Batch Generate Matches (Admin)
+
+Admin-only endpoint for generating matches in bulk for multiple users.
+
+**Endpoint:** `POST /api/matches/generate/batch`
+
+**Authentication:** Required (Admin only)
+
+**Request Body:**
+```typescript
+{
+  user_ids: string[],     // Array of UUIDs (1-100 users)
+  limit?: number,         // 1-100 (default: 20)
+  min_score?: number,     // 0-100 (default: 50)
+  force_regenerate?: boolean  // Force regeneration (default: false)
+}
+```
+
+**Example:**
+```typescript
+const response = await fetch('/api/matches/generate/batch', {
+  method: 'POST',
+  headers: { 
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${adminToken}`,
+    'X-CSRF-Token': csrfToken
+  },
+  body: JSON.stringify({
+    user_ids: ['user-1', 'user-2'],
+    limit: 20,
+    force_regenerate: true
+  })
+})
+```
+
+**Response:**
+```typescript
+{
+  success: boolean,
+  message?: string,
+  data?: {
+    batch_id: string,
+    total_users: number,
+    processed: number,
+    succeeded: number,
+    failed: number,
+    status: 'queued' | 'processing' | 'completed' | 'partial' | 'failed',
+    results?: Array<{
+      user_id: string,
+      status: 'success' | 'failed' | 'skipped',
+      matches_generated?: number,
+      error?: string
+    }>,
+    backend_mode: string
+  },
+  error?: string,
+  circuit_breaker_state?: string
+}
+```
+
+**Status Codes:**
+| Code | Description |
+|------|-------------|
+| 200 | Success |
+| 400 | Invalid request body |
+| 401 | Unauthorized |
+| 403 | Admin access required |
+| 503 | Backend unavailable |
+
+---
+
+### Match Service Health Check
+
+Check the health status of the match generation service.
+
+**Endpoint:** `GET /api/matches/health`
+
+**Authentication:** Optional
+
+**Query Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `refresh` | boolean | ❌ No | Clear health cache (default: false) |
+
+**Example:**
+```typescript
+const response = await fetch('/api/matches/health?refresh=true')
+const health = await response.json()
+```
+
+**Response:**
+```typescript
+{
+  status: 'healthy' | 'unhealthy' | 'degraded',
+  backend_available: boolean,
+  backend_mode: string,
+  circuit_breaker_state: 'closed' | 'open' | 'half-open',
+  response_time_ms?: number,
+  worker_health?: {
+    status: string,
+    model_info?: {
+      model_name: string,
+      dimensions: number,
+      device: string
+    },
+    supabase_connected: boolean,
+    queue_size?: number
+  },
+  database_connected: boolean,
+  error?: string,
+  message?: string
+}
+```
+
+**Status Codes:**
+| Code | Description |
+|------|-------------|
+| 200 | Service healthy |
+| 503 | Service degraded or unhealthy |
+
+---
+
+## Notification Endpoints
+
+### Send Notification
+
+Send a single notification to a user.
+
+**Endpoint:** `POST /api/notifications/send`
+
+**Authentication:** Required
+
+**Request Body:**
+```typescript
+{
+  user_id: string,                              // Recipient UUID
+  type: 'connect' | 'message' | 'like' | 'comment' | 'system' | 'match',
+  content: string,                              // Max 500 characters
+  actor_id?: string,                            // Actor UUID
+  actor_name?: string,                          // Max 100 chars
+  actor_avatar?: string,                        // URL
+  resource_type?: 'post' | 'profile' | 'conversation' | 'match',
+  resource_id?: string                          // UUID
+}
+```
+
+**Example:**
+```typescript
+const response = await fetch('/api/notifications/send', {
+  method: 'POST',
+  headers: { 
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+    'X-CSRF-Token': csrfToken
+  },
+  body: JSON.stringify({
+    user_id: 'user-456',
+    type: 'like',
+    content: 'Someone liked your profile',
+    actor_id: 'user-123',
+    actor_name: 'John Doe',
+    resource_type: 'profile'
+  })
+})
+```
+
+**Response:**
+```typescript
+{
+  success: boolean,
+  message?: string,
+  data?: {
+    notification_id: string,
+    user_id: string,
+    type: string,
+    status: 'queued' | 'sent' | 'failed',
+    backend_mode: string
+  },
+  error?: string,
+  circuit_breaker_state?: string
+}
+```
+
+**Status Codes:**
+| Code | Description |
+|------|-------------|
+| 200 | Success |
+| 400 | Invalid request body |
+| 401 | Unauthorized |
+| 403 | Invalid CSRF token |
+| 404 | Recipient or actor not found |
+| 429 | Rate limit exceeded |
+| 503 | Backend unavailable |
+
+**Rate Limit:** 20 requests per hour per user
+
+---
+
+### Send Daily Digest (Admin)
+
+Trigger daily notification digest sending.
+
+**Endpoint:** `POST /api/notifications/digest/send`
+
+**Authentication:** Required (Admin only)
+
+**Request Body:**
+```typescript
+{
+  date?: string,          // YYYY-MM-DD format (optional, defaults to today)
+  batch_size?: number,    // 1-1000 (default: 100)
+  dry_run?: boolean       // Test mode (default: false)
+}
+```
+
+**Example:**
+```typescript
+const response = await fetch('/api/notifications/digest/send', {
+  method: 'POST',
+  headers: { 
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${adminToken}`,
+    'X-CSRF-Token': csrfToken
+  },
+  body: JSON.stringify({
+    date: '2026-03-19',
+    batch_size: 50,
+    dry_run: true
+  })
+})
+```
+
+**Response:**
+```typescript
+{
+  success: boolean,
+  message?: string,
+  data?: {
+    digests_queued: number,
+    digests_sent: number,
+    digests_failed: number,
+    status: 'queued' | 'processing' | 'completed' | 'failed',
+    backend_mode: string,
+    schedule_metadata?: {
+      triggered_at: string,
+      triggered_by: string,
+      date_range?: {
+        start: string,
+        end: string
+      }
+    }
+  },
+  error?: string,
+  circuit_breaker_state?: string
+}
+```
+
+**Status Codes:**
+| Code | Description |
+|------|-------------|
+| 200 | Success |
+| 400 | Invalid request body |
+| 401 | Unauthorized |
+| 403 | Admin access required |
+| 429 | Rate limit exceeded |
+| 503 | Backend unavailable |
+
+**Rate Limit:** 5 requests per 15 minutes
+
+---
+
+### Cleanup Old Notifications (Admin)
+
+Delete or archive old notifications.
+
+**Endpoint:** `POST /api/notifications/cleanup`
+
+**Authentication:** Required (Admin only)
+
+**Request Body:**
+```typescript
+{
+  older_than_days?: number,   // 1-365 (default: 30)
+  batch_size?: number,        // 1-1000 (default: 500)
+  dry_run?: boolean,          // Test mode (default: false)
+  user_id?: string            // Target specific user (optional)
+}
+```
+
+**Example:**
+```typescript
+const response = await fetch('/api/notifications/cleanup', {
+  method: 'POST',
+  headers: { 
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${adminToken}`,
+    'X-CSRF-Token': csrfToken
+  },
+  body: JSON.stringify({
+    older_than_days: 90,
+    batch_size: 1000,
+    dry_run: false
+  })
+})
+```
+
+**Response:**
+```typescript
+{
+  success: boolean,
+  message?: string,
+  data?: {
+    notifications_deleted: number,
+    notifications_archived: number,
+    status: 'queued' | 'processing' | 'completed' | 'failed',
+    backend_mode: string,
+    cleanup_metadata?: {
+      triggered_at: string,
+      triggered_by: string,
+      older_than_days: number,
+      cutoff_date: string,
+      target_user_id?: string
+    }
+  },
+  error?: string,
+  circuit_breaker_state?: string
+}
+```
+
+**Status Codes:**
+| Code | Description |
+|------|-------------|
+| 200 | Success |
+| 400 | Invalid request body |
+| 401 | Unauthorized |
+| 403 | Admin access required |
+| 429 | Rate limit exceeded |
+| 503 | Backend unavailable |
+
+**Rate Limit:** 5 requests per 15 minutes
+
+---
+
+## Content Moderation Endpoints
+
+### Moderate Content
+
+Analyze content for toxicity, spam, NSFW, and PII.
+
+**Endpoint:** `POST /api/moderate`
+
+**Authentication:** Required
+
+**Request Body:**
+```typescript
+{
+  content: string,                          // Content to moderate
+  content_type?: 'post' | 'comment' | 'message' | 'profile'  // default: 'post'
+}
+```
+
+**Example:**
+```typescript
+const response = await fetch('/api/moderate', {
+  method: 'POST',
+  headers: { 
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+    'X-CSRF-Token': csrfToken
+  },
+  body: JSON.stringify({
+    content: 'This is a test post',
+    content_type: 'post'
+  })
+})
+
+const result = await response.json()
+// { approved: true, flag_for_review: false, auto_reject: false, risk_score: 0.05, ... }
+```
+
+**Response:**
+```typescript
+{
+  approved: boolean,
+  flag_for_review: boolean,
+  auto_reject: boolean,
+  risk_score: number,           // 0.0 - 1.0
+  action: 'approved' | 'flag_for_review' | 'auto_reject',
+  details: {
+    toxicity?: { score: number },
+    spam?: { score: number },
+    nsfw?: { score: number },
+    pii?: { detected: boolean, types: string[] }
+  },
+  error?: string
+}
+```
+
+**Status Codes:**
+| Code | Description |
+|------|-------------|
+| 200 | Success |
+| 400 | Invalid request body |
+| 401 | Unauthorized |
+| 403 | Invalid CSRF token |
+| 503 | Backend unavailable (uses fallback) |
+
+**Moderation Actions:**
+- `approved`: Content is safe (risk_score < 0.3)
+- `flag_for_review`: Content needs manual review (0.3 <= risk_score < 0.7)
+- `auto_reject`: Content is rejected (risk_score >= 0.7 or contains PII)
+
+---
+
+## AI Mentor Endpoints
+
+### Send AI Mentor Message
+
+Get AI-powered career/project advice.
+
+**Endpoint:** `POST /api/ai-mentor/message`
+
+**Authentication:** Required
+
+**Request Body:**
+```typescript
+{
+  user_id: string,        // Must match authenticated user
+  message: string,        // 1-2000 characters
+  session_id?: string     // Existing session UUID (optional)
+}
+```
+
+**Example:**
+```typescript
+const response = await fetch('/api/ai-mentor/message', {
+  method: 'POST',
+  headers: { 
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+    'X-CSRF-Token': csrfToken
+  },
+  body: JSON.stringify({
+    user_id: user.id,
+    message: 'How can I improve my profile visibility?',
+    session_id: null
+  })
+})
+```
+
+**Response:**
+```typescript
+{
+  response: string,
+  action_items: Array<{
+    task: string,
+    priority: 'high' | 'medium' | 'low'
+  }>,
+  session_id: string,
+  message_id?: string,
+  suggested_next_steps: string[]
+}
+```
+
+**Status Codes:**
+| Code | Description |
+|------|-------------|
+| 200 | Success |
+| 400 | Invalid request body |
+| 401 | Unauthorized |
+| 403 | Cannot access other users' data |
+| 403 | Invalid CSRF token |
+| 503 | Backend unavailable (uses fallback) |
+
+**Fallback Mode:** When Python worker is unavailable, predefined helpful responses are returned based on keywords.
+
+---
+
+## Analytics Endpoints
+
+### Daily Analytics Aggregation (Admin)
+
+Trigger daily analytics data aggregation.
+
+**Endpoint:** `POST /api/analytics/daily`
+
+**Authentication:** Required (Admin only)
+
+**Request Body:**
+```typescript
+{
+  date?: string   // YYYY-MM-DD format (optional, defaults to today)
+}
+```
+
+**Example:**
+```typescript
+const response = await fetch('/api/analytics/daily', {
+  method: 'POST',
+  headers: { 
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${adminToken}`
+  },
+  body: JSON.stringify({
+    date: '2026-03-19'
+  })
+})
+```
+
+**Response:**
+```typescript
+{
+  status: 'success' | 'error',
+  date: string,
+  metrics: {
+    dau?: number,           // Daily Active Users
+    mau?: number,           // Monthly Active Users
+    wau?: number,           // Weekly Active Users
+    new_users?: number,
+    new_posts?: number,
+    new_matches?: number,
+    new_connections?: number,
+    new_messages?: number,
+    content_flagged?: number
+  },
+  error?: string
+}
+```
+
+**Status Codes:**
+| Code | Description |
+|------|-------------|
+| 200 | Success |
+| 400 | Invalid request body |
+| 401 | Unauthorized |
+| 403 | Admin access required |
+| 503 | Backend unavailable (uses fallback) |
+
+**Fallback Mode:** When Python worker is unavailable, basic metrics are calculated directly from the database.
+
+---
+
+## Upload Endpoints
+
+### Upload File
+
+Upload a file to Supabase Storage.
+
+**Endpoint:** `POST /api/upload`
+
+**Authentication:** Required
+
+**Request Body:** FormData
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `file` | File | ✅ Yes | File to upload |
+| `type` | string | ❌ No | `avatar` | `banner` | `post` (default: `post`) |
+
+**Example:**
+```typescript
+const formData = new FormData()
+formData.append('file', fileInput.files[0])
+formData.append('type', 'avatar')
+
+const response = await fetch('/api/upload', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${token}`,
+    'X-CSRF-Token': csrfToken
+  },
+  body: formData
+})
+
+const result = await response.json()
+// { success: true, url: 'https://...', path: '...', bucket: '...' }
+```
+
+**Response:**
+```typescript
+{
+  success: boolean,
+  url: string,              // Public URL
+  path: string,             // Storage path
+  bucket: string            // Bucket name
+}
+```
+
+**File Validation:**
+| Type | Max Size | Allowed Types |
+|------|----------|---------------|
+| `avatar` | 5 MB | image/jpeg, image/png, image/webp |
+| `banner` | 10 MB | image/jpeg, image/png, image/webp |
+| `post` | 10 MB | image/jpeg, image/png, image/webp, video/mp4 |
+
+**Status Codes:**
+| Code | Description |
+|------|-------------|
+| 200 | Success |
+| 400 | No file provided or validation failed |
+| 401 | Unauthorized |
+| 403 | Invalid CSRF token |
+| 500 | Upload failed |
+
+---
+
+### Generate Signed Upload URL
+
+Generate a signed URL for direct file upload.
+
+**Endpoint:** `POST /api/upload/sign`
+
+**Authentication:** Required
+
+**Request Body:**
+```typescript
+{
+  fileName: string,         // 1-255 characters
+  fileType: string,         // MIME type
+  fileSize: number,         // Bytes (max varies by type)
+  uploadType: 'avatar' | 'banner'
+}
+```
+
+**Example:**
+```typescript
+const response = await fetch('/api/upload/sign', {
+  method: 'POST',
+  headers: { 
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  },
+  body: JSON.stringify({
+    fileName: 'profile.jpg',
+    fileType: 'image/jpeg',
+    fileSize: 1024 * 1024 * 3,  // 3MB
+    uploadType: 'avatar'
+  })
+})
+
+const result = await response.json()
+// { success: true, uploadUrl: 'https://...', publicUrl: 'https://...', expiresAt: '...' }
+```
+
+**Response:**
+```typescript
+{
+  success: boolean,
+  uploadUrl: string,        // Signed upload URL
+  publicUrl: string,        // Public URL after upload
+  path: string,             // Storage path
+  bucket: string,           // Bucket name
+  expiresAt: string         // ISO 8601 (60 seconds from now)
+}
+```
+
+**Status Codes:**
+| Code | Description |
+|------|-------------|
+| 200 | Success |
+| 400 | Invalid request or validation failed |
+| 401 | Unauthorized |
+| 500 | Failed to generate URL |
+
+---
+
+## Health Check Endpoints
+
+### System Health Check
+
+Check overall system health including database and Python worker.
+
+**Endpoint:** `GET /api/health`
+
+**Authentication:** Optional
+
+**Example:**
+```typescript
+const response = await fetch('/api/health')
+const health = await response.json()
+```
+
+**Response:**
+```typescript
+{
+  status: 'healthy' | 'degraded' | 'unhealthy',
+  timestamp: string,        // ISO 8601
+  version: string,          // App version
+  environment: string,      // development | production
+  checks: {
+    database: {
+      status: 'ok' | 'failed',
+      error?: string
+    },
+    pythonWorker: {
+      status: 'ok' | 'failed',
+      error?: string
+    }
+  },
+  uptime: number            // Seconds
+}
+```
+
+**Status Codes:**
+| Code | Description |
+|------|-------------|
+| 200 | Service healthy or degraded |
+| 503 | Service unhealthy |
+
+**Health Status:**
+- `healthy`: Database and Python worker both operational
+- `degraded`: Database OK, but Python worker unavailable
+- `unhealthy`: Database connection failed
+
+---
+
 ## Server Actions
 
 Server actions are TypeScript functions called directly from components.
@@ -510,38 +1496,209 @@ Retry-After: 60  // Only on 429
 | `RESOURCE_NOT_FOUND` | Resource doesn't exist | Check ID |
 | `PERMISSION_DENIED` | No access to resource | Check permissions |
 
-### Error Response Format
+## Standard Error Response Format
+
+All API endpoints return errors in a consistent format to enable reliable error handling in client applications.
+
+### Error Response Structure
 
 ```typescript
 {
+  success: false,           // Always false for error responses
   error: {
-    code: string,           // Machine-readable error code
+    code: string,           // Machine-readable error code (SCREAMING_SNAKE_CASE)
     message: string,        // Human-readable message
-    details?: object,       // Additional context
-    field?: string,         // For validation errors
-    timestamp: string,      // ISO 8601 timestamp
-    path: string            // Request path
-  }
+    details?: object,       // Additional context (Zod errors, stack traces, etc.)
+    field?: string,         // For validation errors - the problematic field
+    timestamp?: string,     // ISO 8601 timestamp
+    path?: string           // Request path
+  },
+  circuit_breaker_state?: string  // When backend is involved
 }
 ```
 
-**Example:**
+### Error Categories
+
+#### Authentication Errors (401)
+
+| Code | Message | Resolution |
+|------|---------|------------|
+| `UNAUTHORIZED` | Unauthorized | Missing or invalid auth token |
+| `INVALID_TOKEN` | Invalid token format | Token malformed or expired |
+| `USER_NOT_FOUND` | User not found | User ID doesn't exist |
+
+#### Authorization Errors (403)
+
+| Code | Message | Resolution |
+|------|---------|------------|
+| `FORBIDDEN` | Forbidden | Insufficient permissions |
+| `ADMIN_ACCESS_REQUIRED` | Admin access required | Endpoint restricted to admins |
+| `INVALID_CSRF_TOKEN` | Invalid CSRF token | CSRF validation failed |
+| `CANNOT_ACCESS_OTHER_USERS_DATA` | Cannot access other users' data | User tried to access another user's resource |
+
+#### Validation Errors (400)
+
+| Code | Message | Resolution |
+|------|---------|------------|
+| `VALIDATION_ERROR` | Invalid request body | Zod validation failed |
+| `INVALID_REQUEST` | Invalid request | Malformed request |
+| `MISSING_REQUIRED_FIELDS` | Missing required fields | Required fields not provided |
+| `INVALID_USER_ID` | Invalid user ID format | UUID format invalid |
+| `SELF_ACTION_NOT_ALLOWED` | Cannot track self profile views | User tried to perform action on themselves |
+| `ONBOARDING_NOT_COMPLETED` | Onboarding not completed | User must complete onboarding first |
+| `EMBEDDING_NOT_READY` | Vector embedding not ready | Wait for embedding generation |
+
+#### Resource Errors (404)
+
+| Code | Message | Resolution |
+|------|---------|------------|
+| `NOT_FOUND` | Resource not found | Resource doesn't exist |
+| `USER_NOT_FOUND` | User not found | User ID doesn't exist |
+| `PROFILE_NOT_FOUND` | Profile not found | Profile doesn't exist |
+| `DLQ_ITEM_NOT_FOUND` | DLQ item not found | Dead letter queue item not found |
+
+#### Rate Limit Errors (429)
+
+| Code | Message | Resolution |
+|------|---------|------------|
+| `RATE_LIMIT_EXCEEDED` | Rate limit exceeded | Wait and retry |
+| `TOO_MANY_REQUESTS` | Too many requests | Wait and retry |
+
+#### Backend Service Errors (503)
+
+| Code | Message | Resolution |
+|------|---------|------------|
+| `SERVICE_UNAVAILABLE` | Service unavailable | Backend service down |
+| `BACKEND_UNAVAILABLE` | Python worker backend not available | Retry later |
+| `MATCH_GENERATION_FAILED` | Match generation failed | Backend connection failed |
+| `NOTIFICATION_DELIVERY_FAILED` | Notification delivery failed | Backend connection failed |
+
+#### Server Errors (500)
+
+| Code | Message | Resolution |
+|------|---------|------------|
+| `INTERNAL_SERVER_ERROR` | Internal server error | Contact support |
+| `UPLOAD_FAILED` | Failed to upload file | Retry or check file |
+| `DATABASE_ERROR` | Database error | Retry later |
+
+### Error Response Examples
+
+#### Validation Error (400)
 ```json
 {
+  "success": false,
   "error": {
     "code": "VALIDATION_ERROR",
-    "message": "Invalid input data",
+    "message": "Invalid request body",
     "details": {
       "issues": [
         {
           "field": "email",
-          "message": "Invalid email format"
+          "message": "Invalid email format",
+          "code": "invalid_string"
         }
       ]
     },
-    "timestamp": "2026-03-16T10:30:00Z",
-    "path": "/api/chat"
+    "timestamp": "2026-03-19T10:30:00Z",
+    "path": "/api/notifications/send"
   }
+}
+```
+
+#### Authentication Error (401)
+```json
+{
+  "success": false,
+  "error": {
+    "code": "UNAUTHORIZED",
+    "message": "Unauthorized",
+    "timestamp": "2026-03-19T10:30:00Z",
+    "path": "/api/activity/track/view"
+  }
+}
+```
+
+#### Authorization Error (403)
+```json
+{
+  "success": false,
+  "error": {
+    "code": "INVALID_CSRF_TOKEN",
+    "message": "Invalid CSRF token",
+    "timestamp": "2026-03-19T10:30:00Z",
+    "path": "/api/matches/generate"
+  }
+}
+```
+
+#### Rate Limit Error (429)
+```json
+{
+  "success": false,
+  "error": {
+    "code": "RATE_LIMIT_EXCEEDED",
+    "message": "Rate limit exceeded",
+    "details": {
+      "retry_after": 3600,
+      "reset_at": "2026-03-19T11:30:00Z"
+    },
+    "timestamp": "2026-03-19T10:30:00Z",
+    "path": "/api/matches/generate"
+  },
+  "retry_after": 3600
+}
+```
+
+#### Backend Service Error (503)
+```json
+{
+  "success": false,
+  "error": {
+    "code": "BACKEND_UNAVAILABLE",
+    "message": "Match generation service unavailable",
+    "details": {
+      "message": "Please try again later or contact support"
+    },
+    "circuit_breaker_state": "open"
+  },
+  "circuit_breaker_state": "open"
+}
+```
+
+### Client-Side Error Handling
+
+```typescript
+async function handleApiResponse(response: Response) {
+  const data = await response.json()
+  
+  if (!response.ok) {
+    const errorCode = data.error?.code
+    const errorMessage = data.error?.message
+    
+    switch (errorCode) {
+      case 'UNAUTHORIZED':
+        // Redirect to login
+        router.push('/login')
+        break
+      case 'RATE_LIMIT_EXCEEDED':
+        // Show retry after message
+        const retryAfter = data.error?.details?.retry_after
+        toast.error(`Too many requests. Try again in ${retryAfter}s`)
+        break
+      case 'VALIDATION_ERROR':
+        // Show field-specific errors
+        data.error.details?.issues?.forEach((issue: any) => {
+          setError(issue.field, { message: issue.message })
+        })
+        break
+      default:
+        toast.error(errorMessage || 'Something went wrong')
+    }
+    
+    throw new Error(errorCode)
+  }
+  
+  return data
 }
 ```
 
