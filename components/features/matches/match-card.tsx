@@ -1,11 +1,11 @@
 "use client"
 
+import React, { useState, useMemo } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
 import { UserPlus, Sparkles, Brain } from "lucide-react"
-import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { WhyMatchModal } from "./why-match-modal"
 import { GlassCard } from "@/components/shared/glass-card"
@@ -46,7 +46,7 @@ const availabilityLabels: Record<string, string> = {
     "side-project": "Side-project"
 }
 
-export function MatchCard({ match, index = 0 }: MatchCardProps) {
+export const MatchCard = React.memo(function MatchCard({ match, index = 0 }: MatchCardProps) {
     const router = useRouter()
     const [whyModalOpen, setWhyModalOpen] = useState(false)
     const [requestSent, setRequestSent] = useState(false)
@@ -280,4 +280,4 @@ export function MatchCard({ match, index = 0 }: MatchCardProps) {
             />
         </>
     )
-}
+})
