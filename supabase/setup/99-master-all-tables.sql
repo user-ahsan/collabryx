@@ -298,6 +298,7 @@ CREATE TABLE IF NOT EXISTS public.messages (
     text TEXT NOT NULL,
     is_read BOOLEAN NOT NULL DEFAULT FALSE,
     attachment_url TEXT,
+    read_at TIMESTAMPTZ,
     attachment_type TEXT CHECK (attachment_type IN ('image', 'file')),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -2274,4 +2275,480 @@ COMMENT ON TABLE public.embedding_pending_queue IS 'Queue for pending embedding 
 -- - Guides: docs/ (implementation guides)
 -- - Alignment: docs/DATABASE-SCHEMA-ALIGNMENT.md (verification report)
 --
+-- ============================================================================
+
+-- ============================================================================
+-- SECTION 2.6: PRIVACY & SECURITY TABLES (ADDITIONAL)
+-- ============================================================================
+
+-- --------------------------------------------
+-- TABLE: privacy_settings
+-- --------------------------------------------
+CREATE TABLE IF NOT EXISTS public.privacy_settings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID UNIQUE NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    profile_visibility TEXT NOT NULL DEFAULT 'public' CHECK (profile_visibility IN ('public', 'friends-only', 'private')),
+    show_email BOOLEAN NOT NULL DEFAULT FALSE,
+    show_connections_list BOOLEAN NOT NULL DEFAULT TRUE,
+    activity_status_visible BOOLEAN NOT NULL DEFAULT TRUE,
+    allow_data_download BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_privacy_settings_user_id ON public.privacy_settings(user_id);
+CREATE INDEX IF NOT EXISTS idx_privacy_settings_visibility ON public.privacy_settings(profile_visibility);
+
+-- --------------------------------------------
+-- TABLE: blocked_users
+-- --------------------------------------------
+CREATE TABLE IF NOT EXISTS public.blocked_users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    blocker_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    blocked_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    reason TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(blocker_id, blocked_id),
+    CHECK (blocker_id != blocked_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_blocked_users_blocker ON public.blocked_users(blocker_id);
+CREATE INDEX IF NOT EXISTS idx_blocked_users_blocked ON public.blocked_users(blocked_id);
+
+-- --------------------------------------------
+-- TABLE: audit_logs
+-- --------------------------------------------
+CREATE TABLE IF NOT EXISTS public.audit_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    action TEXT NOT NULL,
+    resource_type TEXT,
+    resource_id TEXT,
+    details JSONB DEFAULT '{}'::jsonb,
+    ip_address INET,
+    user_agent TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_audit_logs_user_id ON public.audit_logs(user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_action ON public.audit_logs(action);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_resource ON public.audit_logs(resource_type, resource_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON public.audit_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_details ON public.audit_logs USING GIN(details);
+
+
+-- ============================================================================
+-- SECTION 5.7: NOTIFICATION TRIGGERS
+-- ============================================================================
+
+-- notify_connection_request
+CREATE OR REPLACE FUNCTION notify_connection_request()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO notifications (user_id, type, actor_id, content, resource_type, resource_id)
+  VALUES (NEW.receiver_id, 'connect', NEW.requester_id, 'sent you a connection request', 'profile', NEW.requester_id);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+CREATE TRIGGER notify_connection_request_trigger
+  AFTER INSERT ON connections
+  FOR EACH ROW
+  WHEN (NEW.status = 'pending')
+  EXECUTE FUNCTION notify_connection_request();
+
+-- notify_post_reaction
+CREATE OR REPLACE FUNCTION notify_post_reaction()
+RETURNS trigger AS $$
+DECLARE
+  post_author uuid;
+BEGIN
+  SELECT author_id INTO post_author FROM posts WHERE posts.id = NEW.post_id;
+  IF post_author IS NOT NULL AND post_author != NEW.user_id THEN
+    INSERT INTO notifications (user_id, type, actor_id, content, resource_type, resource_id)
+    VALUES (post_author, 'like', NEW.user_id, 'liked your post', 'post', NEW.post_id);
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+CREATE TRIGGER notify_post_reaction_trigger
+  AFTER INSERT ON post_reactions
+  FOR EACH ROW
+  EXECUTE FUNCTION notify_post_reaction();
+
+-- notify_new_comment
+CREATE OR REPLACE FUNCTION notify_new_comment()
+RETURNS trigger AS $$
+DECLARE
+  post_author uuid;
+BEGIN
+  SELECT author_id INTO post_author FROM posts WHERE posts.id = NEW.post_id;
+  IF post_author IS NOT NULL AND post_author != NEW.author_id THEN
+    INSERT INTO notifications (user_id, type, actor_id, content, resource_type, resource_id)
+    VALUES (post_author, 'comment', NEW.author_id, 'commented on your post', 'post', NEW.post_id);
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+CREATE TRIGGER notify_new_comment_trigger
+  AFTER INSERT ON comments
+  FOR EACH ROW
+  EXECUTE FUNCTION notify_new_comment();
+
+-- notify_new_message
+CREATE OR REPLACE FUNCTION notify_new_message()
+RETURNS trigger AS $$
+DECLARE
+  other_participant uuid;
+BEGIN
+  SELECT CASE 
+    WHEN conversations.participant_1 = NEW.sender_id THEN conversations.participant_2
+    ELSE conversations.participant_1
+  END INTO other_participant
+  FROM conversations WHERE conversations.id = NEW.conversation_id;
+  
+  IF other_participant IS NOT NULL AND other_participant != NEW.sender_id THEN
+    INSERT INTO notifications (user_id, type, actor_id, content, resource_type, resource_id)
+    VALUES (other_participant, 'message', NEW.sender_id, 'sent you a message', 'conversation', NEW.conversation_id);
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+CREATE TRIGGER notify_new_message_trigger
+  AFTER INSERT ON messages
+  FOR EACH ROW
+  EXECUTE FUNCTION notify_new_message();
+
+-- notify_match_suggested
+CREATE OR REPLACE FUNCTION notify_match_suggested()
+RETURNS trigger AS $$
+DECLARE
+  matched_user_profile record;
+BEGIN
+  IF NEW.match_percentage >= 80 THEN
+    SELECT display_name, headline INTO matched_user_profile
+    FROM profiles WHERE id = NEW.matched_user_id;
+    
+    IF matched_user_profile.display_name IS NOT NULL THEN
+      INSERT INTO notifications (user_id, type, actor_id, content, resource_type, resource_id)
+      VALUES (NEW.user_id, 'match', NEW.matched_user_id, 
+        format('You have a %s%% match with %s!', NEW.match_percentage::text, matched_user_profile.display_name),
+        'match', NEW.id);
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+CREATE TRIGGER notify_match_suggested_trigger
+  AFTER INSERT ON match_suggestions
+  FOR EACH ROW
+  EXECUTE FUNCTION notify_match_suggested();
+
+-- notify_connection_accepted
+CREATE OR REPLACE FUNCTION notify_connection_accepted()
+RETURNS trigger AS $$
+BEGIN
+  IF NEW.status = 'accepted' AND OLD.status = 'pending' THEN
+    INSERT INTO notifications (user_id, type, actor_id, content, resource_type, resource_id)
+    VALUES (NEW.requester_id, 'connection_accepted', NEW.receiver_id, 'accepted your connection request', 'connection', NEW.id);
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+CREATE TRIGGER notify_connection_accepted_trigger
+  AFTER UPDATE ON connections
+  FOR EACH ROW
+  WHEN (OLD.status = 'pending' AND NEW.status = 'accepted')
+  EXECUTE FUNCTION notify_connection_accepted();
+
+GRANT EXECUTE ON FUNCTION notify_connection_request TO service_role;
+GRANT EXECUTE ON FUNCTION notify_post_reaction TO service_role;
+GRANT EXECUTE ON FUNCTION notify_new_comment TO service_role;
+GRANT EXECUTE ON FUNCTION notify_new_message TO service_role;
+GRANT EXECUTE ON FUNCTION notify_match_suggested TO service_role;
+GRANT EXECUTE ON FUNCTION notify_connection_accepted TO service_role;
+
+-- ============================================================================
+-- SECTION 5.8: EVENT CAPTURE TRIGGERS
+-- ============================================================================
+
+-- Generic event capture
+CREATE OR REPLACE FUNCTION capture_event(event_type_param text)
+RETURNS trigger AS $$
+DECLARE
+  target_id_val uuid;
+  target_type_val text;
+  metadata_val jsonb;
+BEGIN
+  CASE TG_TABLE_NAME
+    WHEN 'post_reactions' THEN
+      target_id_val := NEW.post_id;
+      target_type_val := 'post';
+      metadata_val := jsonb_build_object('post_id', NEW.post_id);
+    WHEN 'comments' THEN
+      target_id_val := NEW.post_id;
+      target_type_val := 'post';
+      metadata_val := jsonb_build_object('post_id', NEW.post_id);
+    WHEN 'connections' THEN
+      target_id_val := CASE WHEN NEW.requester_id = auth.uid() THEN NEW.receiver_id ELSE NEW.requester_id END;
+      target_type_val := 'profile';
+      metadata_val := jsonb_build_object('status', NEW.status);
+    WHEN 'messages' THEN
+      target_id_val := NEW.conversation_id;
+      target_type_val := 'conversation';
+      metadata_val := jsonb_build_object('conversation_id', NEW.conversation_id);
+    WHEN 'match_activity' THEN
+      target_id_val := NEW.target_user_id;
+      target_type_val := 'profile';
+      metadata_val := jsonb_build_object('type', NEW.type);
+    ELSE
+      target_id_val := NULL;
+      target_type_val := 'unknown';
+      metadata_val := '{}'::jsonb;
+  END CASE;
+  
+  INSERT INTO events (event_type, actor_id, target_id, target_type, metadata)
+  VALUES (event_type_param, COALESCE(NEW.user_id, NEW.author_id, NEW.actor_user_id, NEW.requester_id, NEW.sender_id), 
+    target_id_val, target_type_val, metadata_val);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+CREATE TRIGGER capture_post_reaction_event AFTER INSERT ON post_reactions FOR EACH ROW EXECUTE FUNCTION capture_event('post_reaction');
+CREATE TRIGGER capture_comment_event AFTER INSERT ON comments FOR EACH ROW EXECUTE FUNCTION capture_event('comment_created');
+CREATE TRIGGER capture_connection_request_event AFTER INSERT ON connections FOR EACH ROW WHEN (NEW.status = 'pending') EXECUTE FUNCTION capture_event('connection_requested');
+CREATE TRIGGER capture_connection_accepted_event AFTER UPDATE ON connections FOR EACH ROW WHEN (OLD.status = 'pending' AND NEW.status = 'accepted') EXECUTE FUNCTION capture_event('connection_accepted');
+CREATE TRIGGER capture_message_sent_event AFTER INSERT ON messages FOR EACH ROW EXECUTE FUNCTION capture_event('message_sent');
+CREATE TRIGGER capture_profile_view_event AFTER INSERT ON match_activity FOR EACH ROW WHEN (NEW.type = 'profile_view') EXECUTE FUNCTION capture_event('profile_viewed');
+
+-- Post creation event
+CREATE OR REPLACE FUNCTION capture_post_created_event()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO events (event_type, actor_id, target_id, target_type, metadata)
+  VALUES ('post_created', NEW.author_id, NEW.id, 'post', jsonb_build_object('post_type', NEW.post_type, 'intent', NEW.intent));
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+CREATE TRIGG
+ER capture_post_created_event AFTER INSERT ON posts FOR EACH ROW EXECUTE FUNCTION capture_post_created_event();
+
+-- Profile update event
+CREATE OR REPLACE FUNCTION capture_profile_updated_event()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO events (event_type, actor_id, target_id, target_type, metadata)
+  VALUES ('profile_updated', NEW.id, NEW.id, 'profile', jsonb_build_object('updated_at', now()));
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+CREATE TRIGGER capture_profile_updated_event AFTER UPDATE ON profiles FOR EACH ROW EXECUTE FUNCTION capture_profile_updated_event();
+
+GRANT EXECUTE ON FUNCTION capture_event TO service_role;
+GRANT EXECUTE ON FUNCTION capture_post_created_event TO service_role;
+GRANT EXECUTE ON FUNCTION capture_profile_updated_event TO service_role;
+
+-- ============================================================================
+-- SECTION 5.9: REALTIME BROADCAST
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION broadcast_realtime(channel_prefix text)
+RETURNS trigger AS $$
+DECLARE
+  channel_name text;
+  payload jsonb;
+BEGIN
+  CASE TG_TABLE_NAME
+    WHEN 'notifications' THEN
+      channel_name := channel_prefix || ':user:' || NEW.user_id::text;
+      payload := jsonb_build_object('type', 'new_notification', 'timestamp', now());
+    WHEN 'messages' THEN
+      channel_name := channel_prefix || ':conversation:' || NEW.conversation_id::text;
+      payload := jsonb_build_object('type', 'new_message', 'timestamp', now());
+    WHEN 'match_activity' THEN
+      channel_name := channel_prefix || ':user:' || NEW.target_user_id::text;
+      payload := jsonb_build_object('type', 'match_activity', 'timestamp', now());
+    WHEN 'match_suggestions' THEN
+      channel_name := channel_prefix || ':user:' || NEW.user_id::text;
+      payload := jsonb_build_object('type', 'new_match_suggestion', 'timestamp', now());
+    ELSE
+      channel_name := channel_prefix || ':unknown';
+      payload := jsonb_build_object('type', 'unknown_event', 'table', TG_TABLE_NAME);
+  END CASE;
+  PERFORM pg_notify(channel_name, payload::text);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+CREATE TRIGGER broadcast_notification_realtime AFTER INSERT ON notifications FOR EACH ROW EXECUTE FUNCTION broadcast_realtime('notifications');
+CREATE TRIGGER broadcast_message_realtime AFTER INSERT ON messages FOR EACH ROW EXECUTE FUNCTION broadcast_realtime('messages');
+CREATE TRIGGER broadcast_match_activity_realtime AFTER INSERT ON match_activity FOR EACH ROW EXECUTE FUNCTION broadcast_realtime('match_activity');
+CREATE TRIGGER broadcast_match_suggestion_realtime AFTER INSERT ON match_suggestions FOR EACH ROW EXECUTE FUNCTION broadcast_realtime('matches');
+
+GRANT EXECUTE ON FUNCTION broadcast_realtime TO service_role;
+
+-- ============================================================================
+-- SECTION 5.10: PROFILE COMPLETION AUTO-UPDATE
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION public.calculate_profile_completion(p_user_id uuid)
+RETURNS integer AS $$
+DECLARE
+  v_score integer := 0;
+  v_profile RECORD;
+BEGIN
+  SELECT * INTO v_profile FROM profiles WHERE id = p_user_id;
+  IF NOT FOUND THEN RETURN 0; END IF;
+  
+  IF v_profile.full_name IS NOT NULL OR v_profile.display_name IS NOT NULL THEN v_score := v_score + 10; END IF;
+  IF v_profile.headline IS NOT NULL THEN v_score := v_score + 10; END IF;
+  IF v_profile.bio IS NOT NULL THEN v_score := v_score + 5; END IF;
+  
+  SELECT COUNT(*) INTO v_score FROM user_skills WHERE user_id = p_user_id HAVING COUNT(*) > 0;
+  v_score := v_score + 25;
+  
+  SELECT COUNT(*) INTO v_score FROM user_interests WHERE user_id = p_user_id HAVING COUNT(*) > 0;
+  v_score := v_score + 15;
+  
+  IF v_profile.looking_for IS NOT NULL AND array_length(v_profile.looking_for, 1) > 0 THEN v_score := v_score + 10; END IF;
+  
+  SELECT COUNT(*) INTO v_score FROM user_experiences WHERE user_id = p_user_id HAVING COUNT(*) > 0;
+  v_score := v_score + 25;
+  
+  RETURN LEAST(v_score, 100);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+CREATE OR REPLACE FUNCTION public.update_profile_completion_from_profile() RETURNS TRIGGER AS $$
+BEGIN NEW.profile_completion := public.calculate_profile_completion(NEW.id); RETURN NEW; END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+CREATE TRIGGER update_profile_completion_on_profile_update BEFORE UPDATE ON profiles FOR EACH ROW
+  WHEN (OLD.full_name IS DISTINCT FROM NEW.full_name OR OLD.display_name IS DISTINCT FROM NEW.display_name OR
+        OLD.headline IS DISTINCT FROM NEW.headline OR OLD.bio IS DISTINCT FROM NEW.bio)
+  EXECUTE FUNCTION public.update_profile_completion_from_profile();
+
+CREATE OR REPLACE FUNCTION public.update_profile_completion_from_related() RETURNS TRIGGER AS $$
+BEGIN
+  UPDATE profiles SET profile_completion = public.calculate_profile_completion(COALESCE(NEW.user_id, OLD.user_id))
+  WHERE id = COALESCE(NEW.user_id, OLD.user_id);
+  RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+CREATE TRIGGER update_profile_completion_on_skills_change AFTER INSERT OR DELETE OR UPDATE ON user_skills FOR EACH ROW EXECUTE FUNCTION public.update_profile_completion_from_related();
+CREATE TRIGGER update_profile_completion_on_interests_change AFTER INSERT OR DELETE OR UPDATE ON user_interests FOR EACH ROW EXECUTE FUNCTION public.update_profile_completion_from_related();
+CREATE TRIGGER update_profile_completion_on_experiences_change AFTER INSERT OR DELETE OR UPDATE ON user_experiences FOR EACH ROW EXECUTE FUNCTION public.update_profile_completion_from_related();
+
+CREATE OR REPLACE FUNCTION public.recalculate_all_profile_completions() RETURNS integer AS $$
+DECLARE v_count integer := 0; v_profile RECORD; BEGIN
+  FOR v_profile IN SELECT id FROM profiles LOOP
+    UPDATE profiles SET profile_completion = public.calculate_profile_completion(v_profile.id) WHERE id = v_profile.id;
+    IF FOUND THEN v_count := v_count + 1; END IF;
+  END LOOP;
+  RETURN v_count;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+GRANT EXECUTE ON FUNCTION public.calculate_profile_completion TO authenticated;
+GRANT EXECUTE ON FUNCTION public.calculate_profile_completion TO service_role;
+GRANT EXECUTE ON FUNCTION public.recalculate_all_profile_completions TO service_role;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+CREATE TRIGGER update_profile_completion_on_skills_change AFTER INSERT OR DELETE OR UPDATE ON user_skills FOR EACH ROW EXECUTE FUNCTION public.update_profile_completion_from_related();
+CREATE TRIGGER update_profile_completion_on_interests_change AFTER INSERT OR DELETE OR UPDATE ON user_interests FOR EACH ROW EXECUTE FUNCTION public.update_profile_completion_from_related();
+CREATE TRIGGER update_profile_completion_on_experiences_change AFTER INSERT OR DELETE OR UPDATE ON user_experiences FOR EACH ROW EXECUTE FUNCTION public.update_profile_completion_from_related();
+
+-- ============================================================================
+-- SECTION 6.X: NEW TABLE RLS POLICIES
+-- ============================================================================
+
+-- Enable RLS on new tables
+ALTER TABLE public.privacy_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.blocked_users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
+
+-- privacy_settings RLS
+CREATE POLICY "Users can view own privacy settings" ON public.privacy_settings FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can update own privacy settings" ON public.privacy_settings FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own privacy settings" ON public.privacy_settings FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- blocked_users RLS
+CREATE POLICY "Users can view own blocked list" ON public.blocked_users FOR SELECT USING (auth.uid() = blocker_id);
+CREATE POLICY "Users can block others" ON public.blocked_users FOR INSERT WITH CHECK (auth.uid() = blocker_id);
+CREATE POLICY "Users can unblock" ON public.blocked_users FOR DELETE USING (auth.uid() = blocker_id);
+
+-- audit_logs RLS
+CREATE POLICY "Users can view own audit logs" ON public.audit_logs FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "System can insert audit logs" ON public.audit_logs FOR INSERT WITH CHECK (true);
+
+-- Add new tables to realtime
+ALTER PUBLICATION supabase_realtime ADD TABLE public.privacy_settings;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.blocked_users;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.audit_logs;
+
+-- updated_at triggers for new tables
+CREATE TRIGGER update_privacy_settings_updated_at BEFORE UPDATE ON public.privacy_settings FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+-- ============================================================================
+-- FINAL DOCUMENTATION UPDATE
+-- ============================================================================
+-- 
+-- COMPLETE DATABASE SCHEMA - VERSION 4.0.0
+-- ========================================
+-- 
+-- TABLES: 34 total
+-- - 22 core tables (profiles through theme_preferences)
+-- - 4 embedding tables (profile_embeddings through embedding_pending_queue)
+-- - 5 ML feature tables (feed_scores through content_moderation_logs)
+-- - 3 privacy/security tables (privacy_settings, blocked_users, audit_logs)
+-- 
+-- FUNCTIONS: 40+ total including:
+-- - Helper functions (get_comment_depth, get_profile_completion_percentage, etc.)
+-- - Match functions (find_similar_users, calculate_skills_overlap, etc.)
+-- - Notification triggers (7 functions)
+-- - Event capture triggers (3 functions)
+-- - Realtime broadcast (1 function)
+-- - Profile completion auto-update (4 functions)
+-- 
+-- TRIGGERS: 35+ total
+-- - updated_at triggers (22 tables)
+-- - Count update triggers (posts, comments)
+-- - Notification triggers (7)
+-- - Event capture triggers (8)
+-- - Realtime broadcast triggers (4)
+-- - Profile completion triggers (4)
+-- 
+-- INDEXES: 85+ total (including HNSW for vectors)
+-- RLS POLICIES: 70+ total
+-- STORAGE BUCKETS: 3 (post-media, profile-media, project-media)
+-- 
+-- POST-INSTALLATION:
+-- 1. Run: SELECT recalculate_all_profile_completions();
+-- 2. Run: supabase/setup/40-messages-read-at.sql (migration for existing messages)
+-- 3. Verify: SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public';
+-- 
+-- DEPRECATED FILES (all content merged into this file):
+-- - 01-23-*.sql (core tables)
+-- - 30-match-scores.sql, 31-feed-scores.sql, 32-events.sql, 33-user-analytics.sql, 34-platform-analytics.sql
+-- - 35-notification-triggers.sql, 36-event-capture-triggers.sql, 37-realtime-broadcast.sql
+-- - 38-match-sql-functions.sql, 39-match-helpers.sql
+-- - 99-missing-indexes.sql
+-- 
+-- KEPT FILES:
+-- - 99-master-all-tables.sql (this file - complete schema)
+-- - 40-messages-read-at.sql (standalone migration)
+-- - 41-profile-completion-trigger.sql (reference only, content merged)
+-- - 50-audit-logs.sql (reference only, content merged)
+-- - 99-rls-policies-test.sql (verification tool)
+-- - README.md (documentation)
+-- 
 -- ============================================================================
