@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { SESSION_DURATION_SECONDS } from '@/lib/config/session'
+import { getSupabasePoolConfig } from '@/lib/config/database'
 
 export async function createClient() {
     const cookieStore = await cookies()
@@ -34,6 +35,8 @@ export async function createClient() {
                 flowType: 'pkce',
                 autoRefreshToken: true,
             },
+            // P1-11: Database connection pooling configuration
+            db: getSupabasePoolConfig(),
         }
     )
 }

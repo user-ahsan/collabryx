@@ -12,16 +12,83 @@ services:
     healthCheckTimeout: 30s
     healthCheckInterval: 30s
     autoDeploy: true
+    
+    # P1-31: Auto-scaling configuration
+    scaling:
+      minInstances: 1
+      maxInstances: 3
+      targetMemoryUtilization: 80
+      targetCPUUtilization: 70
+    
     envVars:
       - key: PYTHONUNBUFFERED
         value: "1"
+      - key: NODE_ENV
+        value: production
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
       - key: ALLOWED_ORIGINS
         value: https://collabryx.vercel.app,http://localhost:3000
+    
     disk:
       name: model-cache
       mountPath: /root/.cache
       sizeGB: 2
+    
+    # Resource limits
+    resources:
+      cpu: 1.0
+      memory: 1G
+
+  # Next.js Frontend
+  - type: web
+    name: collabryx-frontend
+    env: static
+    region: oregon
+    plan: standard
+    buildCommand: npm run build
+    staticPublishPath: ./.next
+    branch: main
+    autoDeploy: true
+    
+    headers:
+      - path: /api/*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /api/*
+        name: X-Frame-Options
+        value: DENY
+    
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+
+databases:
+  - name: collabryx-db
+    region: oregon
+    plan: standard
+    postgresMajorVersion: 15
+    
+    # P1-29: Backup configuration
+    backups:
+      enabled: true
+      retentionDays: 7
+      frequency: daily
+      time: "03:00"
+    
+    # Connection pooling
+    connectionPooler:
+      enabled: true
+      mode: transaction
+      poolSize: 20
+
+disks:
+  - name: model-cache
+    sizeGB: 2
+    mountPath: /app/.cache
