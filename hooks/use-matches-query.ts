@@ -65,12 +65,14 @@ export function useMatchActivity() {
   return useQuery({
     queryKey: MATCH_QUERY_KEYS.activity(),
     queryFn: async () => {
-      const { data, error } = await fetchMatchActivity()
+      const { data, error } = await fetchMatchActivity({ limit: 5 })
       if (error) throw error
       return data
     },
     staleTime: 1000 * 60 * 1, // 1 minute
-    retry: 1,
+    gcTime: 1000 * 60 * 5,    // 5 minutes
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000),
   })
 }
 

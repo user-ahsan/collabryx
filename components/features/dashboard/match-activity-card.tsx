@@ -1,17 +1,15 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Bell, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
 import { GlassCard } from "@/components/shared/glass-card"
-import { toast } from "sonner"
-import { getCache, setCache, CACHE_KEYS } from "@/lib/dashboard-cache"
-import { fetchMatchActivity } from "@/lib/services/matches"
+import { getCache, CACHE_KEYS } from "@/lib/dashboard-cache"
+import { useMatchActivity } from "@/hooks/use-matches-query"
 import type { MatchActivityWithUser } from "@/lib/services/matches"
-import { TOAST_MESSAGES, TOAST_IDS } from "@/lib/constants/toast-messages"
 
 interface MatchActivityCardProps {
     className?: string
@@ -21,48 +19,63 @@ export function MatchActivityCard({
     className
 }: MatchActivityCardProps) {
     const [activities, setActivities] = useState<MatchActivityWithUser[]>([])
-    const [isFetching, setIsFetching] = useState(false)
+    const { data, isLoading, error } = useMatchActivity()
 
-    const fetchActivities = useCallback(async () => {
-        setIsFetching(true)
-        try {
-            const { data, error } = await fetchMatchActivity({ limit: 5 })
-
-            if (error) throw error
-
-            if (data && data.length > 0) {
-                const mapped: MatchActivityWithUser[] = data.map((activity) => ({
-                    ...activity,
-                    user_name: activity.user_name ?? "Unknown",
-                    user_avatar: activity.user_avatar ?? "",
-                    user_initials: activity.user_initials ?? "U",
-                }))
-                setActivities(mapped)
-                setCache(CACHE_KEYS.MATCH_ACTIVITY, mapped)
-            } else {
-                setActivities([])
-            }
-        } catch (error) {
-            console.error("Failed to fetch match activities", {
-                error: error instanceof Error ? error.message : String(error)
-            })
+    useEffect(() => {
+        if (data && data.length > 0) {
+            const mapped: MatchActivityWithUser[] = data.map((activity) => ({
+                ...activity,
+                user_name: activity.user_name ?? "Unknown",
+                user_avatar: activity.user_avatar ?? "",
+                user_initials: activity.user_initials ?? "U",
+            }))
+            setActivities(mapped)
+        } else if (error) {
+            // Try to load from cache on error
             const cached = getCache<MatchActivityWithUser[]>(CACHE_KEYS.MATCH_ACTIVITY)
             if (cached) {
                 setActivities(cached)
-                toast.info(TOAST_MESSAGES.ACTIVITY.CACHE, { id: TOAST_IDS.ACTIVITY })
             } else {
-                toast.error("Unable to load activities")
+                setActivities([])
             }
-        } finally {
-            setIsFetching(false)
+        } else {
+            setActivities([])
         }
-    }, [])
+    }, [data, error])
 
-    useEffect(() => {
-        fetchActivities()
-    }, [fetchActivities])
+    // Don't render if no activities and not loading
+    if (activities.length === 0 && !isLoading) return null
 
-    if (activities.length === 0 && !isFetching) return null
+    // Show skeleton while loading
+    if (isLoading) {
+        return (
+            <GlassCard className={cn(className)}>
+                <div className="p-4 md:p-5 animate-pulse">
+                    <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-2.5">
+                            <div className="h-8 w-8 bg-blue-500/10 rounded-lg" />
+                            <div>
+                                <div className="h-4 w-32 bg-muted rounded mb-1" />
+                                <div className="h-3 w-40 bg-muted rounded" />
+                            </div>
+                        </div>
+                        <div className="h-8 w-20 bg-muted rounded" />
+                    </div>
+                    <div className="space-y-1.5">
+                        {[1, 2, 3].map((i) => (
+                            <div key={i} className="flex items-center gap-3 p-2.5">
+                                <div className="h-9 w-9 rounded-full bg-muted" />
+                                <div className="flex-1">
+                                    <div className="h-3 w-3/4 bg-muted rounded mb-1" />
+                                    <div className="h-2 w-16 bg-muted rounded" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </GlassCard>
+        )
+    }
 
     return (
         <GlassCard className={cn(className)}>
@@ -89,6 +102,7 @@ export function MatchActivityCard({
                             "h-8 px-3 text-sm text-muted-foreground transition-colors cursor-pointer",
                             glass("buttonGhost")
                         )}
+                        onClick={() => window.location.href = '/activity'}
                     >
                         View All
                         <ArrowRight className="h-3 w-3 ml-1" />
@@ -101,9 +115,10 @@ export function MatchActivityCard({
                         <div
                             key={activity.id}
                             className={cn(
-                                "flex items-center gap-3 p-2.5 rounded-lg transition-all duration-200 cursor-pointer",
+                                "flex items-center gap-3 p-2.5 rounded-lg transition-all duration-200 cursor-pointer hover:bg-white/[0.04]",
                                 glass("tabInactive")
                             )}
+                            onClick={() => window.location.href = '/activity'}
                         >
                             <Avatar className={cn(
                                 "h-9 w-9 shrink-0",
@@ -119,12 +134,14 @@ export function MatchActivityCard({
                                     <span className="font-medium">{activity.user_name}</span>{" "}
                                     <span className="text-muted-foreground">{activity.activity}</span>
                                 </p>
-                                <p className={cn(
-                                    "text-xs font-semibold mt-1",
-                                    glass("badge")
-                                )}>
-                                    {activity.match_percentage}% match
-                                </p>
+                                {activity.match_percentage && (
+                                    <p className={cn(
+                                        "text-xs font-semibold mt-1",
+                                        glass("badge")
+                                    )}>
+                                        {activity.match_percentage}% match
+                                    </p>
+                                )}
                             </div>
                         </div>
                     ))}
