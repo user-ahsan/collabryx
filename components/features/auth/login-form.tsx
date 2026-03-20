@@ -278,7 +278,7 @@ export function LoginForm() {
                         </div>
                     )}
                     <form 
-                        onSubmit={handleSubmit} 
+                        onSubmit={form.handleSubmit(onLoginSubmit)} 
                         className="space-y-4"
                         aria-labelledby="login-heading"
                         noValidate
