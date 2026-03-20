@@ -12,6 +12,20 @@ import { glass } from "@/lib/utils/glass-variants"
 import { useRouter } from "next/navigation"
 import { devLog, logEmailVerificationStatus, logRedirectDecision, isDebugEnabled, isDevelopmentMode } from "@/lib/services/development"
 
+// ARIA live region announcer component for screen readers
+function LiveAnnouncer({ message, priority = "polite" }: { message: string; priority?: "polite" | "assertive" }) {
+    return (
+        <div
+            role="status"
+            aria-live={priority}
+            aria-atomic="true"
+            className="sr-only"
+        >
+            {message}
+        </div>
+    )
+}
+
 type VerificationStatus = "loading" | "verified" | "error" | "pending"
 
 export function VerifyEmailForm() {
@@ -145,11 +159,26 @@ export function VerifyEmailForm() {
     )
 
     return (
-        <div className="w-full relative min-h-[350px] sm:min-h-[400px]">
-            {/* DEV MODE Indicator */}
+        <div className="w-full relative min-h-[350px] sm:min-h-[400px]" role="main" aria-label="Email verification">
+            {/* Live region for status announcements */}
+            <LiveAnnouncer 
+                message={
+                    status === "loading" ? "Verifying your email, please wait" :
+                    status === "verified" ? "Email verified successfully. Redirecting to onboarding." :
+                    status === "error" ? "Verification failed. " + message :
+                    status === "pending" ? "Email not yet verified. Please check your inbox." : ""
+                }
+                priority={status === "error" ? "assertive" : "polite"}
+            />
+            
+            {/* DEV MODE Indicator - improved contrast and accessibility */}
             {isDevelopmentMode() && isDebugEnabled() && (
                 <div className="absolute top-2 right-2 z-50">
-                    <div className="px-2 py-1 text-xs font-semibold bg-amber-500/90 text-black rounded-md shadow-lg">
+                    <div 
+                        className="px-2 py-1 text-xs font-semibold bg-amber-600 text-white rounded-md shadow-lg"
+                        role="status"
+                        aria-label="Development mode indicator"
+                    >
                         DEV MODE
                     </div>
                 </div>
@@ -163,28 +192,32 @@ export function VerifyEmailForm() {
                     className="space-y-6"
                 >
                     {status === "loading" && (
-                        <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                            <p className="text-muted-foreground">Verifying your email...</p>
+                        <div 
+                            className="flex flex-col items-center justify-center py-12 space-y-4"
+                            role="status"
+                            aria-busy="true"
+                        >
+                            <Loader2 className="h-12 w-12 animate-spin text-primary" aria-hidden="true" />
+                            <p className="text-muted-foreground" id="loading-message">Verifying your email...</p>
                         </div>
                     )}
 
                     {status === "verified" && (
-                        <div className="text-left space-y-6">
+                        <div className="text-left space-y-6" role="region" aria-labelledby="verified-heading">
                             <div className="flex items-center gap-3">
                                 <div className="flex items-center justify-center w-12 h-12 rounded-full bg-green-100 dark:bg-green-900/20">
-                                    <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
+                                    <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" aria-hidden="true" />
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Email verified!</h1>
+                                <h1 id="verified-heading" className="text-3xl sm:text-4xl font-bold tracking-tight">Email verified!</h1>
                                 <p className="text-muted-foreground text-base sm:text-lg">
                                     Your email has been successfully verified
                                 </p>
                             </div>
 
-                            <Alert className={cn(glass("subtle"))}>
-                                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                            <Alert className={cn(glass("subtle"))} role="status">
+                                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" aria-hidden="true" />
                                 <AlertDescription className="text-green-600 dark:text-green-400">
                                     Redirecting you to onboarding...
                                 </AlertDescription>
@@ -197,21 +230,21 @@ export function VerifyEmailForm() {
                     )}
 
                     {status === "error" && (
-                        <div className="text-left space-y-6">
+                        <div className="text-left space-y-6" role="region" aria-labelledby="error-heading">
                             <div className="flex items-center gap-3">
                                 <div className="flex items-center justify-center w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/20">
-                                    <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
+                                    <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" aria-hidden="true" />
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Verification failed</h1>
+                                <h1 id="error-heading" className="text-3xl sm:text-4xl font-bold tracking-tight">Verification failed</h1>
                                 <p className="text-muted-foreground text-base sm:text-lg">
                                     We couldn&apos;t verify your email
                                 </p>
                             </div>
 
-                            <Alert variant="destructive" className={cn(glass("overlay"))}>
-                                <AlertCircle className="h-5 w-5" />
+                            <Alert variant="destructive" className={cn(glass("overlay"))} role="alert">
+                                <AlertCircle className="h-5 w-5" aria-hidden="true" />
                                 <AlertTitle>Error</AlertTitle>
                                 <AlertDescription>{message}</AlertDescription>
                             </Alert>
@@ -245,21 +278,21 @@ export function VerifyEmailForm() {
                     )}
 
                     {status === "pending" && (
-                        <div className="text-left space-y-6">
+                        <div className="text-left space-y-6" role="region" aria-labelledby="pending-heading">
                             <div className="flex items-center gap-3">
                                 <div className="flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-900/20">
-                                    <Mail className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                                    <Mail className="h-6 w-6 text-amber-600 dark:text-amber-400" aria-hidden="true" />
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Verify your email</h1>
+                                <h1 id="pending-heading" className="text-3xl sm:text-4xl font-bold tracking-tight">Verify your email</h1>
                                 <p className="text-muted-foreground text-base sm:text-lg">
                                     We&apos;ve sent a verification link to your email
                                 </p>
                             </div>
 
-                            <Alert className={cn(glass("subtle"))}>
-                                <Mail className="h-5 w-5" />
+                            <Alert className={cn(glass("subtle"))} role="status">
+                                <Mail className="h-5 w-5" aria-hidden="true" />
                                 <AlertDescription>
                                     We&apos;ve sent a verification link to{" "}
                                     <span className="font-medium text-foreground">{userEmail}</span>.
@@ -268,29 +301,33 @@ export function VerifyEmailForm() {
                             </Alert>
 
                             {message && (
-                                <Alert className={cn(glass("subtle"))}>
+                                <Alert className={cn(glass("subtle"))} role="status">
                                     <AlertDescription>{message}</AlertDescription>
                                 </Alert>
                             )}
 
-                            {/* DEV MODE: Debug Info Panel */}
+                            {/* DEV MODE: Debug Info Panel - keyboard accessible */}
                             {isDevelopmentMode() && isDebugEnabled() && (
-                                <Alert className={cn(glass("overlay"), "border-amber-500/30")}>
+                                <Alert 
+                                    className={cn(glass("overlay"), "border-amber-500/30")}
+                                    role="region"
+                                    aria-labelledby="debug-info-heading"
+                                >
                                     <div className="space-y-2">
                                         <div className="flex items-center gap-2 text-sm font-semibold text-amber-600 dark:text-amber-400">
-                                            <AlertCircle className="h-4 w-4" />
-                                            Debug Info (Dev Mode)
+                                            <AlertCircle className="h-4 w-4" aria-hidden="true" />
+                                            <span id="debug-info-heading">Debug Info (Dev Mode)</span>
                                         </div>
-                                        <div className="text-xs space-y-1 font-mono">
-                                            <div className="flex justify-between">
+                                        <div className="text-xs space-y-1 font-mono" role="list">
+                                            <div className="flex justify-between" role="listitem">
                                                 <span className="text-muted-foreground">Email:</span>
                                                 <span className="text-foreground">{userEmail || "N/A"}</span>
                                             </div>
-                                            <div className="flex justify-between">
+                                            <div className="flex justify-between" role="listitem">
                                                 <span className="text-muted-foreground">Status:</span>
                                                 <span className="text-amber-600 dark:text-amber-400">PENDING</span>
                                             </div>
-                                            <div className="flex justify-between">
+                                            <div className="flex justify-between" role="listitem">
                                                 <span className="text-muted-foreground">Confirmed:</span>
                                                 <span className="text-red-600">NO</span>
                                             </div>

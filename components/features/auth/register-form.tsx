@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { motion } from "motion/react"
-import { Loader2, Mail, Lock, AlertCircle } from "lucide-react"
+import { Loader2, Mail, Lock, AlertCircle, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -25,6 +25,20 @@ import { toast } from "sonner"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
+
+// Live announcer for screen reader announcements
+function LiveAnnouncer({ message, priority = "polite" }: { message: string; priority?: "polite" | "assertive" }) {
+    return (
+        <div
+            role="status"
+            aria-live={priority}
+            aria-atomic="true"
+            className="sr-only"
+        >
+            {message}
+        </div>
+    )
+}
 
 const signupSchema = z.object({
     email: z.string().email("Please enter a valid email address."),
@@ -55,12 +69,21 @@ export function RegisterForm() {
     const [showProviderDialog, setShowProviderDialog] = React.useState(false)
     const [providerToShow, setProviderToShow] = React.useState<"google" | "github" | "apple" | null>(null)
     const [passwordValue, setPasswordValue] = React.useState("")
+    const [announcement, setAnnouncement] = React.useState("")
     const supabase = createClient()
 
     const form = useForm<z.infer<typeof signupSchema>>({
         resolver: zodResolver(signupSchema),
         defaultValues: { email: "", password: "" },
     })
+    
+    // Announce form errors to screen readers
+    React.useEffect(() => {
+        const hasErrors = Object.keys(form.formState.errors).length > 0
+        if (hasErrors) {
+            setAnnouncement("Form has validation errors. Please check the fields and try again.")
+        }
+    }, [form.formState.errors])
 
     const onSignupSubmit = async (data: z.infer<typeof signupSchema>) => {
         devLog("auth", "Signup initiated", { email: data.email })
@@ -164,7 +187,10 @@ export function RegisterForm() {
     }
 
     return (
-        <div className="w-full relative min-h-[350px] sm:min-h-[400px]">
+        <div className="w-full relative min-h-[350px] sm:min-h-[400px]" role="main" aria-label="Create account">
+            {/* Live region for announcements */}
+            <LiveAnnouncer message={announcement} priority="assertive" />
+            
             <Dialog open={showProviderDialog} onOpenChange={setShowProviderDialog}>
                 <DialogContent className={cn("sm:max-w-md sm:rounded-2xl", glass("overlay"))}>
                     <DialogHeader>
@@ -194,15 +220,20 @@ export function RegisterForm() {
                     className="space-y-6"
                 >
                     <div className="text-left space-y-2 mb-8">
-                        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Create an account</h1>
+                        <h1 id="register-heading" className="text-3xl sm:text-4xl font-bold tracking-tight">Create an account</h1>
                         <p className="text-muted-foreground text-base sm:text-lg">Enter your details to get started</p>
                     </div>
 
-                    <form onSubmit={form.handleSubmit(onSignupSubmit)} className="space-y-4">
+                    <form 
+                        onSubmit={form.handleSubmit(onSignupSubmit)} 
+                        className="space-y-4"
+                        aria-labelledby="register-heading"
+                        noValidate
+                    >
                         <div className="space-y-2">
                             <Label htmlFor="signup-email">Email</Label>
                             <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" aria-hidden="true" />
                                 <Input
                                     id="signup-email"
                                     type="email"
@@ -210,17 +241,22 @@ export function RegisterForm() {
                                     className={cn(inputClasses, "pl-10")}
                                     {...form.register("email")}
                                     disabled={isLoading}
+                                    aria-invalid={!!form.formState.errors.email}
+                                    aria-describedby={form.formState.errors.email ? "signup-email-error" : undefined}
+                                    autoComplete="email"
                                 />
                             </div>
                             {form.formState.errors.email && (
-                                <p className="text-sm text-destructive px-1">{form.formState.errors.email.message}</p>
+                                <p id="signup-email-error" className="text-sm text-destructive px-1" role="alert">
+                                    {form.formState.errors.email.message}
+                                </p>
                             )}
                         </div>
 
                         <div className="space-y-2">
                             <Label htmlFor="new-password">Password</Label>
                             <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" aria-hidden="true" />
                                 <Input
                                     id="new-password"
                                     type="password"
@@ -232,15 +268,20 @@ export function RegisterForm() {
                                         setPasswordValue(e.target.value)
                                     }}
                                     disabled={isLoading}
+                                    aria-invalid={!!form.formState.errors.password}
+                                    aria-describedby={form.formState.errors.password ? "password-error" : "password-requirements"}
+                                    autoComplete="new-password"
                                 />
                             </div>
                             {form.formState.errors.password && (
-                                <p className="text-sm text-destructive px-1">{form.formState.errors.password.message}</p>
+                                <p id="password-error" className="text-sm text-destructive px-1" role="alert">
+                                    {form.formState.errors.password.message}
+                                </p>
                             )}
                             
                             {passwordValue && (
-                                <div className="space-y-2 pt-2">
-                                    <div className="h-1 w-full bg-muted rounded-full overflow-hidden">
+                                <div className="space-y-2 pt-2" id="password-requirements" role="region" aria-label="Password requirements">
+                                    <div className="h-1 w-full bg-muted rounded-full overflow-hidden" aria-hidden="true">
                                         <div 
                                             className={cn(
                                                 "h-full transition-all duration-300",
@@ -251,23 +292,23 @@ export function RegisterForm() {
                                             style={{ width: `${calculatePasswordStrength(passwordValue)}%` }}
                                         />
                                     </div>
-                                    <div className="grid grid-cols-2 gap-1">
-                                        {passwordRequirements.map((req) => (
-                                            <div 
-                                                key={req.label}
-                                                className={cn(
-                                                    "text-xs flex items-center gap-1",
-                                                    req.regex.test(passwordValue) ? "text-green-600 dark:text-green-400" : "text-muted-foreground"
-                                                )}
-                                            >
-                                                <div className={cn(
-                                                    "w-1.5 h-1.5 rounded-full",
-                                                    req.regex.test(passwordValue) ? "bg-green-600 dark:bg-green-400" : "bg-muted-foreground"
-                                                )} />
-                                                {req.label}
-                                            </div>
-                                        ))}
-                                    </div>
+                                    <ul className="grid grid-cols-2 gap-1" role="list">
+                                        {passwordRequirements.map((req) => {
+                                            const isMet = req.regex.test(passwordValue)
+                                            return (
+                                                <li 
+                                                    key={req.label}
+                                                    className={cn(
+                                                        "text-xs flex items-center gap-1",
+                                                        isMet ? "text-green-600 dark:text-green-400" : "text-muted-foreground"
+                                                    )}
+                                                >
+                                                    <Check className={cn("h-3 w-3", isMet ? "text-green-600 dark:text-green-400" : "text-muted-foreground")} aria-hidden="true" />
+                                                    <span>{req.label}</span>
+                                                </li>
+                                            )
+                                        })}
+                                    </ul>
                                 </div>
                             )}
                         </div>
@@ -289,26 +330,53 @@ export function RegisterForm() {
                     </div>
 
                     <div className="grid grid-cols-3 gap-3">
-                        <Button type="button" variant="outline" size="lg" className={cn("w-full rounded-xl transition-all", glass("buttonGhost"))} onClick={() => handleSocialLogin("google")}>
-                            <GoogleIcon className="h-5 w-5" />
-                            <span className="sr-only">Sign up with Google</span>
+                        <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="lg" 
+                            className={cn("w-full rounded-xl transition-all", glass("buttonGhost"))} 
+                            onClick={() => handleSocialLogin("google")}
+                            aria-label="Sign up with Google"
+                        >
+                            <GoogleIcon className="h-5 w-5" aria-hidden="true" />
                         </Button>
-                        <Button type="button" variant="outline" size="lg" className={cn("w-full rounded-xl transition-all", glass("buttonGhost"))} onClick={() => handleSocialLogin("apple")}>
-                            <AppleIcon className="h-5 w-5" />
-                            <span className="sr-only">Sign up with Apple</span>
+                        <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="lg" 
+                            className={cn("w-full rounded-xl transition-all", glass("buttonGhost"))} 
+                            onClick={() => handleSocialLogin("apple")}
+                            aria-label="Sign up with Apple"
+                        >
+                            <AppleIcon className="h-5 w-5" aria-hidden="true" />
                         </Button>
-                        <Button type="button" variant="outline" size="lg" className={cn("w-full rounded-xl transition-all", glass("buttonGhost"))} onClick={() => handleSocialLogin("github")}>
-                            <GitHubIcon className="h-5 w-5" />
-                            <span className="sr-only">Sign up with GitHub</span>
+                        <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="lg" 
+                            className={cn("w-full rounded-xl transition-all", glass("buttonGhost"))} 
+                            onClick={() => handleSocialLogin("github")}
+                            aria-label="Sign up with GitHub"
+                        >
+                            <GitHubIcon className="h-5 w-5" aria-hidden="true" />
                         </Button>
                     </div>
 
                     <p className="text-center text-xs text-muted-foreground mt-4">
-                        By clicking continue, you agree to our <a href="#" className="underline hover:text-primary">Terms</a> and <a href="#" className="underline hover:text-primary">Privacy Policy</a>.
+                        By clicking continue, you agree to our{" "}
+                        <Link href="/terms" className="underline hover:text-primary">
+                            Terms of Service
+                        </Link>{" "}
+                        and{" "}
+                        <Link href="/privacy" className="underline hover:text-primary">
+                            Privacy Policy
+                        </Link>.
                     </p>
                     <div className="text-center mt-4">
                         <span className="text-sm text-muted-foreground">Already have an account? </span>
-                        <Link href="/login" className="text-sm font-semibold hover:underline text-primary">Sign in</Link>
+                        <Link href="/login" className="text-sm font-semibold hover:underline text-primary">
+                            Sign in
+                        </Link>
                     </div>
                 </motion.div>
             </div>

@@ -26,6 +26,20 @@ import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
 
+// Live announcer for screen reader announcements
+function LiveAnnouncer({ message, priority = "polite" }: { message: string; priority?: "polite" | "assertive" }) {
+    return (
+        <div
+            role="status"
+            aria-live={priority}
+            aria-atomic="true"
+            className="sr-only"
+        >
+            {message}
+        </div>
+    )
+}
+
 const loginSchema = z.object({
     email: z.string().email("Please enter a valid email address."),
     password: z.string().min(1, "Password is required."),
@@ -37,6 +51,7 @@ export function LoginForm() {
     const [providerToShow, setProviderToShow] = React.useState<"google" | "github" | "apple" | null>(null)
     const [isDev, setIsDev] = React.useState(false)
     const [devCredentials, setDevCredentials] = React.useState({ email: "", password: "" })
+    const [announcement, setAnnouncement] = React.useState("")
     const supabase = createClient()
 
     // Pre-populate test credentials in development mode (client-side only)
@@ -55,6 +70,14 @@ export function LoginForm() {
             password: "" 
         },
     })
+    
+    // Announce form errors to screen readers
+    React.useEffect(() => {
+        const hasErrors = Object.keys(form.formState.errors).length > 0
+        if (hasErrors) {
+            setAnnouncement("Form has validation errors. Please check the fields and try again.")
+        }
+    }, [form.formState.errors])
 
     // Set values after mount to avoid hydration mismatch
     React.useEffect(() => {
@@ -130,7 +153,10 @@ export function LoginForm() {
     }
 
     return (
-        <div className="w-full relative min-h-[350px] sm:min-h-[400px]">
+        <div className="w-full relative min-h-[350px] sm:min-h-[400px]" role="main" aria-label="Sign in">
+            {/* Live region for announcements */}
+            <LiveAnnouncer message={announcement} priority="assertive" />
+            
             <Dialog open={showProviderDialog} onOpenChange={setShowProviderDialog}>
                 <DialogContent className={cn("sm:max-w-md sm:rounded-2xl", glass("overlay"))}>
                     <DialogHeader>
@@ -160,23 +186,32 @@ export function LoginForm() {
                     className="space-y-6"
                 >
                     <div className="text-left space-y-2 mb-8">
-                        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Welcome back</h1>
+                        <h1 id="login-heading" className="text-3xl sm:text-4xl font-bold tracking-tight">Welcome back</h1>
                         <p className="text-muted-foreground text-base sm:text-lg">Enter your details to sign in</p>
                     </div>
 
                     {isDev && (
-                        <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4">
+                        <div 
+                            className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4"
+                            role="status"
+                            aria-label="Development mode notice"
+                        >
                             <p className="text-yellow-600 dark:text-yellow-400 text-sm text-center">
                                 <strong>Development Mode:</strong> Test credentials pre-filled. 
                                 Click Sign In to continue.
                             </p>
                         </div>
                     )}
-                    <form onSubmit={form.handleSubmit(onLoginSubmit)} className="space-y-4">
+                    <form 
+                        onSubmit={form.handleSubmit(onLoginSubmit)} 
+                        className="space-y-4"
+                        aria-labelledby="login-heading"
+                        noValidate
+                    >
                         <div className="space-y-2">
                             <Label htmlFor="login-email">Email</Label>
                             <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
+                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" aria-hidden="true" />
                                 <Input
                                     id="login-email"
                                     type="email"
@@ -184,22 +219,30 @@ export function LoginForm() {
                                     className={cn(inputClasses, "pl-10")}
                                     {...form.register("email")}
                                     disabled={isLoading}
+                                    aria-invalid={!!form.formState.errors.email}
+                                    aria-describedby={form.formState.errors.email ? "login-email-error" : undefined}
+                                    autoComplete="email"
                                 />
                             </div>
                             {form.formState.errors.email && (
-                                <p className="text-sm text-destructive px-1">{form.formState.errors.email.message}</p>
+                                <p id="login-email-error" className="text-sm text-destructive px-1" role="alert">
+                                    {form.formState.errors.email.message}
+                                </p>
                             )}
                         </div>
 
                         <div className="space-y-2">
                             <div className="flex justify-between items-center">
                                 <Label htmlFor="password">Password</Label>
-                                <Link href="/forgot-password" className="px-0 h-auto text-sm text-muted-foreground hover:text-primary">
+                                <Link 
+                                    href="/forgot-password" 
+                                    className="px-0 h-auto text-sm text-muted-foreground hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded"
+                                >
                                     Forgot password?
                                 </Link>
                             </div>
                             <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" />
+                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground z-10" aria-hidden="true" />
                                 <Input
                                     id="password"
                                     type="password"
@@ -207,10 +250,15 @@ export function LoginForm() {
                                     className={cn(inputClasses, "pl-10")}
                                     {...form.register("password")}
                                     disabled={isLoading}
+                                    aria-invalid={!!form.formState.errors.password}
+                                    aria-describedby={form.formState.errors.password ? "password-error" : undefined}
+                                    autoComplete="current-password"
                                 />
                             </div>
                             {form.formState.errors.password && (
-                                <p className="text-sm text-destructive px-1">{form.formState.errors.password.message}</p>
+                                <p id="password-error" className="text-sm text-destructive px-1" role="alert">
+                                    {form.formState.errors.password.message}
+                                </p>
                             )}
                         </div>
                         <Button type="submit" className={buttonClasses} disabled={isLoading}>
@@ -230,17 +278,35 @@ export function LoginForm() {
                     </div>
 
                     <div className="grid grid-cols-3 gap-3">
-                        <Button type="button" variant="outline" size="lg" className={cn("w-full rounded-xl transition-all", glass("buttonGhost"))} onClick={() => handleSocialLogin("google")}>
-                            <GoogleIcon className="h-5 w-5" />
-                            <span className="sr-only">Sign in with Google</span>
+                        <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="lg" 
+                            className={cn("w-full rounded-xl transition-all", glass("buttonGhost"))} 
+                            onClick={() => handleSocialLogin("google")}
+                            aria-label="Sign in with Google"
+                        >
+                            <GoogleIcon className="h-5 w-5" aria-hidden="true" />
                         </Button>
-                        <Button type="button" variant="outline" size="lg" className={cn("w-full rounded-xl transition-all", glass("buttonGhost"))} onClick={() => handleSocialLogin("apple")}>
-                            <AppleIcon className="h-5 w-5" />
-                            <span className="sr-only">Sign in with Apple</span>
+                        <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="lg" 
+                            className={cn("w-full rounded-xl transition-all", glass("buttonGhost"))} 
+                            onClick={() => handleSocialLogin("apple")}
+                            aria-label="Sign in with Apple"
+                        >
+                            <AppleIcon className="h-5 w-5" aria-hidden="true" />
                         </Button>
-                        <Button type="button" variant="outline" size="lg" className={cn("w-full rounded-xl transition-all", glass("buttonGhost"))} onClick={() => handleSocialLogin("github")}>
-                            <GitHubIcon className="h-5 w-5" />
-                            <span className="sr-only">Sign in with GitHub</span>
+                        <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="lg" 
+                            className={cn("w-full rounded-xl transition-all", glass("buttonGhost"))} 
+                            onClick={() => handleSocialLogin("github")}
+                            aria-label="Sign in with GitHub"
+                        >
+                            <GitHubIcon className="h-5 w-5" aria-hidden="true" />
                         </Button>
                     </div>
 
