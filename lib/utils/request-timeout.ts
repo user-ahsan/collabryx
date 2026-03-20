@@ -287,4 +287,17 @@ export function checkRequestTimeout(request: NextRequest, maxAge: number = TIMEO
   const startTime = request.headers.get("x-request-start")
   if (!startTime) return false
   
-  const elapsed =
+  const elapsed = Date.now() - parseInt(startTime)
+  return elapsed > maxAge
+}
+
+/**
+ * Get remaining timeout time
+ */
+export function getRemainingTimeout(request: NextRequest, maxAge: number = TIMEOUT_CONFIG.DEFAULT): number {
+  const startTime = request.headers.get("x-request-start")
+  if (!startTime) return maxAge
+  
+  const elapsed = Date.now() - parseInt(startTime)
+  return Math.max(0, maxAge - elapsed)
+}

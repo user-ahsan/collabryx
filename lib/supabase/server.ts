@@ -21,7 +21,7 @@ export async function createClient() {
                 getAll() {
                     return cookieStore.getAll()
                 },
-                setAll(cookiesToSet) {
+                setAll(cookiesToSet: { name: string; value: string; options: Parameters<typeof cookieStore.set>[2] }[]) {
                     try {
                         cookiesToSet.forEach(({ name, value, options }) =>
                             cookieStore.set(name, value, {
@@ -42,8 +42,6 @@ export async function createClient() {
                 flowType: 'pkce',
                 autoRefreshToken: true,
             },
-            // P1-11: Database connection pooling configuration
-            db: getSupabasePoolConfig(),
         }
     )
 }

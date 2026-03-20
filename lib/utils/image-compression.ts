@@ -319,3 +319,21 @@ export async function getImageMetadata(buffer: Buffer): Promise<ImageMetadata> {
     const height = metadata.height || 0
     
     
+    return {
+      width,
+      height,
+      format: (metadata.format as string) || 'unknown',
+      size: buffer.length,
+      aspectRatio: width / height,
+    }
+  } catch (error) {
+    console.error('Error getting image metadata:', error)
+    return {
+      width: 0,
+      height: 0,
+      format: 'unknown',
+      size: buffer.length,
+      aspectRatio: 0,
+    }
+  }
+}

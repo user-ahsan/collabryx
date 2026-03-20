@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
     const lockoutData = failedAttempts.get(rateLimitKey)
     if (lockoutData && lockoutData.lockedUntil > now) {
       const remainingLockTime = Math.ceil((lockoutData.lockedUntil - now) / 1000 / 60)
-      logger.warn('Login attempt on locked account', {
+      logger.auth.warn('Login attempt on locked account', {
         email: email.toLowerCase(),
         ip,
         remainingLockTime,
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     // Check for exponential backoff
     if (lockoutData && lockoutData.backoffUntil > now) {
       const remainingBackoff = Math.ceil((lockoutData.backoffUntil - now) / 1000)
-      logger.info('Login attempt during backoff period', {
+      logger.auth.info('Login attempt during backoff period', {
         email: email.toLowerCase(),
         ip,
         remainingBackoff,
@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
 
     // Handle authentication failure
     if (error) {
-      logger.warn('Failed login attempt', {
+      logger.auth.warn('Failed login attempt', {
         email: email.toLowerCase(),
         ip,
         errorCode: error.code,
@@ -165,7 +165,7 @@ export async function POST(request: NextRequest) {
           backoffUntil: 0,
         })
         
-        logger.error('Account locked due to failed attempts', {
+        logger.auth.error('Account locked due to failed attempts', {
           email: email.toLowerCase(),
           ip,
           failedAttempts: newCount,
@@ -199,7 +199,7 @@ export async function POST(request: NextRequest) {
         backoffUntil: now + backoffMs,
       })
 
-      logger.info('Failed login with backoff', {
+      logger.auth.info('Failed login with backoff', {
         email: email.toLowerCase(),
         ip,
         attempts: newCount,
@@ -226,7 +226,7 @@ export async function POST(request: NextRequest) {
     // Successful login - clear failed attempts
     failedAttempts.delete(rateLimitKey)
 
-    logger.info('Successful login', {
+    logger.auth.info('Successful login', {
       userId: data.user.id,
       email: email.toLowerCase(),
       ip,
@@ -251,7 +251,7 @@ export async function POST(request: NextRequest) {
     })
 
   } catch (error) {
-    logger.error('Login endpoint error', {
+    logger.auth.error('Login endpoint error', {
       error: error instanceof Error ? error.message : 'Unknown error',
       ip: request.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown',
     })
