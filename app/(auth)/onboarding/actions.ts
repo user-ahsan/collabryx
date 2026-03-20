@@ -24,7 +24,22 @@ interface OnboardingData {
 
 export async function completeOnboarding(data: OnboardingData, completionPercentage: number) {
     const supabase = await createClient()
-    const { data: userData, error: userError } = await supabase.auth.getUser()
+    let userData = null
+    let userError = null
+    
+    // Try to get user - allow unverified users
+    const getUserResult = await supabase.auth.getUser()
+    userData = getUserResult.data
+    userError = getUserResult.error
+
+    // If user verification failed due to email not confirmed, get user from session instead
+    if (userError && (userError.message.includes("Email not confirmed") || userError.message.includes("not confirmed"))) {
+        const { data: sessionData } = await supabase.auth.getSession()
+        if (sessionData?.session?.user) {
+            userData = { user: sessionData.session.user }
+            userError = null
+        }
+    }
 
     if (userError || !userData?.user) {
         throw new Error("Unable to verify user authentication. Please log in again.")

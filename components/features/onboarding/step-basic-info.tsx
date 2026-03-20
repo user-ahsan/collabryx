@@ -109,7 +109,7 @@ export function StepBasicInfo({ userName, onNameExtracted }: StepBasicInfoProps)
                 </div>
 
                 <div className="grid gap-2.5">
-                    <Label htmlFor="headline" className="text-base font-medium">Headline / Role</Label>
+                    <Label htmlFor="headline" className="text-base font-medium">Headline</Label>
                     <Input
                         id="headline"
                         placeholder="e.g. Full Stack Developer @ TechStart"
@@ -122,6 +122,11 @@ export function StepBasicInfo({ userName, onNameExtracted }: StepBasicInfoProps)
                             maxLength: {
                                 value: 100,
                                 message: "Headline must be less than 100 characters"
+                            },
+                            validate: {
+                                noSpecialChars: (value) => 
+                                    /^[a-zA-Z0-9\s@.,&'()-]+$/.test(value) || 
+                                    "Headline can only contain letters, numbers, and basic punctuation"
                             }
                         })}
                         className={cn(
