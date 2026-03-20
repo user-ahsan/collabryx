@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client"
-import type { Post, PostWithAuthor, PostAttachment, PostReaction } from "@/types/database.types"
+import type { Post, PostWithAuthor, PostAttachment, PostReaction, PostUpdateInput } from "@/types/database.types"
 
 // ===========================================
 // POSTS SERVICE
@@ -12,6 +12,11 @@ export interface PostsQueryOptions {
   postType?: Post["post_type"]
   includeAttachments?: boolean
   random?: boolean  // Fetch random posts (for new users without embeddings)
+}
+
+export interface UpdatePostOptions {
+  maxRetries?: number
+  onRetry?: (attempt: number, error: Error) => void
 }
 
 export interface CreatePostInput {
@@ -49,6 +54,7 @@ type RawPost = {
   reaction_count: number
   comment_count: number
   share_count: number
+  version: number
   created_at: string
   updated_at: string
   author?: {
@@ -61,7 +67,12 @@ type RawPost = {
 export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
   data: PostWithAuthor[]
   error: Error | null
+  queryCount?: number
+  duration?: number
 }> {
+  const queryStartTime = Date.now()
+  let queryCount = 0
+  
   try {
     const supabase = createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -71,12 +82,12 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
         message: authError.message,
         stack: authError.stack,
       })
-      return { data: [], error: new Error("Authentication failed. Please log in again.") }
+      return { data: [], error: new Error("Authentication failed. Please log in again."), queryCount: 0 }
     }
 
     if (!user) {
       console.log("No authenticated user - returning empty posts")
-      return { data: [], error: new Error("Please log in to view posts.") }
+      return { data: [], error: new Error("Please log in to view posts."), queryCount: 0 }
     }
 
     console.log("Fetching posts for user:", user.id, "with options:", options)
@@ -137,7 +148,16 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
       throw error
     }
 
+    queryCount++
+    const queryDuration = Date.now() - queryStartTime
+    
     console.log("Posts fetched successfully:", data?.length || 0, "posts")
+    console.log("Query performance:", {
+      queryCount,
+      duration: queryDuration,
+      postsCount: data?.length || 0
+    })
+    
     if (data && data.length > 0) {
       console.log("First post sample:", JSON.stringify(data[0], null, 2))
     }
@@ -154,6 +174,7 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
       reaction_count: post.reaction_count,
       comment_count: post.comment_count,
       share_count: post.share_count,
+      version: post.version,
       created_at: post.created_at,
       updated_at: post.updated_at,
       author_name: post.author?.display_name || post.author?.full_name || "Unknown",
@@ -162,15 +183,18 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
       time_ago: formatTimeAgo(post.created_at),
     }))
 
-    return { data: mappedPosts, error: null }
+    return { data: mappedPosts, error: null, queryCount, duration: queryDuration }
   } catch (error: any) {
+    const queryDuration = Date.now() - queryStartTime
     console.error("Error fetching posts:", {
       message: error?.message || error,
       stack: error?.stack,
       code: error?.code,
       error: error,
+      queryCount,
+      duration: queryDuration
     })
-    return { data: [], error: error instanceof Error ? error : new Error("Unknown error") }
+    return { data: [], error: error instanceof Error ? error : new Error("Unknown error"), queryCount, duration: queryDuration }
   }
 }
 
@@ -222,6 +246,7 @@ export async function fetchPostById(postId: string): Promise<{
       reaction_count: data.reaction_count,
       comment_count: data.comment_count,
       share_count: data.share_count,
+      version: data.version,
       created_at: data.created_at,
       updated_at: data.updated_at,
       author_name: data.author?.display_name || data.author?.full_name || "Unknown",
@@ -309,6 +334,179 @@ export async function deletePost(postId: string): Promise<{ error: Error | null 
     console.error("Error deleting post:", error)
     return { error: error instanceof Error ? error : new Error("Unknown error") }
   }
+}
+
+/**
+ * Update a post with optimistic locking to prevent race conditions
+ * Uses version field to detect concurrent modifications
+ */
+export async function updatePostWithLock(
+  postId: string,
+  updates: PostUpdateInput,
+  options: UpdatePostOptions = {}
+): Promise<{
+  data: Post | null
+  error: Error | null
+  conflict?: boolean
+}> {
+  const { maxRetries = 3, onRetry } = options
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const supabase = createClient()
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+      if (authError) {
+        return { data: null, error: new Error("Authentication failed") }
+      }
+
+      if (!user) {
+        return { data: null, error: new Error("Please log in to update posts.") }
+      }
+
+      const { data, error } = await supabase
+        .from("posts")
+        .update({
+          ...updates,
+          version: updates.version + 1,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", postId)
+        .eq("author_id", user.id)
+        .eq("version", updates.version)
+        .select()
+        .single()
+
+      if (error) {
+        if (error.code === "PGRST116" || !data) {
+          if (attempt < maxRetries) {
+            const currentPost = await supabase
+              .from("posts")
+              .select("version")
+              .eq("id", postId)
+              .single()
+            
+            if (currentPost.data) {
+              updates.version = currentPost.data.version
+              onRetry?.(attempt, new Error(`Version conflict, retrying with version ${updates.version}`))
+              await new Promise(resolve => setTimeout(resolve, 50 * attempt))
+              continue
+            }
+          }
+          return { data: null, error: new Error("Post was modified by another user"), conflict: true }
+        }
+        throw error
+      }
+
+      return { data, error: null, conflict: false }
+    } catch (error: any) {
+      if (attempt === maxRetries) {
+        console.error("Error updating post after retries:", error)
+        return { data: null, error: error instanceof Error ? error : new Error("Unknown error") }
+      }
+      onRetry?.(attempt, error)
+      await new Promise(resolve => setTimeout(resolve, 50 * attempt))
+    }
+  }
+
+  return { data: null, error: new Error("Failed to update after retries"), conflict: true }
+}
+
+/**
+ * Atomically increment post counter fields (reaction_count, comment_count, share_count)
+ * Uses Supabase atomic increment to avoid race conditions
+ */
+export async function incrementPostCounter(
+  postId: string,
+  field: "reaction_count" | "comment_count" | "share_count",
+  delta: number = 1
+): Promise<{ error: Error | null }> {
+  try {
+    const supabase = createClient()
+
+    const { error } = await supabase.rpc("increment_post_counter", {
+      post_id: postId,
+      counter_field: field,
+      increment_by: delta,
+    })
+
+    if (error) {
+      if (error.code === "42883") {
+        const { error: fallbackError } = await supabase
+          .from("posts")
+          .update({ [field]: supabase.rpc("get_counter_with_lock", { post_id: postId, field }) })
+          .eq("id", postId)
+        
+        if (fallbackError) throw fallbackError
+      } else {
+        throw error
+      }
+    }
+
+    return { error: null }
+  } catch (error: any) {
+    console.error("Error incrementing counter:", error)
+    return { error: error instanceof Error ? error : new Error("Failed to update counter") }
+  }
+}
+
+/**
+ * Update post counter with optimistic locking and retry logic
+ */
+export async function updatePostCounterWithLock(
+  postId: string,
+  field: "reaction_count" | "comment_count" | "share_count",
+  value: number,
+  expectedVersion: number,
+  options: UpdatePostOptions = {}
+): Promise<{ success: boolean; conflict?: boolean; error?: Error }> {
+  const { maxRetries = 3, onRetry } = options
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const supabase = createClient()
+
+      const { data, error } = await supabase
+        .from("posts")
+        .update({
+          [field]: value,
+          version: expectedVersion + 1,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", postId)
+        .eq("version", expectedVersion)
+        .select()
+        .single()
+
+      if (error || !data) {
+        if (attempt < maxRetries) {
+          const currentPost = await supabase
+            .from("posts")
+            .select()
+            .eq("id", postId)
+            .single()
+          
+          if (currentPost.data) {
+            expectedVersion = (currentPost.data as Post).version
+            onRetry?.(attempt, new Error(`Version conflict on counter update`))
+            await new Promise(resolve => setTimeout(resolve, 50 * attempt))
+            continue
+          }
+        }
+        return { success: false, conflict: true, error: new Error("Conflict updating counter") }
+      }
+
+      return { success: true, conflict: false }
+    } catch (error: any) {
+      if (attempt === maxRetries) {
+        return { success: false, error: error instanceof Error ? error : new Error("Failed to update counter") }
+      }
+      onRetry?.(attempt, error)
+      await new Promise(resolve => setTimeout(resolve, 50 * attempt))
+    }
+  }
+
+  return { success: false, conflict: true }
 }
 
 // ===========================================

@@ -95,6 +95,7 @@ export interface Post {
   reaction_count: number;
   comment_count: number;
   share_count: number;
+  version: number; // Optimistic locking version
   created_at: string; // TIMESTAMPTZ
   updated_at: string; // TIMESTAMPTZ
 }
@@ -333,6 +334,17 @@ export interface PostWithAuthor extends Post {
   media_url?: string;
   media_urls?: string[];
   media_type?: 'image' | 'video';
+}
+
+// Post update input with version for optimistic locking
+export interface PostUpdateInput {
+  content?: string;
+  post_type?: 'project-launch' | 'teammate-request' | 'announcement' | 'general';
+  intent?: 'cofounder' | 'teammate' | 'mvp' | 'fyp';
+  link_url?: string;
+  is_pinned?: boolean;
+  is_archived?: boolean;
+  version: number; // Required for optimistic locking
 }
 
 // Extended MatchSuggestion type for UI components

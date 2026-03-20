@@ -8,6 +8,7 @@ import {
   generateSecureFileName,
   FILE_SIZE_LIMITS 
 } from '@/lib/utils/file-validation'
+import { validateCSRFRequest, requiresCSRF } from "@/lib/csrf";
 
 export const dynamic = 'force-dynamic'
 
@@ -24,6 +25,25 @@ export const dynamic = 'force-dynamic'
  * - Public URL of uploaded file
  */
 export async function POST(request: NextRequest) {
+  // Validate CSRF token for security
+  const csrfToken = request.headers.get('x-csrf-token');
+  const cookieToken = request.cookies.get('csrf_token')?.value || null;
+  
+  if (requiresCSRF(request.method)) {
+    const isValid = await validateCSRFRequest(csrfToken, cookieToken);
+    if (!isValid) {
+      console.warn('⚠️ CSRF validation failed:', {
+        hasHeaderToken: !!csrfToken,
+        hasCookieToken: !!cookieToken,
+        path: request.url,
+      });
+      return NextResponse.json(
+        { error: "Invalid CSRF token" },
+        { status: 403 }
+      );
+    }
+  }
+  
   try {
     const supabase = await createClient()
     

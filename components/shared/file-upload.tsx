@@ -5,6 +5,15 @@ import { useCallback, useState, useRef } from 'react'
 import { Upload, X, Image as ImageIcon, FileText, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
+/**
+ * Get CSRF token from cookies
+ */
+function getCSRFToken(): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(/csrf_token=([^;]+)/);
+  return match ? match[1] : null;
+}
+
 interface FileUploadProps {
   onUpload: (url: string) => void
   onError?: (error: string) => void
@@ -84,8 +93,12 @@ export function FileUpload({
       }, 100)
 
       // Upload file
+      const csrfToken = getCSRFToken();
       const response = await fetch('/api/upload', {
         method: 'POST',
+        headers: {
+          'X-CSRF-Token': csrfToken || '',
+        },
         body: formData
       })
 

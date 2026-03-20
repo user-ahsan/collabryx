@@ -3,6 +3,7 @@ import type { MatchSuggestion, MatchActivity, MatchPreference } from "@/types/da
 import { executeOptimizedQuery } from "@/lib/database-optimization"
 import { formatInitials } from "@/lib/utils/format-initials"
 import { logger } from "@/lib/logger"
+import { withDatabaseProtection, trackDatabaseOperation } from "@/lib/database-connection-manager"
 
 // ===========================================
 // MATCH SUGGESTIONS SERVICE
@@ -62,49 +63,62 @@ export async function fetchMatches(
     return { data: [], error: new Error("Please log in to view matches.") }
   }
 
-  const { data: queryData, error: queryError } = await executeOptimizedQuery(async () => {
-    let query = supabase
-      .from("match_suggestions")
-      .select(`
-        id,
-        user_id,
-        matched_user_id,
-        match_percentage,
-        reasons,
-        ai_confidence,
-        ai_explanation,
-        status,
-        created_at,
-        expires_at,
-        matched_user:profiles (
-          full_name,
-          display_name,
-          avatar_url,
-          headline
-        )
-      `)
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .order("match_percentage", { ascending: false })
-      .limit(options.limit || 20)
+  const { data: queryData, error: queryError } = await executeOptimizedQuery(
+    async () => {
+      let query = supabase
+        .from("match_suggestions")
+        .select(`
+          id,
+          user_id,
+          matched_user_id,
+          match_percentage,
+          reasons,
+          ai_confidence,
+          ai_explanation,
+          status,
+          created_at,
+          expires_at,
+          matched_user:profiles (
+            full_name,
+            display_name,
+            avatar_url,
+            headline
+          )
+        `)
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .order("match_percentage", { ascending: false })
+        .limit(options.limit || 20)
 
-    if (options.minPercentage) {
-      query = query.gte("match_percentage", options.minPercentage)
+      if (options.minPercentage) {
+        query = query.gte("match_percentage", options.minPercentage)
+      }
+
+      if (options.status) {
+        query = query.eq("status", options.status)
+      }
+
+      const result = await query
+      return result.data as unknown as RawMatch[]
+    },
+    {
+      operationName: 'fetchMatches',
+      maxRetries: 3,
+      timeout: 15000, // 15 second timeout for match queries
     }
-
-    if (options.status) {
-      query = query.eq("status", options.status)
-    }
-
-    const result = await query
-    return result.data as unknown as RawMatch[]
-  })
+  )
 
   // If there's an actual error, log and return it
   if (queryError) {
-    logger.app.error("Failed to fetch matches", queryError)
+    logger.app.error("Failed to fetch matches", {
+      error: queryError.message,
+      userId: user.id,
+    })
+    trackDatabaseOperation(false, queryError)
     return { data: [], error: queryError }
   }
+  
+  trackDatabaseOperation(true)
   
   // If no data but no error, it's not an error - just no matches
   if (!queryData || queryData.length === 0) {
@@ -166,6 +180,7 @@ export async function dismissMatch(matchId: string): Promise<{ error: Error | nu
 
 /**
  * Connect with a match (creates a connection request)
+ * Uses transaction-like pattern to ensure atomicity
  */
 export async function connectWithMatch(matchedUserId: string): Promise<{ error: Error | null }> {
   try {
@@ -181,28 +196,40 @@ export async function connectWithMatch(matchedUserId: string): Promise<{ error: 
       return { error: new Error("Please log in to connect with matches.") }
     }
 
-    // Create connection request
-    const { error } = await supabase
+    // Create connection request first
+    const { data: connectionData, error: connectionError } = await supabase
       .from("connections")
       .insert({
         requester_id: user.id,
         receiver_id: matchedUserId,
         status: "pending",
       })
+      .select("id")
+      .single()
 
-    if (error) throw error
+    if (connectionError) {
+      logger.app.error("Failed to create connection", connectionError)
+      throw connectionError
+    }
 
     // Update match suggestion status
-    await supabase
+    const { error: updateError } = await supabase
       .from("match_suggestions")
       .update({ status: "connected" })
       .eq("user_id", user.id)
       .eq("matched_user_id", matchedUserId)
 
+    if (updateError) {
+      // Rollback: delete the connection if status update fails
+      logger.app.error("Failed to update match status, rolling back connection", updateError)
+      await supabase.from("connections").delete().eq("id", connectionData.id)
+      throw updateError
+    }
+
     return { error: null }
   } catch (error) {
     logger.app.error("Failed to connect with match", error)
-    return { error: error instanceof Error ? error : new Error("Unknown error") }
+    return { error: error instanceof Error ? error : new Error("Failed to connect with match") }
   }
 }
 

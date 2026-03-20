@@ -92,18 +92,28 @@ export function useLoginData() {
   const profileQuery = useQuery({
     queryKey: ['profile'],
     queryFn: async () => {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) return null
-      
-      const { data } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', user.id)
-        .single()
-      
-      return data
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        
+        if (!user) return null
+        
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+        
+        if (error) {
+          console.error('Error fetching profile:', error)
+          return null
+        }
+        
+        return data
+      } catch (error) {
+        console.error('Profile query failed:', error)
+        throw error
+      }
     },
     staleTime: 1000 * 60 * 5,
     retry: 2,
@@ -115,20 +125,30 @@ export function useLoginData() {
   const notificationsQuery = useQuery({
     queryKey: ['notifications'],
     queryFn: async () => {
-      const supabase = createClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (!user) return []
-      
-      const { data } = await supabase
-        .from('notifications')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_read', false)
-        .order('created_at', { ascending: false })
-        .limit(10)
-      
-      return data || []
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+        
+        if (!user) return []
+        
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('is_read', false)
+          .order('created_at', { ascending: false })
+          .limit(10)
+        
+        if (error) {
+          console.error('Error fetching notifications:', error)
+          return []
+        }
+        
+        return data || []
+      } catch (error) {
+        console.error('Notifications query failed:', error)
+        throw error
+      }
     },
     staleTime: 1000 * 60 * 1, // 1 minute
     retry: 2,
@@ -171,14 +191,20 @@ export function useLoginData() {
     isLoading: postsQuery.isLoading || matchesQuery.isLoading || profileQuery.isLoading,
     error: postsQuery.error || matchesQuery.error || profileQuery.error,
     refetch: async () => {
-      setIsReady(false)
-      await Promise.all([
-        postsQuery.refetch(),
-        matchesQuery.refetch(),
-        profileQuery.refetch(),
-        notificationsQuery.refetch(),
-      ])
-      setIsReady(true)
+      try {
+        setIsReady(false)
+        await Promise.all([
+          postsQuery.refetch(),
+          matchesQuery.refetch(),
+          profileQuery.refetch(),
+          notificationsQuery.refetch(),
+        ])
+        setIsReady(true)
+      } catch (error) {
+        console.error('Error refetching login data:', error)
+        setIsReady(false)
+        throw error
+      }
     },
   }
 }
