@@ -167,10 +167,24 @@ export function formatSessionExpiryMessage(expiresAt: Date | null): string {
 // ===========================================
 
 /**
+ * Supabase client interface for session refresh
+ */
+interface SupabaseAuthClient {
+  auth: {
+    getSession: () => Promise<{ data: { session: { expires_at?: number } | null }; error?: unknown }>
+    refreshSession: () => Promise<{ error?: { message: string } | null }>
+  }
+}
+
+/**
  * Refresh session if expiring soon
  * Call this periodically in authenticated pages
+ * 
+ * @param supabase - Supabase client instance
+ * @returns Object with refresh status and expiry information
+ * @throws {Error} If session refresh fails
  */
-export async function refreshSessionIfNeeded(supabase: any): Promise<{
+export async function refreshSessionIfNeeded(supabase: SupabaseAuthClient): Promise<{
   refreshed: boolean
   expired: boolean
   error?: string

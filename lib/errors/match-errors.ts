@@ -13,6 +13,17 @@ export enum MatchErrorType {
 }
 
 /**
+ * Supabase error interface for type-safe error handling
+ */
+interface SupabaseError {
+  code?: string
+  status?: number
+  message?: string
+  details?: string
+  hint?: string
+}
+
+/**
  * Match Error - Standardized error with classification
  * Provides consistent error handling across match services
  */
@@ -36,80 +47,89 @@ export class MatchError extends Error {
   /**
    * Create MatchError from Supabase error
    * Classifies Supabase errors into standardized types
+   * 
+   * @param error - Supabase error object
+   * @returns Classified MatchError instance
    */
-  static fromSupabaseError(error: any): MatchError {
+  static fromSupabaseError(error: SupabaseError | unknown): MatchError {
     // Handle null/undefined
     if (!error) {
       return new MatchError('Unknown error', MatchErrorType.UNKNOWN, 'UNKNOWN', false)
     }
     
+    // Type guard for error object
+    const err = error as SupabaseError
+    
     // No matches found (PGRST116 is Supabase "not found" code)
-    if (error?.code === 'PGRST116') {
-      return new MatchError('No matches found', MatchErrorType.NO_MATCHES, error.code, false)
+    if (err?.code === 'PGRST116') {
+      return new MatchError('No matches found', MatchErrorType.NO_MATCHES, err.code, false)
     }
     
     // Rate limited
-    if (error?.code === '429' || error?.status === 429) {
+    if (err?.code === '429' || err?.status === 429) {
       return new MatchError(
         'Rate limited',
         MatchErrorType.RATE_LIMITED,
-        error.code || '429',
+        err.code || '429',
         true,
         new Date(Date.now() + 5000) // 5 second backoff
       )
     }
     
     // Unauthorized/Authentication expired
-    if (error?.code === '401' || error?.status === 401) {
+    if (err?.code === '401' || err?.status === 401) {
       return new MatchError(
         'Authentication expired',
         MatchErrorType.AUTH_EXPIRED,
-        error.code || '401',
+        err.code || '401',
         true
       )
     }
     
     // Timeout errors
-    if (error?.message?.includes('timeout') || error?.code === '57014') {
+    if (err?.message?.includes('timeout') || err?.code === '57014') {
       return new MatchError(
         'Vector search timeout',
         MatchErrorType.VECTOR_SEARCH_TIMEOUT,
-        error.code || 'TIMEOUT',
+        err.code || 'TIMEOUT',
         true
       )
     }
     
     // Network errors
-    if (error?.message?.includes('network') || error?.message?.includes('fetch')) {
+    if (err?.message?.includes('network') || err?.message?.includes('fetch')) {
       return new MatchError(
         'Network error',
         MatchErrorType.NETWORK_ERROR,
-        error.code || 'NETWORK',
+        err.code || 'NETWORK',
         true
       )
     }
     
     // Database errors (default for Supabase errors)
-    if (error?.code?.startsWith('PGRST') || error?.code?.startsWith('23') || error?.code?.startsWith('42')) {
+    if (err?.code?.startsWith('PGRST') || err?.code?.startsWith('23') || err?.code?.startsWith('42')) {
       return new MatchError(
-        error?.message || 'Database error',
+        err?.message || 'Database error',
         MatchErrorType.DATABASE_ERROR,
-        error.code || 'UNKNOWN',
+        err.code || 'UNKNOWN',
         false // Database errors usually need intervention
       )
     }
     
     // Fallback to unknown
     return new MatchError(
-      error?.message || 'Unknown error',
+      err?.message || 'Unknown error',
       MatchErrorType.UNKNOWN,
-      error?.code || 'UNKNOWN',
+      err?.code || 'UNKNOWN',
       false
     )
   }
   
   /**
    * Create MatchError from generic Error
+   * 
+   * @param error - Unknown error type
+   * @returns Classified MatchError instance
    */
   static fromError(error: unknown): MatchError {
     if (error instanceof MatchError) {
@@ -142,6 +162,8 @@ export class MatchError extends Error {
   
   /**
    * Check if error is retryable
+   * 
+   * @returns True if error can be retried
    */
   isRetryable(): boolean {
     return this.retryable
@@ -149,6 +171,8 @@ export class MatchError extends Error {
   
   /**
    * Get recommended retry delay in milliseconds
+   * 
+   * @returns Delay in milliseconds before retry
    */
   getRetryDelay(): number {
     switch (this.type) {
@@ -167,6 +191,8 @@ export class MatchError extends Error {
   
   /**
    * Convert to plain object for logging/serialization
+   * 
+   * @returns Plain object representation of error
    */
   toJSON(): Record<string, unknown> {
     return {

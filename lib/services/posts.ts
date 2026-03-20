@@ -58,6 +58,20 @@ type RawPost = {
   }
 }
 
+/**
+ * Fetch posts with optional filtering and pagination
+ * 
+ * @param options - Query options for filtering and pagination
+ * @returns Object with posts data and error information
+ * 
+ * @example
+ * ```typescript
+ * const { data, error } = await fetchPosts({ limit: 20, offset: 0 })
+ * if (error) {
+ *   console.error('Failed to fetch posts:', error.message)
+ * }
+ * ```
+ */
 export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
   data: PostWithAuthor[]
   error: Error | null
@@ -163,11 +177,11 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
     }))
 
     return { data: mappedPosts, error: null }
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error fetching posts:", {
-      message: error?.message || error,
-      stack: error?.stack,
-      code: error?.code,
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      code: error instanceof Error && 'code' in error ? (error as { code?: string }).code : undefined,
       error: error,
     })
     return { data: [], error: error instanceof Error ? error : new Error("Unknown error") }
@@ -176,6 +190,9 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
 
 /**
  * Fetch a single post by ID
+ * 
+ * @param postId - The ID of the post to fetch
+ * @returns Object with post data and error information
  */
 export async function fetchPostById(postId: string): Promise<{
   data: PostWithAuthor | null
@@ -239,6 +256,9 @@ export async function fetchPostById(postId: string): Promise<{
 
 /**
  * Create a new post
+ * 
+ * @param input - Post creation input data
+ * @returns Object with created post data and error information
  */
 export async function createPost(input: CreatePostInput): Promise<{
   data: Post | null
@@ -263,196 +283,4 @@ export async function createPost(input: CreatePostInput): Promise<{
         author_id: user.id,
         content: input.content,
         post_type: input.post_type,
-        intent: input.intent,
-        link_url: input.link_url,
-        is_pinned: input.is_pinned || false,
-      })
-      .select()
-      .single()
-
-    if (error) throw error
-
-    return { data, error: null }
-  } catch (error) {
-    console.error("Error creating post:", error)
-    return { data: null, error: error instanceof Error ? error : new Error("Unknown error") }
-  }
-}
-
-/**
- * Delete a post (only author can delete)
- */
-export async function deletePost(postId: string): Promise<{ error: Error | null }> {
-  try {
-    const supabase = createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-    if (authError) {
-      console.error("Auth error:", authError)
-      return { error: new Error("Authentication failed. Please log in again.") }
-    }
-
-    if (!user) {
-      return { error: new Error("Please log in to delete posts.") }
-    }
-
-    const { error } = await supabase
-      .from("posts")
-      .delete()
-      .eq("id", postId)
-      .eq("author_id", user.id)
-
-    if (error) throw error
-
-    return { error: null }
-  } catch (error) {
-    console.error("Error deleting post:", error)
-    return { error: error instanceof Error ? error : new Error("Unknown error") }
-  }
-}
-
-// ===========================================
-// POST REACTIONS SERVICE
-// ===========================================
-
-export async function addReaction(
-  postId: string,
-  emoji: string
-): Promise<{ data: PostReaction | null; error: Error | null }> {
-  try {
-    const supabase = createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-    if (authError) {
-      console.error("Auth error:", authError)
-      return { data: null, error: new Error("Authentication failed. Please log in again.") }
-    }
-
-    if (!user) {
-      return { data: null, error: new Error("Please log in to react to posts.") }
-    }
-
-    const { data, error } = await supabase
-      .from("post_reactions")
-      .upsert(
-        {
-          post_id: postId,
-          user_id: user.id,
-          emoji,
-        },
-        { onConflict: "post_id,user_id" }
-      )
-      .select()
-      .single()
-
-    if (error) throw error
-
-    return { data, error: null }
-  } catch (error) {
-    console.error("Error adding reaction:", error)
-    return { data: null, error: error instanceof Error ? error : new Error("Unknown error") }
-  }
-}
-
-export async function removeReaction(postId: string): Promise<{ error: Error | null }> {
-  try {
-    const supabase = createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-    if (authError) {
-      console.error("Auth error:", authError)
-      return { error: new Error("Authentication failed. Please log in again.") }
-    }
-
-    if (!user) {
-      return { error: new Error("Please log in to remove reactions.") }
-    }
-
-    const { error } = await supabase
-      .from("post_reactions")
-      .delete()
-      .eq("post_id", postId)
-      .eq("user_id", user.id)
-
-    if (error) throw error
-
-    return { error: null }
-  } catch (error) {
-    console.error("Error removing reaction:", error)
-    return { error: error instanceof Error ? error : new Error("Unknown error") }
-  }
-}
-
-// ===========================================
-// POST ATTACHMENTS SERVICE
-// ===========================================
-
-export async function addAttachment(
-  input: CreatePostAttachmentInput
-): Promise<{ data: PostAttachment | null; error: Error | null }> {
-  try {
-    const supabase = createClient()
-    const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-    if (authError) {
-      console.error("Auth error:", authError)
-      return { data: null, error: new Error("Authentication failed. Please log in again.") }
-    }
-
-    if (!user) {
-      return { data: null, error: new Error("Please log in to add attachments.") }
-    }
-
-    // Verify user owns the post
-    const { data: post } = await supabase
-      .from("posts")
-      .select("author_id")
-      .eq("id", input.post_id)
-      .single()
-
-    if (!post || post.author_id !== user.id) {
-      return { data: null, error: new Error("Not authorized to add attachments to this post") }
-    }
-
-    const { data, error } = await supabase
-      .from("post_attachments")
-      .insert({
-        post_id: input.post_id,
-        file_url: input.file_url,
-        file_type: input.file_type,
-        file_name: input.file_name,
-        file_size: input.file_size,
-        mime_type: input.mime_type,
-        width: input.width,
-        height: input.height,
-      })
-      .select()
-      .single()
-
-    if (error) throw error
-
-    return { data, error: null }
-  } catch (error) {
-    console.error("Error adding attachment:", error)
-    return { data: null, error: error instanceof Error ? error : new Error("Unknown error") }
-  }
-}
-
-// ===========================================
-// HELPER FUNCTIONS
-// ===========================================
-
-function formatTimeAgo(dateString: string): string {
-  const date = new Date(dateString)
-  const now = new Date()
-  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000)
-
-  if (seconds < 60) return "Just now"
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
-  if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`
-
-  return date.toLocaleDateString()
-}
-
-
+        in

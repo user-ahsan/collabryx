@@ -46,7 +46,7 @@ export interface NotificationDigestResponse {
  * Check if user has admin privileges
  * For now, we check if user has service_role claim or is in admin list
  */
-async function checkAdminAccess(supabase: any) {
+async function checkAdminAccess(supabase: Awaited<ReturnType<typeof createClient>>) {
   const { data: { user } } = await supabase.auth.getUser();
   
   if (!user) {
@@ -54,7 +54,8 @@ async function checkAdminAccess(supabase: any) {
   }
 
   // Check for admin role in user metadata or app_metadata
-  const userRole = (user as any).role || (user as any).user_role;
+  const userMetadata = user.user_metadata as { role?: string; user_role?: string } | null;
+  const userRole = userMetadata?.role || userMetadata?.user_role;
   
   // Allow service_role or admin role
   if (userRole === 'service_role' || userRole === 'admin') {
