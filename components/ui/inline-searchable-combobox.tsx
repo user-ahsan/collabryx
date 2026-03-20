@@ -127,12 +127,12 @@ export function InlineSearchableCombobox({
   const selectedOptions = options.filter(opt => selected.includes(opt.id))
 
   return (
-    <div className={cn("w-full space-y-3", className)} role="group">
-      {/* Selected items */}
+    <div className={cn("w-full space-y-3", className)} role="group" aria-labelledby="combobox-label">
+      {/* Selected items - Fixed minimum height to prevent layout shift */}
       {selected.length > 0 && (
         <div 
           className={cn(
-            "flex flex-wrap gap-2 min-h-[40px] p-2 rounded-lg",
+            "flex flex-wrap gap-2 min-h-[48px] p-2 rounded-lg",
             glass("subtle")
           )}
           role="list"
@@ -159,21 +159,22 @@ export function InlineSearchableCombobox({
         </div>
       )}
 
-      {/* Search Input */}
-      <div className="relative">
+      {/* Search Input - Fixed height container */}
+      <div className="relative min-h-[48px]">
         <Input
           ref={inputRef}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={searchPlaceholder}
+          placeholder={selected.length === 0 ? placeholder : searchPlaceholder}
           className={cn(
-            "h-12 text-base pr-12 transition-all duration-300",
+            "h-12 text-base pr-12 transition-all duration-200",
             glass("input")
           )}
           aria-autocomplete="list"
           aria-controls="combobox-dropdown"
           aria-expanded={!!search}
+          aria-haspopup="listbox"
         />
         {allowCustom && onAddCustom && search.trim() && (
           <button
@@ -191,17 +192,24 @@ export function InlineSearchableCombobox({
         )}
       </div>
 
-      {/* Results Dropdown */}
+      {/* Results Dropdown - Absolute positioning to prevent layout shift */}
       {search && (
         <div 
           id="combobox-dropdown"
           className={cn(
-            "relative w-full overflow-hidden rounded-xl shadow-lg",
+            "absolute top-full left-0 z-50 w-full min-w-[200px] max-w-[600px]",
+            "mt-2 rounded-xl shadow-lg border border-border/50",
+            "overflow-hidden",
+            "animate-in fade-in slide-in-from-top-1 duration-200",
+            "motion-reduce:animate-none motion-reduce:transition-none",
             glass("overlay")
           )}
-          style={{ maxHeight: `${maxHeight}px` }}
           role="listbox"
           aria-label="Available options"
+          style={{ 
+            maxHeight: `${maxHeight}px`,
+            width: 'var(--radix-popper-anchor-width, 100%)'
+          }}
         >
           <Command shouldFilter={false} className="w-full">
             <CommandList className="h-full" role="presentation">
@@ -288,8 +296,8 @@ export function InlineSearchableCombobox({
         </div>
       )}
 
-      {/* Helper text */}
-      <p className="text-xs text-muted-foreground">
+      {/* Helper text - Fixed position */}
+      <p className="text-xs text-muted-foreground min-h-[20px]" id="combobox-label">
         {allowCustom ? "Type to search or add custom option (press Enter)" : "Select from the list above"}
       </p>
     </div>
