@@ -3,12 +3,9 @@
 import React from "react"
 import { useFormContext, Controller } from "react-hook-form"
 import { Label } from "@/components/ui/label"
-import { SearchableCombobox, ComboboxOption } from "@/components/ui/searchable-combobox"
+import { InlineSearchableCombobox, ComboboxOption } from "@/components/ui/inline-searchable-combobox"
 import { collaborationGoals } from "@/lib/data/collaboration-goals"
 import { industriesDatabase } from "@/lib/data/industries-database"
-import { GlassCard } from "@/components/shared/glass-card"
-import { Checkbox } from "@/components/ui/checkbox"
-import { cn } from "@/lib/utils"
 
 export function StepInterestsAndGoals() {
   const { control, formState: { errors } } = useFormContext()
@@ -61,11 +58,10 @@ export function StepInterestsAndGoals() {
                 <p className="text-sm text-destructive pb-1">{errors.goals.message}</p>
               )}
 
-              <SearchableCombobox
+              <InlineSearchableCombobox
                 options={goalOptions}
                 selected={currentGoals}
                 onChange={(selected) => field.onChange(selected)}
-                placeholder="Select collaboration goals..."
                 searchPlaceholder="Search goals (e.g., Find Co-Founder, Networking, Mentorship)..."
                 emptyMessage="No goals found."
                 maxHeight={350}
@@ -95,11 +91,10 @@ export function StepInterestsAndGoals() {
               <Label className="font-semibold text-lg">Your Interests / Industries</Label>
               <p className="text-base text-muted-foreground">Select industries you're interested in or working in.</p>
               
-              <SearchableCombobox
+              <InlineSearchableCombobox
                 options={industryOptions}
                 selected={currentInterests}
                 onChange={(selected) => field.onChange(selected)}
-                placeholder="Select industries..."
                 searchPlaceholder="Search industries (e.g., Technology, Healthcare, Construction, Plumbing)..."
                 emptyMessage="No industries found. Type to add a custom industry."
                 maxHeight={350}

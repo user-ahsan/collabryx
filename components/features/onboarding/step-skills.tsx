@@ -3,7 +3,7 @@
 import React from "react"
 import { useFormContext, Controller } from "react-hook-form"
 import { Label } from "@/components/ui/label"
-import { SearchableCombobox, ComboboxOption } from "@/components/ui/searchable-combobox"
+import { InlineSearchableCombobox, ComboboxOption } from "@/components/ui/inline-searchable-combobox"
 import { skillsDatabase, type Skill } from "@/lib/data/skills-database"
 
 export function StepSkills() {
@@ -38,11 +38,10 @@ export function StepSkills() {
             <div className="space-y-5">
               <div className="grid gap-2.5">
                 <Label htmlFor="skills" className="text-base font-medium">Add Skills</Label>
-                <SearchableCombobox
+                <InlineSearchableCombobox
                   options={skillOptions}
                   selected={skills}
                   onChange={(selected) => field.onChange(selected)}
-                  placeholder="Select skills..."
                   searchPlaceholder="Search skills (e.g., React, Python, Plumbing)..."
                   emptyMessage="No skills found. Type to add a custom skill."
                   maxHeight={350}
@@ -61,7 +60,7 @@ export function StepSkills() {
 
               <div className="p-4 rounded-lg bg-muted/50 border border-border">
                 <p className="text-sm text-muted-foreground">
-                  💡 <strong>Tip:</strong> You can select from our list of 10,000+ skills across all categories including technical, trades, services, creative, and more. Or type to add custom skills not in the list.
+                  💡 <strong>Tip:</strong> You can select from our list of 1000+ skills across all categories including technical, trades, services, creative, and more. Or type to add custom skills not in the list.
                 </p>
               </div>
             </div>

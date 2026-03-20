@@ -14,7 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { SearchableCombobox, ComboboxOption } from "@/components/ui/searchable-combobox"
+import { InlineSearchableCombobox, ComboboxOption } from "@/components/ui/inline-searchable-combobox"
 import { jobTitlesDatabase } from "@/lib/data/job-titles-database"
 import { cn } from "@/lib/utils"
 
@@ -102,16 +102,15 @@ export function StepExperience({}: StepExperienceProps) {
                       control={control}
                       name={`experiences.${index}.title` as const}
                       render={({ field: titleField }) => (
-                        <SearchableCombobox
+                        <InlineSearchableCombobox
                           options={jobTitleOptions}
                           selected={titleField.value ? [titleField.value] : []}
-                          onChange={(selected) => titleField.onChange(selected[0] || "")}
-                          placeholder="Select or type job title..."
+                          onChange={(selected: string[]) => titleField.onChange(selected[0] || "")}
                           searchPlaceholder="Search job titles (e.g., Software Engineer, Plumber, Teacher)..."
                           emptyMessage="No job titles found. Type to add custom."
                           maxHeight={300}
                           allowCustom={true}
-                          onAddCustom={(customTitle) => {
+                          onAddCustom={(customTitle: string) => {
                             titleField.onChange(customTitle)
                           }}
                           showCategories={true}
