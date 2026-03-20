@@ -98,6 +98,7 @@ export default function OnboardingPage() {
     const [completionPercentage, setCompletionPercentage] = useState(0)
     const [isEmailVerified, setIsEmailVerified] = useState<boolean | null>(null)
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+    const [hasAcknowledgedWarning, setHasAcknowledgedWarning] = useState(false)
     const router = useRouter()
     const shouldReduceMotion = useReducedMotion()
 
@@ -156,7 +157,13 @@ export default function OnboardingPage() {
                 setUserName(name)
                 
                 // Check email verification status
-                setIsEmailVerified(!!user?.email_confirmed_at)
+                const emailIsVerified = user?.email_confirmed_at !== null && user?.email_confirmed_at !== undefined
+                setIsEmailVerified(emailIsVerified)
+                
+                if (!emailIsVerified) {
+                    console.log('📧 Email not verified, showing warning')
+                    setHasAcknowledgedWarning(false)
+                }
             } catch (error) {
                 console.error("Error fetching user:", error)
                 toast.error("Failed to load user information.")
@@ -534,7 +541,7 @@ export default function OnboardingPage() {
                 className="w-full max-w-3xl relative z-10 p-4 sm:p-6 lg:p-8"
             >
                 {/* Email Verification Warning */}
-                {isEmailVerified === false && (
+                {isEmailVerified === false && !hasAcknowledgedWarning && (
                     <div 
                         className="mb-4 p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-start gap-3" 
                         role="alert"
@@ -548,6 +555,20 @@ export default function OnboardingPage() {
                         <div className="flex-1">
                             <p className="text-sm font-semibold text-amber-500">Email Not Verified</p>
                             <p className="text-xs text-amber-500/80 mt-0.5">Please verify your email to unlock all features. You can continue with onboarding now.</p>
+                            <div className="mt-3 flex gap-2">
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => {
+                                        setHasAcknowledgedWarning(true)
+                                        toast.info("You can verify your email from your account settings")
+                                    }}
+                                    className="h-8 text-xs border-amber-500/30 text-amber-500 hover:bg-amber-500/10"
+                                >
+                                    Continue Anyway
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 )}
