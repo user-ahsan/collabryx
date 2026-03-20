@@ -46,6 +46,21 @@ const loginSchema = z.object({
 })
 
 export function LoginForm() {
+    // 🔴 CRITICAL DEBUG: Persistent logging that survives reload
+    const debugId = React.useMemo(() => {
+        if (typeof window !== 'undefined') {
+            const urlParams = new URLSearchParams(window.location.search)
+            const existingId = sessionStorage.getItem('login_form_debug_id')
+            const newId = urlParams.get('debug') || existingId || Date.now().toString()
+            sessionStorage.setItem('login_form_debug_id', newId)
+            console.error(`🔴🔴🔴 [LOGIN_FORM_MOUNT] Component MOUNTED, debugId=${newId}, timestamp=${new Date().toISOString()} 🔴🔴🔴`)
+            console.error(`🔴 [LOGIN_FORM_MOUNT] URL: ${window.location.href}`)
+            console.error(`🔴 [LOGIN_FORM_MOUNT] User agent: ${navigator.userAgent}`)
+            return newId
+        }
+        return 'server'
+    }, [])
+
     const [isLoading, setIsLoading] = React.useState(false)
     const [showProviderDialog, setShowProviderDialog] = React.useState(false)
     const [providerToShow, setProviderToShow] = React.useState<"google" | "github" | "apple" | null>(null)
@@ -53,6 +68,9 @@ export function LoginForm() {
     const [devCredentials, setDevCredentials] = React.useState({ email: "", password: "" })
     const [announcement, setAnnouncement] = React.useState("")
     const supabase = createClient()
+
+    // 🔴 CRITICAL DEBUG: Log every render
+    console.error(`🔴 [LOGIN_FORM_RENDER] Component rendering, debugId=${debugId}, isLoading=${isLoading}`)
 
     // Pre-populate test credentials in development mode (client-side only)
     React.useEffect(() => {
@@ -71,6 +89,25 @@ export function LoginForm() {
         },
     })
     
+    // 🔴 CRITICAL DEBUG: Track component lifecycle
+    React.useEffect(() => {
+        console.error(`🔴 [USE_EFFECT_MOUNT] Component mounted, debugId=${debugId}`)
+        
+        // Log before unload (will show if page is reloading)
+        const beforeUnload = () => {
+            console.error(`🔴🔴🔴 [BEFORE_UNLOAD] Page is about to unload/reload! debugId=${debugId} 🔴🔴🔴`)
+            sessionStorage.setItem('login_last_event', 'before_unload')
+        }
+        
+        window.addEventListener('beforeunload', beforeUnload)
+        
+        return () => {
+            console.error(`🔴 [USE_EFFECT_CLEANUP] Component unmounting, debugId=${debugId}`)
+            sessionStorage.setItem('login_last_event', 'unmount')
+            window.removeEventListener('beforeunload', beforeUnload)
+        }
+    }, [debugId])
+
     // Announce form errors to screen readers
     React.useEffect(() => {
         const hasErrors = Object.keys(form.formState.errors).length > 0
@@ -88,7 +125,10 @@ export function LoginForm() {
     }, [isDev, devCredentials, form])
 
     const onLoginSubmit = async (data: z.infer<typeof loginSchema>) => {
-        console.log('[LoginForm] Submit handler called with data:', { email: data.email })
+        // 🔴 CRITICAL DEBUG: This is the inner submit handler
+        console.error(`🔴🔴🔴 [ON_LOGIN_SUBMIT] CALLED! debugId=${debugId}, email=${data.email} 🔴🔴🔴`)
+        console.error(`🔴 [ON_LOGIN_SUBMIT] Timestamp: ${new Date().toISOString()}`)
+        
         setIsLoading(true)
         
         // Check if Supabase is configured
@@ -96,49 +136,71 @@ export function LoginForm() {
         const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
         
         if (!supabaseUrl || !supabaseKey) {
-            console.error('[LoginForm] Supabase not configured')
+            console.error(`🔴 [ON_LOGIN_SUBMIT] Supabase not configured, redirecting in 2s`)
             toast.error("Authentication service is not configured. Please contact support.")
             setIsLoading(false)
             // Redirect to home page with error
             setTimeout(() => {
+                console.error(`🔴 [ON_LOGIN_SUBMIT] Executing window.location.assign("/")`)
                 window.location.assign("/")
             }, 2000)
             return
         }
         
         try {
-            console.log('[LoginForm] Attempting Supabase login...')
+            console.error(`🔴 [ON_LOGIN_SUBMIT] Calling supabase.auth.signInWithPassword...`)
             const { error } = await supabase.auth.signInWithPassword({
                 email: data.email,
                 password: data.password,
             })
+            console.error(`🔴 [ON_LOGIN_SUBMIT] Supabase call completed, error=${error?.message || 'none'}`)
             setIsLoading(false)
 
             if (error) {
-                console.error('[LoginForm] Login error:', error.message)
+                console.error(`🔴 [ON_LOGIN_SUBMIT] Login error: ${error.message}`)
                 toast.error(error.message)
                 return
             }
 
-            console.log('[LoginForm] Login successful, redirecting...')
+            console.error(`🔴 [ON_LOGIN_SUBMIT] Login SUCCESSFUL, calling window.location.assign("/auth-sync")`)
             toast.success("Welcome back!")
             window.location.assign("/auth-sync")
         } catch (err) {
-            console.error('[LoginForm] Login exception:', err)
+            console.error(`🔴 [ON_LOGIN_SUBMIT] Login exception:`, err)
             toast.error("An unexpected error occurred. Please try again.")
             setIsLoading(false)
         }
     }
 
-    // Wrapper handler to ensure preventDefault is called
+    // 🔴 CRITICAL DEBUG: Wrapper handler to ensure preventDefault is called
     const handleSubmit = async (e: React.FormEvent) => {
+        // 🔴 LOG BEFORE preventDefault to see if this is even being called
+        console.error(`🔴🔴🔴 [HANDLE_SUBMIT] FORM SUBMIT TRIGGERED! debugId=${debugId} 🔴🔴🔴`)
+        console.error(`🔴 [HANDLE_SUBMIT] Event type: ${e.type}, cancelable: ${e.cancelable}`)
+        console.error(`🔴 [HANDLE_SUBMIT] Calling e.preventDefault() NOW...`)
+        
         e.preventDefault()
-        console.log('[LoginForm] Form submit event prevented, calling validation...')
-        // Trigger react-hook-form validation and submission
-        await form.handleSubmit(onLoginSubmit)(e)
+        e.stopPropagation()
+        
+        console.error(`🔴 [HANDLE_SUBMIT] preventDefault() and stopPropagation() called`)
+        console.error(`🔴 [HANDLE_SUBMIT] Event defaultPrevented: ${e.defaultPrevented}`)
+        
+        // 🔴 Check if form has action attribute (this would cause reload)
+        const formElement = (e.target as HTMLFormElement)
+        console.error(`🔴 [HANDLE_SUBMIT] Form action attribute: "${formElement.getAttribute('action') || 'none'}"`)
+        console.error(`🔴 [HANDLE_SUBMIT] Form method: "${formElement.method || 'none'}"`)
+        
+        // 🔴 Trigger react-hook-form validation and submission
+        console.error(`🔴 [HANDLE_SUBMIT] Calling form.handleSubmit(onLoginSubmit)...`)
+        
+        // 🔴 IMPORTANT: Don't pass event to form.handleSubmit - it creates its own
+        await form.handleSubmit(onLoginSubmit)()
+        
+        console.error(`🔴 [HANDLE_SUBMIT] form.handleSubmit completed`)
     }
 
     const handleSocialLogin = async (provider: "google" | "github" | "apple") => {
+        console.error(`🔴 [SOCIAL_LOGIN] Button clicked, provider=${provider}, debugId=${debugId}`)
         setProviderToShow(provider)
         setShowProviderDialog(true)
     }
