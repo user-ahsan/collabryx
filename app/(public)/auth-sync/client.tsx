@@ -54,15 +54,20 @@ export function AuthSyncClient({ destination, needsEmbeddingWait = false, config
             }
         }, needsEmbeddingWait ? 8000 : 3000)
 
+        let pollInterval: NodeJS.Timeout | null = null
+        let isUnmounted = false
+
         // If we need to wait for embedding, poll the status
         if (needsEmbeddingWait) {
             const checkEmbeddingStatus = async () => {
+                if (isUnmounted) return
+                
                 try {
                     const supabase = createClient()
                     const { data: { user } } = await supabase.auth.getUser()
                     
                     if (!user) {
-                        setIsChecking(false)
+                        if (!isUnmounted) setIsChecking(false)
                         return
                     }
 
@@ -72,6 +77,8 @@ export function AuthSyncClient({ destination, needsEmbeddingWait = false, config
                         .eq("user_id", user.id)
                         .single()
 
+                    if (isUnmounted) return
+                    
                     setEmbeddingStatus(embedding?.status || 'not_found')
                     setIsChecking(false)
 
@@ -83,27 +90,32 @@ export function AuthSyncClient({ destination, needsEmbeddingWait = false, config
                 } catch (error) {
                     console.error('Error checking embedding status:', error)
                     // Don't fail on embedding check errors - just continue with redirect
-                    setIsChecking(false)
+                    if (!isUnmounted) setIsChecking(false)
                 }
             }
 
             checkEmbeddingStatus()
 
             // Poll every 2 seconds if still processing
-            const pollInterval = setInterval(() => {
+            pollInterval = setInterval(() => {
+                if (isUnmounted) {
+                    clearInterval(pollInterval!)
+                    return
+                }
                 if (embeddingStatus === 'pending' || embeddingStatus === 'processing') {
                     checkEmbeddingStatus()
                 }
             }, 2000)
+        }
 
-            return () => {
-                clearTimeout(redirectTimer)
+        return () => {
+            isUnmounted = true
+            clearTimeout(redirectTimer)
+            if (pollInterval) {
                 clearInterval(pollInterval)
             }
-        } else {
-            return () => clearTimeout(redirectTimer)
         }
-    }, [router, destination, needsEmbeddingWait, embeddingStatus])
+    }, [router, destination, needsEmbeddingWait])
 
     // If there's an error, show error message with action buttons
     if (hasError) {

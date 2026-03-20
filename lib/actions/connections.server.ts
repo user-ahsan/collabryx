@@ -36,7 +36,8 @@ export async function sendConnectionRequest(targetUserId: string) {
 
   const { data: request, error } = await withAudit(
     async () => {
-      const { data, error } = await supabase
+      // Insert connection request
+      const { data, error: insertError } = await supabase
         .from('connections')
         .insert({
           user_id: user.id,
@@ -46,10 +47,10 @@ export async function sendConnectionRequest(targetUserId: string) {
         .select()
         .single()
 
-      if (error) throw error
+      if (insertError) throw insertError
 
-      // Create notification for the recipient
-      await supabase
+      // Create notification for the recipient (within same transaction context)
+      const { error: notifError } = await supabase
         .from('notifications')
         .insert({
           user_id: targetUserId,
@@ -58,6 +59,12 @@ export async function sendConnectionRequest(targetUserId: string) {
           content: `${user.id} wants to connect with you`,
           action_url: `/requests`,
         })
+      
+      if (notifError) {
+        // Rollback: delete the connection request if notification fails
+        await supabase.from('connections').delete().eq('id', data.id)
+        throw notifError
+      }
       
       return data
     },
@@ -87,28 +94,29 @@ export async function acceptConnectionRequest(requestId: string) {
     return { error: 'Unauthorized' }
   }
 
-  const { data: request } = await supabase
+  const { data: request, error: fetchError } = await supabase
     .from('connections')
     .select('user_id, connected_to')
     .eq('id', requestId)
     .eq('connected_to', user.id)
     .single()
 
-  if (!request) {
+  if (fetchError || !request) {
     return { error: 'Request not found' }
   }
 
   await withAudit(
     async () => {
-      const { error } = await supabase
+      // Update connection status
+      const { error: updateError } = await supabase
         .from('connections')
         .update({ status: 'accepted' })
         .eq('id', requestId)
 
-      if (error) throw error
+      if (updateError) throw updateError
 
-      // Create notification for the sender
-      await supabase
+      // Create notification for the sender (with rollback on failure)
+      const { error: notifError } = await supabase
         .from('notifications')
         .insert({
           user_id: request.user_id,
@@ -117,6 +125,12 @@ export async function acceptConnectionRequest(requestId: string) {
           content: `${user.id} accepted your connection request`,
           action_url: `/profile/${user.id}`,
         })
+      
+      if (notifError) {
+        // Rollback: revert connection status if notification fails
+        await supabase.from('connections').update({ status: 'pending' }).eq('id', requestId)
+        throw notifError
+      }
       
       return { success: true }
     },

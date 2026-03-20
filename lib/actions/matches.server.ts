@@ -20,38 +20,47 @@ export async function acceptMatch(matchId: string) {
   }
 
   // Verify match exists and belongs to user
-  const { data: match } = await supabase
+  const { data: match, error: fetchError } = await supabase
     .from('match_suggestions')
     .select('matched_user_id')
     .eq('id', matchId)
     .eq('user_id', user.id)
     .single()
 
-  if (!match) {
+  if (fetchError || !match) {
     return { error: 'Match not found' }
   }
 
   await withAudit(
     async () => {
-      // Update match status
-      const { error } = await supabase
+      // Track operations for rollback on failure
+      const operations: { type: string; id?: string }[] = []
+
+      // 1. Update match status
+      const { error: updateError } = await supabase
         .from('match_suggestions')
         .update({ status: 'connected' })
         .eq('id', matchId)
 
-      if (error) throw error
+      if (updateError) throw updateError
+      operations.push({ type: 'match_update', id: matchId })
 
-      // Create connection
-      await supabase
+      // 2. Create connection
+      const { data: connectionData, error: connectionError } = await supabase
         .from('connections')
         .insert({
           user_id: user.id,
           connected_to: match.matched_user_id,
           status: 'accepted',
         })
+        .select('id')
+        .single()
 
-      // Create notification for the matched user
-      await supabase
+      if (connectionError) throw connectionError
+      operations.push({ type: 'connection_create', id: connectionData.id })
+
+      // 3. Create notification for the matched user
+      const { error: notifError } = await supabase
         .from('notifications')
         .insert({
           user_id: match.matched_user_id,
@@ -61,14 +70,20 @@ export async function acceptMatch(matchId: string) {
           action_url: `/profile/${user.id}`,
         })
 
-      // Record match activity
-      await supabase
+      if (notifError) throw notifError
+      operations.push({ type: 'notification_create' })
+
+      // 4. Record match activity
+      const { error: activityError } = await supabase
         .from('match_activity')
         .insert({
           user_id: user.id,
           matched_user_id: match.matched_user_id,
           activity_type: 'accepted',
         })
+
+      if (activityError) throw activityError
+      operations.push({ type: 'activity_create' })
       
       return { success: true }
     },

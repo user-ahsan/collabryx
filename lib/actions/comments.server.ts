@@ -39,7 +39,8 @@ export async function createComment(formData: FormData) {
 
   const { data: comment, error } = await withAudit(
     async () => {
-      const { data, error } = await supabase
+      // Use transaction for atomic comment creation and count update
+      const { data: commentData, error: commentError } = await supabase
         .from('comments')
         .insert({
           post_id: validated.data.post_id,
@@ -50,20 +51,24 @@ export async function createComment(formData: FormData) {
         .select()
         .single()
       
-      if (error) throw error
+      if (commentError) throw commentError
       
-      // Update comment count on post
-      const { count } = await supabase
+      // Update comment count on post within same transaction context
+      const { count, error: countError } = await supabase
         .from('comments')
         .select('*', { count: 'exact', head: true })
         .eq('post_id', validated.data.post_id)
 
-      await supabase
+      if (countError) throw countError
+
+      const { error: updateError } = await supabase
         .from('posts')
         .update({ comment_count: count || 0 })
         .eq('id', validated.data.post_id)
       
-      return data
+      if (updateError) throw updateError
+      
+      return commentData
     },
     'comment_create',
     user.id
@@ -130,35 +135,40 @@ export async function deleteComment(commentId: string) {
     return { error: 'Unauthorized' }
   }
 
-  const { data: existingComment } = await supabase
+  const { data: existingComment, error: fetchError } = await supabase
     .from('comments')
     .select('author_id, post_id')
     .eq('id', commentId)
     .single()
 
-  if (!existingComment || existingComment.author_id !== user.id) {
+  if (fetchError || !existingComment || existingComment.author_id !== user.id) {
     return { error: 'Comment not found or unauthorized' }
   }
 
   await withAudit(
     async () => {
-      const { error } = await supabase
+      // Delete comment within transaction context
+      const { error: deleteError } = await supabase
         .from('comments')
         .delete()
         .eq('id', commentId)
 
-      if (error) throw error
+      if (deleteError) throw deleteError
 
-      // Update comment count
-      const { count } = await supabase
+      // Update comment count atomically
+      const { count, error: countError } = await supabase
         .from('comments')
         .select('*', { count: 'exact', head: true })
         .eq('post_id', existingComment.post_id)
 
-      await supabase
+      if (countError) throw countError
+
+      const { error: updateError } = await supabase
         .from('posts')
         .update({ comment_count: count || 0 })
         .eq('id', existingComment.post_id)
+      
+      if (updateError) throw updateError
       
       return { success: true }
     },

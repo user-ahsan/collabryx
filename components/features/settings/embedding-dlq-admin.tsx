@@ -60,9 +60,13 @@ export function EmbeddingDeadLetterQueueAdmin() {
   const handleRetry = async (id: string, userId: string) => {
     setRetryingId(id)
     try {
+      const csrfToken = document.cookie.split('; ').find(row => row.startsWith('csrf_token='))?.split('=')[1] || '';
       const response = await fetch("/api/embeddings/retry-dlq", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "X-CSRF-Token": csrfToken,
+        },
         body: JSON.stringify({ id, user_id: userId }),
       })
 

@@ -48,10 +48,17 @@ export function useTypingIndicator(conversationId?: string, userId?: string): Us
         return () => {
             if (channelRef.current) {
                 supabase.removeChannel(channelRef.current)
+                channelRef.current = null
             }
             if (typingTimeoutRef.current) {
                 clearTimeout(typingTimeoutRef.current)
+                typingTimeoutRef.current = null
             }
+            if (debounceRef.current) {
+                clearTimeout(debounceRef.current)
+                debounceRef.current = null
+            }
+            setIsTyping(false)
         }
     }, [conversationId, userId])
 

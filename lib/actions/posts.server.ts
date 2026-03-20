@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import type { PostReactionType } from '@/types/actions'
 import { withAudit } from './audit.server'
+import { updatePostWithLock, incrementPostCounter, updatePostCounterWithLock } from '@/lib/services/posts'
 
 // ===========================================
 // POSTS SERVER ACTIONS
@@ -19,12 +20,13 @@ const CreatePostSchema = z.object({
   is_pinned: z.boolean().default(false),
 })
 
-const UpdatePostSchema = z.object({
+const UpdatePostWithVersionSchema = z.object({
   content: z.string().min(1).max(5000).optional(),
   post_type: z.enum(['project-launch', 'teammate-request', 'announcement', 'general']).optional(),
   intent: z.enum(['cofounder', 'teammate', 'mvp', 'fyp']).optional(),
   link_url: z.string().url().optional().or(z.literal('')).optional(),
   is_pinned: z.boolean().optional(),
+  version: z.number().min(1, 'Version is required for optimistic locking'),
 })
 
 // ===========================================
@@ -83,7 +85,7 @@ export async function createPost(formData: FormData) {
 }
 
 // ===========================================
-// UPDATE POST
+// UPDATE POST (with optimistic locking)
 // ===========================================
 export async function updatePost(postId: string, formData: FormData) {
   const supabase = await createClient()
@@ -94,10 +96,10 @@ export async function updatePost(postId: string, formData: FormData) {
     return { error: 'Unauthorized' }
   }
 
-  // Verify ownership
-  const { data: existingPost } = await supabase
+  // Get current post with version
+  const { data: existingPost, error: fetchError } = await supabase
     .from('posts')
-    .select('author_id')
+    .select('author_id, version')
     .eq('id', postId)
     .single()
 
@@ -105,24 +107,35 @@ export async function updatePost(postId: string, formData: FormData) {
     return { error: 'Post not found or unauthorized' }
   }
 
-  // Parse and validate
-  const validated = UpdatePostSchema.safeParse({
+  // Parse and validate (version required from formData or hidden input)
+  const validated = UpdatePostWithVersionSchema.safeParse({
     content: formData.get('content'),
     post_type: formData.get('post_type'),
     intent: formData.get('intent'),
     link_url: formData.get('link_url'),
     is_pinned: formData.get('is_pinned') === 'true',
+    version: parseInt(formData.get('version') as string) || existingPost.version,
   })
 
   if (!validated.success) {
     return { error: 'Invalid input', details: validated.error.issues }
   }
 
-  // Update post
-  const { error } = await supabase
-    .from('posts')
-    .update(validated.data)
-    .eq('id', postId)
+  // Update with optimistic locking and retry logic
+  const { data, error, conflict } = await updatePostWithLock(
+    postId,
+    validated.data,
+    {
+      maxRetries: 3,
+      onRetry: (attempt, err) => {
+        console.log(`Retry ${attempt} for post update:`, err.message)
+      },
+    }
+  )
+
+  if (conflict) {
+    return { error: 'Post was modified by another user. Please refresh and try again.' }
+  }
 
   if (error) {
     console.error('Failed to update post:', error)
@@ -132,11 +145,11 @@ export async function updatePost(postId: string, formData: FormData) {
   revalidatePath('/dashboard')
   revalidatePath(`/post/${postId}`)
   
-  return { success: true }
+  return { success: true, data }
 }
 
 // ===========================================
-// DELETE POST (Soft Delete)
+// DELETE POST (Soft Delete with optimistic locking)
 // ===========================================
 export async function deletePost(postId: string) {
   const supabase = await createClient()
@@ -147,10 +160,10 @@ export async function deletePost(postId: string) {
     return { error: 'Unauthorized' }
   }
 
-  // Verify ownership
+  // Get current version
   const { data: existingPost } = await supabase
     .from('posts')
-    .select('author_id')
+    .select('author_id, version')
     .eq('id', postId)
     .single()
 
@@ -158,20 +171,31 @@ export async function deletePost(postId: string) {
     return { error: 'Post not found or unauthorized' }
   }
 
-  // Soft delete with audit logging
-  await withAudit(
+  // Soft delete with optimistic locking and audit logging
+  const { error, conflict } = await withAudit(
     async () => {
-      const { error } = await supabase
-        .from('posts')
-        .update({ is_archived: true })
-        .eq('id', postId)
+      const result = await updatePostWithLock(postId, {
+        is_archived: true,
+        version: existingPost.version,
+      })
       
-      if (error) throw error
-      return { success: true }
+      if (result.conflict) {
+        throw new Error('Post was modified')
+      }
+      
+      if (result.error) {
+        throw result.error
+      }
+      
+      return result
     },
     'post_delete',
     user.id
   )
+
+  if (conflict || error) {
+    return { error: 'Post was modified. Please refresh and try again.' }
+  }
 
   revalidatePath('/dashboard')
   
@@ -241,16 +265,11 @@ export async function reactToPost(postId: string, reactionType: string) {
     }
   }
 
-  // Update reaction count
+  // Get updated count for response (non-critical if fails)
   const { count } = await supabase
     .from('post_reactions')
     .select('*', { count: 'exact', head: true })
     .eq('post_id', postId)
-
-  await supabase
-    .from('posts')
-    .update({ reaction_count: count || 0 })
-    .eq('id', postId)
 
   revalidatePath('/dashboard')
   revalidatePath(`/post/${postId}`)
@@ -259,28 +278,14 @@ export async function reactToPost(postId: string, reactionType: string) {
 }
 
 // ===========================================
-// SHARE POST
+// SHARE POST (atomic increment)
 // ===========================================
 export async function sharePost(postId: string) {
-  const supabase = await createClient()
-  
-  // Increment share count
-  const { data: post } = await supabase
-    .from('posts')
-    .select('share_count')
-    .eq('id', postId)
-    .single()
-
-  if (!post) {
-    return { error: 'Post not found' }
-  }
-
-  const { error } = await supabase
-    .from('posts')
-    .update({ share_count: (post.share_count || 0) + 1 })
-    .eq('id', postId)
+  // Use atomic increment to prevent race conditions
+  const { error } = await incrementPostCounter(postId, 'share_count', 1)
 
   if (error) {
+    console.error('Failed to share post:', error)
     return { error: 'Failed to share post' }
   }
 
@@ -291,7 +296,7 @@ export async function sharePost(postId: string) {
 }
 
 // ===========================================
-// PIN POST
+// PIN POST (with optimistic locking)
 // ===========================================
 export async function pinPost(postId: string, pinned: boolean) {
   const supabase = await createClient()
@@ -302,10 +307,10 @@ export async function pinPost(postId: string, pinned: boolean) {
     return { error: 'Unauthorized' }
   }
 
-  // Verify ownership
+  // Get current version
   const { data: existingPost } = await supabase
     .from('posts')
-    .select('author_id')
+    .select('author_id, version')
     .eq('id', postId)
     .single()
 
@@ -313,10 +318,15 @@ export async function pinPost(postId: string, pinned: boolean) {
     return { error: 'Post not found or unauthorized' }
   }
 
-  const { error } = await supabase
-    .from('posts')
-    .update({ is_pinned: pinned })
-    .eq('id', postId)
+  // Update with optimistic locking
+  const { error, conflict } = await updatePostWithLock(postId, {
+    is_pinned: pinned,
+    version: existingPost.version,
+  })
+
+  if (conflict) {
+    return { error: 'Post was modified. Please refresh and try again.' }
+  }
 
   if (error) {
     return { error: 'Failed to update pin status' }
@@ -328,7 +338,7 @@ export async function pinPost(postId: string, pinned: boolean) {
 }
 
 // ===========================================
-// ARCHIVE POST
+// ARCHIVE POST (with optimistic locking)
 // ===========================================
 export async function archivePost(postId: string, archived: boolean) {
   const supabase = await createClient()
@@ -339,10 +349,10 @@ export async function archivePost(postId: string, archived: boolean) {
     return { error: 'Unauthorized' }
   }
 
-  // Verify ownership
+  // Get current version
   const { data: existingPost } = await supabase
     .from('posts')
-    .select('author_id')
+    .select('author_id, version')
     .eq('id', postId)
     .single()
 
@@ -350,10 +360,15 @@ export async function archivePost(postId: string, archived: boolean) {
     return { error: 'Post not found or unauthorized' }
   }
 
-  const { error } = await supabase
-    .from('posts')
-    .update({ is_archived: archived })
-    .eq('id', postId)
+  // Update with optimistic locking
+  const { error, conflict } = await updatePostWithLock(postId, {
+    is_archived: archived,
+    version: existingPost.version,
+  })
+
+  if (conflict) {
+    return { error: 'Post was modified. Please refresh and try again.' }
+  }
 
   if (error) {
     return { error: 'Failed to archive post' }

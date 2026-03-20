@@ -8,6 +8,15 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 
+/**
+ * Get CSRF token from cookies
+ */
+function getCSRFToken(): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(/csrf_token=([^;]+)/);
+  return match ? match[1] : null;
+}
+
 // ============================================================================
 // Content Moderation Hook
 // ============================================================================
@@ -45,10 +54,12 @@ export function useContentModeration() {
     setError(null);
 
     try {
+      const csrfToken = getCSRFToken();
       const response = await fetch('/api/moderate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken || '',
         },
         body: JSON.stringify({
           content,
@@ -139,10 +150,12 @@ export function useAIMentor() {
     setError(null);
 
     try {
+      const csrfToken = getCSRFToken();
       const response = await fetch('/api/ai-mentor/message', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken || '',
         },
         body: JSON.stringify({
           user_id: userId,

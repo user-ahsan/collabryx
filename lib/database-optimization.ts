@@ -1,4 +1,16 @@
 import { createClient } from "@/lib/supabase/client"
+import {
+  withDatabaseProtection,
+  executeProtectedQuery,
+  withRetry,
+  withTimeout,
+  withCircuitBreaker,
+  trackDatabaseOperation,
+  getConnectionHealth,
+  type ProtectedQueryOptions,
+  type RetryOptions,
+  type TimeoutOptions,
+} from "@/lib/database-connection-manager"
 
 export interface QueryStats {
   executionTime: number
@@ -6,13 +18,20 @@ export interface QueryStats {
   cacheHit: boolean
 }
 
+/**
+ * @deprecated Use withDatabaseProtection from database-connection-manager instead
+ */
 export async function executeOptimizedQuery<T>(
-  queryFn: () => Promise<T>
+  queryFn: () => Promise<T>,
+  options?: ProtectedQueryOptions<T>
 ): Promise<{ data: T | null; error: Error | null; stats: QueryStats }> {
   const startTime = performance.now()
   
   try {
-    const data = await queryFn()
+    const data = await withDatabaseProtection<T>(queryFn, {
+      ...options,
+      operationName: options?.operationName || 'optimizedQuery',
+    })
     const executionTime = performance.now() - startTime
     
     return {

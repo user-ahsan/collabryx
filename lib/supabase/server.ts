@@ -1,6 +1,13 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 
+/**
+ * Supabase Server Client Configuration
+ * 
+ * Server components create new client instances per request.
+ * Connection pooling is managed by Supabase's edge infrastructure.
+ * We implement application-layer retry logic and timeout handling.
+ */
 export async function createClient() {
     const cookieStore = await cookies()
 
