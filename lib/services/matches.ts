@@ -63,6 +63,12 @@ export async function fetchMatches(
     return { data: [], error: new Error("Please log in to view matches.") }
   }
 
+  logger.app.info("Fetching matches", {
+    userId: user.id,
+    limit: options.limit || 20,
+    minPercentage: options.minPercentage,
+  })
+
   const { data: queryData, error: queryError } = await executeOptimizedQuery(
     async () => {
       let query = supabase
@@ -78,7 +84,8 @@ export async function fetchMatches(
           status,
           created_at,
           expires_at,
-          matched_user:profiles (
+          matched_user:profiles!match_suggestions_matched_user_id_fkey (
+            id,
             full_name,
             display_name,
             avatar_url,
@@ -142,6 +149,11 @@ export async function fetchMatches(
     matched_user_avatar: match.matched_user?.avatar_url || "",
     matched_user_initials: formatInitials(match.matched_user?.display_name || match.matched_user?.full_name || "Unknown"),
   }))
+
+  logger.app.info("Matches fetched successfully", {
+    count: mappedMatches.length,
+    userId: user.id,
+  })
 
   return { data: mappedMatches, error: null }
 }
@@ -261,14 +273,17 @@ export async function fetchMatchActivity(
       }
     }
 
+    // Use explicit foreign key constraint name for the join
     let query = supabase
       .from("match_activity")
       .select(`
         *,
-        actor:profiles (
+        actor_profile:profiles!match_activity_actor_user_id_fkey (
+          id,
           full_name,
           display_name,
-          avatar_url
+          avatar_url,
+          headline
         )
       `)
       .eq("target_user_id", user.id)
@@ -280,7 +295,13 @@ export async function fetchMatchActivity(
 
     const { data, error } = await query
 
-    if (error) throw error
+    if (error) {
+      logger.app.error("Match activity query failed", {
+        error: error.message,
+        userId: user.id,
+      })
+      throw error
+    }
 
     const mappedActivities: MatchActivityWithUser[] = (data || []).map((activity) => ({
       id: activity.id,
@@ -291,10 +312,15 @@ export async function fetchMatchActivity(
       match_percentage: activity.match_percentage,
       is_read: activity.is_read,
       created_at: activity.created_at,
-      user_name: activity.actor?.display_name || activity.actor?.full_name || "Unknown",
-      user_avatar: activity.actor?.avatar_url || "",
-      user_initials: formatInitials(activity.actor?.display_name || activity.actor?.full_name || "Unknown"),
+      user_name: activity.actor_profile?.display_name || activity.actor_profile?.full_name || "Unknown",
+      user_avatar: activity.actor_profile?.avatar_url || "",
+      user_initials: formatInitials(activity.actor_profile?.display_name || activity.actor_profile?.full_name || "Unknown"),
     }))
+
+    logger.app.info("Match activity fetched successfully", {
+      count: mappedActivities.length,
+      userId: user.id,
+    })
 
     return { data: mappedActivities, error: null }
   } catch (error) {
