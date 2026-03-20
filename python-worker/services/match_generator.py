@@ -48,6 +48,8 @@ class MatchGenerator:
         Task: 1.2.6
         """
         try:
+            logger.info(f"Starting match generation for user {user_id} (limit={limit})")
+
             # Get user profile and embedding
             user_response = await asyncio.to_thread(
                 self.supabase.rpc(
@@ -65,9 +67,16 @@ class MatchGenerator:
 
             user_data = user_response.data[0]
             user_embedding = user_data.get("embedding")
+            user_completion = user_data.get("profile_completion", 0)
+
+            logger.info(
+                f"User {user_id} profile: completion={user_completion}%, onboarding={user_data.get('onboarding_completed', False)}"
+            )
 
             if not user_embedding:
-                logger.error(f"User {user_id} has no embedding")
+                logger.error(
+                    f"User {user_id} has no embedding - cannot generate matches"
+                )
                 return {
                     "suggestions_created": 0,
                     "matches": [],
@@ -78,8 +87,14 @@ class MatchGenerator:
             similar_users = await self.find_similar_users(user_id, limit=50)
 
             if not similar_users:
-                logger.info(f"No similar users found for {user_id}")
+                logger.warning(
+                    f"No similar users found for {user_id} - check if embedding exists and onboarding is complete"
+                )
                 return {"suggestions_created": 0, "matches": []}
+
+            logger.info(
+                f"Proceeding with {len(similar_users)} candidates for match scoring"
+            )
 
             # Calculate match percentage for each candidate
             matches = []
@@ -194,6 +209,8 @@ class MatchGenerator:
         Task: 1.2.2
         """
         try:
+            logger.info(f"Finding similar users for {user_id} (limit={limit})")
+
             # Get user's embedding
             embedding_response = await asyncio.to_thread(
                 self.supabase.table("profile_embeddings")
@@ -204,10 +221,15 @@ class MatchGenerator:
             )
 
             if not embedding_response.data:
-                logger.warning(f"No embedding found for user {user_id}")
+                logger.warning(
+                    f"No embedding found for user {user_id} - cannot find matches"
+                )
                 return []
 
             user_embedding = embedding_response.data["embedding"]
+            logger.info(
+                f"Retrieved embedding for {user_id} (dimensions: {len(user_embedding) if user_embedding else 0})"
+            )
 
             # Call database function for similarity search
             response = await asyncio.to_thread(
@@ -221,10 +243,23 @@ class MatchGenerator:
                 ).execute
             )
 
-            return response.data if response.data else []
+            results = response.data if response.data else []
+            logger.info(f"Found {len(results)} similar users for {user_id}")
+
+            # Log profile completion stats for found users
+            if results:
+                completions = [u.get("profile_completion", 0) for u in results]
+                avg_completion = (
+                    sum(completions) / len(completions) if completions else 0
+                )
+                logger.info(
+                    f"Similar users avg completion: {avg_completion:.1f}% (range: {min(completions)}-{max(completions)}%)"
+                )
+
+            return results
 
         except Exception as e:
-            logger.error(f"Error finding similar users: {str(e)}")
+            logger.error(f"Error finding similar users: {str(e)}", exc_info=True)
             return []
 
     async def generate_match_reasons(
@@ -336,6 +371,10 @@ class MatchGenerator:
 
             user_data = profile_response.data or {}
 
+            logger.info(
+                f"Profile data for {user_id}: completion={user_data.get('profile_completion', 0)}%, onboarding={user_data.get('onboarding_completed', False)}"
+            )
+
             # Get skills
             skills_response = await asyncio.to_thread(
                 self.supabase.rpc("get_user_skills", {"p_user_id": user_id}).execute
@@ -350,11 +389,70 @@ class MatchGenerator:
                 i["name"] for i in (interests_response.data or [])
             ]
 
+            # Get experiences for better matching
+            try:
+                experiences_response = await asyncio.to_thread(
+                    self.supabase.table("user_experiences")
+                    .select("id, title, company")
+                    .eq("user_id", user_id)
+                    .execute
+                )
+                user_data["experiences"] = experiences_response.data or []
+            except Exception as e:
+                logger.warning(f"Could not fetch experiences for {user_id}: {e}")
+                user_data["experiences"] = []
+
+            # Calculate profile completion if not available or stale
+            if (
+                not user_data.get("profile_completion")
+                or user_data.get("profile_completion", 0) == 0
+            ):
+                # Calculate based on available data
+                calculated = self._calculate_completion_from_data(user_data)
+                user_data["profile_completion"] = calculated
+                logger.warning(
+                    f"Profile {user_id} had 0% completion, calculated {calculated}% from available data"
+                )
+
+            logger.info(
+                f"Enhanced profile data for {user_id}: skills={len(user_data.get('skills', []))}, interests={len(user_data.get('interests', []))}, experiences={len(user_data.get('experiences', []))}"
+            )
+
             return user_data
 
         except Exception as e:
             logger.error(f"Error getting user data: {str(e)}")
             return {}
+
+    def _calculate_completion_from_data(self, data: Dict[str, Any]) -> int:
+        """Calculate profile completion from available data (fallback method)."""
+        score = 0
+
+        # Basic profile (25%)
+        if data.get("full_name") or data.get("display_name"):
+            score += 10
+        if data.get("headline"):
+            score += 10
+        if data.get("bio"):
+            score += 5
+
+        # Skills (25%)
+        if data.get("skills") and len(data["skills"]) > 0:
+            score += 25
+
+        # Interests & Goals (25%)
+        if data.get("interests") and len(data["interests"]) > 0:
+            score += 15
+        if data.get("looking_for") and (
+            isinstance(data["looking_for"], list) and len(data["looking_for"]) > 0
+        ):
+            score += 10
+
+        # Experience (25%)
+        if data.get("experiences") and len(data["experiences"]) > 0:
+            score += 25
+
+        return min(score, 100)
 
     async def _calculate_score_breakdown(
         self, user1: Dict[str, Any], user2: Dict[str, Any]
