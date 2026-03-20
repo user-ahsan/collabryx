@@ -10,9 +10,26 @@ interface UseTypingIndicatorReturn {
     clearTypingStatus: () => void
 }
 
+interface TypingPayload {
+    user_id: string
+    is_typing: boolean
+}
+
 const TYPING_TIMEOUT = 2000 // Clear typing status after 2 seconds
 const TYPING_DEBOUNCE = 500 // Debounce typing events by 500ms
 
+/**
+ * Hook for managing typing indicators in chat conversations
+ * 
+ * @param conversationId - The ID of the conversation to monitor
+ * @param userId - The ID of the current user
+ * @returns Object with typing state and control functions
+ * 
+ * @example
+ * ```typescript
+ * const { isTyping, sendTypingEvent, clearTypingStatus } = useTypingIndicator(convId, userId)
+ * ```
+ */
 export function useTypingIndicator(conversationId?: string, userId?: string): UseTypingIndicatorReturn {
     const [isTyping, setIsTyping] = useState(false)
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -28,8 +45,9 @@ export function useTypingIndicator(conversationId?: string, userId?: string): Us
         const channel = supabase.channel(`typing:${conversationId}`)
         channelRef.current = channel
         
-        channel.on("broadcast", { event: "typing" }, (payload: any) => {
-            const { user_id, is_typing } = payload.payload as { user_id: string; is_typing: boolean }
+        channel.on("broadcast", { event: "typing" }, (payload: { payload: unknown }) => {
+            const typingPayload = payload.payload as TypingPayload
+            const { user_id, is_typing } = typingPayload
             // Only show typing indicator if it's from the other user
             if (user_id !== userId && is_typing) {
                 setIsTyping(true)
