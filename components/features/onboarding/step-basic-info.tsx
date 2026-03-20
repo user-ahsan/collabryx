@@ -1,20 +1,23 @@
 "use client"
 
 import React, { useEffect, useRef } from "react"
-import { useFormContext } from "react-hook-form"
+import { useFormContext, RegisterOptions } from "react-hook-form"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
 import { toast } from "sonner"
+import type { OnboardingFormValues } from "@/app/(auth)/onboarding/page"
 
 interface StepBasicInfoProps {
     userName?: string
     onNameExtracted?: (displayName: string) => void
 }
 
+type LocationField = keyof Pick<OnboardingFormValues, "location">
+
 export function StepBasicInfo({ userName, onNameExtracted }: StepBasicInfoProps) {
-    const { register, setValue, formState: { errors }, watch } = useFormContext()
+    const { register, setValue, formState: { errors }, watch } = useFormContext<OnboardingFormValues>()
     const locationInputRef = useRef<HTMLInputElement | null>(null)
     const fullNameValue = watch("fullName")
 
@@ -33,18 +36,27 @@ export function StepBasicInfo({ userName, onNameExtracted }: StepBasicInfoProps)
         }
     }, [fullNameValue, onNameExtracted])
 
-    // Location validation helper
-    const validateLocation = (value: string) => {
-        if (!value) return true // Optional field
+    // Location validation helper with proper format
+    const validateLocation = (value: string): boolean | string => {
+        if (!value || value.trim() === "") return true // Optional field
         // Basic location format validation: City, State/Country or City, State Code
         const locationPattern = /^[A-Za-z\s]+,\s*[A-Za-z\s]+$/
-        if (!locationPattern.test(value)) {
+        if (!locationPattern.test(value.trim())) {
             return "Please enter location in format: City, State or City, Country"
         }
         return true
     }
 
-    const locationRegister = register("location")
+    const locationValidation: RegisterOptions<OnboardingFormValues, LocationField> = {
+        validate: {
+            format: (value) => {
+                const result = validateLocation(value || "")
+                return result === true || result
+            }
+        }
+    }
+
+    const locationRegister = register("location", locationValidation)
 
     return (
         <div className="space-y-6">

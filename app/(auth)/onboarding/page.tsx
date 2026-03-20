@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import { useForm, FormProvider } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -27,12 +27,25 @@ import { GlassCard } from "@/components/shared/glass-card"
 import { createClient } from "@/lib/supabase/client"
 import { completeOnboarding } from "./actions"
 
-// Schemas for each step
+// Schemas for each step - aligned with component validation
 const basicInfoSchema = z.object({
-    fullName: z.string().min(2, "Full name must be at least 2 characters."),
-    displayName: z.string().optional(),
-    headline: z.string().min(2, "Headline must be at least 2 characters."),
-    location: z.string().optional(),
+    fullName: z.string()
+        .min(2, "Full name must be at least 2 characters.")
+        .max(100, "Full name must be less than 100 characters.")
+        .regex(/^[A-Za-z\s]+$/, "Name can only contain letters and spaces"),
+    displayName: z.string()
+        .max(30, "Display name must be less than 30 characters.")
+        .regex(/^[a-z0-9_]*$/, "Display name can only contain lowercase letters, numbers, and underscores.")
+        .optional()
+        .or(z.literal("")),
+    headline: z.string()
+        .min(5, "Headline must be at least 5 characters.")
+        .max(100, "Headline must be less than 100 characters.")
+        .regex(/^[a-zA-Z0-9\s@.,&'()-]+$/, "Headline can only contain letters, numbers, and basic punctuation."),
+    location: z.string()
+        .max(100, "Location must be less than 100 characters.")
+        .optional()
+        .or(z.literal("")),
 })
 
 const skillsSchema = z.object({
@@ -46,13 +59,13 @@ const interestsGoalsSchema = z.object({
 
 const experienceSchema = z.object({
     experiences: z.array(z.object({
-        title: z.string().optional(),
-        company: z.string().optional(),
-        description: z.string().optional(),
+        title: z.string().optional().or(z.literal("")),
+        company: z.string().optional().or(z.literal("")),
+        description: z.string().optional().or(z.literal("")),
     })).optional(),
     links: z.array(z.object({
         platform: z.string(),
-        url: z.string().optional(),
+        url: z.string().optional().or(z.literal("")),
     })).optional(),
 })
 
@@ -63,7 +76,7 @@ const combinedSchema = z.object({
     ...experienceSchema.shape,
 });
 
-type OnboardingFormValues = z.infer<typeof combinedSchema>
+export type OnboardingFormValues = z.infer<typeof combinedSchema>
 
 const STEPS = [
     { id: "welcome", title: "Welcome", component: StepWelcome, icon: Sparkles },
@@ -84,11 +97,13 @@ export default function OnboardingPage() {
     const [userName, setUserName] = useState("")
     const [completionPercentage, setCompletionPercentage] = useState(0)
     const [isEmailVerified, setIsEmailVerified] = useState<boolean | null>(null)
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
     const router = useRouter()
 
     const methods = useForm<OnboardingFormValues>({
         resolver: zodResolver(combinedSchema),
         mode: "onBlur",
+        reValidateMode: "onChange",
         defaultValues: {
             fullName: "",
             displayName: "",
@@ -102,29 +117,103 @@ export default function OnboardingPage() {
         }
     })
 
-    const { handleSubmit, trigger } = methods
+    const { handleSubmit, trigger, watch, formState: { isDirty } } = methods
     const isLastStep = currentStep === STEPS.length - 1
+    
+    // Track form changes for unsaved warning
+    const formValues = watch()
+    
+    // Detect form changes
+    useEffect(() => {
+        if (isDirty && currentStep > 0) {
+            setHasUnsavedChanges(true)
+        }
+    }, [isDirty, currentStep])
 
     // Fetch user info on mount
     useEffect(() => {
         async function fetchUser() {
-            const supabase = await createClient()
-            const { data: { user } } = await supabase.auth.getUser()
-            let name = ""
-            if (user?.user_metadata?.full_name) {
-                name = user.user_metadata.full_name
-            } else if (user?.email) {
-                // Extract name from email
-                name = user.email.split('@')[0]
-                name = name.charAt(0).toUpperCase() + name.slice(1)
+            try {
+                const supabase = await createClient()
+                const { data: { user }, error } = await supabase.auth.getUser()
+                
+                if (error) {
+                    console.error("Failed to fetch user:", error)
+                    toast.error("Authentication failed. Please log in again.")
+                    router.push("/login")
+                    return
+                }
+                
+                let name = ""
+                if (user?.user_metadata?.full_name) {
+                    name = user.user_metadata.full_name
+                } else if (user?.email) {
+                    // Extract name from email
+                    name = user.email.split('@')[0]
+                    name = name.charAt(0).toUpperCase() + name.slice(1)
+                }
+                setUserName(name)
+                
+                // Check email verification status
+                setIsEmailVerified(!!user?.email_confirmed_at)
+            } catch (error) {
+                console.error("Error fetching user:", error)
+                toast.error("Failed to load user information.")
             }
-            setUserName(name)
-            
-            // Check email verification status
-            setIsEmailVerified(!!user?.email_confirmed_at)
         }
         fetchUser()
-    }, [])
+    }, [router])
+    
+    // Warn before leaving page with unsaved changes
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (hasUnsavedChanges && !isSubmitting) {
+                e.preventDefault()
+                e.returnValue = ""
+                return ""
+            }
+        }
+        
+        window.addEventListener("beforeunload", handleBeforeUnload)
+        return () => window.removeEventListener("beforeunload", handleBeforeUnload)
+    }, [hasUnsavedChanges, isSubmitting])
+    
+    // Persist form data to sessionStorage on change
+    useEffect(() => {
+        if (currentStep > 0 && hasUnsavedChanges) {
+            try {
+                sessionStorage.setItem("onboarding_draft", JSON.stringify({
+                    values: formValues,
+                    step: currentStep,
+                    timestamp: Date.now()
+                }))
+            } catch (error) {
+                console.warn("Failed to persist form data:", error)
+            }
+        }
+    }, [formValues, currentStep, hasUnsavedChanges])
+    
+    // Restore form data from sessionStorage on mount
+    useEffect(() => {
+        try {
+            const saved = sessionStorage.getItem("onboarding_draft")
+            if (saved) {
+                const { values, step, timestamp } = JSON.parse(saved)
+                // Only restore if saved within last 24 hours
+                const isRecent = Date.now() - timestamp < 24 * 60 * 60 * 1000
+                if (isRecent && step > 0) {
+                    methods.reset(values)
+                    setCurrentStep(step)
+                    toast.info("Draft recovered from previous session")
+                } else {
+                    sessionStorage.removeItem("onboarding_draft")
+                }
+            }
+        } catch (error) {
+            console.warn("Failed to restore form data:", error)
+            sessionStorage.removeItem("onboarding_draft")
+        }
+    }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleNext = async () => {
         if (currentStep === 0) {
@@ -132,16 +221,32 @@ export default function OnboardingPage() {
             return
         }
 
+        // Prevent navigation during submission
+        if (isSubmitting) return
+
         // Only validate and move to next step for steps 1-3
         let isStepValid = false
         
         if (currentStep === 1) {
-            isStepValid = await trigger(['fullName', 'headline'])
+            isStepValid = await trigger(['fullName', 'headline', 'displayName', 'location'])
+            if (!isStepValid) {
+                toast.error("Please fix the errors before continuing")
+                return
+            }
         } else if (currentStep === 2) {
             isStepValid = await trigger(['skills'])
+            if (!isStepValid) {
+                toast.error("Please add at least one skill")
+                return
+            }
         } else if (currentStep === 3) {
             isStepValid = await trigger(['interests'])
+            if (!isStepValid) {
+                toast.error("Please add at least one interest")
+                return
+            }
         }
+        
         if (isStepValid) {
             setCurrentStep(prev => Math.min(prev + 1, STEPS.length - 1))
         }
@@ -158,9 +263,45 @@ export default function OnboardingPage() {
     }
 
     const handleSkipExperience = async () => {
+        // Prevent double submission
+        if (isSubmitting) return
+        
+        // Validate current step before skipping
+        const isCurrentStepValid = currentStep === 3 ? await trigger(['interests']) : true
+        if (!isCurrentStepValid) {
+            toast.error("Please fix validation errors before continuing")
+            return
+        }
+        
         setIsSubmitting(true)
+        
         try {
             const values = methods.getValues()
+            
+            // Client-side validation before submission
+            if (!values.fullName || values.fullName.trim().length < 2) {
+                toast.error("Full name is required")
+                setIsSubmitting(false)
+                return
+            }
+            
+            if (!values.headline || values.headline.trim().length < 5) {
+                toast.error("Headline is required (minimum 5 characters)")
+                setIsSubmitting(false)
+                return
+            }
+            
+            if (!values.skills || values.skills.length === 0) {
+                toast.error("At least one skill is required")
+                setIsSubmitting(false)
+                return
+            }
+            
+            if (!values.interests || values.interests.length === 0) {
+                toast.error("At least one interest is required")
+                setIsSubmitting(false)
+                return
+            }
             
             // Calculate completion based on data entered so far
             let calculatedPercentage = 25 // Base for basic info
@@ -186,49 +327,116 @@ export default function OnboardingPage() {
             )
             
             if (result.success && result.userId) {
+                // Clear persisted draft on success
+                sessionStorage.removeItem("onboarding_draft")
+                setHasUnsavedChanges(false)
+                
                 if (result.alreadyCompleted) {
                     router.push("/dashboard")
                 } else {
                     toast.success("Profile setup complete! Your vector embedding is queued.")
                     router.push("/dashboard")
                 }
+            } else {
+                toast.error("Failed to complete onboarding. Please try again.")
             }
         } catch (error: unknown) {
             console.error("Onboarding skip failed:", error)
-            const errorMessage = error instanceof Error ? error.message : "Something went wrong. Please try again."
-            toast.error(errorMessage)
+            
+            // Handle specific error types with user-friendly messages
+            if (error instanceof Error) {
+                const errorMessage = error.message.toLowerCase()
+                
+                // Authentication/session errors
+                if (errorMessage.includes("authentication") || errorMessage.includes("session") || errorMessage.includes("unauthorized")) {
+                    toast.error("Your session has expired. Please log in again.")
+                    router.push("/login")
+                    return
+                }
+                
+                // Network errors - allow retry
+                if (errorMessage.includes("network") || errorMessage.includes("fetch") || errorMessage.includes("timeout")) {
+                    toast.error("Network error. Please check your connection and try again.", {
+                        description: "Your data is saved locally and can be recovered.",
+                        duration: 8000
+                    })
+                    setIsSubmitting(false)
+                    return
+                }
+                
+                // Generic error with message
+                toast.error(error.message || "Failed to complete onboarding. Please try again.")
+            } else {
+                toast.error("An unexpected error occurred. Please try again.", {
+                    description: "If the problem persists, contact support.",
+                    duration: 8000
+                })
+            }
         } finally {
             setIsSubmitting(false)
         }
     }
 
-    const onSubmit = async (data: OnboardingFormValues) => {
-        // Calculate completion percentage
-        let calculatedPercentage = 25
-
-        if (data.skills && data.skills.length > 0) {
-            calculatedPercentage += 25
-        }
-
-        if (data.interests && data.interests.length > 0) {
-            calculatedPercentage += 40
-        }
-
-        const hasExp = data.experiences && data.experiences.some(e => e.title || e.company)
-        const hasLinks = data.links && data.links.some(l => l.url)
-        if (hasExp || hasLinks) {
-            calculatedPercentage += 10
-        }
-
-        setCompletionPercentage(calculatedPercentage)
+    const onSubmit = useCallback(async (data: OnboardingFormValues) => {
+        // Prevent double submission
+        if (isSubmitting) return
+        
         setIsSubmitting(true)
 
         try {
+            // Client-side validation before submission (redundant but safe)
+            if (!data.fullName || data.fullName.trim().length < 2) {
+                toast.error("Full name is required (minimum 2 characters)")
+                setIsSubmitting(false)
+                return
+            }
+            
+            if (!data.headline || data.headline.trim().length < 5) {
+                toast.error("Headline is required (minimum 5 characters)")
+                setIsSubmitting(false)
+                return
+            }
+            
+            if (!data.skills || data.skills.length === 0) {
+                toast.error("At least one skill is required")
+                setIsSubmitting(false)
+                return
+            }
+            
+            if (!data.interests || data.interests.length === 0) {
+                toast.error("At least one interest is required")
+                setIsSubmitting(false)
+                return
+            }
+
+            // Calculate completion percentage
+            let calculatedPercentage = 25
+
+            if (data.skills && data.skills.length > 0) {
+                calculatedPercentage += 25
+            }
+
+            if (data.interests && data.interests.length > 0) {
+                calculatedPercentage += 40
+            }
+
+            const hasExp = data.experiences && data.experiences.some(e => e.title || e.company)
+            const hasLinks = data.links && data.links.some(l => l.url)
+            if (hasExp || hasLinks) {
+                calculatedPercentage += 10
+            }
+
+            setCompletionPercentage(calculatedPercentage)
+
             const result = await completeOnboarding(data, calculatedPercentage)
 
             // Embedding generation is handled server-side in completeOnboarding()
             // No need to trigger from frontend - server action already queues it in DB and calls API
             if (result.success && result.userId) {
+                // Clear persisted draft on success
+                sessionStorage.removeItem("onboarding_draft")
+                setHasUnsavedChanges(false)
+                
                 if (result.alreadyCompleted) {
                     // Profile was already completed, just redirect
                     router.push("/dashboard");
@@ -250,18 +458,59 @@ export default function OnboardingPage() {
                     router.push("/dashboard");
                 }
             } else {
-                // If there's an error and we didn't get a user ID, we need to handle it
-                setIsSubmitting(false);
+                toast.error("Failed to complete onboarding. Please try again.")
+                setIsSubmitting(false)
             }
 
         } catch (error: unknown) {
             console.error("Onboarding submission failed:", error)
-            const errorMessage = error instanceof Error ? error.message : "Something went wrong. Please try again."
-            toast.error(errorMessage)
-        } finally {
+            
+            // Handle specific error types with user-friendly messages
+            if (error instanceof Error) {
+                const errorMessage = error.message.toLowerCase()
+                
+                // Authentication/session errors
+                if (errorMessage.includes("authentication") || errorMessage.includes("session") || errorMessage.includes("unauthorized")) {
+                    toast.error("Your session has expired. Please log in again.")
+                    router.push("/login")
+                    return
+                }
+                
+                // Network errors - allow retry
+                if (errorMessage.includes("network") || errorMessage.includes("fetch") || errorMessage.includes("timeout")) {
+                    toast.error("Network error. Please check your connection and try again.", {
+                        description: "Your data is saved locally and can be recovered.",
+                        duration: 8000
+                    })
+                    setIsSubmitting(false)
+                    return
+                }
+                
+                // Database configuration errors
+                if (errorMessage.includes("database") || errorMessage.includes("table") || errorMessage.includes("migration")) {
+                    toast.error("Database configuration error. Please contact support.")
+                    setIsSubmitting(false)
+                    return
+                }
+                
+                // Validation errors from server
+                if (errorMessage.includes("validation") || errorMessage.includes("invalid")) {
+                    toast.error("Please review your information and try again.")
+                    setIsSubmitting(false)
+                    return
+                }
+                
+                // Generic error with message
+                toast.error(error.message || "Failed to complete onboarding. Please try again.")
+            } else {
+                toast.error("An unexpected error occurred. Please try again.", {
+                    description: "If the problem persists, contact support.",
+                    duration: 8000
+                })
+            }
             setIsSubmitting(false)
         }
-    }
+    }, [isSubmitting, router])
 
     return (
         <div className="min-h-screen bg-background relative flex items-center justify-center overflow-hidden">

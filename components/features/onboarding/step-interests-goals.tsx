@@ -95,7 +95,7 @@ export function StepInterestsAndGoals() {
             <div className="space-y-4 pt-6 border-t border-border/20">
               <div className="space-y-1.5">
                 <Label className="text-sm font-semibold text-foreground">Your Interests / Industries</Label>
-                <p className="text-sm text-muted-foreground">Select industries you're interested in or working in.</p>
+                <p className="text-sm text-muted-foreground">Select industries you&apos;re interested in or working in.</p>
               </div>
               
               <InlineSearchableCombobox

@@ -43,6 +43,17 @@ export function StepExperience({}: StepExperienceProps) {
     name: "links"
   })
 
+  // Type-safe error accessors
+  const getExperienceError = (index: number) => {
+    if (!errors.experiences || !Array.isArray(errors.experiences)) return undefined
+    return errors.experiences[index]
+  }
+  
+  const getLinkError = (index: number) => {
+    if (!errors.links || !Array.isArray(errors.links)) return undefined
+    return errors.links[index]
+  }
+
   // Convert job titles database to combobox options
   const jobTitleOptions: ComboboxOption[] = React.useMemo(() => 
     jobTitlesDatabase.map(job => ({
@@ -142,11 +153,11 @@ export function StepExperience({}: StepExperienceProps) {
                       className={cn(
                         "h-11 text-sm",
                         glass("input"),
-                        (errors.experiences as any)?.[index]?.company && "border-destructive focus:border-destructive"
+                        getExperienceError(index)?.company && "border-destructive focus:border-destructive"
                       )}
                     />
-                    {(errors.experiences as any)?.[index]?.company && (
-                      <p className="text-xs text-destructive font-medium">{(errors.experiences as any)[index]?.company?.message as string}</p>
+                    {getExperienceError(index)?.company?.message && (
+                      <p className="text-xs text-destructive font-medium">{getExperienceError(index)!.company!.message as string}</p>
                     )}
                   </div>
                   <div className="grid gap-2">
@@ -165,8 +176,8 @@ export function StepExperience({}: StepExperienceProps) {
                         }
                       })}
                     />
-                    {(errors.experiences as any)?.[index]?.description && (
-                      <p className="text-xs text-destructive font-medium">{(errors.experiences as any)[index]?.description?.message as string}</p>
+                    {getExperienceError(index)?.description?.message && (
+                      <p className="text-xs text-destructive font-medium">{getExperienceError(index)!.description!.message as string}</p>
                     )}
                   </div>
                 </div>
@@ -227,13 +238,11 @@ export function StepExperience({}: StepExperienceProps) {
               </div>
             )}
             {linkFields.map((field, index) => {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const platformId = (field as any).platform || "portfolio"
+              const platformId = "platform" in field ? (field.platform as string) || "portfolio" : "portfolio"
               const platform = LINK_PLATFORMS.find(p => p.id === platformId) || LINK_PLATFORMS[3]
               const Icon = platform.icon
-              // Type cast errors because we can't reliably type dynamic index keys in the general case
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const currentError = (errors.links as any)?.[index]?.url?.message
+              const linkError = getLinkError(index)
+              const currentError = linkError?.url?.message
 
               return (
                 <div key={field.id} className="flex gap-2 items-start relative group">
