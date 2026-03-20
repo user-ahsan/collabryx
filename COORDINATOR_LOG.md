@@ -9,8 +9,8 @@
 | 1 | Fix embedding generation logic (no premature triggering, works without email verification) | Backend | agent/backend/fix-embedding-flow | ✅ Complete |
 | 2 | Fix UI/UX - input boxes, design tokens, spacing consistency | UI/UX | agent/uiux/onboarding-polish | ✅ Complete |
 | 3 | Frontend fixes - validation, error states, edge cases | Frontend | agent/frontend/onboarding-fixes | ✅ Complete |
-| 4 | Accessibility audit & fixes (WCAG 2.2 AA) | Accessibility | agent/accessibility/onboarding-a11y | ⏳ In Progress |
-| 5 | QA testing - full flow verification, edge cases | QA | agent/qa/onboarding-testing | ⏳ Pending |
+| 4 | Accessibility audit & fixes (WCAG 2.2 AA) | Accessibility | agent/accessibility/onboarding-a11y | ✅ Complete |
+| 5 | QA testing - full flow verification, edge cases | QA | agent/qa/onboarding-testing | ⏳ In Progress |
 
 ## Dispatch Log
 
@@ -33,21 +33,29 @@
 - Completed: 10:55
 - Branch: agent/frontend/onboarding-fixes
 - Review outcome: ✅ Approved & Merged
-- Notes: 
-  - 4 files, 340 insertions, 70 deletions
-  - Zero `any` types, comprehensive validation
-  - Edge case handling (drafts, navigation, network failure)
-  - Session expiration handling
+- Notes: 4 files, 340 insertions, 70 deletions, zero `any` types, edge cases
 
 ### Task 4 — Accessibility Expert
 - Dispatched: 10:56
-- Completed: ⏳ In Progress
+- Completed: 11:15
 - Branch: agent/accessibility/onboarding-a11y
+- Review outcome: ✅ Approved & Merged
+- Notes: 
+  - 10 files, 712 insertions, 80 deletions
+  - WCAG 2.2 AA compliant
+  - 15 violations fixed, 40+ ARIA attributes added
+  - Created ACCESSIBILITY_REPORT.md
+
+### Task 5 — QA Engineer
+- Dispatched: 11:16
+- Completed: ⏳ In Progress
+- Branch: agent/qa/onboarding-testing
 - Review outcome: ⏳ Pending
-- Notes: WCAG 2.2 AA audit, ARIA, keyboard nav, contrast, semantic HTML
+- Notes: Full flow testing, edge cases, test coverage, final verification
 
 ## Changes Merged (Total)
 - Backend: 59 insertions, 13 deletions (2 files)
 - UI/UX: 137 insertions, 94 deletions (5 files)
 - Frontend: 340 insertions, 70 deletions (4 files)
-- **Total:** 536 insertions, 177 deletions (11 files)
+- Accessibility: 712 insertions, 80 deletions (10 files)
+- **Total:** 1,248 insertions, 257 deletions (21 files + 2 docs)
