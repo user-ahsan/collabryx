@@ -32,9 +32,11 @@ Complete checklist for deploying Collabryx to production.
   ```
 
 - [ ] **Database Setup**
-  - [ ] Run `supabase/setup/99-master-all-tables.sql`
-  - [ ] Verify all 26 tables created
-  - [ ] Test RLS policies
+  - [ ] Run `supabase/setup/99-master-all-tables.sql` (v4.1.0)
+  - [ ] Verify all 34 tables created
+  - [ ] Test RLS policies (100 total)
+  - [ ] Verify optimistic locking functions exist
+  - [ ] Verify messages.read_at column exists
   - [ ] Enable Realtime on required tables
 
 - [ ] **Python Worker**
@@ -173,10 +175,13 @@ Complete checklist for deploying Collabryx to production.
   ```
 
 - [ ] **Verification**
-  - [ ] All tables exist (26 total)
-  - [ ] Indexes created
-  - [ ] RLS policies active
-  - [ ] Triggers working
+  - [ ] All tables exist (34 total)
+  - [ ] Indexes created (103 total)
+  - [ ] RLS policies active (100 total)
+  - [ ] Triggers working (39 total)
+  - [ ] Functions exist (46 total)
+  - [ ] Optimistic locking functions work
+  - [ ] Messages read_at column exists
   - [ ] Realtime enabled
 
 - [ ] **Seed Data** (if needed)

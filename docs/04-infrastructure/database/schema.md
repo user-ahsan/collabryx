@@ -1,6 +1,9 @@
 # Database Schema
 
-Complete reference for Collabryx database schema (26 tables).
+Complete reference for Collabryx database schema (34 tables).
+
+**Version:** 4.1.0 (Final Boss - Self-Contained)  
+**Last Updated:** 2026-03-21
 
 ---
 
@@ -21,9 +24,17 @@ Complete reference for Collabryx database schema (26 tables).
 ## Overview
 
 **Database:** PostgreSQL (Supabase)  
-**Total Tables:** 26  
+**Total Tables:** 34  
 **Extensions:** pgvector  
-**Master File:** `supabase/setup/99-master-all-tables.sql` (run this file only)
+**Master File:** `supabase/setup/99-master-all-tables.sql` (run this file only)  
+**Version:** 4.1.0 (Self-contained, no external dependencies)
+
+### What's New in v4.1.0
+
+- **Optimistic Locking:** Posts table includes `version` column with counter functions
+- **Message Read Tracking:** Messages table includes `read_at` timestamp column
+- **Composite Indexes:** 3 additional indexes for query optimization
+- **All Migrations Merged:** No standalone migration files - everything in master file
 
 ---
 
@@ -59,9 +70,11 @@ User portfolio projects.
 ## Social Features (6 Tables)
 
 ### posts
-User posts with reactions and comments.
+User posts with reactions and comments, with optimistic locking support.
 
-**Key columns:** id, author_id, content, post_type, intent, link_url, reaction_count, comment_count, share_count
+**Key columns:** id, author_id, content, post_type, intent, link_url, reaction_count, comment_count, share_count, version
+
+**New in v4.1.0:** `version` column for optimistic locking to prevent concurrent update conflicts
 
 ### post_attachments
 Media attachments for posts.
@@ -122,9 +135,11 @@ Direct message conversations between two users.
 **Key columns:** id, participant_1, participant_2, last_message_text, last_message_at, unread_count_1, unread_count_2
 
 ### messages
-Messages within conversations.
+Messages within conversations with read receipt tracking.
 
-**Key columns:** id, conversation_id, sender_id, text, is_read, attachment_url, attachment_type
+**Key columns:** id, conversation_id, sender_id, text, is_read, read_at, attachment_url, attachment_type
+
+**New in v4.1.0:** `read_at` column for precise read receipt timestamps
 
 ---
 
@@ -156,12 +171,60 @@ Messages within AI mentor sessions.
 
 ---
 
-## Preferences (1 Table)
+## Preferences (2 Tables)
+
+### notification_preferences
+User notification preferences for email and push notifications.
+
+**Key columns:** id, user_id, email_new_connections, email_messages, ai_smart_match_alerts, email_post_likes, push_enabled
 
 ### theme_preferences
 User theme preferences.
 
 **Key columns:** id, user_id, theme (light/dark/system)
+
+---
+
+## Analytics (4 Tables)
+
+### user_engagement_metrics
+Tracks user engagement metrics and activity patterns.
+
+**Key columns:** id, user_id, metric_type, value, period, calculated_at
+
+### user_activity_analytics
+Detailed user activity tracking and analytics.
+
+**Key columns:** id, user_id, activity_type, metadata, session_id, created_at
+
+### feature_adoption_metrics
+Tracks feature adoption and usage patterns.
+
+**Key columns:** id, user_id, feature_name, adopted_at, usage_count, last_used_at
+
+### analytics_aggregation_queue
+Queue for analytics data aggregation jobs.
+
+**Key columns:** id, metric_type, period, status, scheduled_at, completed_at
+
+---
+
+## Content Moderation (3 Tables)
+
+### content_reports
+User-reported content for moderation review.
+
+**Key columns:** id, reporter_id, content_type, content_id, reason, status, reviewed_by, reviewed_at
+
+### content_moderation_queue
+Queue of content awaiting moderation.
+
+**Key columns:** id, content_type, content_id, priority, status, assigned_moderator, created_at
+
+### content_moderation_logs
+Audit log of moderation actions.
+
+**Key columns:** id, moderator_id, action, content_type, content_id, reason, created_at
 
 ---
 
@@ -203,8 +266,29 @@ All 26 tables have RLS enabled with policies for:
 
 ## Helper Functions
 
+### Connection Functions
 - `get_conversation(user1, user2)` - Get conversation ID between two users
 - `are_connected(user1, user2)` - Check if users are connected
+- `get_connection_status(user1, user2)` - Get connection status (pending/accepted/declined/blocked)
+
+### Notification Functions
+- `create_notification(user_id, type, title, message, data, actor_id)` - Create notification
+- `get_unread_notification_count(user_id)` - Count unread notifications
+
+### Comment Functions
+- `get_comment_depth(comment_id)` - Get nesting level (0=top-level)
+- `get_comment_replies_count(comment_id)` - Count all replies
+- `increment_comment_count(post_id)` - Increment post comment count
+- `decrement_comment_count(post_id)` - Decrement post comment count
+- `increment_like_count(comment_id)` - Increment comment like count
+- `decrement_like_count(comment_id)` - Decrement comment like count
+
+### Match-Making Functions
+- `calculate_match_percentage(user1, user2)` - Calculate match % (0-100)
+- `get_shared_skills(user1, user2)` - Array of shared skill names
+- `get_shared_interests(user1, user2)` - Array of shared interest names
+
+### Embedding Functions
 - `has_embedding(user_id)` - Check if user has completed embedding
 - `get_embedding_status(user_id)` - Get embedding status
 - `regenerate_embedding(user_id)` - Manually trigger embedding regeneration
@@ -213,9 +297,50 @@ All 26 tables have RLS enabled with policies for:
 - `queue_embedding_request(user_id, source)` - Queue embedding request
 - `get_pending_queue_stats()` - Get queue statistics by status
 
+### Optimistic Locking (New in v4.1.0)
+- `increment_post_counter(post_id)` - Increment post counter for optimistic locking
+- `get_post_counter_with_lock(post_id)` - Get counter with advisory lock
+- `posts_bump_version(post_id)` - Bump post version number
+
+### Profile Functions
+- `get_profile_completion_percentage(user_id)` - Calculate profile completion (0-100)
+- `recalculate_profile_completion(user_id)` - Recalculate profile completion score
+- `recalculate_all_profile_completions()` - Recalculate for all users
+
 ---
 
-**Last Updated**: 2026-03-14  
+### Indexes (103 Total)
+
+**New Composite Indexes in v4.1.0:**
+- `idx_comments_post_parent` - ON comments(post_id, parent_id) - Optimizes threaded comment queries
+- `idx_notifications_user_read_created` - ON notifications(user_id, is_read, created_at DESC) - Optimizes notification feed
+- `idx_posts_version` - ON posts(author_id, version) - Supports optimistic locking
+
+**Key Indexes by Category:**
+- Comments: 6 indexes (including composite for threaded queries)
+- Connections: 5 indexes (for fast relationship lookups)
+- Notifications: 5 indexes (including composite for feed queries)
+- Posts: 5 indexes (including version for optimistic locking)
+- Messages: 4 indexes (including read_at for read receipts)
+- Embeddings: 4 indexes (including HNSW for vector similarity)
+- Match system: 8 indexes (for fast match calculations)
+
+### Triggers (39 Total)
+
+**Automatic Count Updates:**
+- `update_post_reaction_count` - Updates reaction count on posts
+- `update_post_comment_count` - Updates comment count on posts
+- `update_comment_like_count` - Updates like count on comments
+- `update_conversation_last_message` - Updates conversation metadata
+- `update_profiles_updated_at` - Updates timestamp on profile changes
+
+**Optimistic Locking Triggers (v4.1.0):**
+- `posts_increment_version` - Auto-increments version on post updates
+
+---
+
+**Last Updated**: 2026-03-21  
+**Version**: 4.1.0  
 **Source**: [supabase/setup/99-master-all-tables.sql](../../../supabase/setup/99-master-all-tables.sql)
 
 [← Back to Docs](../README.md)

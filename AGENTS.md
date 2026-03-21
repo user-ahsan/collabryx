@@ -407,7 +407,7 @@ npm run test -- --coverage
 - **Architecture:** `docs/ARCHITECTURE.md`
 - **Deployment:** `docs/DEPLOYMENT.md`
 - **API Reference:** `docs/API-REFERENCE.md`
-- **Database Schema:** `supabase/setup/99-master-all-tables.sql`
+- **Database Schema:** `supabase/setup/99-master-all-tables.sql` (v4.1.0 - 34 tables, 103 indexes, 100 RLS policies)
 - **Security:** `docs/SECURITY.md`
 
 ---

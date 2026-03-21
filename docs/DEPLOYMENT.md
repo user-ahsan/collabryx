@@ -389,10 +389,11 @@ Execute the master migration file:
 
 **Expected Output:**
 ```
-✓ 26 tables created
-✓ 89 indexes created
-✓ 78 RLS policies created
-✓ 15 triggers created
+✓ 34 tables created
+✓ 103 indexes created (including 3 composite indexes in v4.1.0)
+✓ 100 RLS policies created
+✓ 39 triggers created (including optimistic locking triggers)
+✓ 46 functions created (including counter functions)
 ✓ Storage buckets configured
 ```
 
@@ -403,11 +404,18 @@ Execute the master migration file:
 SELECT COUNT(*) 
 FROM information_schema.tables 
 WHERE table_schema = 'public';
--- Should return 26
+-- Should return 34 (35 with storage.objects)
 
 -- Check extensions
 SELECT * FROM pg_extension WHERE extname = 'vector';
 -- Should return 1 row
+
+-- Verify optimistic locking (v4.1.0)
+SELECT posts_bump_version('test-post-uuid');
+
+-- Verify message read tracking (v4.1.0)
+SELECT column_name FROM information_schema.columns 
+WHERE table_name = 'messages' AND column_name = 'read_at';
 ```
 
 ### Step 4: Enable Realtime

@@ -1,8 +1,18 @@
 # Collabryx — Backend Object Model Overview
 
-> **Last Updated:** 2026-03-14 (Aligned with Production)  
+> **Last Updated:** 2026-03-21 (v4.1.0 - Final Boss)  
 > **Purpose:** Complete backend schema specification derived from the frontend codebase.
-> **Source of Truth:** `supabase/setup/99-master-all-tables.sql`
+> **Source of Truth:** `supabase/setup/99-master-all-tables.sql` (v4.1.0 - Self-contained)
+
+### What's New in v4.1.0
+
+- **34 Tables** (up from 26): Added Analytics (4) and Content Moderation (3) tables
+- **Optimistic Locking:** Posts table with `version` column + counter functions
+- **Message Read Tracking:** Messages table with `read_at` column
+- **103 Indexes:** Including 3 new composite indexes
+- **100 RLS Policies:** Comprehensive security coverage
+- **46 Functions:** Including optimistic locking and analytics functions
+- **All Migrations Merged:** No external dependencies - master file is self-contained
 
 ---
 
@@ -29,6 +39,8 @@
 | 10 | `comment_likes` | [10-comment-likes.md](./10-comment-likes.md) | Likes on comments |
 | 11 | `connections` | [11-connections.md](./11-connections.md) | Connection requests between users |
 
+**New in v4.1.0:** `posts.version` column for optimistic locking to prevent concurrent update conflicts
+
 ### Matching System (Tables 12-15)
 
 | # | Table | Document | Purpose |
@@ -43,7 +55,9 @@
 | # | Table | Document | Purpose |
 |---|-------|----------|---------|
 | 16 | `conversations` | [16-conversations.md](./16-conversations.md) | Message threads between users |
-| 17 | `messages` | [17-messages.md](./17-messages.md) | Individual chat messages |
+| 17 | `messages` | [17-messages.md](./17-messages.md) | Individual chat messages with read receipts |
+
+**New in v4.1.0:** `messages.read_at` column for precise read receipt timestamps
 
 ### Notifications (Tables 18)
 
@@ -65,21 +79,46 @@
 | 21 | `notification_preferences` | [21-notification-preferences.md](./21-notification-preferences.md) | Email/push notification toggles |
 | 22 | `theme_preferences` | [22-theme-preferences.md](./22-theme-preferences.md) | Dark/light mode setting |
 
-### Vector Embeddings (Table 23)
+### Vector Embeddings (Tables 23-26)
 
 | # | Table | Document | Purpose |
 |---|-------|----------|---------|
 | 23 | `profile_embeddings` | [23-profile-embeddings.md](./23-profile-embeddings.md) | Vector embeddings for semantic profile matching (384-dim) |
-
-### Embedding Reliability (Tables 24-26)
-
-| # | Table | Document | Purpose |
-|---|-------|----------|---------|
 | 24 | `embedding_dead_letter_queue` | [24-dead-letter-queue.md](./24-dead-letter-queue.md) | Failed embedding retry queue with exponential backoff |
 | 25 | `embedding_rate_limits` | [25-rate-limiting.md](./25-rate-limiting.md) | Rate limiting (3 req/hour/user) to prevent DoS |
 | 26 | `embedding_pending_queue` | [26-pending-queue.md](./26-pending-queue.md) | Reliable onboarding embedding queue |
 
-**Total Tables:** 26
+### Analytics (Tables 27-30) - New in v4.1.0
+
+| # | Table | Document | Purpose |
+|---|-------|----------|---------|
+| 27 | `user_engagement_metrics` | [27-user-engagement-metrics.md](./27-user-engagement-metrics.md) | User engagement tracking |
+| 28 | `user_activity_analytics` | [28-user-activity-analytics.md](./28-user-activity-analytics.md) | Activity analytics |
+| 29 | `feature_adoption_metrics` | [29-feature-adoption-metrics.md](./29-feature-adoption-metrics.md) | Feature adoption tracking |
+| 30 | `analytics_aggregation_queue` | [30-analytics-aggregation-queue.md](./30-analytics-aggregation-queue.md) | Analytics job queue |
+
+### Content Moderation (Tables 31-34) - New in v4.1.0
+
+| # | Table | Document | Purpose |
+|---|-------|----------|---------|
+| 31 | `content_reports` | [31-content-reports.md](./31-content-reports.md) | User content reports |
+| 32 | `content_moderation_queue` | [32-content-moderation-queue.md](./32-content-moderation-queue.md) | Moderation queue |
+| 33 | `content_moderation_logs` | [33-content-moderation-logs.md](./33-content-moderation-logs.md) | Moderation audit logs |
+
+**Total Tables:** 34
+
+### New Tables in v4.1.0
+
+**Analytics (4):**
+- `user_engagement_metrics` - User engagement tracking
+- `user_activity_analytics` - Activity analytics
+- `feature_adoption_metrics` - Feature adoption tracking
+- `analytics_aggregation_queue` - Analytics job queue
+
+**Content Moderation (3):**
+- `content_reports` - User content reports
+- `content_moderation_queue` - Moderation queue
+- `content_moderation_logs` - Moderation audit logs
 
 ---
 
@@ -210,6 +249,14 @@ Supported auth methods (frontend):
 | `get_embedding_status` | `user_id UUID` | `TABLE` | Get embedding status details |
 | `get_profile_completion_percentage` | `user_id UUID` | `INTEGER` | Calculate profile completion (0-100) |
 
+### Optimistic Locking Functions (New in v4.1.0)
+
+| Function | Parameters | Returns | Purpose |
+|----------|-----------|---------|---------|
+| `increment_post_counter` | `post_id UUID` | `INTEGER` | Increment post counter for optimistic locking |
+| `get_post_counter_with_lock` | `post_id UUID` | `INTEGER` | Get counter with advisory lock |
+| `posts_bump_version` | `post_id UUID` | `INTEGER` | Bump post version number |
+
 ---
 
 ## Database Triggers
@@ -224,9 +271,26 @@ Supported auth methods (frontend):
 | `update_conversation_last_message` | `messages` | INSERT | `update_conversation_last_message()` |
 | `update_profiles_updated_at` | `profiles` | UPDATE | `update_updated_at_column()` |
 
+### Optimistic Locking Triggers (New in v4.1.0)
+
+| Trigger | Table | Event | Function |
+|---------|-------|-------|----------|
+| `posts_increment_version` | `posts` | UPDATE | `posts_bump_version()` |
+| `posts_track_updates` | `posts` | UPDATE | Track update metadata |
+
+**Total Triggers:** 39
+
 ---
 
-## Indexes
+## Indexes (103 Total)
+
+### New Composite Indexes (v4.1.0)
+
+```sql
+idx_comments_post_parent        -- ON comments(post_id, parent_id) - Threaded comment optimization
+idx_notifications_user_read_created -- ON notifications(user_id, is_read, created_at DESC) - Feed queries
+idx_posts_version               -- ON posts(author_id, version) - Optimistic locking support
+```
 
 ### Comments Indexes
 
@@ -305,6 +369,24 @@ Location: {location}.
 - **Max Sequence Length**: 256 tokens
 - **Normalization**: L2 normalized (magnitude ≈ 1.0)
 - **Use Case**: Semantic search, profile matching
+
+---
+
+## Database Statistics (v4.1.0)
+
+| Category | Count | Notes |
+|----------|-------|-------|
+| **Tables** | 34 | +8 from v2.1.0 (Analytics + Moderation) |
+| **Functions** | 46 | +3 optimistic locking functions |
+| **Triggers** | 39 | +2 optimistic locking triggers |
+| **Indexes** | 103 | +3 composite indexes |
+| **RLS Policies** | 100 | Comprehensive coverage |
+| **Storage Buckets** | 3 | post-media, profile-media, project-media |
+
+---
+
+**Last Updated:** 2026-03-21  
+**Version:** 4.1.0 (Final Boss - Self-Contained)
 
 ### Fallback Mechanism
 If Python worker is unavailable:

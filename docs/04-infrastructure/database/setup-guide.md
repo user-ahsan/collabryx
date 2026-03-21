@@ -10,7 +10,7 @@ Complete guide to setting up the Collabryx database schema in Supabase.
 
 **DO NOT run individual SQL files (01-23).** They are reference-only.
 
-Run the master migration file that includes all 26 tables:
+Run the master migration file that includes all 34 tables:
 
 ```sql
 -- In Supabase SQL Editor:
@@ -20,15 +20,22 @@ Run the master migration file that includes all 26 tables:
 supabase/setup/99-master-all-tables.sql
 ```
 
-This creates all 26 tables including:
+This creates all 34 tables including:
 - User management (profiles, user_skills, user_interests, user_experiences, user_projects)
 - Social features (posts, post_attachments, post_reactions, comments, comment_likes, connections)
 - Matching system (match_suggestions, match_scores, match_activity, match_preferences)
-- Messaging (conversations, messages)
+- Messaging (conversations, messages with `read_at` for read receipts)
 - Notifications (notifications, notification_preferences)
 - AI features (ai_mentor_sessions, ai_mentor_messages)
 - Preferences (theme_preferences)
 - **Vector embeddings** (profile_embeddings, embedding_dead_letter_queue, embedding_rate_limits, embedding_pending_queue)
+- **Analytics** (user_engagement_metrics, user_activity_analytics, feature_adoption_metrics, analytics_aggregation_queue)
+- **Content Moderation** (content_reports, content_moderation_queue, content_moderation_logs)
+
+**New in v4.1.0:**
+- Optimistic locking support for posts (version column + counter functions)
+- Message read tracking (read_at column)
+- 3 composite indexes for query optimization
 
 ---
 
@@ -190,6 +197,23 @@ CREATE EXTENSION IF NOT EXISTS vector;
 SELECT * FROM pg_extension WHERE extname = 'vector';
 ```
 
+### Issue: Optimistic Locking Functions Not Found
+
+```sql
+-- These are included in v4.1.0 master file
+-- Re-run the master file to get:
+-- - increment_post_counter()
+-- - get_post_counter_with_lock()
+-- - posts_bump_version()
+```
+
+### Issue: Messages read_at Column Missing
+
+```sql
+-- This column is added in v4.1.0 master file
+-- Re-run supabase/setup/99-master-all-tables.sql
+```
+
 ---
 
 ## Post-Setup Tasks
@@ -240,6 +264,35 @@ SELECT reset_embedding_rate_limit(
 );
 ```
 
+### 4. Test Optimistic Locking (v4.1.0)
+
+```sql
+-- Test post version bump
+SELECT posts_bump_version('post-uuid-here');
+
+-- Test counter increment
+SELECT increment_post_counter('post-uuid-here');
+
+-- Verify version column exists
+SELECT column_name, data_type 
+FROM information_schema.columns 
+WHERE table_name = 'posts' AND column_name = 'version';
+```
+
+### 5. Test Message Read Tracking (v4.1.0)
+
+```sql
+-- Test read_at column
+UPDATE messages 
+SET read_at = NOW() 
+WHERE id = 'message-uuid-here';
+
+-- Verify read_at column exists
+SELECT column_name, data_type 
+FROM information_schema.columns 
+WHERE table_name = 'messages' AND column_name = 'read_at';
+```
+
 ---
 
 ## Security Notes
@@ -274,5 +327,5 @@ Rate limiting functions use `SECURITY DEFINER`:
 
 ---
 
-**Last Updated:** 2026-03-14  
-**Version:** 2.0.0
+**Last Updated:** 2026-03-21  
+**Version:** 4.1.0 (Final Boss - Self-Contained)

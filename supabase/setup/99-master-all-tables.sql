@@ -2344,7 +2344,6 @@ COMMENT ON TABLE public.embedding_rate_limits IS 'Rate limiting for embedding ge
 COMMENT ON TABLE public.embedding_pending_queue IS 'Queue for pending embedding requests from onboarding';
 COMMENT ON TABLE public.privacy_settings IS 'User-controlled privacy settings for profile visibility and data sharing';
 COMMENT ON TABLE public.blocked_users IS 'User blocking system to prevent unwanted interactions';
-COMMENT ON TABLE public.audit_logs IS 'Security audit trail for user actions and system events';
 COMMENT ON TABLE public.messages IS 'Direct messages between users with read receipts (read_at timestamp)';
 
 -- ============================================================================
@@ -2514,6 +2513,7 @@ CREATE INDEX IF NOT EXISTS idx_audit_logs_resource ON public.audit_logs(resource
 CREATE INDEX IF NOT EXISTS idx_audit_logs_created_at ON public.audit_logs(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_audit_logs_details ON public.audit_logs USING GIN(details);
 
+COMMENT ON TABLE public.audit_logs IS 'Security audit trail for user actions and system events';
 
 -- ============================================================================
 -- SECTION 5.7: NOTIFICATION TRIGGERS
@@ -2529,6 +2529,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
+DROP TRIGGER IF EXISTS notify_connection_request_trigger ON public.connections;
 CREATE TRIGGER notify_connection_request_trigger
   AFTER INSERT ON connections
   FOR EACH ROW
@@ -2550,6 +2551,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
+DROP TRIGGER IF EXISTS notify_post_reaction_trigger ON public.post_reactions;
 CREATE TRIGGER notify_post_reaction_trigger
   AFTER INSERT ON post_reactions
   FOR EACH ROW
@@ -2570,6 +2572,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
+DROP TRIGGER IF EXISTS notify_new_comment_trigger ON public.comments;
 CREATE TRIGGER notify_new_comment_trigger
   AFTER INSERT ON comments
   FOR EACH ROW
@@ -2595,6 +2598,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
+DROP TRIGGER IF EXISTS notify_new_message_trigger ON public.messages;
 CREATE TRIGGER notify_new_message_trigger
   AFTER INSERT ON messages
   FOR EACH ROW
@@ -2621,6 +2625,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
+DROP TRIGGER IF EXISTS notify_match_suggested_trigger ON public.match_suggestions;
 CREATE TRIGGER notify_match_suggested_trigger
   AFTER INSERT ON match_suggestions
   FOR EACH ROW
@@ -2638,6 +2643,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
+DROP TRIGGER IF EXISTS notify_connection_accepted_trigger ON public.connections;
 CREATE TRIGGER notify_connection_accepted_trigger
   AFTER UPDATE ON connections
   FOR EACH ROW
@@ -2697,11 +2703,17 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
+DROP TRIGGER IF EXISTS capture_post_reaction_event ON public.post_reactions;
 CREATE TRIGGER capture_post_reaction_event AFTER INSERT ON post_reactions FOR EACH ROW EXECUTE FUNCTION capture_event('post_reaction');
+DROP TRIGGER IF EXISTS capture_comment_event ON public.comments;
 CREATE TRIGGER capture_comment_event AFTER INSERT ON comments FOR EACH ROW EXECUTE FUNCTION capture_event('comment_created');
+DROP TRIGGER IF EXISTS capture_connection_request_event ON public.connections;
 CREATE TRIGGER capture_connection_request_event AFTER INSERT ON connections FOR EACH ROW WHEN (NEW.status = 'pending') EXECUTE FUNCTION capture_event('connection_requested');
+DROP TRIGGER IF EXISTS capture_connection_accepted_event ON public.connections;
 CREATE TRIGGER capture_connection_accepted_event AFTER UPDATE ON connections FOR EACH ROW WHEN (OLD.status = 'pending' AND NEW.status = 'accepted') EXECUTE FUNCTION capture_event('connection_accepted');
+DROP TRIGGER IF EXISTS capture_message_sent_event ON public.messages;
 CREATE TRIGGER capture_message_sent_event AFTER INSERT ON messages FOR EACH ROW EXECUTE FUNCTION capture_event('message_sent');
+DROP TRIGGER IF EXISTS capture_profile_view_event ON public.match_activity;
 CREATE TRIGGER capture_profile_view_event AFTER INSERT ON match_activity FOR EACH ROW WHEN (NEW.type = 'profile_view') EXECUTE FUNCTION capture_event('profile_viewed');
 
 -- Post creation event
@@ -2714,8 +2726,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
-CREATE TRIGG
-ER capture_post_created_event AFTER INSERT ON posts FOR EACH ROW EXECUTE FUNCTION capture_post_created_event();
+DROP TRIGGER IF EXISTS capture_post_created_event ON public.posts;
+CREATE TRIGGER capture_post_created_event AFTER INSERT ON posts FOR EACH ROW EXECUTE FUNCTION capture_post_created_event();
 
 -- Profile update event
 CREATE OR REPLACE FUNCTION capture_profile_updated_event()
@@ -2727,6 +2739,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
+DROP TRIGGER IF EXISTS capture_profile_updated_event ON public.profiles;
 CREATE TRIGGER capture_profile_updated_event AFTER UPDATE ON profiles FOR EACH ROW EXECUTE FUNCTION capture_profile_updated_event();
 
 GRANT EXECUTE ON FUNCTION capture_event TO service_role;
@@ -2765,9 +2778,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
+DROP TRIGGER IF EXISTS broadcast_notification_realtime ON public.notifications;
 CREATE TRIGGER broadcast_notification_realtime AFTER INSERT ON notifications FOR EACH ROW EXECUTE FUNCTION broadcast_realtime('notifications');
+DROP TRIGGER IF EXISTS broadcast_message_realtime ON public.messages;
 CREATE TRIGGER broadcast_message_realtime AFTER INSERT ON messages FOR EACH ROW EXECUTE FUNCTION broadcast_realtime('messages');
+DROP TRIGGER IF EXISTS broadcast_match_activity_realtime ON public.match_activity;
 CREATE TRIGGER broadcast_match_activity_realtime AFTER INSERT ON match_activity FOR EACH ROW EXECUTE FUNCTION broadcast_realtime('match_activity');
+DROP TRIGGER IF EXISTS broadcast_match_suggestion_realtime ON public.match_suggestions;
 CREATE TRIGGER broadcast_match_suggestion_realtime AFTER INSERT ON match_suggestions FOR EACH ROW EXECUTE FUNCTION broadcast_realtime('matches');
 
 GRANT EXECUTE ON FUNCTION broadcast_realtime TO service_role;

@@ -1,7 +1,7 @@
 # Collabryx Database Setup
 
-**Last Updated:** 2026-03-14  
-**Version:** 2.1.0 (Bulletproof)
+**Last Updated:** 2026-03-21  
+**Version:** 4.1.0 (Final Boss - Self-Contained)
 
 ---
 
@@ -47,7 +47,7 @@
 |------|---------|----------|
 | `00-complete-database-wipe.sql` | ⚠️ Deletes ALL data - use for resets | Production resets |
 | `01-profiles.sql` through `23-profile-embeddings.sql` | ❌ Reference only - DO NOT RUN | Documentation |
-| `99-master-all-tables.sql` | ✅ Complete schema (26 tables) | **RUN THIS FILE ONLY** |
+| `99-master-all-tables.sql` | ✅ Complete schema (34 tables) | **RUN THIS FILE ONLY** |
 
 ---
 
@@ -59,6 +59,14 @@ The master file (`99-master-all-tables.sql`) is now **bulletproof**:
 - **Auth RLS Optimization:** All `auth.uid()`, `auth.jwt()`, and `auth.role()` calls wrapped in `(select ...)` to prevent per-row re-evaluation
 - **No Duplicate Indexes:** All indexes are unique and necessary
 - **Efficient RLS Policies:** Optimized policy structure
+
+### ✅ New in v4.1.0 (2026-03-21)
+- **Optimistic Locking:** Posts table includes `version` column with counter functions (`increment_post_counter`, `get_post_counter_with_lock`, `posts_bump_version`)
+- **Message Read Tracking:** Messages table includes `read_at` column for read receipt functionality
+- **Composite Indexes:** 3 additional composite indexes for query optimization:
+  - `idx_comments_post_parent` - Optimizes threaded comment queries
+  - `idx_notifications_user_read_created` - Optimizes notification feed queries
+  - `idx_posts_version` - Supports optimistic locking
 
 ### ✅ Expected Linter Notes (Intentional)
 Some Supabase linter warnings are **correct design decisions**:
@@ -100,7 +108,7 @@ This is the **correct RLS pattern** for public-read, owner-write tables. Combini
 
 ---
 
-## 📊 Schema (26 Tables)
+## 📊 Schema (34 Tables)
 
 **User Management (5):** profiles, user_skills, user_interests, user_experiences, user_projects
 
@@ -108,7 +116,7 @@ This is the **correct RLS pattern** for public-read, owner-write tables. Combini
 
 **Matching (4):** match_suggestions, match_scores, match_activity, match_preferences
 
-**Messaging (2):** conversations, messages
+**Messaging (2):** conversations, messages (with `read_at` column for read receipts)
 
 **Notifications (2):** notifications, notification_preferences
 
@@ -118,20 +126,37 @@ This is the **correct RLS pattern** for public-read, owner-write tables. Combini
 
 **Embeddings (4):** profile_embeddings, embedding_dead_letter_queue, embedding_rate_limits, embedding_pending_queue
 
+**Analytics (4):** user_engagement_metrics, user_activity_analytics, feature_adoption_metrics, analytics_aggregation_queue
+
+**Content Moderation (3):** content_reports, content_moderation_queue, content_moderation_logs
+
 ---
 
 ## ✅ Verification
 
 ```sql
--- Check table count (should be 27: 26 + storage.objects)
+-- Check table count (should be 35: 34 + storage.objects)
 SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public';
 
 -- Test helper functions
 SELECT public.are_connected('user1-uuid', 'user2-uuid');
 SELECT * FROM public.get_pending_queue_stats();
 
--- Check all functions exist
+-- Test optimistic locking (v4.1.0)
+SELECT public.increment_post_counter('post-uuid');
+SELECT public.posts_bump_version('post-uuid');
+
+-- Test message read tracking (v4.1.0)
+UPDATE messages SET read_at = NOW() WHERE id = 'message-uuid';
+
+-- Check all functions exist (should be 46+)
 SELECT proname FROM pg_proc WHERE pronamespace = 'public'::regnamespace ORDER BY proname;
+
+-- Check indexes (should be 103+)
+SELECT COUNT(*) FROM pg_indexes WHERE schemaname = 'public';
+
+-- Check RLS policies (should be 100+)
+SELECT COUNT(*) FROM pg_policies WHERE schemaname = 'public';
 ```
 
 ---
