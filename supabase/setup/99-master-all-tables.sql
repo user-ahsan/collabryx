@@ -2662,13 +2662,17 @@ GRANT EXECUTE ON FUNCTION notify_connection_accepted TO service_role;
 -- ============================================================================
 
 -- Generic event capture
-CREATE OR REPLACE FUNCTION capture_event(event_type_param text)
+CREATE OR REPLACE FUNCTION capture_event()
 RETURNS trigger AS $$
 DECLARE
+  event_type_param text;
   target_id_val uuid;
   target_type_val text;
   metadata_val jsonb;
 BEGIN
+  -- Get event type from trigger argument (TG_ARGV[0])
+  event_type_param := TG_ARGV[0];
+  
   CASE TG_TABLE_NAME
     WHEN 'post_reactions' THEN
       target_id_val := NEW.post_id;
@@ -2750,12 +2754,16 @@ GRANT EXECUTE ON FUNCTION capture_profile_updated_event TO service_role;
 -- SECTION 5.9: REALTIME BROADCAST
 -- ============================================================================
 
-CREATE OR REPLACE FUNCTION broadcast_realtime(channel_prefix text)
+CREATE OR REPLACE FUNCTION broadcast_realtime()
 RETURNS trigger AS $$
 DECLARE
+  channel_prefix text;
   channel_name text;
   payload jsonb;
 BEGIN
+  -- Get channel prefix from trigger argument (TG_ARGV[0])
+  channel_prefix := TG_ARGV[0];
+  
   CASE TG_TABLE_NAME
     WHEN 'notifications' THEN
       channel_name := channel_prefix || ':user:' || NEW.user_id::text;
@@ -2825,6 +2833,7 @@ CREATE OR REPLACE FUNCTION public.update_profile_completion_from_profile() RETUR
 BEGIN NEW.profile_completion := public.calculate_profile_completion(NEW.id); RETURN NEW; END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
+DROP TRIGGER IF EXISTS update_profile_completion_on_profile_update ON public.profiles;
 CREATE TRIGGER update_profile_completion_on_profile_update BEFORE UPDATE ON profiles FOR EACH ROW
   WHEN (OLD.full_name IS DISTINCT FROM NEW.full_name OR OLD.display_name IS DISTINCT FROM NEW.display_name OR
         OLD.headline IS DISTINCT FROM NEW.headline OR OLD.bio IS DISTINCT FROM NEW.bio)
@@ -2838,8 +2847,11 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
+DROP TRIGGER IF EXISTS update_profile_completion_on_skills_change ON public.user_skills;
 CREATE TRIGGER update_profile_completion_on_skills_change AFTER INSERT OR DELETE OR UPDATE ON user_skills FOR EACH ROW EXECUTE FUNCTION public.update_profile_completion_from_related();
+DROP TRIGGER IF EXISTS update_profile_completion_on_interests_change ON public.user_interests;
 CREATE TRIGGER update_profile_completion_on_interests_change AFTER INSERT OR DELETE OR UPDATE ON user_interests FOR EACH ROW EXECUTE FUNCTION public.update_profile_completion_from_related();
+DROP TRIGGER IF EXISTS update_profile_completion_on_experiences_change ON public.user_experiences;
 CREATE TRIGGER update_profile_completion_on_experiences_change AFTER INSERT OR DELETE OR UPDATE ON user_experiences FOR EACH ROW EXECUTE FUNCTION public.update_profile_completion_from_related();
 
 CREATE OR REPLACE FUNCTION public.recalculate_all_profile_completions() RETURNS integer AS $$
@@ -2882,10 +2894,15 @@ CREATE POLICY "Users can unblock" ON public.blocked_users FOR DELETE USING (auth
 CREATE POLICY "Users can view own audit logs" ON public.audit_logs FOR SELECT USING (user_id = auth.uid());
 CREATE POLICY "System can insert audit logs" ON public.audit_logs FOR INSERT WITH CHECK (true);
 
--- Add new tables to realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE public.privacy_settings;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.blocked_users;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.audit_logs;
+-- Add new tables to realtime (ignore if already exists)
+DO $$
+BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.privacy_settings;
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.blocked_users;
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.audit_logs;
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
 
 -- updated_at triggers for new tables
 CREATE TRIGGER update_privacy_settings_updated_at BEFORE UPDATE ON public.privacy_settings FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
