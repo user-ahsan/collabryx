@@ -1,0 +1,46 @@
+# Collabryx Grafana Datasources Configuration
+# 
+# This file configures Prometheus as the primary datasource for Grafana.
+# Grafana will automatically provision this datasource on startup.
+#
+# Documentation: https://grafana.com/docs/grafana/latest/administration/provisioning/#datasources
+
+apiVersion: 1
+
+# Delete datasources that are no longer present in this file
+deleteDatasources: []
+
+# List of datasources to provision
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+    jsonData:
+      # Prometheus HTTP timeout
+      httpMethod: POST
+      
+      # Enable Prometheus query editor autocomplete
+      prometheusType: prometheus
+      
+      # Incremental querying for better performance
+      incrementalQuerying: true
+      incrementalQueryOverlapWindow: 10m
+      
+      # Time range settings
+      timeInterval: 30s
+      
+      # Alerting configuration
+      manageAlerts: true
+      prometheusRules: true
+      
+      # Caching for better performance
+      cacheLevel: 'High'
+    
+    # Secure JSON data (encrypted at rest)
+    secureJsonData: {}
+    
+    # Version (incremented when datasource is updated)
+    version: 1
