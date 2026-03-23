@@ -1,6 +1,6 @@
 """
 Rate Limiter Module for Embedding Service
-Implements sliding window rate limiting with caching
+Implements sliding window rate limiting with database as source of truth
 """
 
 from datetime import datetime, timedelta
@@ -12,11 +12,10 @@ logger = logging.getLogger(__name__)
 
 
 class RateLimiter:
-    """Rate limiter for embedding generation requests"""
+    """Rate limiter for embedding generation requests (database-backed, no cache)"""
 
     RATE_LIMIT = 3  # requests per window
     WINDOW_HOURS = 1  # 1 hour window
-    CACHE_TTL_SECONDS = 60  # Cache results for 60 seconds
 
     def __init__(self, supabase_client):
         """
@@ -26,7 +25,7 @@ class RateLimiter:
             supabase_client: Supabase client instance
         """
         self.supabase = supabase_client
-        self.cache: Dict[str, dict] = {}
+        # No in-memory cache - database is source of truth for distributed rate limiting
 
     async def check_rate_limit(
         self, user_id: str, bypass_rate_limit: bool = False
@@ -56,18 +55,8 @@ class RateLimiter:
                 "retry_after": 0,
             }
 
-        # Check cache first
-        if user_id in self.cache:
-            cached = self.cache[user_id]
-            now = datetime.utcnow().timestamp()
-            if now < cached["expires"]:
-                logger.debug(f"Rate limit cache hit for user {user_id}")
-                return cached["result"]
-            else:
-                # Cache expired, remove it
-                del self.cache[user_id]
-
-        # Call database function
+        # Always check database - no cache for distributed rate limiting
+        # This ensures consistent rate limiting across multiple worker instances
         try:
             response = self.supabase.rpc(
                 "check_embedding_rate_limit", {"p_user_id": user_id}
@@ -80,12 +69,6 @@ class RateLimiter:
                     "remaining": result["remaining"],
                     "reset_at": result["reset_at"],
                     "retry_after": self._calculate_retry_after(result["reset_at"]),
-                }
-
-                # Cache result
-                self.cache[user_id] = {
-                    "result": rate_limit_result,
-                    "expires": datetime.utcnow().timestamp() + self.CACHE_TTL_SECONDS,
                 }
 
                 logger.info(
@@ -158,19 +141,3 @@ class RateLimiter:
         except Exception as e:
             logger.error(f"Failed to calculate retry_after: {e}")
             return 3600  # Default to 1 hour if parsing fails
-
-    def clear_cache(self, user_id: str):
-        """
-        Clear rate limit cache for user
-
-        Args:
-            user_id: User UUID to clear from cache
-        """
-        if user_id in self.cache:
-            del self.cache[user_id]
-            logger.debug(f"Rate limit cache cleared for user {user_id}")
-
-    def clear_all_cache(self):
-        """Clear entire rate limit cache"""
-        self.cache.clear()
-        logger.info("Rate limit cache cleared")
