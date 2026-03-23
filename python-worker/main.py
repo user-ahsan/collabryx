@@ -493,7 +493,7 @@ def _mark_embedding_status(
 async def generate_and_store_embedding(
     text: str, user_id: str, request_id: Optional[str] = None
 ):
-    """Async function to generate and save embedding with retry logic"""
+    """Async function to generate and save embedding with retry logic and timeout"""
     async with processing_semaphore:
         try:
             logger.info(
@@ -502,7 +502,11 @@ async def generate_and_store_embedding(
             )
             start_time = time.time()
 
-            embedding = await generator.generate_embedding(text)
+            # Add timeout to prevent hung workers on model failures
+            embedding = await asyncio.wait_for(
+                generator.generate_embedding(text),
+                timeout=30.0,  # 30 second timeout for embedding generation
+            )
             elapsed_ms = (time.time() - start_time) * 1000
 
             success = store_embedding(user_id, embedding, "completed")
@@ -522,6 +526,19 @@ async def generate_and_store_embedding(
                     f"Failed to store embedding for {user_id}",
                     extra={"user_id": user_id},
                 )
+
+        except asyncio.TimeoutError:
+            logger.error(
+                f"Embedding generation TIMEOUT for {user_id} (exceeded 30s)",
+                extra={"user_id": user_id, "request_id": request_id},
+            )
+            # Store in DLQ with timeout-specific error
+            await store_in_dead_letter_queue(
+                user_id=user_id,
+                semantic_text=text,
+                failure_reason="Embedding generation timeout (exceeded 30 seconds)",
+                retry_count=0,
+            )
 
         except Exception as e:
             logger.error(
