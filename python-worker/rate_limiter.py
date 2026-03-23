@@ -28,12 +28,15 @@ class RateLimiter:
         self.supabase = supabase_client
         self.cache: Dict[str, dict] = {}
 
-    async def check_rate_limit(self, user_id: str) -> Dict[str, Any]:
+    async def check_rate_limit(
+        self, user_id: str, bypass_rate_limit: bool = False
+    ) -> Dict[str, Any]:
         """
         Check if user is within rate limits
 
         Args:
             user_id: User UUID to check
+            bypass_rate_limit: If True, skip rate limiting (for admin/service operations)
 
         Returns:
             dict: {
@@ -43,6 +46,16 @@ class RateLimiter:
                 retry_after: int (seconds)
             }
         """
+        # Service role bypass for admin operations
+        if bypass_rate_limit:
+            logger.debug(f"Rate limit bypassed for service operation (user: {user_id})")
+            return {
+                "allowed": True,
+                "remaining": self.RATE_LIMIT,
+                "reset_at": None,
+                "retry_after": 0,
+            }
+
         # Check cache first
         if user_id in self.cache:
             cached = self.cache[user_id]
