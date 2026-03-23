@@ -6,6 +6,7 @@ Implements sliding window rate limiting with caching
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any
 import logging
+from fastapi import HTTPException, status
 
 logger = logging.getLogger(__name__)
 
@@ -80,26 +81,39 @@ class RateLimiter:
 
                 return rate_limit_result
 
-            # Fallback: allow if DB check fails (fail open)
+            # Fallback: reject if DB check returns no data (fail closed)
             logger.warning(
-                f"Rate limit DB check returned no data for user {user_id}, failing open"
+                f"Rate limit DB check returned no data for user {user_id}, failing closed"
             )
-            return {
-                "allowed": True,
-                "remaining": self.RATE_LIMIT,
-                "reset_at": None,
-                "retry_after": 0,
-            }
+            # Treat as rate limit exceeded - safer than allowing unlimited requests
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail={
+                    "error": "Rate limit check unavailable",
+                    "message": "Unable to verify rate limits, please try again in 1 hour",
+                },
+                headers={
+                    "Retry-After": "3600",  # Retry after 1 hour
+                },
+            )
 
         except Exception as e:
             logger.error(f"Rate limit check failed for user {user_id}: {e}")
-            # Fail open - allow request if rate limiting service fails
-            return {
-                "allowed": True,
-                "remaining": self.RATE_LIMIT,
-                "reset_at": None,
-                "retry_after": 0,
-            }
+            # FAIL CLOSED: Reject on uncertainty to prevent DoS attacks
+            # Database outage should not allow unlimited requests
+            logger.critical(
+                f"Rate limiting service unavailable for {user_id}, failing closed"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail={
+                    "error": "Rate limiting service unavailable",
+                    "message": "Unable to verify rate limits, please try again later",
+                },
+                headers={
+                    "Retry-After": "60",  # Retry after 60 seconds
+                },
+            )
 
     def _calculate_retry_after(self, reset_at: Optional[str]) -> int:
         """
