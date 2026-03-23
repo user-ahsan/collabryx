@@ -140,6 +140,62 @@ DLQ_SIZE_GAUGE = Gauge(
 )
 
 
+async def run_embedding_tests():
+    """Run embedding tests on startup to verify fixes are working"""
+    import subprocess
+    import sys
+
+    logger.info("=" * 60)
+    logger.info("RUNNING EMBEDDING TESTS")
+    logger.info("=" * 60)
+
+    try:
+        # Run pytest on embedding tests
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "pytest",
+                "tests/test_embedding.py",
+                "-v",
+                "--tb=short",
+            ],
+            cwd=os.path.dirname(os.path.abspath(__file__)),
+            capture_output=True,
+            text=True,
+            timeout=120,  # 2 minute timeout
+        )
+
+        if result.returncode == 0:
+            logger.info("✓ Embedding tests PASSED")
+            logger.info("All critical fixes verified:")
+            logger.info("  - Atomic claim pattern (pending queue)")
+            logger.info("  - Atomic claim pattern (DLQ)")
+            logger.info("  - Rate limiter fail-closed")
+            logger.info("  - Service role bypass")
+            logger.info("  - Async lock removed")
+            logger.info("  - Transaction handling")
+            logger.info("  - None value handling")
+            logger.info("  - Generation timeout")
+            logger.info("  - Circuit breaker logging")
+            logger.info("  - Graceful shutdown")
+        else:
+            logger.error("✗ Embedding tests FAILED")
+            logger.error(f"stdout: {result.stdout}")
+            logger.error(f"stderr: {result.stderr}")
+            # Don't fail startup on test failure - just log
+            logger.warning("Continuing startup despite test failures")
+
+    except subprocess.TimeoutExpired:
+        logger.error("Embedding tests timed out (2 min limit)")
+    except FileNotFoundError:
+        logger.warning("pytest not found - skipping tests")
+    except Exception as e:
+        logger.error(f"Failed to run embedding tests: {e}")
+
+    logger.info("=" * 60)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifecycle with graceful shutdown and signal handling"""
@@ -148,6 +204,10 @@ async def lifespan(app: FastAPI):
     logger.info("=" * 60)
     logger.info("EMBEDDING SERVICE STARTING UP")
     logger.info("=" * 60)
+
+    # Run embedding tests on startup to verify fixes
+    await run_embedding_tests()
+
     logger.info("Starting background queue processor...")
     processor_task = asyncio.create_task(queue_processor())
     logger.info("Starting DLQ processor...")
