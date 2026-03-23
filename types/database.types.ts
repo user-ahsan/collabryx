@@ -494,3 +494,154 @@ export interface PrivacySetting {
   created_at: string; // TIMESTAMPTZ
   updated_at?: string; // TIMESTAMPTZ
 }
+
+// ===========================================
+// DATABASE TYPE FOR SUPABASE CLIENT GENERICS
+// ===========================================
+// Used to provide TypeScript type safety for Supabase queries
+// Note: This type provides Row types for SELECT queries.
+// Insert/Update operations use Partial to avoid strict type errors.
+export type Database = {
+  public: {
+    Tables: {
+      profiles: {
+        Row: Profile;
+        Insert: Partial<Profile>;
+        Update: Partial<Profile>;
+      };
+      user_skills: {
+        Row: UserSkill;
+        Insert: Partial<UserSkill>;
+        Update: Partial<UserSkill>;
+      };
+      user_interests: {
+        Row: UserInterest;
+        Insert: Partial<UserInterest>;
+        Update: Partial<UserInterest>;
+      };
+      user_experiences: {
+        Row: UserExperience;
+        Insert: Partial<UserExperience>;
+        Update: Partial<UserExperience>;
+      };
+      user_projects: {
+        Row: UserProject;
+        Insert: Partial<UserProject>;
+        Update: Partial<UserProject>;
+      };
+      posts: {
+        Row: Post;
+        Insert: Partial<Post>;
+        Update: Partial<Post>;
+      };
+      post_attachments: {
+        Row: PostAttachment;
+        Insert: Partial<PostAttachment>;
+        Update: Partial<PostAttachment>;
+      };
+      post_reactions: {
+        Row: PostReaction;
+        Insert: Partial<PostReaction>;
+        Update: Partial<PostReaction>;
+      };
+      comments: {
+        Row: Comment;
+        Insert: Partial<Comment>;
+        Update: Partial<Comment>;
+      };
+      comment_likes: {
+        Row: CommentLike;
+        Insert: Partial<CommentLike>;
+        Update: Partial<CommentLike>;
+      };
+      connections: {
+        Row: Connection;
+        Insert: Partial<Connection>;
+        Update: Partial<Connection>;
+      };
+      match_suggestions: {
+        Row: MatchSuggestion;
+        Insert: Partial<MatchSuggestion>;
+        Update: Partial<MatchSuggestion>;
+      };
+      match_scores: {
+        Row: MatchScore;
+        Insert: Partial<MatchScore>;
+        Update: Partial<MatchScore>;
+      };
+      match_activity: {
+        Row: MatchActivity;
+        Insert: Partial<MatchActivity>;
+        Update: Partial<MatchActivity>;
+      };
+      match_preferences: {
+        Row: MatchPreference;
+        Insert: Partial<MatchPreference>;
+        Update: Partial<MatchPreference>;
+      };
+      conversations: {
+        Row: Conversation;
+        Insert: Partial<Conversation>;
+        Update: Partial<Conversation>;
+      };
+      messages: {
+        Row: Message;
+        Insert: Partial<Message>;
+        Update: Partial<Message>;
+      };
+      notifications: {
+        Row: Notification;
+        Insert: Partial<Notification>;
+        Update: Partial<Notification>;
+      };
+      ai_mentor_sessions: {
+        Row: AiMentorSession;
+        Insert: Partial<AiMentorSession>;
+        Update: Partial<AiMentorSession>;
+      };
+      ai_mentor_messages: {
+        Row: AiMentorMessage;
+        Insert: Partial<AiMentorMessage>;
+        Update: Partial<AiMentorMessage>;
+      };
+      notification_preferences: {
+        Row: NotificationPreference;
+        Insert: Partial<NotificationPreference>;
+        Update: Partial<NotificationPreference>;
+      };
+      theme_preferences: {
+        Row: ThemePreference;
+        Insert: Partial<ThemePreference>;
+        Update: Partial<ThemePreference>;
+      };
+      embedding_dead_letter_queue: {
+        Row: EmbeddingDeadLetterQueue;
+        Insert: Partial<EmbeddingDeadLetterQueue>;
+        Update: Partial<EmbeddingDeadLetterQueue>;
+      };
+      embedding_pending_queue: {
+        Row: EmbeddingPendingQueue;
+        Insert: Partial<EmbeddingPendingQueue>;
+        Update: Partial<EmbeddingPendingQueue>;
+      };
+      user_analytics: {
+        Row: UserAnalytics;
+        Insert: Partial<UserAnalytics>;
+        Update: Partial<UserAnalytics>;
+      };
+      blocked_users: {
+        Row: BlockedUser;
+        Insert: Partial<BlockedUser>;
+        Update: Partial<BlockedUser>;
+      };
+      privacy_settings: {
+        Row: PrivacySetting;
+        Insert: Partial<PrivacySetting>;
+        Update: Partial<PrivacySetting>;
+      };
+    };
+    Views: {};
+    Functions: {};
+    Enums: {};
+  };
+};
