@@ -537,7 +537,7 @@ async def queue_processor():
 
 
 async def process_dead_letter_queue():
-    """Process retryable items from dead letter queue"""
+    """Process retryable items from dead letter queue with atomic claim pattern"""
     while True:
         try:
             now = datetime.utcnow().isoformat()
@@ -555,13 +555,28 @@ async def process_dead_letter_queue():
 
             for item in response.data:
                 try:
-                    # Mark as processing
-                    supabase.table("embedding_dead_letter_queue").update(
-                        {
-                            "status": "processing",
-                            "last_attempt": datetime.utcnow().isoformat(),
-                        }
-                    ).eq("id", item["id"]).execute()
+                    # ATOMIC CLAIM: Update only if status is still "pending"
+                    # This prevents multiple workers from processing the same failed item
+                    claim_response = (
+                        supabase.table("embedding_dead_letter_queue")
+                        .update(
+                            {
+                                "status": "processing",
+                                "last_attempt": datetime.utcnow().isoformat(),
+                            }
+                        )
+                        .eq("id", item["id"])
+                        .eq("status", "pending")  # Critical: atomic claim condition
+                        .execute()
+                    )
+
+                    # Check if we successfully claimed this item
+                    if not claim_response.data or len(claim_response.data) == 0:
+                        # Another worker claimed it, skip this item
+                        logger.debug(
+                            f"DLQ item {item['id']} already claimed by another worker, skipping"
+                        )
+                        continue
 
                     # Generate embedding
                     embedding = await generator.generate_embedding(
