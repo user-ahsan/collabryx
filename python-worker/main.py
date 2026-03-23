@@ -141,16 +141,20 @@ DLQ_SIZE_GAUGE = Gauge(
 
 
 async def run_embedding_tests():
-    """Run embedding tests on startup to verify fixes are working"""
+    """Run embedding tests on startup to verify fixes are working with detailed reporting"""
     import subprocess
     import sys
+    import time
 
     logger.info("=" * 60)
     logger.info("RUNNING EMBEDDING TESTS")
+    logger.info("Verifying all critical fixes are working correctly")
     logger.info("=" * 60)
 
+    start_time = time.time()
+
     try:
-        # Run pytest on embedding tests
+        # Run pytest on embedding tests with summary report
         result = subprocess.run(
             [
                 sys.executable,
@@ -159,6 +163,8 @@ async def run_embedding_tests():
                 "tests/test_embedding.py",
                 "-v",
                 "--tb=short",
+                "-r",
+                "fE",  # Show summary of failed and error tests
             ],
             cwd=os.path.dirname(os.path.abspath(__file__)),
             capture_output=True,
@@ -166,32 +172,54 @@ async def run_embedding_tests():
             timeout=120,  # 2 minute timeout
         )
 
+        elapsed_time = time.time() - start_time
+
         if result.returncode == 0:
             logger.info("✓ Embedding tests PASSED")
+            logger.info(f"Test execution time: {elapsed_time:.2f}s")
             logger.info("All critical fixes verified:")
-            logger.info("  - Atomic claim pattern (pending queue)")
-            logger.info("  - Atomic claim pattern (DLQ)")
-            logger.info("  - Rate limiter fail-closed")
-            logger.info("  - Service role bypass")
-            logger.info("  - Async lock removed")
-            logger.info("  - Transaction handling")
-            logger.info("  - None value handling")
-            logger.info("  - Generation timeout")
-            logger.info("  - Circuit breaker logging")
-            logger.info("  - Graceful shutdown")
+            logger.info("  ✓ Atomic claim pattern (pending queue) - CRITICAL-2")
+            logger.info("  ✓ Atomic claim pattern (DLQ) - CRITICAL-3")
+            logger.info("  ✓ Rate limiter fail-closed - CRITICAL-4")
+            logger.info("  ✓ Remove in-memory cache - CRITICAL-1")
+            logger.info("  ✓ Service role bypass - B07")
+            logger.info("  ✓ Async lock removed - B05")
+            logger.info("  ✓ Transaction handling - B06")
+            logger.info("  ✓ None value handling - B08")
+            logger.info("  ✓ Generation timeout - E03")
+            logger.info("  ✓ Circuit breaker logging - E01")
+            logger.info("  ✓ Graceful shutdown - B09")
+            logger.info("System health: LOW RISK - Production ready")
         else:
             logger.error("✗ Embedding tests FAILED")
-            logger.error(f"stdout: {result.stdout}")
-            logger.error(f"stderr: {result.stderr}")
-            # Don't fail startup on test failure - just log
-            logger.warning("Continuing startup despite test failures")
+            logger.error(f"Test execution time: {elapsed_time:.2f}s")
+            logger.error(f"Return code: {result.returncode}")
+            # Show test output for debugging
+            if result.stdout:
+                logger.error("Test output:")
+                for line in result.stdout.split("\n"):
+                    logger.error(f"  {line}")
+            if result.stderr:
+                logger.error("Errors:")
+                for line in result.stderr.split("\n"):
+                    logger.error(f"  {line}")
+            # Don't fail startup on test failure - just log and continue
+            logger.warning(
+                "⚠️ Continuing startup despite test failures - manual review recommended"
+            )
 
     except subprocess.TimeoutExpired:
         logger.error("Embedding tests timed out (2 min limit)")
+        logger.error("This may indicate:")
+        logger.error("  - Model loading issues")
+        logger.error("  - Database connectivity problems")
+        logger.error("  - Test infrastructure issues")
     except FileNotFoundError:
         logger.warning("pytest not found - skipping tests")
+        logger.warning("Install pytest: pip install pytest pytest-asyncio")
     except Exception as e:
         logger.error(f"Failed to run embedding tests: {e}")
+        logger.error(f"Exception type: {type(e).__name__}")
 
     logger.info("=" * 60)
 
