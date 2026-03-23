@@ -249,6 +249,7 @@ export interface Message {
   sender_id: string; // UUID
   text: string;
   is_read: boolean;
+  read_at?: string | null; // TIMESTAMPTZ
   attachment_url?: string;
   attachment_type?: 'image' | 'file';
   created_at: string; // TIMESTAMPTZ
