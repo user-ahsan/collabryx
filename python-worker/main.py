@@ -358,75 +358,135 @@ async def store_in_dead_letter_queue(
 
 
 def store_embedding(user_id: str, embedding: List[float], status: str):
-    """Store embedding in Supabase with validation metadata using UPSERT to avoid race conditions"""
+    """
+    Store embedding in Supabase with validation metadata using UPSERT to avoid race conditions.
+    Implements transaction-like error handling with rollback to failed status.
+    """
     if not supabase:
-        logger.warning(
-            f"Supabase client not initialized. Cannot store embedding for {user_id}"
+        logger.error(
+            f"CRITICAL: Supabase client not initialized. Cannot store embedding for {user_id}"
         )
         return False
 
+    upsert_success = False
+
     try:
+        # Step 1: Validate embedding before storage
         validation_result = EmbeddingValidator.validate(embedding)
 
         if not validation_result.is_valid:
             logger.error(
                 f"Pre-storage validation failed for {user_id}: {validation_result.message}"
             )
+            # Attempt to record validation failure
+            _mark_embedding_status(
+                user_id, "failed", f"Validation failed: {validation_result.message}"
+            )
             raise ValueError(
                 f"Invalid embedding cannot be stored: {validation_result.message}"
             )
 
-        # Normalize to 384 dimensions
+        # Step 2: Normalize to 384 dimensions if needed
         target_dim = 384
+        original_dim = len(embedding)
         if len(embedding) < target_dim:
             embedding = embedding + [0.0] * (target_dim - len(embedding))
+            logger.warning(
+                f"Embedding for {user_id} padded from {original_dim} to {target_dim} dimensions"
+            )
         elif len(embedding) > target_dim:
             embedding = embedding[:target_dim]
+            logger.warning(
+                f"Embedding for {user_id} truncated from {original_dim} to {target_dim} dimensions"
+            )
 
-        # UPSERT: Insert or update based on user_id constraint
-        # This eliminates the race condition from check-then-insert pattern
-        supabase.table("profile_embeddings").upsert(
-            {
-                "user_id": user_id,
-                "embedding": embedding,
-                "status": status,
-                "last_updated": datetime.utcnow().isoformat(),
-                "metadata": {
-                    "validation": validation_result.details,
-                    "model": "sentence-transformers/all-MiniLM-L6-v2",
-                    "dimensions": len(embedding),
-                    "validated_at": datetime.utcnow().isoformat(),
+        # Step 3: UPSERT with metadata (atomic operation)
+        upsert_response = (
+            supabase.table("profile_embeddings")
+            .upsert(
+                {
+                    "user_id": user_id,
+                    "embedding": embedding,
+                    "status": status,
+                    "last_updated": datetime.utcnow().isoformat(),
+                    "metadata": {
+                        "validation": validation_result.details,
+                        "model": "sentence-transformers/all-MiniLM-L6-v2",
+                        "dimensions": len(embedding),
+                        "validated_at": datetime.utcnow().isoformat(),
+                    },
                 },
-            },
-            on_conflict="user_id",  # Critical: specify conflict column for UPSERT
-        ).execute()
-
-        logger.info(
-            f"Successfully stored embedding for {user_id} (status={status})",
-            extra={"user_id": user_id},
+                on_conflict="user_id",  # Critical: ensures atomic upsert
+            )
+            .execute()
         )
-        return True
+
+        # Verify upsert succeeded
+        if upsert_response.data:
+            upsert_success = True
+            logger.info(
+                f"Successfully stored embedding for {user_id} (status={status})",
+                extra={"user_id": user_id},
+            )
+        else:
+            logger.warning(f"UPSERT returned no data for {user_id}, may have failed")
+            upsert_success = False
+
+        return upsert_success
 
     except Exception as e:
+        error_type = type(e).__name__
         logger.error(
-            f"Failed to store embedding for {user_id}: {e}",
+            f"Failed to store embedding for {user_id} ({error_type}): {e}",
             extra={"user_id": user_id, "error": str(e)},
             exc_info=True,
         )
-        # Try to mark as failed
-        # Try to mark as failed (with UPSERT to avoid duplicate key errors)
-        try:
-            supabase.table("profile_embeddings").upsert(
-                {
-                    "user_id": user_id,
-                    "status": "failed",
-                    "error_message": str(e),
-                    "last_updated": datetime.utcnow().isoformat(),
-                },
+
+        # Rollback: Mark as failed if upsert failed
+        if not upsert_success:
+            fallback_success = _mark_embedding_status(
+                user_id, "failed", f"{error_type}: {str(e)}"
+            )
+            if not fallback_success:
+                logger.critical(
+                    f"CRITICAL: Both UPSERT and fallback failed for {user_id}. Manual intervention may be needed.",
+                    exc_info=True,
+                )
+
+        return False
+
+
+def _mark_embedding_status(
+    user_id: str, status: str, error_message: Optional[str] = None
+) -> bool:
+    """
+    Helper function to update embedding status (used for error handling).
+    Returns True if successful, False otherwise.
+    """
+    if not supabase:
+        return False
+
+    try:
+        update_data = {
+            "user_id": user_id,
+            "status": status,
+            "last_updated": datetime.utcnow().isoformat(),
+        }
+        if error_message:
+            update_data["error_message"] = error_message
+
+        response = (
+            supabase.table("profile_embeddings")
+            .upsert(
+                update_data,
                 on_conflict="user_id",
-            ).execute()
-        except Exception as inner_e:
-            logger.error(f"Failed to update error status for {user_id}: {inner_e}")
+            )
+            .execute()
+        )
+
+        return response.data is not None
+    except Exception as e:
+        logger.error(f"Failed to update embedding status for {user_id}: {e}")
         return False
 
 
