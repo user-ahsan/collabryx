@@ -7,6 +7,7 @@
 
 import { createClient } from "@/lib/supabase/client"
 import { logger } from "@/lib/logger"
+import { toast } from "sonner"
 import { z } from "zod"
 import type { Connection } from "@/types/database.types"
 
@@ -255,9 +256,11 @@ export async function sendConnectionRequest(
 
     if (error) throw error
 
+    toast.success("Connection request sent")
     return { data, error: null }
   } catch (error) {
     log.error("Error sending connection request:", error)
+    toast.error("Failed to send connection request")
     return { 
       data: null, 
       error: error instanceof Error ? error : new Error("[Connections] Failed to send connection request") 
@@ -321,9 +324,11 @@ export async function acceptConnectionRequest(
 
     if (error) throw error
 
+    toast.success("Connection accepted")
     return { data, error: null }
   } catch (error) {
     log.error("Error accepting connection request:", error)
+    toast.error("Failed to accept connection")
     return { 
       data: null, 
       error: error instanceof Error ? error : new Error("[Connections] Failed to accept connection request") 
@@ -375,9 +380,11 @@ export async function declineConnectionRequest(
 
     if (error) throw error
 
+    toast.success("Connection request declined")
     return { error: null }
   } catch (error) {
     log.error("Error declining connection request:", error)
+    toast.error("Failed to decline connection")
     return { error: error instanceof Error ? error : new Error("[Connections] Failed to decline connection request") }
   }
 }
