@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/client"
+import { logger } from "@/lib/logger"
 import type { Post, PostWithAuthor, PostAttachment, PostReaction, PostUpdateInput } from "@/types/database.types"
 
 // ===========================================
@@ -78,19 +79,16 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError) {
-      console.error("Auth error:", {
-        message: authError.message,
-        stack: authError.stack,
-      })
+      logger.api.error("Auth error fetching posts", authError, { userId: user?.id })
       return { data: [], error: new Error("Authentication failed. Please log in again."), queryCount: 0 }
     }
 
     if (!user) {
-      console.log("No authenticated user - returning empty posts")
+      logger.api.warn("No authenticated user - returning empty posts")
       return { data: [], error: new Error("Please log in to view posts."), queryCount: 0 }
     }
 
-    console.log("Fetching posts for user:", user.id, "with options:", options)
+    logger.api.debug("Fetching posts", { userId: user.id, options })
 
     let query = supabase
       .from("posts")
@@ -139,28 +137,14 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
     const { data, error } = await query
 
     if (error) {
-      console.error("Supabase query error:", {
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        code: error.code,
-      })
+      logger.api.error("Supabase query error", error, { code: error.code, details: error.details })
       throw error
     }
 
     queryCount++
     const queryDuration = Date.now() - queryStartTime
     
-    console.log("Posts fetched successfully:", data?.length || 0, "posts")
-    console.log("Query performance:", {
-      queryCount,
-      duration: queryDuration,
-      postsCount: data?.length || 0
-    })
-    
-    if (data && data.length > 0) {
-      console.log("First post sample:", JSON.stringify(data[0], null, 2))
-    }
+    logger.api.debug("Posts fetched successfully", { count: data?.length || 0, duration: queryDuration })
 
     const mappedPosts: PostWithAuthor[] = (data as RawPost[] || []).map((post) => ({
       id: post.id,
@@ -186,14 +170,7 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
     return { data: mappedPosts, error: null, queryCount, duration: queryDuration }
   } catch (error: any) {
     const queryDuration = Date.now() - queryStartTime
-    console.error("Error fetching posts:", {
-      message: error?.message || error,
-      stack: error?.stack,
-      code: error?.code,
-      error: error,
-      queryCount,
-      duration: queryDuration
-    })
+    logger.api.error("Error fetching posts", error, { queryCount, duration: queryDuration })
     return { data: [], error: error instanceof Error ? error : new Error("Unknown error"), queryCount, duration: queryDuration }
   }
 }
@@ -210,7 +187,7 @@ export async function fetchPostById(postId: string): Promise<{
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError) {
-      console.error("Auth error:", authError)
+      logger.api.error("Auth error fetching post", authError, { postId })
       return { data: null, error: new Error("Authentication failed. Please log in again.") }
     }
 
@@ -257,7 +234,7 @@ export async function fetchPostById(postId: string): Promise<{
 
     return { data: mappedPost, error: null }
   } catch (error) {
-    console.error("Error fetching post:", error)
+    logger.api.error("Error fetching post", error, { postId })
     return { data: null, error: error instanceof Error ? error : new Error("Unknown error") }
   }
 }
@@ -299,7 +276,7 @@ export async function createPost(input: CreatePostInput): Promise<{
 
     return { data, error: null }
   } catch (error) {
-    console.error("Error creating post:", error)
+    logger.api.error("Error creating post", error)
     return { data: null, error: error instanceof Error ? error : new Error("Unknown error") }
   }
 }
