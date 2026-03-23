@@ -6,14 +6,19 @@ Uses Sentence Transformers to generate semantic embeddings for user profiles
 from sentence_transformers import SentenceTransformer
 import torch
 import asyncio
+import logging
 from typing import List
 from tenacity import (
     retry,
     stop_after_attempt,
     wait_exponential,
     retry_if_exception_type,
+    before_log,
+    after_log,
 )
 from embedding_validator import EmbeddingValidator
+
+logger = logging.getLogger(__name__)
 
 
 class EmbeddingGenerator:
@@ -41,11 +46,13 @@ class EmbeddingGenerator:
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
         retry=retry_if_exception_type(Exception),
+        before=before_log(logger, logging.WARNING),
+        after=after_log(logger, logging.INFO),
         reraise=True,
     )
     async def generate_embedding(self, text: str) -> List[float]:
         """
-        Generate embedding for a text string with retry logic
+        Generate embedding for a text string with retry logic and circuit breaker pattern
 
         Args:
             text: Input text to embed (10-512 characters recommended)
@@ -55,7 +62,7 @@ class EmbeddingGenerator:
 
         Raises:
             ValueError: If text is empty or too short
-            Exception: If embedding generation fails after retries
+            Exception: If embedding generation fails after retries (circuit opens)
         """
         try:
             if not text or not text.strip():
