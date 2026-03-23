@@ -142,7 +142,7 @@ DLQ_SIZE_GAUGE = Gauge(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Manage application lifecycle with graceful shutdown"""
+    """Manage application lifecycle with graceful shutdown and signal handling"""
     global SHUTDOWN_FLAG
     validate_env_vars()
     logger.info("=" * 60)
@@ -159,11 +159,16 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    # Graceful shutdown
+    # Graceful shutdown initiated
     logger.info("=" * 60)
     logger.info("SHUTTING DOWN EMBEDDING SERVICE")
     logger.info("=" * 60)
     SHUTDOWN_FLAG = True
+
+    # Report queue state before shutdown
+    queue_size = request_queue.qsize()
+    if queue_size > 0:
+        logger.warning(f"⚠️ {queue_size} items still in queue during shutdown")
 
     # Wait for queue to drain (with timeout)
     logger.info("Waiting for queue to drain (max 30s)...")
@@ -172,20 +177,27 @@ async def lifespan(app: FastAPI):
         logger.info("✓ Queue drained successfully")
     except asyncio.TimeoutError:
         logger.warning("⚠️ Queue drain timeout - some items may be lost")
+    except KeyboardInterrupt:
+        logger.warning("⚠️ Shutdown interrupted by user")
 
-    # Cancel background tasks gracefully
+    # Cancel background tasks gracefully with individual timeouts
     logger.info("Cancelling background tasks...")
-    for task_name, task in [
+    tasks_with_names = [
         ("processor", processor_task),
         ("dlq", dlq_processor_task),
         ("pending", pending_queue_task),
-    ]:
-        task.cancel()
-        try:
-            await asyncio.wait_for(task, timeout=5.0)
-            logger.info(f"✓ {task_name} task cancelled gracefully")
-        except (asyncio.CancelledError, asyncio.TimeoutError):
-            logger.warning(f"⚠️ {task_name} task forced to stop")
+    ]
+
+    for task_name, task in tasks_with_names:
+        if not task.done():
+            task.cancel()
+            try:
+                await asyncio.wait_for(task, timeout=5.0)
+                logger.info(f"✓ {task_name} task cancelled gracefully")
+            except asyncio.CancelledError:
+                logger.info(f"✓ {task_name} task cancelled")
+            except asyncio.TimeoutError:
+                logger.warning(f"⚠️ {task_name} task forced to stop (timeout)")
 
     logger.info("=" * 60)
     logger.info("EMBEDDING SERVICE SHUTDOWN COMPLETE")
