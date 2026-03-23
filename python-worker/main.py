@@ -613,10 +613,10 @@ async def process_dead_letter_queue():
 
 
 async def process_pending_queue():
-    """Process pending embedding requests from database queue"""
+    """Process pending embedding requests from database queue with atomic claim pattern"""
     while True:
         try:
-            # Get pending requests
+            # Get pending requests (candidates for claiming)
             response = (
                 supabase.table("embedding_pending_queue")
                 .select("*")
@@ -628,13 +628,28 @@ async def process_pending_queue():
 
             for item in response.data:
                 try:
-                    # Mark as processing
-                    supabase.table("embedding_pending_queue").update(
-                        {
-                            "status": "processing",
-                            "first_attempt": datetime.utcnow().isoformat(),
-                        }
-                    ).eq("id", item["id"]).execute()
+                    # ATOMIC CLAIM: Update only if status is still "pending"
+                    # This prevents multiple workers from processing the same item
+                    claim_response = (
+                        supabase.table("embedding_pending_queue")
+                        .update(
+                            {
+                                "status": "processing",
+                                "first_attempt": datetime.utcnow().isoformat(),
+                            }
+                        )
+                        .eq("id", item["id"])
+                        .eq("status", "pending")  # Critical: atomic claim condition
+                        .execute()
+                    )
+
+                    # Check if we successfully claimed this item
+                    if not claim_response.data or len(claim_response.data) == 0:
+                        # Another worker claimed it, skip this item
+                        logger.debug(
+                            f"Item {item['id']} already claimed by another worker, skipping"
+                        )
+                        continue
 
                     # Get user profile data
                     profile_response = (
