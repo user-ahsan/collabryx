@@ -37,8 +37,20 @@ services:
       - PYTHONUNBUFFERED=1
       - TRANSFORMERS_CACHE=/app/.cache/huggingface
       - HF_HOME=/app/.cache/huggingface
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
     env_file:
       - .env
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=256m
+      - /app/logs:noexec,nosuid,size=512m
+      - /home/appuser/.cache:noexec,nosuid,size=512m
     volumes:
       - model-cache:/app/.cache/huggingface
       - worker-logs:/app/logs
@@ -68,11 +80,38 @@ services:
       - embedding-worker
     networks:
       - collabryx-network
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=64m
+      - /var/cache/nginx:noexec,nosuid,size=128m
+      - /var/log/nginx:noexec,nosuid,size=128m
     deploy:
       resources:
         limits:
           cpus: '0.5'
           memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
 
 volumes:
   model-cache:

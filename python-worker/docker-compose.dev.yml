@@ -1,0 +1,127 @@
+# Collabryx Python Worker - Development Configuration
+# 
+# This configuration mirrors production security settings for consistency.
+# Use for local development with the same security posture as production.
+#
+# Usage:
+#   # Start worker only (Redis NOT included - recommended for simple development)
+#   docker-compose -f docker-compose.dev.yml up
+#   
+#   # Start worker + Redis (only if you need queue functionality)
+#   docker-compose -f docker-compose.dev.yml --profile redis up
+#   
+#   # Rebuild and start
+#   docker-compose -f docker-compose.dev.yml up --build
+#
+# Note: 
+# - Redis is OPTIONAL in development - only start if needed
+# - Security hardening is intentionally enabled to prevent security drift
+# - Code hot-reloading is enabled via volume mounts
+
+services:
+  # Python Embedding Worker - Development with security hardening
+  collabryx-worker-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: collabryx-worker-dev:latest
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000}
+      - HF_API_KEY=${HF_API_KEY:-}
+      - LOG_LEVEL=${LOG_LEVEL:-DEBUG}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+      # Development-specific settings
+      - TRANSFORMERS_CACHE=/app/.cache/huggingface
+      - HF_HOME=/app/.cache/huggingface
+    volumes:
+      # Mount local code for hot reloading (development only)
+      - ./main.py:/app/main.py:ro
+      - ./embedding_generator.py:/app/embedding_generator.py:ro
+      - ./embedding_validator.py:/app/embedding_validator.py:ro
+      - ./rate_limiter.py:/app/rate_limiter.py:ro
+      - ./services:/app/services:ro
+      # Persist logs locally for debugging
+      - ./logs:/app/logs
+      # Model cache persistence
+      - model-cache-dev:/app/.cache/huggingface
+    security_opt:
+      # CRITICAL: Maintain security parity with production
+      - no-new-privileges:true
+    cap_drop:
+      # Drop all capabilities (production parity)
+      - ALL
+    cap_add:
+      # Only add back what's absolutely necessary
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      # Secure temporary storage (production parity)
+      - /tmp:noexec,nosuid,size=256m
+      - /app/logs:noexec,nosuid,size=512m
+      - /home/appuser/.cache:noexec,nosuid,size=512m
+    deploy:
+      resources:
+        # Higher limits for development to accommodate debugging
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"
+        compress: "true"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    networks:
+      - collabryx-network-dev
+
+  # Redis for Development (with authentication)
+  # OPTIONAL: Only start if you need queue functionality
+  # Run with: docker-compose -f docker-compose.dev.yml --profile redis up
+  redis-dev:
+    image: redis:7-alpine
+    container_name: collabryx-redis-dev
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data-dev:/data
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-devpassword123}
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-devpassword123}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-devpassword123}", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - collabryx-network-dev
+    profiles:
+      - redis
+
+networks:
+  collabryx-network-dev:
+    driver: bridge
+
+volumes:
+  model-cache-dev:
+    driver: local
+  redis-data-dev:
+    driver: local

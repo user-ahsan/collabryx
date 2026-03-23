@@ -15,6 +15,7 @@ services:
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-http://localhost:3000}
       - HF_API_KEY=${HF_API_KEY:-}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -26,6 +27,14 @@ services:
       - /tmp:noexec,nosuid,size=256m
       - /app/logs:noexec,nosuid,size=512m
       - /home/appuser/.cache:noexec,nosuid,size=512m
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
     logging:
       driver: json-file
       options:
@@ -50,13 +59,16 @@ services:
       - "6379:6379"
     volumes:
       - redis-data:/data
-    command: redis-server --appendonly yes
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
       interval: 30s
       timeout: 5s
       retries: 3
+      start_period: 10s
     networks:
       - collabryx-network
     profiles:
@@ -93,9 +105,12 @@ services:
     ports:
       - "3000:3000"
     environment:
+      # SECURITY: Change default credentials in production!
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-ChangeMe123!@#SecurePass}
       - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      - GF_SERVER_ROOT_URL=http://localhost:3000
     volumes:
       - grafana-data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
