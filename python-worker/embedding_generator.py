@@ -104,6 +104,7 @@ generator = EmbeddingGenerator()
 def construct_semantic_text(profile: dict, skills: list, interests: list) -> str:
     """
     Construct semantic text string from user profile data
+    Handles None values and malformed data gracefully
 
     Args:
         profile: User profile dictionary
@@ -113,26 +114,41 @@ def construct_semantic_text(profile: dict, skills: list, interests: list) -> str
     Returns:
         Semantic text string for embedding (max 2000 chars)
     """
+    # Handle None values in lists with defensive filtering
     skills_text = (
-        ", ".join([s.get("skill_name", "") for s in skills]) if skills else "None"
+        ", ".join(
+            [
+                s.get("skill_name", "")
+                for s in (skills or [])
+                if s and isinstance(s, dict)
+            ]
+        )
+        or "None"
     )
     interests_text = (
-        ", ".join([i.get("interest", "") for i in interests]) if interests else "None"
+        ", ".join(
+            [
+                i.get("interest", "")
+                for i in (interests or [])
+                if i and isinstance(i, dict)
+            ]
+        )
+        or "None"
     )
     goals_text = (
-        ", ".join(profile.get("looking_for", []))
+        ", ".join(profile.get("looking_for", []) or [])
         if profile.get("looking_for")
         else "None"
     )
 
     semantic_text = f"""
-Role: {profile.get("role", "User")}.
-Headline: {profile.get("headline", "")}.
-Bio: {profile.get("bio", "")}.
+Role: {profile.get("role", "User") or "User"}.
+Headline: {profile.get("headline", "") or ""}.
+Bio: {profile.get("bio", "") or ""}.
 Skills: {skills_text}.
 Interests: {interests_text}.
 Goals: {goals_text}.
-Location: {profile.get("location", "")}.
+Location: {profile.get("location", "") or ""}.
     """.strip()
 
     return semantic_text[:2000]
