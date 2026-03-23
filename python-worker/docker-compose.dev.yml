@@ -4,11 +4,19 @@
 # Use for local development with the same security posture as production.
 #
 # Usage:
+#   # Start worker only (Redis NOT included - recommended for simple development)
 #   docker-compose -f docker-compose.dev.yml up
+#   
+#   # Start worker + Redis (only if you need queue functionality)
+#   docker-compose -f docker-compose.dev.yml --profile redis up
+#   
+#   # Rebuild and start
 #   docker-compose -f docker-compose.dev.yml up --build
 #
-# Note: Security hardening is intentionally enabled to prevent security drift
-# between development and production environments.
+# Note: 
+# - Redis is OPTIONAL in development - only start if needed
+# - Security hardening is intentionally enabled to prevent security drift
+# - Code hot-reloading is enabled via volume mounts
 
 services:
   # Python Embedding Worker - Development with security hardening
@@ -84,6 +92,8 @@ services:
       - collabryx-network-dev
 
   # Redis for Development (with authentication)
+  # OPTIONAL: Only start if you need queue functionality
+  # Run with: docker-compose -f docker-compose.dev.yml --profile redis up
   redis-dev:
     image: redis:7-alpine
     container_name: collabryx-redis-dev
@@ -103,6 +113,8 @@ services:
       start_period: 10s
     networks:
       - collabryx-network-dev
+    profiles:
+      - redis
 
 networks:
   collabryx-network-dev:
