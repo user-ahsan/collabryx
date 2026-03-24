@@ -108,8 +108,8 @@ export async function GET(request: NextRequest) {
       },
     });
 
-  } catch {
-    console.error("Health check error:", error);
+  } catch (err) {
+    console.error("Health check error:", err);
     
     const errorResponse: HealthCheckResponse = {
       status: "unhealthy",
@@ -117,7 +117,7 @@ export async function GET(request: NextRequest) {
       backend_mode: "unknown",
       circuit_breaker_state: getCircuitBreakerStatus(),
       database_connected: false,
-      error: error instanceof Error ? error.message : "Health check failed",
+      error: err instanceof Error ? err.message : "Health check failed",
     };
 
     return NextResponse.json(errorResponse, {
