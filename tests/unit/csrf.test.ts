@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * CSRF Token Validation Tests
  * Tests for P0-02: Missing CSRF protection on mutating endpoints
