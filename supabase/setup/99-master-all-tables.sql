@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS public.user_experiences (
     is_current BOOLEAN NOT NULL DEFAULT FALSE,
     order_index INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE(user_id, title)
+    UNIQUE(user_id, title, company, start_date)
 );
 
 -- --------------------------------------------
