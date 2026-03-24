@@ -161,7 +161,7 @@ export default function NotificationsPage() {
   const { mutate: markAsRead } = useMarkNotificationAsRead()
   const { mutate: markAllAsRead } = useMarkAllNotificationsAsRead()
   const { mutate: deleteNotification } = useDeleteNotification()
-  const { acceptRequest, declineRequest, isLoading: isActionLoading } = useConnectionRequests()
+  const { acceptRequest, declineRequest } = useConnectionRequests()
   
   // Subscribe to real-time notifications
   useRealtimeNotifications()
