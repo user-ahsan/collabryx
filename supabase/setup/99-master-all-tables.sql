@@ -624,6 +624,61 @@ CREATE TABLE IF NOT EXISTS public.content_moderation_logs (
     moderated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- --------------------------------------------
+-- TABLE 32: post_impressions (NEW for Thompson Sampling)
+-- --------------------------------------------
+-- Tracks post impressions for engagement rate calculation
+CREATE TABLE IF NOT EXISTS public.post_impressions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    impression_count INTEGER NOT NULL DEFAULT 0,
+    last_impression_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(user_id, post_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_post_impressions_post ON public.post_impressions(post_id);
+CREATE INDEX IF NOT EXISTS idx_post_impressions_user ON public.post_impressions(user_id);
+
+-- --------------------------------------------
+-- TABLE 33: feed_thompson_params (NEW for Thompson Sampling)
+-- --------------------------------------------
+-- Stores alpha/beta distribution parameters for Thompson Sampling
+CREATE TABLE IF NOT EXISTS public.feed_thompson_params (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+    post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+    alpha REAL NOT NULL DEFAULT 1.0,
+    beta REAL NOT NULL DEFAULT 1.0,
+    successes INTEGER NOT NULL DEFAULT 0,
+    failures INTEGER NOT NULL DEFAULT 0,
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE(user_id, post_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_feed_thompson_params_user ON public.feed_thompson_params(user_id);
+CREATE INDEX IF NOT EXISTS idx_feed_thompson_params_post ON public.feed_thompson_params(post_id);
+
+-- Enable RLS on new tables
+ALTER TABLE public.post_impressions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.feed_thompson_params ENABLE ROW LEVEL SECURITY;
+
+-- RLS policies for post_impressions
+CREATE POLICY "Users can view own impressions" ON public.post_impressions FOR SELECT USING (user_id = auth.uid());
+CREATE POLICY "Service role can manage impressions" ON public.post_impressions FOR ALL USING ((auth.jwt() ->> 'role') = 'service_role');
+
+-- RLS policies for feed_thompson_params
+CREATE POLICY "Service role can manage thompson params" ON public.feed_thompson_params FOR ALL USING ((auth.jwt() ->> 'role') = 'service_role');
+
+-- Add to realtime
+DO $$
+BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.post_impressions;
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.feed_thompson_params;
+EXCEPTION
+    WHEN duplicate_object THEN NULL;
+END $$;
+
 -- ============================================================================
 -- SECTION 2.7: MIGRATIONS FOR EXISTING DATABASES
 -- ============================================================================
