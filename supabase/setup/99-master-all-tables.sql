@@ -1882,6 +1882,9 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 -- --------------------------------------------
 -- FUNCTION: calculate_skills_overlap
 -- --------------------------------------------
+-- Drop existing function first (return type changed - added complementary_explanation)
+DROP FUNCTION IF EXISTS public.calculate_skills_overlap(UUID, UUID) CASCADE;
+
 CREATE OR REPLACE FUNCTION public.calculate_skills_overlap(
     user1_id UUID,
     user2_id UUID
