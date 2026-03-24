@@ -22,8 +22,55 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Collabryx - Innovate. Collaborate. Create.",
-  description: "The ultimate collaboration platform for modern teams. Connect, create, and innovate together.",
+  title: {
+    default: "Collabryx - Innovate. Collaborate. Create.",
+    template: "%s | Collabryx",
+  },
+  description: "The ultimate collaboration platform for modern teams. Connect, create, and innovate together with AI-powered matching and real-time collaboration tools.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://collabryx.com"),
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "/",
+    title: "Collabryx - Innovate. Collaborate. Create.",
+    description: "The ultimate collaboration platform for modern teams.",
+    siteName: "Collabryx",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Collabryx",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Collabryx - Innovate. Collaborate. Create.",
+    description: "The ultimate collaboration platform for modern teams.",
+    images: ["/og-image.png"],
+    creator: "@collabryx",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  icons: {
+    icon: "/favicon.ico",
+    shortcut: "/favicon-16x16.png",
+    apple: "/apple-touch-icon.png",
+  },
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({

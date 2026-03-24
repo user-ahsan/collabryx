@@ -6,27 +6,46 @@ import { MobileNav } from "@/components/shared/mobile-nav"
 import { SettingsDialog } from "@/components/features/settings/settings-dialog"
 import { cn } from "@/lib/utils"
 import { useLoginData } from "@/hooks/use-login-data"
-import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
-// Create query client once
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
+// Query client factory - creates fresh instance per request
+function makeQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: 1,
+        refetchOnWindowFocus: false,
+      },
     },
-  },
-})
+  })
+}
+
+// Store query client instance
+let browserQueryClient: QueryClient | undefined = undefined
+
+// Get or create query client instance (singleton in browser)
+function getQueryClient() {
+  if (typeof window === 'undefined') {
+    // Server: always create new instance
+    return makeQueryClient()
+  } else {
+    // Browser: use singleton to prevent data loss
+    if (!browserQueryClient) {
+      browserQueryClient = makeQueryClient()
+    }
+    return browserQueryClient
+  }
+}
 
 function AuthLayoutContent({ children }: { children: React.ReactNode }) {
     const { isCollapsed } = useSidebar()
     const { isReady } = useLoginData()
     const router = useRouter()
     const [isChecking, setIsChecking] = useState(true)
-    const queryClient = useQueryClient()
+    const queryClient = getQueryClient()
 
     useEffect(() => {
         async function checkAuth() {
@@ -107,6 +126,8 @@ function AuthLayoutContent({ children }: { children: React.ReactNode }) {
 }
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
+    const queryClient = getQueryClient()
+    
     return (
         <QueryClientProvider client={queryClient}>
             <SidebarProvider>
