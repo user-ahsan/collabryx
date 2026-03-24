@@ -4,13 +4,21 @@ import { useState, useCallback, useEffect } from "react"
 import { useIsMobile } from "@/hooks/use-media-query"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import {
   Bell,
+  Check,
   Trash2,
+  X,
   CheckCheck,
+  UserPlus,
+  MessageSquare,
+  Heart,
+  Star,
 } from "lucide-react"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { useRef } from "react"
