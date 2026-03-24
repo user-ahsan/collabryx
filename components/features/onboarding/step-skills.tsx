@@ -3,11 +3,19 @@
 import React from "react"
 import { useFormContext, Controller } from "react-hook-form"
 import { Label } from "@/components/ui/label"
-import { InlineSearchableCombobox, ComboboxOption } from "@/components/ui/inline-searchable-combobox"
+import { Button } from "@/components/ui/button"
+import { SearchableCombobox, type ComboboxOption } from "@/components/ui/searchable-combobox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Badge } from "@/components/ui/badge"
+import { X } from "lucide-react"
 import { skillsDatabase, type Skill } from "@/lib/data/skills-database"
-import { cn } from "@/lib/utils"
-import { glass } from "@/lib/utils/glass-variants"
-import { SkillMatrixGrid } from "./skill-matrix-grid"
+
+const PROFICIENCY_LEVELS = [
+  { value: "beginner", label: "Beginner" },
+  { value: "intermediate", label: "Intermediate" },
+  { value: "advanced", label: "Advanced" },
+  { value: "expert", label: "Expert" },
+]
 
 interface SkillWithProficiency {
   id: string
@@ -18,7 +26,6 @@ interface SkillWithProficiency {
 export function StepSkills() {
   const { control, formState: { errors } } = useFormContext()
 
-  // Convert skills database to combobox options
   const skillOptions: ComboboxOption[] = React.useMemo(() => 
     skillsDatabase.map((skill: Skill) => ({
       id: skill.id,
@@ -33,8 +40,8 @@ export function StepSkills() {
   return (
     <div className="space-y-6">
       <div className="space-y-2 text-center md:text-left">
-        <h2 id="step-heading" className="text-3xl font-bold tracking-tight text-foreground">Your Skills</h2>
-        <p className="text-base text-muted-foreground">Add your skills to help us match you with the right opportunities. Select from our comprehensive list or add custom skills.</p>
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">Your Skills</h2>
+        <p className="text-base text-muted-foreground">Add your skills to help us match you with the right opportunities.</p>
       </div>
 
       <Controller
@@ -44,21 +51,23 @@ export function StepSkills() {
           const skills: SkillWithProficiency[] = field.value || []
 
           return (
-            <div className="space-y-4" aria-labelledby="step-heading">
+            <div className="space-y-4" aria-labelledby="skills-heading">
+              {/* Add Skills Combobox */}
               <div className="grid gap-2">
                 <Label htmlFor="skills-combobox" className="text-sm font-semibold text-foreground">
-                  Add Skills <span className="text-destructive" aria-hidden="true">*</span>
-                  <span className="sr-only">(required)</span>
+                  Add Skills <span className="text-destructive">*</span>
                 </Label>
-                <InlineSearchableCombobox
+                
+                <SearchableCombobox
                   options={skillOptions}
-                  selected={skills.map(s => s.label)}
-                  onChange={(selected) => {
-                    const newSkills = selected.map((label) => {
-                      const existing = skills.find(skill => skill.label === label)
+                  selected={skills.map(s => s.id)}
+                  onChange={(selectedIds) => {
+                    const newSkills = selectedIds.map((id) => {
+                      const existing = skills.find(s => s.id === id)
+                      const option = skillOptions.find(opt => opt.id === id)
                       return {
-                        id: existing?.id || `custom-${label}`,
-                        label,
+                        id,
+                        label: option?.label || id,
                         proficiency: existing?.proficiency || "intermediate",
                       }
                     })
@@ -77,47 +86,61 @@ export function StepSkills() {
                   className="skills-combobox"
                   aria-required="true"
                   aria-invalid={!!errors.skills}
-                  aria-describedby={typeof errors.skills?.message === "string" ? "skills-error" : "skills-hint"}
                 />
+
+                {/* Proficiency for each skill */}
+                {skills.length > 0 && (
+                  <div className="space-y-3 mt-4">
+                    <Label className="text-sm font-semibold text-foreground">Proficiency Levels</Label>
+                    {skills.map((skill, index) => (
+                      <div key={skill.id} className="flex items-center gap-3">
+                        <span className="text-sm text-muted-foreground w-32 truncate">{skill.label}</span>
+                        <Select
+                          value={skill.proficiency || "intermediate"}
+                          onValueChange={(value) => {
+                            const newSkills = [...skills]
+                            newSkills[index] = { ...skill, proficiency: value }
+                            field.onChange(newSkills)
+                          }}
+                        >
+                          <SelectTrigger className="w-[180px] bg-background/40 backdrop-blur-md">
+                            <SelectValue placeholder="Select proficiency" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {PROFICIENCY_LEVELS.map((level) => (
+                              <SelectItem key={level.value} value={level.value}>
+                                {level.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newSkills = skills.filter(s => s.id !== skill.id)
+                            field.onChange(newSkills)
+                          }}
+                          className="p-1 rounded-md hover:bg-red-500/20 transition-colors text-muted-foreground hover:text-red-400"
+                          aria-label={`Remove ${skill.label}`}
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {typeof errors.skills?.message === "string" && (
-                  <p id="skills-error" className="text-xs text-destructive font-medium" role="alert">
+                  <p className="text-xs text-destructive font-medium" role="alert">
                     {errors.skills.message}
                   </p>
                 )}
               </div>
 
-              {/* Proficiency selector for each skill */}
-              {skills.length > 0 && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-                  <div className="w-2 h-2 rounded-full bg-green-500/50" />
-                  <span>{skills.length} skill{skills.length > 1 ? 's' : ''} added</span>
-                </div>
-              )}
-
-              <SkillMatrixGrid
-                skills={skills.map((skill) => ({
-                  id: skill.id,
-                  label: skill.label,
-                  proficiency: (skill.proficiency || "intermediate") as "beginner" | "intermediate" | "advanced" | "expert",
-                }))}
-                onProficiencyChange={(skillId, proficiency) => {
-                  const newSkills = skills.map((skill) =>
-                    skill.id === skillId ? { ...skill, proficiency } : skill
-                  )
-                  field.onChange(newSkills)
-                }}
-                onRemove={(skillId) => {
-                  const newSkills = skills.filter((skill) => skill.id !== skillId)
-                  field.onChange(newSkills)
-                }}
-              />
-
-              <div className={cn(
-                "p-4 rounded-lg",
-                glass("subtle")
-              )}>
-                <p id="skills-hint" className="text-sm text-muted-foreground">
-                  💡 Tip: Click on any skill card to flip it and adjust proficiency. Your skills are matched with opportunities based on both category and expertise level.
+              {/* Helper Text */}
+              <div className="p-4 rounded-lg bg-muted/50 backdrop-blur-sm border border-border/50">
+                <p className="text-sm text-muted-foreground">
+                  💡 <strong>Tip:</strong> Select from 1000+ skills or type to add custom skills. Set proficiency levels to help us match you better.
                 </p>
               </div>
             </div>

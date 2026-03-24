@@ -1,0 +1,101 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 2.69kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for ghcr.io/astral-sh/uv:python3.11-bookworm-slim
+#2 DONE 1.4s
+
+#3 [internal] load metadata for docker.io/library/python:3.11-slim-bookworm
+#3 DONE 1.7s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 424B done
+#4 DONE 0.0s
+
+#5 [builder 1/7] FROM ghcr.io/astral-sh/uv:python3.11-bookworm-slim@sha256:4f5d923c9dcea037f57bda425dd209f3ec643da2f0b74227f68d09dab0b3bb36
+#5 resolve ghcr.io/astral-sh/uv:python3.11-bookworm-slim@sha256:4f5d923c9dcea037f57bda425dd209f3ec643da2f0b74227f68d09dab0b3bb36 0.0s done
+#5 DONE 0.0s
+
+#6 [runtime  1/15] FROM docker.io/library/python:3.11-slim-bookworm@sha256:420310dd2ff7895895f0f1f9d15cae5a95dabceb8f1d6b9a23ef33c2c1c542c3
+#6 resolve docker.io/library/python:3.11-slim-bookworm@sha256:420310dd2ff7895895f0f1f9d15cae5a95dabceb8f1d6b9a23ef33c2c1c542c3
+#6 resolve docker.io/library/python:3.11-slim-bookworm@sha256:420310dd2ff7895895f0f1f9d15cae5a95dabceb8f1d6b9a23ef33c2c1c542c3 0.1s done
+#6 DONE 0.1s
+
+#7 [internal] load build context
+#7 transferring context: 918B done
+#7 DONE 0.0s
+
+#8 [runtime  7/15] COPY main.py .
+#8 CACHED
+
+#9 [runtime 10/15] COPY rate_limiter.py .
+#9 CACHED
+
+#10 [runtime  9/15] COPY embedding_validator.py .
+#10 CACHED
+
+#11 [builder 3/7] RUN apt-get update && apt-get install -y --no-install-recommends     gcc     g++     && rm -rf /var/lib/apt/lists/*
+#11 CACHED
+
+#12 [runtime 14/15] RUN mkdir -p /app/logs /tmp &&     chown -R appuser:appuser /app /tmp &&     chmod -R 755 /app/.cache
+#12 CACHED
+
+#13 [builder 6/7] RUN uv pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+#13 CACHED
+
+#14 [runtime  2/15] WORKDIR /app
+#14 CACHED
+
+#15 [runtime  4/15] COPY --from=builder /app/.venv /app/.venv
+#15 CACHED
+
+#16 [runtime  3/15] RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends     curl     && rm -rf /var/lib/apt/lists/*     && apt-get clean     && apt-get autoremove -y
+#16 CACHED
+
+#17 [runtime 13/15] RUN useradd --create-home --shell /bin/bash appuser
+#17 CACHED
+
+#18 [runtime 11/15] COPY services/ ./services/
+#18 CACHED
+
+#19 [builder 2/7] WORKDIR /app
+#19 CACHED
+
+#20 [builder 7/7] RUN uv pip install --no-cache-dir -r requirements.txt
+#20 CACHED
+
+#21 [runtime  5/15] COPY --from=builder /app/requirements.txt /app/
+#21 CACHED
+
+#22 [runtime  6/15] RUN mkdir -p /app/.cache/huggingface &&     python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')" &&     chmod -R 755 /app/.cache/huggingface
+#22 CACHED
+
+#23 [runtime  8/15] COPY embedding_generator.py .
+#23 CACHED
+
+#24 [builder 5/7] RUN uv venv /app/.venv
+#24 CACHED
+
+#25 [builder 4/7] COPY requirements.txt .
+#25 CACHED
+
+#26 [runtime 12/15] COPY tests/ ./tests/
+#26 CACHED
+
+#27 [runtime 15/15] RUN chown -R appuser:appuser /app
+#27 CACHED
+
+#28 exporting to image
+#28 exporting layers done
+#28 exporting manifest sha256:203155e61007378fcd39ea5848276e7c1c0a487f32cd37f3e7b1d2884809337b 0.0s done
+#28 exporting config sha256:d231e37fc2ff156b889839e809d65c10feea0d204dfd95060cd450f50787d7e5 0.0s done
+#28 exporting attestation manifest sha256:a64e93f9f35548847e53cf983e2f1588f30420bb67a70f28a6e613c1d26ab7e5
+#28 exporting attestation manifest sha256:a64e93f9f35548847e53cf983e2f1588f30420bb67a70f28a6e613c1d26ab7e5 0.0s done
+#28 exporting manifest list sha256:fd5059502ee40cb037a2dc51545a08bdf2c7431f1e92f48760b719b181d096f3 0.0s done
+#28 naming to docker.io/library/collabryx-worker:latest done
+#28 unpacking to docker.io/library/collabryx-worker:latest 0.0s done
+#28 DONE 0.2s
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/jztrhco1m1njre6d0lsd90i0a
