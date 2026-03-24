@@ -1796,6 +1796,9 @@ BEGIN
     LEFT JOIN user_analytics ua ON p.id = ua.user_id
     WHERE p.id != COALESCE(exclude_user_id, p.id)
         AND p.onboarding_completed = true
+        AND (filter_location IS NULL OR p.location = filter_location)
+        AND (filter_availability IS NULL OR p.collaboration_readiness = filter_availability)
+        AND (filter_looking_for IS NULL OR p.looking_for && filter_looking_for)
         AND p.id NOT IN (
             SELECT receiver_id FROM connections 
             WHERE requester_id = exclude_user_id AND status = 'accepted'
