@@ -2649,11 +2649,16 @@ CREATE OR REPLACE FUNCTION notify_post_reaction()
 RETURNS trigger AS $$
 DECLARE
   post_author uuid;
+  prefs notification_preferences;
 BEGIN
   SELECT author_id INTO post_author FROM posts WHERE posts.id = NEW.post_id;
   IF post_author IS NOT NULL AND post_author != NEW.user_id THEN
-    INSERT INTO notifications (user_id, type, actor_id, content, resource_type, resource_id)
-    VALUES (post_author, 'like', NEW.user_id, 'liked your post', 'post', NEW.post_id);
+    -- Check notification preferences
+    SELECT * INTO prefs FROM notification_preferences WHERE user_id = post_author;
+    IF prefs.email_post_likes = TRUE THEN
+      INSERT INTO notifications (user_id, type, actor_id, content, resource_type, resource_id)
+      VALUES (post_author, 'like', NEW.user_id, 'liked your post', 'post', NEW.post_id);
+    END IF;
   END IF;
   RETURN NEW;
 END;
