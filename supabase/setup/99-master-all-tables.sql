@@ -1625,7 +1625,7 @@ BEGIN
   
   RETURN counter_value;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 GRANT EXECUTE ON FUNCTION public.get_post_counter_with_lock(UUID, TEXT) TO authenticated;
 
