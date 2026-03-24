@@ -1727,11 +1727,10 @@ BEGIN
     RETURN QUERY
     SELECT 
         us.id as skill_id,
-        s.name,
-        s.category,
-        us.proficiency_level
+        us.skill_name as name,
+        NULL::TEXT as category,
+        us.proficiency as proficiency_level
     FROM user_skills us
-    INNER JOIN skills s ON us.skill_id = s.id
     WHERE us.user_id = p_user_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
