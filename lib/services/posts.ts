@@ -231,14 +231,17 @@ export async function fetchPersonalizedFeed(options: PostsQueryOptions = {}): Pr
     const queryDuration = Date.now() - queryStartTime
     logger.api.debug("Personalized feed fetched", { count: feedData.length, duration: queryDuration })
 
-    const mappedPosts: PostWithAuthor[] = feedData.map((item: { post: PostWithAuthor; score: number }) => ({
-      ...item.post,
-      author_name: item.post.author?.display_name || item.post.author?.full_name || "Unknown",
-      author_role: "Member",
-      author_avatar: item.post.author?.avatar_url || "",
-      time_ago: formatTimeAgo(item.post.created_at),
-      feed_score: item.score,
-    }))
+    const mappedPosts: PostWithAuthor[] = feedData.map((item) => {
+      const feedItem = item as unknown as { score: number; post: PostWithAuthor & { author?: { display_name?: string; full_name?: string; avatar_url?: string } } }
+      return {
+        ...feedItem.post,
+        author_name: feedItem.post.author?.display_name || feedItem.post.author?.full_name || "Unknown",
+        author_role: "Member",
+        author_avatar: feedItem.post.author?.avatar_url || "",
+        time_ago: formatTimeAgo(feedItem.post.created_at),
+        feed_score: feedItem.score,
+      }
+    })
 
     return { data: mappedPosts, error: null, queryCount, duration: queryDuration }
   } catch (error) {
