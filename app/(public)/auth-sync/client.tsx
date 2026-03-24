@@ -12,10 +12,9 @@ import { Button } from "@/components/ui/button"
 interface AuthSyncClientProps {
     destination: string
     needsEmbeddingWait?: boolean
-    configError?: boolean
 }
 
-export function AuthSyncClient({ destination, needsEmbeddingWait = false, configError = false }: AuthSyncClientProps) {
+export function AuthSyncClient({ destination, needsEmbeddingWait = false }: AuthSyncClientProps) {
     const router = useRouter()
     const [embeddingStatus, setEmbeddingStatus] = useState<'pending' | 'processing' | 'completed' | 'failed' | 'not_found'>('not_found')
     const [isChecking, setIsChecking] = useState(true)
@@ -28,11 +27,8 @@ export function AuthSyncClient({ destination, needsEmbeddingWait = false, config
         const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
         
         if (!supabaseUrl || !supabaseKey) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
             setHasError(true)
-            // eslint-disable-next-line react-hooks/set-state-in-effect
             setErrorMessage("Authentication service is not configured. Please contact support.")
-            // eslint-disable-next-line react-hooks/set-state-in-effect
             setIsChecking(false)
             return
         }
