@@ -5,8 +5,7 @@ import {
   validateBanner, 
   validateImage,
   sanitizeFileName,
-  generateSecureFileName,
-  FILE_SIZE_LIMITS 
+  generateSecureFileName
 } from '@/lib/utils/file-validation'
 import { validateCSRFRequest, requiresCSRF } from "@/lib/csrf";
 
