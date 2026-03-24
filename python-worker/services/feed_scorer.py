@@ -283,6 +283,8 @@ class FeedScorer:
                 return 0.5
 
             # Get post embedding (if exists, otherwise use author's)
+            # TODO: Generate post-specific embeddings from content
+            # For now using author's profile embedding as proxy
             post_emb_response = await asyncio.to_thread(
                 self.supabase.table("profile_embeddings")
                 .select("embedding")
@@ -294,6 +296,9 @@ class FeedScorer:
 
             if not post_emb_response.data:
                 return 0.5
+
+            # TODO: When post embeddings are implemented, query post_embeddings table
+            # and generate embedding from post content (title + description)
 
             # Actual cosine similarity calculation
             user_embedding = user_emb_response.data["embedding"]
