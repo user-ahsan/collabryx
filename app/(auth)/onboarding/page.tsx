@@ -62,7 +62,10 @@ const experienceSchema = z.object({
         title: z.string().optional().or(z.literal("")),
         company: z.string().optional().or(z.literal("")),
         description: z.string().optional().or(z.literal("")),
-    })).optional(),
+    }).refine(
+        (data) => data.title || data.company,
+        { message: "At least title or company is required" }
+    )).optional(),
     links: z.array(z.object({
         platform: z.string(),
         url: z.string().optional().or(z.literal("")),
