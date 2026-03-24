@@ -1684,9 +1684,10 @@ BEGIN
         p.location,
         (1 - (pe.embedding <-> query_embedding)) as similarity_score,
         p.profile_completion,
-        (p.last_active > NOW() - INTERVAL '5 minutes') as is_online
+        COALESCE((ua.last_active > NOW() - INTERVAL '5 minutes'), false) as is_online
     FROM profiles p
     INNER JOIN profile_embeddings pe ON p.id = pe.user_id
+    LEFT JOIN user_analytics ua ON p.id = ua.user_id
     WHERE p.id != COALESCE(exclude_user_id, p.id)
         AND p.onboarding_completed = true
         AND p.id NOT IN (
@@ -1702,6 +1703,18 @@ BEGIN
             UNION
             SELECT requester_id FROM connections 
             WHERE receiver_id = exclude_user_id AND status = 'pending'
+        )
+        AND p.id NOT IN (
+            SELECT receiver_id FROM connections 
+            WHERE requester_id = exclude_user_id AND status = 'declined'
+            UNION
+            SELECT requester_id FROM connections 
+            WHERE receiver_id = exclude_user_id AND status = 'declined'
+        )
+        AND p.id NOT IN (
+            SELECT blocked_id FROM blocked_users WHERE blocker_id = exclude_user_id
+            UNION
+            SELECT blocker_id FROM blocked_users WHERE blocked_id = exclude_user_id
         )
         AND p.id NOT IN (
             SELECT matched_user_id FROM match_suggestions
