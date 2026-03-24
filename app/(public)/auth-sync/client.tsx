@@ -120,7 +120,7 @@ export function AuthSyncClient({ destination, needsEmbeddingWait = false }: Auth
                 clearInterval(pollInterval)
             }
         }
-    }, [router, destination, needsEmbeddingWait])
+    }, [router, destination, needsEmbeddingWait, embeddingStatus])
 
     // If there's an error, show error message with action buttons
     if (hasError) {
