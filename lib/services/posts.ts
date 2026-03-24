@@ -231,7 +231,7 @@ export async function fetchPersonalizedFeed(options: PostsQueryOptions = {}): Pr
     const queryDuration = Date.now() - queryStartTime
     logger.api.debug("Personalized feed fetched", { count: feedData.length, duration: queryDuration })
 
-    const mappedPosts: PostWithAuthor[] = feedData.map((item) => ({
+    const mappedPosts: PostWithAuthor[] = feedData.map((item: { post: PostWithAuthor; score: number }) => ({
       ...item.post,
       author_name: item.post.author?.display_name || item.post.author?.full_name || "Unknown",
       author_role: "Member",
