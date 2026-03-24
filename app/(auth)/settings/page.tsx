@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { User, Shield, Bell, CreditCard, Loader2, Code2, Briefcase, Lock, AlertCircle } from "lucide-react"
+import { User, Shield, Bell, CreditCard, Loader2, Code2, Briefcase, Lock, AlertCircle, Check, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
 import { ProfileSettingsTab } from "@/components/features/settings/profile-settings-tab"
@@ -18,6 +18,7 @@ import { NotificationPreferencesForm } from "@/components/features/settings/noti
 import { PrivacySettingsForm } from "@/components/features/settings/privacy-settings-form"
 import { BlockedUsersList } from "@/components/features/settings/blocked-users-list"
 import Link from "next/link"
+import { toast } from "sonner"
 
 type SettingsTab = "profile" | "skills" | "experience" | "account" | "notifications" | "privacy" | "billing"
 
@@ -27,32 +28,66 @@ export default function SettingsPage() {
 	const [activeTab, setActiveTab] = useState<SettingsTab>("profile")
 	const [userId, setUserId] = useState<string | null>(null)
 	const [email, setEmail] = useState("")
+	const [newPassword, setNewPassword] = useState("")
+	const [confirmPassword, setConfirmPassword] = useState("")
+	const [isChangingPassword, setIsChangingPassword] = useState(false)
 
 	const supabase = createClient()
 
-	useEffect(() => {
-		const fetchUserData = async () => {
-			try {
-				setIsLoading(true)
-				setError(null)
+		useEffect(() => {
+			const fetchUserData = async () => {
+				try {
+					setIsLoading(true)
+					setError(null)
 
-				const { data: { user }, error: authError } = await supabase.auth.getUser()
+					const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-				if (authError) throw authError
-				if (!user) throw new Error("Not authenticated")
+					if (authError) throw authError
+					if (!user) throw new Error("Not authenticated")
 
-				setUserId(user.id)
-				setEmail(user.email || "")
-			} catch (err: unknown) {
-				console.error("Error fetching settings:", err)
-				setError("Failed to load settings.")
-			} finally {
-				setIsLoading(false)
+					setUserId(user.id)
+					setEmail(user.email || "")
+				} catch (err: unknown) {
+					console.error("Error fetching settings:", err)
+					setError("Failed to load settings.")
+				} finally {
+					setIsLoading(false)
+				}
 			}
+
+			fetchUserData()
+		}, [supabase])
+
+	const handlePasswordChange = async () => {
+		if (newPassword.length < 8) {
+			toast.error("Password must be at least 8 characters")
+			return
 		}
 
-		fetchUserData()
-	}, [supabase])
+		if (newPassword !== confirmPassword) {
+			toast.error("Passwords do not match")
+			return
+		}
+
+		try {
+			setIsChangingPassword(true)
+
+			const { error } = await supabase.auth.updateUser({
+				password: newPassword
+			})
+
+			if (error) throw error
+
+			toast.success("Password changed successfully")
+			setNewPassword("")
+			setConfirmPassword("")
+		} catch (err: unknown) {
+			const errorMessage = err instanceof Error ? err.message : "Failed to change password"
+			toast.error(errorMessage)
+		} finally {
+			setIsChangingPassword(false)
+		}
+	}
 
 	return (
 		<div className="min-h-screen bg-background">
@@ -194,20 +229,70 @@ export default function SettingsPage() {
 													)}
 												/>
 											</div>
-												<div className="space-y-2">
-													<Label htmlFor="new-password">New Password</Label>
+											<div className="space-y-2">
+												<Label htmlFor="new-password">New Password</Label>
 												<Input
 													id="new-password"
 													type="password"
+													value={newPassword}
+													onChange={(e) => setNewPassword(e.target.value)}
+													placeholder="Minimum 8 characters"
 													className={cn(
 														"focus-visible:border-primary focus-visible:ring-primary/20",
 														glass("input")
 													)}
 												/>
-												</div>
-											<Button className={cn("mt-2 active:scale-[0.98] transition-transform", glass("buttonPrimary"), glass("buttonPrimaryGlow"))}>
-												Change Password
+											</div>
+											<div className="space-y-2">
+												<Label htmlFor="confirm-password">Confirm Password</Label>
+												<Input
+													id="confirm-password"
+													type="password"
+													value={confirmPassword}
+													onChange={(e) => setConfirmPassword(e.target.value)}
+													placeholder="Re-enter password"
+													className={cn(
+														"focus-visible:border-primary focus-visible:ring-primary/20",
+														glass("input")
+													)}
+												/>
+											</div>
+											<Button 
+												onClick={handlePasswordChange}
+												disabled={isChangingPassword || !newPassword || !confirmPassword}
+												className={cn(
+													"mt-2 active:scale-[0.98] transition-transform", 
+													glass("buttonPrimary"), 
+													glass("buttonPrimaryGlow")
+												)}
+											>
+												{isChangingPassword ? (
+													<>
+														<Loader2 className="h-4 w-4 mr-2 animate-spin" />
+														Changing...
+													</>
+												) : (
+													"Change Password"
+												)}
 											</Button>
+											{newPassword && (
+												<div className="space-y-1 mt-2">
+													<p className={cn(
+														"text-xs flex items-center gap-1.5",
+														newPassword.length >= 8 ? "text-green-600" : "text-muted-foreground"
+													)}>
+														{newPassword.length >= 8 ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+														At least 8 characters
+													</p>
+													<p className={cn(
+														"text-xs flex items-center gap-1.5",
+														newPassword === confirmPassword && confirmPassword.length > 0 ? "text-green-600" : "text-muted-foreground"
+													)}>
+														{newPassword === confirmPassword && confirmPassword.length > 0 ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+														Passwords match
+													</p>
+												</div>
+											)}
 											</CardContent>
 										</Card>
 									<Separator className={glass("divider")} />
