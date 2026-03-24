@@ -1950,6 +1950,13 @@ BEGIN
         SELECT UNNEST(user1_skill_names)
     ) AS complementary;
     
+    -- Generate human-readable explanation
+    IF array_length(complementary_skills, 1) > 0 THEN
+        complementary_explanation := format('Complementary skills: %s', array_to_string(complementary_skills, ', '));
+    ELSE
+        complementary_explanation := 'No complementary skills found';
+    END IF;
+    
     RETURN NEXT;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
