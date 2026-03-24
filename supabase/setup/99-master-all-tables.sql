@@ -1770,18 +1770,18 @@ RETURNS TABLE (
     complementary_skills TEXT[]
 ) AS $$
 DECLARE
-    user1_skill_ids UUID[];
-    user2_skill_ids UUID[];
-    shared_skill_ids UUID[];
-    all_skill_ids UUID[];
+    user1_skill_names TEXT[];
+    user2_skill_names TEXT[];
+    shared_skill_names TEXT[];
+    all_skill_names TEXT[];
 BEGIN
-    SELECT ARRAY_AGG(skill_id) INTO user1_skill_ids
+    SELECT ARRAY_AGG(skill_name) INTO user1_skill_names
     FROM user_skills WHERE user_id = user1_id;
     
-    SELECT ARRAY_AGG(skill_id) INTO user2_skill_ids
+    SELECT ARRAY_AGG(skill_name) INTO user2_skill_names
     FROM user_skills WHERE user_id = user2_id;
     
-    IF user1_skill_ids IS NULL OR user2_skill_ids IS NULL THEN
+    IF user1_skill_names IS NULL OR user2_skill_names IS NULL THEN
         overlap_ratio := 0;
         user1_skills := ARRAY[]::TEXT[];
         user2_skills := ARRAY[]::TEXT[];
@@ -1792,45 +1792,38 @@ BEGIN
     END IF;
     
     SELECT ARRAY(
-        SELECT UNNEST(user1_skill_ids)
+        SELECT UNNEST(user1_skill_names)
         INTERSECT
-        SELECT UNNEST(user2_skill_ids)
-    ) INTO shared_skill_ids;
+        SELECT UNNEST(user2_skill_names)
+    ) INTO shared_skill_names;
     
     SELECT ARRAY(
-        SELECT UNNEST(user1_skill_ids)
+        SELECT UNNEST(user1_skill_names)
         UNION
-        SELECT UNNEST(user2_skill_ids)
-    ) INTO all_skill_ids;
+        SELECT UNNEST(user2_skill_names)
+    ) INTO all_skill_names;
     
-    IF array_length(all_skill_ids, 1) > 0 THEN
-        overlap_ratio := array_length(shared_skill_ids, 1)::REAL / array_length(all_skill_ids, 1)::REAL;
+    IF array_length(all_skill_names, 1) > 0 THEN
+        overlap_ratio := array_length(shared_skill_names, 1)::REAL / array_length(all_skill_names, 1)::REAL;
     ELSE
         overlap_ratio := 0;
     END IF;
     
-    SELECT ARRAY_AGG(s.name) INTO user1_skills
-    FROM skills s WHERE s.id = ANY(user1_skill_ids);
-    
-    SELECT ARRAY_AGG(s.name) INTO user2_skills
-    FROM skills s WHERE s.id = ANY(user2_skill_ids);
-    
-    SELECT ARRAY_AGG(s.name) INTO shared_skills
-    FROM skills s WHERE s.id = ANY(shared_skill_ids);
+    user1_skills := user1_skill_names;
+    user2_skills := user2_skill_names;
+    shared_skills := shared_skill_names;
     
     -- Get complementary skills (skills one has but other doesn't)
-    SELECT ARRAY_AGG(DISTINCT s.name) INTO complementary_skills
-    FROM skills s 
-    WHERE s.id IN (
-        SELECT UNNEST(user1_skill_ids)
+    SELECT ARRAY_AGG(DISTINCT skill) INTO complementary_skills
+    FROM (
+        SELECT UNNEST(user1_skill_names) AS skill
         EXCEPT
-        SELECT UNNEST(user2_skill_ids)
-    )
-    OR s.id IN (
-        SELECT UNNEST(user2_skill_ids)
+        SELECT UNNEST(user2_skill_names)
+        UNION
+        SELECT UNNEST(user2_skill_names) AS skill
         EXCEPT
-        SELECT UNNEST(user1_skill_ids)
-    );
+        SELECT UNNEST(user1_skill_names)
+    ) AS complementary;
     
     RETURN NEXT;
 END;
