@@ -62,26 +62,32 @@ async function markAsReadMutation(conversationId: string): Promise<void> {
   const supabase = createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   
-  if (authError || !user) return
+  if (authError || !user) throw new Error("Not authenticated")
 
-  const { data: conversation } = await supabase
+  const { data: conversation, error: convError } = await supabase
     .from("conversations")
     .select("participant_1, participant_2")
     .eq("id", conversationId)
     .single()
 
-  if (!conversation) return
+  if (convError || !conversation) {
+    throw new Error("Conversation not found")
+  }
 
   const isParticipant1 = conversation.participant_1 === user.id
 
-  await supabase
+  // Update unread count first
+  const { error: updateError } = await supabase
     .from("conversations")
     .update({
       [isParticipant1 ? "unread_count_1" : "unread_count_2"]: 0,
     })
     .eq("id", conversationId)
 
-  await supabase
+  if (updateError) throw updateError
+
+  // Mark messages as read
+  const { error: markError } = await supabase
     .from("messages")
     .update({
       is_read: true,
@@ -91,6 +97,9 @@ async function markAsReadMutation(conversationId: string): Promise<void> {
     .eq("is_read", false)
     .neq("sender_id", user.id)
 
+  if (markError) throw markError
+
+  // Broadcast read receipt
   supabase.channel(`read:${conversationId}`).send({
     type: "broadcast",
     event: "read_receipt",
