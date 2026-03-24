@@ -30,7 +30,6 @@ import {
   UserXIcon,
 } from "lucide-react"
 import { toast } from "sonner"
-import { ReportContentDialog } from "@/components/features/moderation/report-content-dialog"
 
 interface ReportedContent {
   id: string
