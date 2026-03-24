@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { glass } from '@/lib/utils/glass-variants'
 import { ProficiencyRing, type ProficiencyLevel } from '@/components/ui/proficiency-ring'
@@ -57,6 +57,7 @@ export const SkillFlipCard: React.FC<SkillFlipCardProps> = ({
   onRemove,
 }) => {
   const [isFlipped, setIsFlipped] = useState(false)
+  const shouldReduceMotion = useReducedMotion()
 
   const IconComponent =
     skill.category && categoryIconMap[skill.category]
@@ -64,6 +65,8 @@ export const SkillFlipCard: React.FC<SkillFlipCardProps> = ({
       : Tag
 
   const handleFlip = () => {
+    // Optional: Add haptic feedback on flip
+    // if (navigator.vibrate) navigator.vibrate(5)
     setIsFlipped(!isFlipped)
     onToggle()
   }
@@ -82,9 +85,12 @@ export const SkillFlipCard: React.FC<SkillFlipCardProps> = ({
       <motion.div
         className="relative w-full h-full"
         initial={false}
-        animate={{ rotateY: isFlipped ? 180 : 0 }}
+        animate={{ 
+          rotateY: isFlipped ? 180 : 0,
+          scale: isFlipped ? 1.02 : 1,
+        }}
         transition={{
-          duration: 0.4,
+          duration: shouldReduceMotion ? 0 : 0.4,
           ease: 'easeInOut',
         }}
         style={{
@@ -92,7 +98,7 @@ export const SkillFlipCard: React.FC<SkillFlipCardProps> = ({
         }}
       >
         {/* Front Face - Display Mode */}
-        <div
+        <motion.div
           className={cn(
             'absolute inset-0 w-full h-full rounded-xl',
             glass(selected ? 'skillCardActive' : 'skillCard'),
@@ -102,6 +108,14 @@ export const SkillFlipCard: React.FC<SkillFlipCardProps> = ({
           style={{
             backfaceVisibility: 'hidden',
             WebkitBackfaceVisibility: 'hidden',
+          }}
+          whileHover={{ 
+            scale: shouldReduceMotion ? 1 : 1.02,
+            y: shouldReduceMotion ? 0 : -2,
+          }}
+          transition={{
+            duration: shouldReduceMotion ? 0 : 0.2,
+            ease: 'easeOut',
           }}
         >
           <IconComponent className="h-8 w-8 text-blue-400/80" />
@@ -116,10 +130,10 @@ export const SkillFlipCard: React.FC<SkillFlipCardProps> = ({
               {skill.category}
             </span>
           )}
-        </div>
+        </motion.div>
 
         {/* Back Face - Edit Mode */}
-        <div
+        <motion.div
           className={cn(
             'absolute inset-0 w-full h-full rounded-xl',
             glass('skillCard'),
@@ -129,6 +143,14 @@ export const SkillFlipCard: React.FC<SkillFlipCardProps> = ({
             backfaceVisibility: 'hidden',
             WebkitBackfaceVisibility: 'hidden',
             transform: 'rotateY(180deg)',
+          }}
+          whileHover={{ 
+            scale: shouldReduceMotion ? 1 : 1.02,
+            y: shouldReduceMotion ? 0 : -2,
+          }}
+          transition={{
+            duration: shouldReduceMotion ? 0 : 0.2,
+            ease: 'easeOut',
           }}
         >
           <div className="flex items-center justify-between w-full gap-2">
@@ -186,7 +208,7 @@ export const SkillFlipCard: React.FC<SkillFlipCardProps> = ({
               <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
             </div>
           </div>
-        </div>
+        </motion.div>
       </motion.div>
     </div>
   )

@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { glass } from '@/lib/utils/glass-variants'
 import { cn } from '@/lib/utils'
 import React from 'react'
@@ -50,6 +50,7 @@ export const ProficiencyRing: React.FC<ProficiencyRingProps> = ({
   className,
   ariaLabel,
 }) => {
+  const shouldReduceMotion = useReducedMotion()
   const value = proficiencyValues[proficiency]
   const label = proficiencyLabels[proficiency]
   const color = ringColors[proficiency]
@@ -61,12 +62,18 @@ export const ProficiencyRing: React.FC<ProficiencyRingProps> = ({
 
   const defaultAriaLabel = ariaLabel || `${proficiency} proficiency level`
 
-  const motionProps = animated
+  const shouldAnimate = animated && !shouldReduceMotion
+  const duration = shouldReduceMotion ? 0 : 0.4
+
+  const motionProps = shouldAnimate
     ? {
         initial: { strokeDashoffset: circumference },
-        animate: { strokeDashoffset: offset },
+        animate: { 
+          strokeDashoffset: offset,
+          filter: ['drop-shadow(0 0 0px transparent)', 'drop-shadow(0 0 2px currentColor)', 'drop-shadow(0 0 0px transparent)'],
+        },
         transition: {
-          duration: 0.4,
+          duration,
           ease: 'easeOut' as const,
         },
       }
@@ -75,7 +82,7 @@ export const ProficiencyRing: React.FC<ProficiencyRingProps> = ({
       }
 
   return (
-    <div
+    <motion.div
       className={cn(glass('proficiencyRing'), 'relative inline-flex items-center justify-center', className)}
       style={{ width: size, height: size }}
       role="progressbar"
@@ -83,6 +90,14 @@ export const ProficiencyRing: React.FC<ProficiencyRingProps> = ({
       aria-valuemin={0}
       aria-valuemax={100}
       aria-label={defaultAriaLabel}
+      whileHover={{
+        scale: shouldReduceMotion ? 1 : 1.05,
+        filter: shouldReduceMotion ? 'none' : 'drop-shadow(0 0 4px currentColor)',
+      }}
+      transition={{
+        duration: shouldReduceMotion ? 0 : 0.2,
+        ease: 'easeOut',
+      }}
     >
       <svg
         width={size}
@@ -119,7 +134,7 @@ export const ProficiencyRing: React.FC<ProficiencyRingProps> = ({
       >
         {label}
       </span>
-    </div>
+    </motion.div>
   )
 }
 
