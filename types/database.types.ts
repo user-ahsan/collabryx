@@ -173,7 +173,7 @@ export interface MatchSuggestion {
   user_id: string; // UUID
   matched_user_id: string; // UUID
   match_percentage: number; // 0-100
-  reasons: string[]; // JSONB array
+  reasons: unknown[]; // JSONB array
   ai_confidence?: number; // 0-1
   ai_explanation?: string;
   status: 'active' | 'dismissed' | 'connected';
