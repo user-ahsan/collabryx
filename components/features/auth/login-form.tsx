@@ -105,7 +105,7 @@ export function LoginForm() {
         }
         
         try {
-            const { data: authData, error } = await supabase.auth.signInWithPassword({
+            const { error } = await supabase.auth.signInWithPassword({
                 email: email,
                 password: password,
             })
