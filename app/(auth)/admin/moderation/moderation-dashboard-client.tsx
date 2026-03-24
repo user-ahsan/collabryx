@@ -65,11 +65,7 @@ export function ModerationDashboardClient() {
   const [typeFilter, setTypeFilter] = useState<TypeFilter>("all")
   const [actionInProgress, setActionInProgress] = useState<string | null>(null)
 
-  useEffect(() => {
-    loadReports()
-  }, [statusFilter, typeFilter])
-
-  const loadReports = async () => {
+  const loadReports = useCallback(async () => {
     setIsLoading(true)
     try {
       const params = new URLSearchParams()
@@ -89,7 +85,11 @@ export function ModerationDashboardClient() {
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [statusFilter, typeFilter])
+
+  useEffect(() => {
+    loadReports()
+  }, [loadReports])
 
   const handleApprove = async (reportId: string) => {
     setActionInProgress(reportId)
