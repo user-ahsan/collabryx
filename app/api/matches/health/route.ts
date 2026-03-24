@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
   try {
     // Check if user is authenticated (optional, can be removed for public health checks)
     const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
+    await supabase.auth.getUser();
     
     // Get backend configuration
     const backendConfig = await getBackendConfig();
