@@ -1765,7 +1765,10 @@ CREATE TRIGGER posts_bump_version_trigger
 CREATE OR REPLACE FUNCTION public.find_similar_users(
     query_embedding VECTOR(384),
     match_limit INTEGER DEFAULT 50,
-    exclude_user_id UUID DEFAULT NULL
+    exclude_user_id UUID DEFAULT NULL,
+    filter_location TEXT DEFAULT NULL,
+    filter_availability TEXT DEFAULT NULL,
+    filter_looking_for TEXT[] DEFAULT NULL
 )
 RETURNS TABLE (
     user_id UUID,
