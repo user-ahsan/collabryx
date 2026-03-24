@@ -74,12 +74,12 @@ export function useConversations(): UseConversationsReturn {
                 const unreadCount = isParticipant1 ? conv.unread_count_2 : conv.unread_count_1
 
                 return {
-                    id: conn.id,
+                    id: conv.id,
                     other_user_id: otherUser?.id || "",
                     other_user_name: otherUser?.display_name || otherUser?.full_name || "Unknown",
                     other_user_avatar: otherUser?.avatar_url || "",
-                    last_message: lastMessage?.content || "Start a conversation",
-                    last_message_time: formatTimeAgo(lastMessage?.created_at || conn.updated_at),
+                    last_message: conv.last_message_text || "Start a conversation",
+                    last_message_time: formatTimeAgo(conv.last_message_at || conv.updated_at),
                     unread_count: unreadCount || 0
                 } as Conversation
             })
