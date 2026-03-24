@@ -1643,7 +1643,7 @@ BEGIN
   NEW.updated_at = NOW();
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 DROP TRIGGER IF EXISTS posts_bump_version_trigger ON public.posts;
 CREATE TRIGGER posts_bump_version_trigger
