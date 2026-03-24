@@ -2290,6 +2290,8 @@ CREATE POLICY "Service role can insert notifications" ON public.notifications FO
 
 CREATE POLICY "Users can update own notifications" ON public.notifications FOR UPDATE USING ((SELECT auth.uid()) = user_id);
 
+CREATE POLICY "Users can delete own notifications" ON public.notifications FOR DELETE USING ((SELECT auth.uid()) = user_id);
+
 -- --------------------------------------------
 -- AI MENTOR SESSIONS RLS
 -- --------------------------------------------
