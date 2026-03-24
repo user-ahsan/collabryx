@@ -3146,6 +3146,7 @@ CREATE POLICY "Users can insert own privacy settings" ON public.privacy_settings
 CREATE POLICY "Users can view own blocked list" ON public.blocked_users FOR SELECT USING (auth.uid() = blocker_id);
 CREATE POLICY "Users can block others" ON public.blocked_users FOR INSERT WITH CHECK (auth.uid() = blocker_id);
 CREATE POLICY "Users can unblock" ON public.blocked_users FOR DELETE USING (auth.uid() = blocker_id);
+CREATE POLICY "Users can update own blocks" ON public.blocked_users FOR UPDATE USING (auth.uid() = blocker_id);
 
 -- audit_logs RLS
 CREATE POLICY "Users can view own audit logs" ON public.audit_logs FOR SELECT USING (user_id = auth.uid());
