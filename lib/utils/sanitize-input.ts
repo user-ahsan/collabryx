@@ -181,7 +181,7 @@ export function sanitizeDomain(domain: string): string | null {
   if (!domain) return null
   
   // Remove protocol if present
-  let clean = domain.replace(/^https?:\/\//, '').replace(/^www\./, '')
+  const clean = domain.replace(/^https?:\/\//, '').replace(/^www\./, '')
   
   // Validate domain format
   const domainRegex = /^[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?)*$/

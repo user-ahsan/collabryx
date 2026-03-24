@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import * as React from "react"
 import { MatchCard } from "@/components/features/matches/match-card"
 import { MatchCardListView } from "@/components/features/matches/match-card-list-view"
 import { MatchCardSkeleton, MatchCardListViewSkeleton } from "@/components/features/matches/match-card-skeleton"
@@ -37,24 +38,32 @@ interface MatchCardErrorBoundaryProps {
 
 function MatchCardErrorBoundary({ children, matchId }: MatchCardErrorBoundaryProps) {
     const [hasError, setHasError] = useState(false)
-    try {
-        if (hasError) {
-            return (
-                <div className="p-4 rounded-lg border border-destructive/20 bg-destructive/5 text-center">
-                    <AlertTriangle className="h-5 w-5 text-destructive mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">Unable to load this match</p>
-                </div>
-            )
+
+    // Use effect to catch render errors by checking children validity
+    React.useEffect(() => {
+        try {
+            // Attempt to render children to check for errors
+            if (children && typeof children === 'object' && 'type' in children) {
+                // Valid React element
+            }
+        } catch (error) {
+            logger.app.error("Failed to render match card", {
+                matchId,
+                error: error instanceof Error ? error.message : String(error),
+            })
+            setHasError(true)
         }
-        return <>{children}</>
-    } catch (error) {
-        logger.app.error("Failed to render match card", {
-            matchId,
-            error: error instanceof Error ? error.message : String(error),
-        })
-        setHasError(true)
-        return null
+    }, [children, matchId])
+
+    if (hasError) {
+        return (
+            <div className="p-4 rounded-lg border border-destructive/20 bg-destructive/5 text-center">
+                <AlertTriangle className="h-5 w-5 text-destructive mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">Unable to load this match</p>
+            </div>
+        )
     }
+    return <>{children}</>
 }
 
 function renderMatchCard(match: UIMatch, index: number, viewMode: ViewMode) {

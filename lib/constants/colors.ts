@@ -10,6 +10,13 @@
  * import { COLORS, SEMANTIC_COLORS } from '@/lib/constants/colors'
  */
 
+export type SemanticColorValue = 
+  | "text-primary" | "bg-primary" | "hover:bg-primary/90" | "border-primary"
+  | "text-destructive" | "bg-destructive" | "hover:bg-destructive/90" | "border-destructive"
+  | "text-green-500" | "bg-green-500/10" | "border-green-500/30" | "dark:text-green-400"
+  | "text-yellow-500" | "bg-yellow-500/10" | "border-yellow-500/30" | "dark:text-yellow-400"
+  | "text-blue-500" | "bg-blue-500/10" | "border-blue-500/30" | "dark:text-blue-400"
+
 /**
  * Brand Color Palette
  * These are the core colors that define Collabryx's visual identity
@@ -248,5 +255,5 @@ export function isValidColorUsage(element: string, color: string): boolean {
   // This is a simplified validation
   // In production, you'd want more sophisticated checks
   const validColors = Object.values(SEMANTIC_COLORS).flatMap(v => Object.values(v))
-  return validColors.includes(color as any)
+  return validColors.includes(color as typeof validColors[number])
 }

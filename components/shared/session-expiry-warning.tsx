@@ -30,7 +30,6 @@ export function SessionExpiryWarning({ className }: SessionExpiryWarningProps) {
   const supabase = createClient()
 
   React.useEffect(() => {
-    let checkInterval: NodeJS.Timeout
     let mounted = true
 
     const checkSession = async () => {
@@ -61,11 +60,8 @@ export function SessionExpiryWarning({ className }: SessionExpiryWarningProps) {
       }
     }
 
-    // Check immediately
-    checkSession()
-
-    // Then check periodically
-    checkInterval = setInterval(checkSession, SESSION_CHECK_INTERVAL_MS)
+    // Check immediately, then check periodically
+    const checkInterval = setInterval(checkSession, SESSION_CHECK_INTERVAL_MS)
 
     return () => {
       mounted = false

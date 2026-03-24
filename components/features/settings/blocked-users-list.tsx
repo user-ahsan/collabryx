@@ -256,7 +256,7 @@ export function BlockedUsersList({ userId }: BlockedUsersListProps) {
                     <CardTitle className="text-lg font-semibold">Blocked Users</CardTitle>
                 </div>
                 <CardDescription className="text-sm">
-                    Manage users you've blocked. They won't be able to see your profile or contact you.
+                    Manage users you&apos;ve blocked. They won&apos;t be able to see your profile or contact you.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 px-0 pb-0">
@@ -277,7 +277,7 @@ export function BlockedUsersList({ userId }: BlockedUsersListProps) {
                             <DialogHeader>
                                 <DialogTitle>Block User</DialogTitle>
                                 <DialogDescription>
-                                    Search for a user to block. They won't be notified.
+                                    Search for a user to block. They won&apos;t be notified.
                                 </DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4">
@@ -342,7 +342,7 @@ export function BlockedUsersList({ userId }: BlockedUsersListProps) {
                                                 <p className="font-medium text-amber-500">Confirm Block</p>
                                                 <p className="text-muted-foreground">
                                                     Are you sure you want to block <strong>{confirmBlockUser.name}</strong>?
-                                                    They won't be able to see your profile or contact you.
+                                                    They won&apos;t be able to see your profile or contact you.
                                                 </p>
                                             </div>
                                         </div>

@@ -54,14 +54,7 @@ async function sendMessageMutation({ conversationId, text }: { conversationId: s
 
   if (insertError) throw insertError
 
-  await supabase
-    .from("conversations")
-    .update({
-      last_message_text: text.trim(),
-      last_message_at: new Date().toISOString(),
-    })
-    .eq("id", conversationId)
-
+  // Trigger handles conversation update automatically
   return data
 }
 
@@ -69,26 +62,32 @@ async function markAsReadMutation(conversationId: string): Promise<void> {
   const supabase = createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   
-  if (authError || !user) return
+  if (authError || !user) throw new Error("Not authenticated")
 
-  const { data: conversation } = await supabase
+  const { data: conversation, error: convError } = await supabase
     .from("conversations")
     .select("participant_1, participant_2")
     .eq("id", conversationId)
     .single()
 
-  if (!conversation) return
+  if (convError || !conversation) {
+    throw new Error("Conversation not found")
+  }
 
   const isParticipant1 = conversation.participant_1 === user.id
 
-  await supabase
+  // Update unread count first
+  const { error: updateError } = await supabase
     .from("conversations")
     .update({
       [isParticipant1 ? "unread_count_1" : "unread_count_2"]: 0,
     })
     .eq("id", conversationId)
 
-  await supabase
+  if (updateError) throw updateError
+
+  // Mark messages as read
+  const { error: markError } = await supabase
     .from("messages")
     .update({
       is_read: true,
@@ -98,6 +97,9 @@ async function markAsReadMutation(conversationId: string): Promise<void> {
     .eq("is_read", false)
     .neq("sender_id", user.id)
 
+  if (markError) throw markError
+
+  // Broadcast read receipt
   supabase.channel(`read:${conversationId}`).send({
     type: "broadcast",
     event: "read_receipt",
@@ -135,7 +137,8 @@ export function useMessages(conversationId?: string, currentUserId?: string): Us
       toast.success("Message sent")
     },
     onError: (error) => {
-      toast.error("Failed to send message")
+      const isConversationNotFound = error.message?.includes("Conversation not found")
+      toast.error(isConversationNotFound ? "Conversation no longer exists" : "Failed to send message")
       console.error("Error sending message:", error)
     },
   })
@@ -192,6 +195,27 @@ export function useMessages(conversationId?: string, currentUserId?: string): Us
             (old: Message[] = []) =>
               old.map((msg) => (msg.id === updatedMessage.id ? updatedMessage : msg))
           )
+        }
+      )
+      .on(
+        "broadcast",
+        {
+          event: "read_receipt",
+          channel: `read:${conversationId}`,
+        },
+        (payload) => {
+          const { user_id, read_at } = payload.payload
+          if (user_id !== currentUserId) {
+            queryClient.setQueryData(
+              MESSAGE_QUERY_KEYS.conversation(conversationId),
+              (old: Message[] = []) =>
+                old.map((msg) =>
+                  msg.sender_id === user_id && (!msg.read_at || msg.read_at < read_at)
+                    ? { ...msg, is_read: true, read_at }
+                    : msg
+                )
+            )
+          }
         }
       )
       .subscribe()

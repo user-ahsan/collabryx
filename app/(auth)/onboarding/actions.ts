@@ -160,7 +160,23 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
         return { success: true, userId, embeddingQueued: true }
     }
 
-    // 1. Update Profile
+    // 1. Check display_name uniqueness (L4 fix)
+    if (data.displayName) {
+        const { count } = await supabase
+            .from("profiles")
+            .select("*", { count: "exact", head: true })
+            .eq("display_name", data.displayName)
+            .neq("id", userId)
+        
+        if (count && count > 0) {
+            return { 
+                success: false, 
+                error: "Display name is already taken. Please choose another one or add numbers to make it unique." 
+            }
+        }
+    }
+    
+    // 2. Update Profile
     
     let profileError = null
     try {

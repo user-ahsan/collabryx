@@ -109,7 +109,7 @@ CREATE TABLE IF NOT EXISTS public.user_experiences (
     is_current BOOLEAN NOT NULL DEFAULT FALSE,
     order_index INTEGER NOT NULL DEFAULT 0,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE(user_id, title, company, start_date)
+    UNIQUE(user_id, title)
 );
 
 -- --------------------------------------------
@@ -624,61 +624,6 @@ CREATE TABLE IF NOT EXISTS public.content_moderation_logs (
     moderated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- --------------------------------------------
--- TABLE 32: post_impressions (NEW for Thompson Sampling)
--- --------------------------------------------
--- Tracks post impressions for engagement rate calculation
-CREATE TABLE IF NOT EXISTS public.post_impressions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-    post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
-    impression_count INTEGER NOT NULL DEFAULT 0,
-    last_impression_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(user_id, post_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_post_impressions_post ON public.post_impressions(post_id);
-CREATE INDEX IF NOT EXISTS idx_post_impressions_user ON public.post_impressions(user_id);
-
--- --------------------------------------------
--- TABLE 33: feed_thompson_params (NEW for Thompson Sampling)
--- --------------------------------------------
--- Stores alpha/beta distribution parameters for Thompson Sampling
-CREATE TABLE IF NOT EXISTS public.feed_thompson_params (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-    post_id UUID NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
-    alpha REAL NOT NULL DEFAULT 1.0,
-    beta REAL NOT NULL DEFAULT 1.0,
-    successes INTEGER NOT NULL DEFAULT 0,
-    failures INTEGER NOT NULL DEFAULT 0,
-    updated_at TIMESTAMPTZ DEFAULT NOW(),
-    UNIQUE(user_id, post_id)
-);
-
-CREATE INDEX IF NOT EXISTS idx_feed_thompson_params_user ON public.feed_thompson_params(user_id);
-CREATE INDEX IF NOT EXISTS idx_feed_thompson_params_post ON public.feed_thompson_params(post_id);
-
--- Enable RLS on new tables
-ALTER TABLE public.post_impressions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.feed_thompson_params ENABLE ROW LEVEL SECURITY;
-
--- RLS policies for post_impressions
-CREATE POLICY "Users can view own impressions" ON public.post_impressions FOR SELECT USING (user_id = auth.uid());
-CREATE POLICY "Service role can manage impressions" ON public.post_impressions FOR ALL USING ((auth.jwt() ->> 'role') = 'service_role');
-
--- RLS policies for feed_thompson_params
-CREATE POLICY "Service role can manage thompson params" ON public.feed_thompson_params FOR ALL USING ((auth.jwt() ->> 'role') = 'service_role');
-
--- Add to realtime
-DO $$
-BEGIN
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.post_impressions;
-    ALTER PUBLICATION supabase_realtime ADD TABLE public.feed_thompson_params;
-EXCEPTION
-    WHEN duplicate_object THEN NULL;
-END $$;
-
 -- ============================================================================
 -- SECTION 2.7: MIGRATIONS FOR EXISTING DATABASES
 -- ============================================================================
@@ -820,10 +765,8 @@ CREATE INDEX IF NOT EXISTS idx_profile_embeddings_updated ON public.profile_embe
 CREATE INDEX IF NOT EXISTS idx_profile_embeddings_retry ON public.profile_embeddings(retry_count);
 CREATE INDEX IF NOT EXISTS idx_profile_embeddings_metadata ON public.profile_embeddings USING GIN (metadata);
 -- HNSW index for vector similarity search (cosine distance)
--- Tuned parameters: M=32 (more connections), ef_construction=128 (better accuracy)
 CREATE INDEX IF NOT EXISTS idx_profile_embeddings_embedding 
-    ON public.profile_embeddings USING hnsw (embedding vector_cosine_ops)
-    WITH (m = 32, ef_construction = 128);
+    ON public.profile_embeddings USING hnsw (embedding vector_cosine_ops);
 
 -- Dead letter queue indexes
 CREATE INDEX IF NOT EXISTS idx_dlq_user_id ON public.embedding_dead_letter_queue(user_id);
@@ -1038,23 +981,6 @@ CREATE TRIGGER on_profile_created_theme
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_theme_preferences();
 
 -- --------------------------------------------
--- FUNCTION: handle_new_privacy_settings
--- --------------------------------------------
-CREATE FUNCTION public.handle_new_privacy_settings()
-RETURNS TRIGGER AS $$
-BEGIN
-    INSERT INTO public.privacy_settings (user_id)
-    VALUES (NEW.id);
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
-DROP TRIGGER IF EXISTS on_profile_created_privacy ON public.profiles;
-CREATE TRIGGER on_profile_created_privacy
-    AFTER INSERT ON public.profiles
-    FOR EACH ROW EXECUTE FUNCTION public.handle_new_privacy_settings();
-
--- --------------------------------------------
 -- FUNCTION: trigger_embedding_generation
 -- --------------------------------------------
 -- Triggers embedding generation when onboarding is completed
@@ -1084,37 +1010,6 @@ CREATE TRIGGER trigger_generate_embedding
     FOR EACH ROW
     WHEN (NEW.onboarding_completed = TRUE AND OLD.onboarding_completed = FALSE)
     EXECUTE FUNCTION public.trigger_embedding_generation();
-
--- --------------------------------------------
--- FUNCTION: retry_failed_embedding
--- --------------------------------------------
--- Retries embedding generation when profile with failed status is updated
-CREATE FUNCTION public.retry_failed_embedding()
-RETURNS TRIGGER AS $$
-BEGIN
-    -- Check if embedding failed and profile was updated
-    IF EXISTS (
-        SELECT 1 FROM profile_embeddings pe 
-        WHERE pe.user_id = NEW.id AND pe.status = 'failed'
-    ) AND (
-        OLD.full_name IS DISTINCT FROM NEW.full_name OR
-        OLD.headline IS DISTINCT FROM NEW.headline OR
-        OLD.bio IS DISTINCT FROM NEW.bio
-    ) THEN
-        -- Reset embedding status to pending for retry
-        UPDATE profile_embeddings 
-        SET status = 'pending', retry_count = retry_count + 1, error_message = NULL
-        WHERE user_id = NEW.id AND status = 'failed';
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
-DROP TRIGGER IF EXISTS retry_failed_embedding_trigger ON public.profiles;
-CREATE TRIGGER retry_failed_embedding_trigger
-    AFTER UPDATE ON public.profiles
-    FOR EACH ROW
-    EXECUTE FUNCTION public.retry_failed_embedding();
 
 -- --------------------------------------------
 -- FUNCTION: increment_post_reaction_count
@@ -1702,7 +1597,7 @@ BEGIN
   
   RETURN current_value;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 GRANT EXECUTE ON FUNCTION public.increment_post_counter(UUID, TEXT, INTEGER) TO authenticated;
 
@@ -1730,7 +1625,7 @@ BEGIN
   
   RETURN counter_value;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 GRANT EXECUTE ON FUNCTION public.get_post_counter_with_lock(UUID, TEXT) TO authenticated;
 
@@ -1748,7 +1643,7 @@ BEGIN
   NEW.updated_at = NOW();
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+$$ LANGUAGE plpgsql;
 
 DROP TRIGGER IF EXISTS posts_bump_version_trigger ON public.posts;
 CREATE TRIGGER posts_bump_version_trigger
@@ -1767,10 +1662,7 @@ CREATE TRIGGER posts_bump_version_trigger
 CREATE OR REPLACE FUNCTION public.find_similar_users(
     query_embedding VECTOR(384),
     match_limit INTEGER DEFAULT 50,
-    exclude_user_id UUID DEFAULT NULL,
-    filter_location TEXT DEFAULT NULL,
-    filter_availability TEXT DEFAULT NULL,
-    filter_looking_for TEXT[] DEFAULT NULL
+    exclude_user_id UUID DEFAULT NULL
 )
 RETURNS TABLE (
     user_id UUID,
@@ -1792,15 +1684,11 @@ BEGIN
         p.location,
         (1 - (pe.embedding <-> query_embedding)) as similarity_score,
         p.profile_completion,
-        COALESCE((ua.last_active > NOW() - INTERVAL '5 minutes'), false) as is_online
+        (p.last_active > NOW() - INTERVAL '5 minutes') as is_online
     FROM profiles p
     INNER JOIN profile_embeddings pe ON p.id = pe.user_id
-    LEFT JOIN user_analytics ua ON p.id = ua.user_id
     WHERE p.id != COALESCE(exclude_user_id, p.id)
         AND p.onboarding_completed = true
-        AND (filter_location IS NULL OR p.location = filter_location)
-        AND (filter_availability IS NULL OR p.collaboration_readiness = filter_availability)
-        AND (filter_looking_for IS NULL OR p.looking_for && filter_looking_for)
         AND p.id NOT IN (
             SELECT receiver_id FROM connections 
             WHERE requester_id = exclude_user_id AND status = 'accepted'
@@ -1814,18 +1702,6 @@ BEGIN
             UNION
             SELECT requester_id FROM connections 
             WHERE receiver_id = exclude_user_id AND status = 'pending'
-        )
-        AND p.id NOT IN (
-            SELECT receiver_id FROM connections 
-            WHERE requester_id = exclude_user_id AND status = 'declined'
-            UNION
-            SELECT requester_id FROM connections 
-            WHERE receiver_id = exclude_user_id AND status = 'declined'
-        )
-        AND p.id NOT IN (
-            SELECT blocked_id FROM blocked_users WHERE blocker_id = exclude_user_id
-            UNION
-            SELECT blocker_id FROM blocked_users WHERE blocked_id = exclude_user_id
         )
         AND p.id NOT IN (
             SELECT matched_user_id FROM match_suggestions
@@ -1851,10 +1727,11 @@ BEGIN
     RETURN QUERY
     SELECT 
         us.id as skill_id,
-        us.skill_name as name,
-        NULL::TEXT as category,
-        us.proficiency as proficiency_level
+        s.name,
+        s.category,
+        us.proficiency_level
     FROM user_skills us
+    INNER JOIN skills s ON us.skill_id = s.id
     WHERE us.user_id = p_user_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
@@ -1872,9 +1749,10 @@ BEGIN
     RETURN QUERY
     SELECT 
         ui.id as interest_id,
-        ui.interest as name,
-        NULL::TEXT as category
+        i.name,
+        i.category
     FROM user_interests ui
+    INNER JOIN interests i ON ui.interest_id = i.id
     WHERE ui.user_id = p_user_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
@@ -1891,22 +1769,21 @@ RETURNS TABLE (
     user1_skills TEXT[],
     user2_skills TEXT[],
     shared_skills TEXT[],
-    complementary_skills TEXT[],
-    complementary_explanation TEXT
+    complementary_skills TEXT[]
 ) AS $$
 DECLARE
-    user1_skill_names TEXT[];
-    user2_skill_names TEXT[];
-    shared_skill_names TEXT[];
-    all_skill_names TEXT[];
+    user1_skill_ids UUID[];
+    user2_skill_ids UUID[];
+    shared_skill_ids UUID[];
+    all_skill_ids UUID[];
 BEGIN
-    SELECT ARRAY_AGG(skill_name) INTO user1_skill_names
+    SELECT ARRAY_AGG(skill_id) INTO user1_skill_ids
     FROM user_skills WHERE user_id = user1_id;
     
-    SELECT ARRAY_AGG(skill_name) INTO user2_skill_names
+    SELECT ARRAY_AGG(skill_id) INTO user2_skill_ids
     FROM user_skills WHERE user_id = user2_id;
     
-    IF user1_skill_names IS NULL OR user2_skill_names IS NULL THEN
+    IF user1_skill_ids IS NULL OR user2_skill_ids IS NULL THEN
         overlap_ratio := 0;
         user1_skills := ARRAY[]::TEXT[];
         user2_skills := ARRAY[]::TEXT[];
@@ -1917,45 +1794,45 @@ BEGIN
     END IF;
     
     SELECT ARRAY(
-        SELECT UNNEST(user1_skill_names)
+        SELECT UNNEST(user1_skill_ids)
         INTERSECT
-        SELECT UNNEST(user2_skill_names)
-    ) INTO shared_skill_names;
+        SELECT UNNEST(user2_skill_ids)
+    ) INTO shared_skill_ids;
     
     SELECT ARRAY(
-        SELECT UNNEST(user1_skill_names)
+        SELECT UNNEST(user1_skill_ids)
         UNION
-        SELECT UNNEST(user2_skill_names)
-    ) INTO all_skill_names;
+        SELECT UNNEST(user2_skill_ids)
+    ) INTO all_skill_ids;
     
-    IF array_length(all_skill_names, 1) > 0 THEN
-        overlap_ratio := array_length(shared_skill_names, 1)::REAL / array_length(all_skill_names, 1)::REAL;
+    IF array_length(all_skill_ids, 1) > 0 THEN
+        overlap_ratio := array_length(shared_skill_ids, 1)::REAL / array_length(all_skill_ids, 1)::REAL;
     ELSE
         overlap_ratio := 0;
     END IF;
     
-    user1_skills := user1_skill_names;
-    user2_skills := user2_skill_names;
-    shared_skills := shared_skill_names;
+    SELECT ARRAY_AGG(s.name) INTO user1_skills
+    FROM skills s WHERE s.id = ANY(user1_skill_ids);
+    
+    SELECT ARRAY_AGG(s.name) INTO user2_skills
+    FROM skills s WHERE s.id = ANY(user2_skill_ids);
+    
+    SELECT ARRAY_AGG(s.name) INTO shared_skills
+    FROM skills s WHERE s.id = ANY(shared_skill_ids);
     
     -- Get complementary skills (skills one has but other doesn't)
-    SELECT ARRAY_AGG(DISTINCT skill) INTO complementary_skills
-    FROM (
-        SELECT UNNEST(user1_skill_names) AS skill
+    SELECT ARRAY_AGG(DISTINCT s.name) INTO complementary_skills
+    FROM skills s 
+    WHERE s.id IN (
+        SELECT UNNEST(user1_skill_ids)
         EXCEPT
-        SELECT UNNEST(user2_skill_names)
-        UNION
-        SELECT UNNEST(user2_skill_names) AS skill
+        SELECT UNNEST(user2_skill_ids)
+    )
+    OR s.id IN (
+        SELECT UNNEST(user2_skill_ids)
         EXCEPT
-        SELECT UNNEST(user1_skill_names)
-    ) AS complementary;
-    
-    -- Generate human-readable explanation
-    IF array_length(complementary_skills, 1) > 0 THEN
-        complementary_explanation := format('Complementary skills: %s', array_to_string(complementary_skills, ', '));
-    ELSE
-        complementary_explanation := 'No complementary skills found';
-    END IF;
+        SELECT UNNEST(user1_skill_ids)
+    );
     
     RETURN NEXT;
 END;
@@ -2023,38 +1900,6 @@ BEGIN
     )
     WHERE ms.user_id = p_user_id
         AND ms.created_at > NOW() - INTERVAL '30 days';
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
--- --------------------------------------------
--- FUNCTION: get_user_profile_with_embedding
--- --------------------------------------------
--- Returns profile with embedding for Python worker match generation
-CREATE OR REPLACE FUNCTION public.get_user_profile_with_embedding(p_user_id UUID)
-RETURNS TABLE (
-    id UUID,
-    email TEXT,
-    display_name TEXT,
-    headline TEXT,
-    bio TEXT,
-    profile_completion INTEGER,
-    onboarding_completed BOOLEAN,
-    embedding VECTOR(384)
-) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT 
-        p.id,
-        p.email,
-        p.display_name,
-        p.headline,
-        p.bio,
-        p.profile_completion,
-        p.onboarding_completed,
-        pe.embedding
-    FROM profiles p
-    LEFT JOIN profile_embeddings pe ON p.id = pe.user_id AND pe.status = 'completed'
-    WHERE p.id = p_user_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
@@ -2128,8 +1973,6 @@ CREATE POLICY "Users can view any profile" ON public.profiles FOR SELECT USING (
 CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING ((SELECT auth.uid()) = id);
 
 CREATE POLICY "Users can insert own profile" ON public.profiles FOR INSERT WITH CHECK ((SELECT auth.uid()) = id);
-
-CREATE POLICY "Users can delete own profile (GDPR)" ON public.profiles FOR DELETE USING ((SELECT auth.uid()) = id);
 
 -- --------------------------------------------
 -- USER SKILLS RLS
@@ -2292,8 +2135,6 @@ CREATE POLICY "Service role can insert notifications" ON public.notifications FO
 
 CREATE POLICY "Users can update own notifications" ON public.notifications FOR UPDATE USING ((SELECT auth.uid()) = user_id);
 
-CREATE POLICY "Users can delete own notifications" ON public.notifications FOR DELETE USING ((SELECT auth.uid()) = user_id);
-
 -- --------------------------------------------
 -- AI MENTOR SESSIONS RLS
 -- --------------------------------------------
@@ -2311,12 +2152,6 @@ CREATE POLICY "Users can view own AI mentor messages" ON public.ai_mentor_messag
 
 CREATE POLICY "Users can create AI mentor messages" ON public.ai_mentor_messages
     FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM public.ai_mentor_sessions s WHERE s.id = ai_mentor_messages.session_id AND s.user_id = (SELECT auth.uid())));
-
-CREATE POLICY "Users can update own AI mentor messages" ON public.ai_mentor_messages
-    FOR UPDATE USING (EXISTS (SELECT 1 FROM public.ai_mentor_sessions s WHERE s.id = ai_mentor_messages.session_id AND s.user_id = (SELECT auth.uid())));
-
-CREATE POLICY "Users can delete own AI mentor messages" ON public.ai_mentor_messages
-    FOR DELETE USING (EXISTS (SELECT 1 FROM public.ai_mentor_sessions s WHERE s.id = ai_mentor_messages.session_id AND s.user_id = (SELECT auth.uid())));
 
 -- --------------------------------------------
 -- NOTIFICATION PREFERENCES RLS
@@ -2706,16 +2541,11 @@ CREATE OR REPLACE FUNCTION notify_post_reaction()
 RETURNS trigger AS $$
 DECLARE
   post_author uuid;
-  prefs notification_preferences;
 BEGIN
   SELECT author_id INTO post_author FROM posts WHERE posts.id = NEW.post_id;
   IF post_author IS NOT NULL AND post_author != NEW.user_id THEN
-    -- Check notification preferences
-    SELECT * INTO prefs FROM notification_preferences WHERE user_id = post_author;
-    IF prefs.email_post_likes = TRUE THEN
-      INSERT INTO notifications (user_id, type, actor_id, content, resource_type, resource_id)
-      VALUES (post_author, 'like', NEW.user_id, 'liked your post', 'post', NEW.post_id);
-    END IF;
+    INSERT INTO notifications (user_id, type, actor_id, content, resource_type, resource_id)
+    VALUES (post_author, 'like', NEW.user_id, 'liked your post', 'post', NEW.post_id);
   END IF;
   RETURN NEW;
 END;
@@ -2807,7 +2637,7 @@ RETURNS trigger AS $$
 BEGIN
   IF NEW.status = 'accepted' AND OLD.status = 'pending' THEN
     INSERT INTO notifications (user_id, type, actor_id, content, resource_type, resource_id)
-    VALUES (NEW.requester_id, 'connect', NEW.receiver_id, 'accepted your connection request', 'profile', NEW.id);
+    VALUES (NEW.requester_id, 'connection_accepted', NEW.receiver_id, 'accepted your connection request', 'connection', NEW.id);
   END IF;
   RETURN NEW;
 END;
@@ -2826,34 +2656,6 @@ GRANT EXECUTE ON FUNCTION notify_new_comment TO service_role;
 GRANT EXECUTE ON FUNCTION notify_new_message TO service_role;
 GRANT EXECUTE ON FUNCTION notify_match_suggested TO service_role;
 GRANT EXECUTE ON FUNCTION notify_connection_accepted TO service_role;
-
--- notify_comment_like (NEW)
-CREATE OR REPLACE FUNCTION notify_comment_like()
-RETURNS trigger AS $$
-DECLARE
-  comment_author uuid;
-  prefs notification_preferences;
-BEGIN
-  SELECT author_id INTO comment_author FROM comments WHERE comments.id = NEW.comment_id;
-  IF comment_author IS NOT NULL AND comment_author != NEW.user_id THEN
-    -- Check notification preferences
-    SELECT * INTO prefs FROM notification_preferences WHERE user_id = comment_author;
-    IF prefs.email_comments = TRUE THEN
-      INSERT INTO notifications (user_id, type, actor_id, content, resource_type, resource_id)
-      VALUES (comment_author, 'like', NEW.user_id, 'liked your comment', 'post', NEW.comment_id);
-    END IF;
-  END IF;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
-DROP TRIGGER IF EXISTS notify_comment_like_trigger ON public.comment_likes;
-CREATE TRIGGER notify_comment_like_trigger
-  AFTER INSERT ON comment_likes
-  FOR EACH ROW
-  EXECUTE FUNCTION notify_comment_like();
-
-GRANT EXECUTE ON FUNCTION notify_comment_like TO service_role;
 
 -- ============================================================================
 -- SECTION 5.8: EVENT CAPTURE TRIGGERS
@@ -2996,62 +2798,6 @@ CREATE TRIGGER broadcast_match_suggestion_realtime AFTER INSERT ON match_suggest
 GRANT EXECUTE ON FUNCTION broadcast_realtime TO service_role;
 
 -- ============================================================================
--- SECTION 5.9.1: FEED SCORE CACHE INVALIDATION TRIGGERS (NEW)
--- ============================================================================
--- Invalidate feed scores when engagement events occur
-
-CREATE OR REPLACE FUNCTION public.invalidate_feed_score_on_reaction()
-RETURNS TRIGGER AS $$
-BEGIN
-    UPDATE public.feed_scores 
-    SET expires_at = NOW() - INTERVAL '1 second'
-    WHERE post_id = NEW.post_id;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
-CREATE TRIGGER trg_invalidate_feed_score_on_reaction
-    AFTER INSERT ON public.post_reactions
-    FOR EACH ROW EXECUTE FUNCTION public.invalidate_feed_score_on_reaction();
-
-CREATE OR REPLACE FUNCTION public.invalidate_feed_score_on_comment()
-RETURNS TRIGGER AS $$
-BEGIN
-    UPDATE public.feed_scores 
-    SET expires_at = NOW() - INTERVAL '1 second'
-    WHERE post_id = NEW.post_id;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
-CREATE TRIGGER trg_invalidate_feed_score_on_comment
-    AFTER INSERT ON public.comments
-    FOR EACH ROW EXECUTE FUNCTION public.invalidate_feed_score_on_comment();
-
-CREATE OR REPLACE FUNCTION public.invalidate_feed_score_on_connection()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW.status = 'accepted' THEN
-        UPDATE public.feed_scores 
-        SET expires_at = NOW() - INTERVAL '1 second'
-        WHERE (
-            user_id = NEW.requester_id 
-            AND post_id IN (SELECT id FROM posts WHERE author_id = NEW.receiver_id)
-        )
-        OR (
-            user_id = NEW.receiver_id 
-            AND post_id IN (SELECT id FROM posts WHERE author_id = NEW.requester_id)
-        );
-    END IF;
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
-CREATE TRIGGER trg_invalidate_feed_score_on_connection
-    AFTER INSERT OR UPDATE OF status ON public.connections
-    FOR EACH ROW EXECUTE FUNCTION public.invalidate_feed_score_on_connection();
-
--- ============================================================================
 -- SECTION 5.10: PROFILE COMPLETION AUTO-UPDATE
 -- ============================================================================
 
@@ -3060,9 +2806,6 @@ RETURNS integer AS $$
 DECLARE
   v_score integer := 0;
   v_profile RECORD;
-  v_has_skills integer := 0;
-  v_has_interests integer := 0;
-  v_has_experience integer := 0;
 BEGIN
   SELECT * INTO v_profile FROM profiles WHERE id = p_user_id;
   IF NOT FOUND THEN RETURN 0; END IF;
@@ -3071,16 +2814,16 @@ BEGIN
   IF v_profile.headline IS NOT NULL THEN v_score := v_score + 10; END IF;
   IF v_profile.bio IS NOT NULL THEN v_score := v_score + 5; END IF;
   
-  SELECT COUNT(*)::integer INTO v_has_skills FROM user_skills WHERE user_id = p_user_id;
-  IF v_has_skills > 0 THEN v_score := v_score + 25; END IF;
+  SELECT COUNT(*) INTO v_score FROM user_skills WHERE user_id = p_user_id HAVING COUNT(*) > 0;
+  v_score := v_score + 25;
   
-  SELECT COUNT(*)::integer INTO v_has_interests FROM user_interests WHERE user_id = p_user_id;
-  IF v_has_interests > 0 THEN v_score := v_score + 15; END IF;
+  SELECT COUNT(*) INTO v_score FROM user_interests WHERE user_id = p_user_id HAVING COUNT(*) > 0;
+  v_score := v_score + 15;
   
   IF v_profile.looking_for IS NOT NULL AND array_length(v_profile.looking_for, 1) > 0 THEN v_score := v_score + 10; END IF;
   
-  SELECT COUNT(*)::integer INTO v_has_experience FROM user_experiences WHERE user_id = p_user_id;
-  IF v_has_experience > 0 THEN v_score := v_score + 25; END IF;
+  SELECT COUNT(*) INTO v_score FROM user_experiences WHERE user_id = p_user_id HAVING COUNT(*) > 0;
+  v_score := v_score + 25;
   
   RETURN LEAST(v_score, 100);
 END;
@@ -3146,11 +2889,10 @@ CREATE POLICY "Users can insert own privacy settings" ON public.privacy_settings
 CREATE POLICY "Users can view own blocked list" ON public.blocked_users FOR SELECT USING (auth.uid() = blocker_id);
 CREATE POLICY "Users can block others" ON public.blocked_users FOR INSERT WITH CHECK (auth.uid() = blocker_id);
 CREATE POLICY "Users can unblock" ON public.blocked_users FOR DELETE USING (auth.uid() = blocker_id);
-CREATE POLICY "Users can update own blocks" ON public.blocked_users FOR UPDATE USING (auth.uid() = blocker_id);
 
 -- audit_logs RLS
 CREATE POLICY "Users can view own audit logs" ON public.audit_logs FOR SELECT USING (user_id = auth.uid());
-CREATE POLICY "System can insert audit logs" ON public.audit_logs FOR INSERT WITH CHECK ((SELECT auth.jwt() ->> 'role') = 'service_role');
+CREATE POLICY "System can insert audit logs" ON public.audit_logs FOR INSERT WITH CHECK (true);
 
 -- Add new tables to realtime (ignore if already exists)
 DO $$
@@ -3200,8 +2942,8 @@ CREATE TRIGGER update_privacy_settings_updated_at BEFORE UPDATE ON public.privac
 -- - Embedding timestamp trigger (1)
 -- - Optimistic locking trigger (posts_bump_version)
 -- 
--- INDEXES: 104+ total (including HNSW for vector search, post_impressions, feed_thompson_params)
--- RLS POLICIES: 100+ total
+-- INDEXES: 103 total (including HNSW for vector search)
+-- RLS POLICIES: 100 total
 -- STORAGE BUCKETS: 3 (post-media, profile-media, project-media)
 -- REALTIME: Enabled for all 34 tables
 -- 

@@ -283,6 +283,8 @@ class FeedScorer:
                 return 0.5
 
             # Get post embedding (if exists, otherwise use author's)
+            # TODO: Generate post-specific embeddings from content
+            # For now using author's profile embedding as proxy
             post_emb_response = await asyncio.to_thread(
                 self.supabase.table("profile_embeddings")
                 .select("embedding")
@@ -295,8 +297,29 @@ class FeedScorer:
             if not post_emb_response.data:
                 return 0.5
 
-            # Cosine similarity (placeholder - would use actual vector math in production)
-            return 0.7  # Placeholder
+            # TODO: When post embeddings are implemented, query post_embeddings table
+            # and generate embedding from post content (title + description)
+
+            # Actual cosine similarity calculation
+            user_embedding = user_emb_response.data["embedding"]
+            post_embedding = post_emb_response.data["embedding"]
+
+            # Convert to numpy arrays
+            user_vec = np.array([float(x) for x in user_embedding])
+            post_vec = np.array([float(x) for x in post_embedding])
+
+            # Cosine similarity: dot(a,b) / (||a|| * ||b||)
+            dot_product = np.dot(user_vec, post_vec)
+            norm_user = np.linalg.norm(user_vec)
+            norm_post = np.linalg.norm(post_vec)
+
+            if norm_user == 0 or norm_post == 0:
+                return 0.5
+
+            similarity = dot_product / (norm_user * norm_post)
+
+            # Normalize from [-1, 1] to [0, 1]
+            return float((similarity + 1) / 2)
 
         except Exception as e:
             logger.error(f"Error calculating semantic score: {str(e)}")

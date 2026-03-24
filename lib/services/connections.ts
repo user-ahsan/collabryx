@@ -311,6 +311,13 @@ export async function acceptConnectionRequest(
       return { data: null, error: new Error("Connection request is no longer pending") }
     }
 
+    // Get requester_id for conversation creation
+    const { data: connData } = await supabase
+      .from("connections")
+      .select("requester_id, receiver_id")
+      .eq("id", connectionId)
+      .single()
+
     // Accept the request
     const { data, error } = await supabase
       .from("connections")
@@ -323,6 +330,27 @@ export async function acceptConnectionRequest(
       .single()
 
     if (error) throw error
+
+    // Create conversation for messaging
+    if (connData) {
+      const participant1 = connData.requester_id < connData.receiver_id ? connData.requester_id : connData.receiver_id
+      const participant2 = connData.requester_id < connData.receiver_id ? connData.receiver_id : connData.requester_id
+
+      await supabase
+        .from("conversations")
+        .insert({
+          participant_1: participant1,
+          participant_2: participant2,
+        })
+        .select()
+        .single()
+        .catch((err) => {
+          // Ignore unique constraint violations (conversation may already exist)
+          if (err.code !== "23505") {
+            log.error("Failed to create conversation:", err)
+          }
+        })
+    }
 
     toast.success("Connection accepted")
     return { data, error: null }

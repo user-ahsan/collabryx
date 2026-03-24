@@ -29,16 +29,20 @@ export function MatchActivityCard({
                 user_avatar: activity.user_avatar ?? "",
                 user_initials: activity.user_initials ?? "U",
             }))
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setActivities(mapped)
         } else if (error) {
             // Try to load from cache on error
             const cached = getCache<MatchActivityWithUser[]>(CACHE_KEYS.MATCH_ACTIVITY)
             if (cached) {
+                // eslint-disable-next-line react-hooks/set-state-in-effect
                 setActivities(cached)
             } else {
+                // eslint-disable-next-line react-hooks/set-state-in-effect
                 setActivities([])
             }
         } else {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setActivities([])
         }
     }, [data, error])

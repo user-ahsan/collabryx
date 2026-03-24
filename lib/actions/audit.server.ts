@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import type { AuditLogInput } from '@/types/actions'
+import type { AuditEventType } from '@/lib/audit-logger'
 import { 
   logAuditEvent as logAudit,
   withAudit as withAuditWrapper,
@@ -32,7 +33,7 @@ export async function withAudit<T>(
   eventType: string,
   userId: string
 ): Promise<T> {
-  return withAuditWrapper(action, eventType as any, { userId })
+  return withAuditWrapper(action, eventType as AuditEventType, { userId })
 }
 
 /**

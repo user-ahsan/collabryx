@@ -30,9 +30,9 @@ export function NotificationPreferencesForm({ userId }: NotificationPreferencesF
         ai_smart_match_alerts: true,
     })
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => {
         if (preferences && !hasSyncedRef.current) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setFormData({
                 email_new_connections: preferences.email_new_connections ?? true,
                 email_messages: preferences.email_messages ?? true,

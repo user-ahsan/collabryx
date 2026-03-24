@@ -234,7 +234,7 @@ export function validateImageForCompression(
   file: { name: string; type: string; size: number }
 ): { valid: true } | { valid: false; error: string } {
   // Check file type
-  if (!IMAGE_CONFIG.SUPPORTED_FORMATS.includes(file.type as any)) {
+  if (!IMAGE_CONFIG.SUPPORTED_FORMATS.includes(file.type as typeof IMAGE_CONFIG.SUPPORTED_FORMATS[number])) {
     return {
       valid: false,
       error: `Unsupported image type: ${file.type}. Supported: ${IMAGE_CONFIG.SUPPORTED_FORMATS.join(', ')}`,
