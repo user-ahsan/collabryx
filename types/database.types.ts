@@ -497,6 +497,150 @@ export interface PrivacySetting {
 }
 
 // ===========================================
+// TABLE: profile_embeddings
+// ===========================================
+export interface ProfileEmbedding {
+  id: string; // UUID
+  user_id: string; // UUID (UNIQUE)
+  embedding: number[] | null; // VECTOR(384)
+  last_updated: string; // TIMESTAMPTZ
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  error_message?: string;
+  retry_count: number;
+  metadata?: Record<string, unknown>;
+}
+
+// ===========================================
+// TABLE: feed_scores
+// ===========================================
+export interface FeedScore {
+  id: string; // UUID
+  user_id: string; // UUID
+  post_id: string; // UUID
+  score: number;
+  semantic_score: number;
+  engagement_score: number;
+  recency_score: number;
+  connection_boost: number;
+  factors: Record<string, unknown>;
+  created_at: string; // TIMESTAMPTZ
+  expires_at?: string; // TIMESTAMPTZ
+}
+
+// ===========================================
+// TABLE: events
+// ===========================================
+export interface Event {
+  id: string; // UUID
+  event_type: string;
+  event_category?: string;
+  actor_id?: string; // UUID
+  target_id?: string;
+  target_type?: string;
+  metadata?: Record<string, unknown>;
+  session_id?: string;
+  ip_address?: string;
+  user_agent?: string;
+  created_at: string; // TIMESTAMPTZ
+}
+
+// ===========================================
+// TABLE: audit_logs
+// ===========================================
+export interface AuditLog {
+  id: string; // UUID
+  user_id?: string; // UUID
+  action: string;
+  resource_type?: string;
+  resource_id?: string;
+  details?: Record<string, unknown>;
+  ip_address?: string;
+  user_agent?: string;
+  created_at: string; // TIMESTAMPTZ
+}
+
+// ===========================================
+// TABLE: embedding_rate_limits
+// ===========================================
+export interface EmbeddingRateLimit {
+  id: string; // UUID
+  user_id: string; // UUID
+  request_count: number;
+  window_start: string; // TIMESTAMPTZ
+  window_end: string; // TIMESTAMPTZ
+  created_at: string; // TIMESTAMPTZ
+  updated_at: string; // TIMESTAMPTZ
+}
+
+// ===========================================
+// TABLE: platform_analytics
+// ===========================================
+export interface PlatformAnalytics {
+  date: string; // DATE
+  dau: number;
+  mau: number;
+  wau: number;
+  new_users: number;
+  deleted_users: number;
+  active_users_change: number;
+  new_posts: number;
+  total_posts: number;
+  posts_with_media: number;
+  avg_post_length: number;
+  new_matches: number;
+  total_matches: number;
+  avg_match_score: number;
+  high_confidence_matches: number;
+  new_connections: number;
+  total_connections: number;
+  connection_acceptance_rate: number;
+  pending_requests: number;
+  new_messages: number;
+  total_messages: number;
+  new_conversations: number;
+  avg_messages_per_conversation: number;
+  total_profile_views: number;
+  total_post_reactions: number;
+  total_comments: number;
+  avg_session_duration_minutes: number;
+  ai_sessions_count: number;
+  ai_messages_count: number;
+  avg_session_length: number;
+  content_flagged: number;
+  content_approved: number;
+  content_rejected: number;
+  avg_moderation_time_seconds: number;
+  api_requests_count: number;
+  avg_api_latency_ms: number;
+  error_count: number;
+  error_rate: number;
+  embeddings_generated: number;
+  embeddings_pending: number;
+  embeddings_failed: number;
+  avg_embedding_time_ms: number;
+  created_at: string; // TIMESTAMPTZ
+  updated_at: string; // TIMESTAMPTZ
+}
+
+// ===========================================
+// TABLE: content_moderation_logs
+// ===========================================
+export interface ContentModerationLog {
+  id: string; // UUID
+  content_type: string;
+  content_id?: string;
+  user_id?: string; // UUID
+  action: 'approved' | 'flag_for_review' | 'auto_reject';
+  risk_score?: number;
+  toxicity_score?: number;
+  spam_score?: number;
+  nsfw_score?: number;
+  pii_detected?: boolean;
+  details?: Record<string, unknown>;
+  moderated_at: string; // TIMESTAMPTZ
+}
+
+// ===========================================
 // DATABASE TYPE FOR SUPABASE CLIENT GENERICS
 // ===========================================
 // Used to provide TypeScript type safety for Supabase queries
@@ -639,6 +783,41 @@ export type Database = {
         Row: PrivacySetting;
         Insert: Partial<PrivacySetting>;
         Update: Partial<PrivacySetting>;
+      };
+      profile_embeddings: {
+        Row: ProfileEmbedding;
+        Insert: Partial<ProfileEmbedding>;
+        Update: Partial<ProfileEmbedding>;
+      };
+      feed_scores: {
+        Row: FeedScore;
+        Insert: Partial<FeedScore>;
+        Update: Partial<FeedScore>;
+      };
+      events: {
+        Row: Event;
+        Insert: Partial<Event>;
+        Update: Partial<Event>;
+      };
+      audit_logs: {
+        Row: AuditLog;
+        Insert: Partial<AuditLog>;
+        Update: Partial<AuditLog>;
+      };
+      embedding_rate_limits: {
+        Row: EmbeddingRateLimit;
+        Insert: Partial<EmbeddingRateLimit>;
+        Update: Partial<EmbeddingRateLimit>;
+      };
+      platform_analytics: {
+        Row: PlatformAnalytics;
+        Insert: Partial<PlatformAnalytics>;
+        Update: Partial<PlatformAnalytics>;
+      };
+      content_moderation_logs: {
+        Row: ContentModerationLog;
+        Insert: Partial<ContentModerationLog>;
+        Update: Partial<ContentModerationLog>;
       };
     };
     Views: {};
