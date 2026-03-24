@@ -1,6 +1,6 @@
 'use client'
 
-import { motion, type Transition } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { glass } from '@/lib/utils/glass-variants'
 import { cn } from '@/lib/utils'
 import React from 'react'
