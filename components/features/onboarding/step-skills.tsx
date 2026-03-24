@@ -4,9 +4,23 @@ import React from "react"
 import { useFormContext, Controller } from "react-hook-form"
 import { Label } from "@/components/ui/label"
 import { InlineSearchableCombobox, ComboboxOption } from "@/components/ui/inline-searchable-combobox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { skillsDatabase, type Skill } from "@/lib/data/skills-database"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
+
+const PROFICIENCY_LEVELS = [
+  { value: "beginner", label: "Beginner", description: "Just starting out" },
+  { value: "intermediate", label: "Intermediate", description: "Comfortable using it" },
+  { value: "advanced", label: "Advanced", description: "Can teach others" },
+  { value: "expert", label: "Expert", description: "Industry professional" },
+]
+
+interface SkillWithProficiency {
+  id: string
+  label: string
+  proficiency?: string
+}
 
 export function StepSkills() {
   const { control, formState: { errors } } = useFormContext()
@@ -34,7 +48,7 @@ export function StepSkills() {
         control={control}
         name="skills"
         render={({ field }) => {
-          const skills = field.value || []
+          const skills: SkillWithProficiency[] = field.value || []
 
           return (
             <div className="space-y-4" aria-labelledby="step-heading">
@@ -45,15 +59,25 @@ export function StepSkills() {
                 </Label>
                 <InlineSearchableCombobox
                   options={skillOptions}
-                  selected={skills}
-                  onChange={(selected) => field.onChange(selected)}
+                  selected={skills.map(s => ({ id: s.id, label: s.label }))}
+                  onChange={(selected) => {
+                    const newSkills = selected.map((s) => {
+                      const existing = skills.find(skill => skill.id === s.id)
+                      return {
+                        id: s.id,
+                        label: s.label,
+                        proficiency: existing?.proficiency || "intermediate",
+                      }
+                    })
+                    field.onChange(newSkills)
+                  }}
                   searchPlaceholder="Search skills (e.g., React, Python, Plumbing)..."
                   emptyMessage="No skills found. Type to add a custom skill."
                   maxHeight={350}
                   allowCustom={true}
                   onAddCustom={(customSkill) => {
-                    if (!skills.includes(customSkill)) {
-                      field.onChange([...skills, customSkill])
+                    if (!skills.find(s => s.label === customSkill)) {
+                      field.onChange([...skills, { id: `custom-${customSkill}`, label: customSkill, proficiency: "intermediate" }])
                     }
                   }}
                   showCategories={true}
@@ -68,6 +92,37 @@ export function StepSkills() {
                   </p>
                 )}
               </div>
+
+              {/* Proficiency selector for each skill */}
+              {skills.length > 0 && (
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold text-foreground">Proficiency Levels (Optional)</Label>
+                  {skills.map((skill, index) => (
+                    <div key={skill.id} className="flex items-center gap-3">
+                      <span className="text-sm text-muted-foreground w-32 truncate">{skill.label}</span>
+                      <Select
+                        value={skill.proficiency || "intermediate"}
+                        onValueChange={(value) => {
+                          const newSkills = [...skills]
+                          newSkills[index] = { ...skill, proficiency: value }
+                          field.onChange(newSkills)
+                        }}
+                      >
+                        <SelectTrigger className="w-[180px]">
+                          <SelectValue placeholder="Select proficiency" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {PROFICIENCY_LEVELS.map((level) => (
+                            <SelectItem key={level.value} value={level.value}>
+                              {level.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <div className={cn(
                 "p-4 rounded-lg",
