@@ -820,8 +820,10 @@ CREATE INDEX IF NOT EXISTS idx_profile_embeddings_updated ON public.profile_embe
 CREATE INDEX IF NOT EXISTS idx_profile_embeddings_retry ON public.profile_embeddings(retry_count);
 CREATE INDEX IF NOT EXISTS idx_profile_embeddings_metadata ON public.profile_embeddings USING GIN (metadata);
 -- HNSW index for vector similarity search (cosine distance)
+-- Tuned parameters: M=32 (more connections), ef_construction=128 (better accuracy)
 CREATE INDEX IF NOT EXISTS idx_profile_embeddings_embedding 
-    ON public.profile_embeddings USING hnsw (embedding vector_cosine_ops);
+    ON public.profile_embeddings USING hnsw (embedding vector_cosine_ops)
+    WITH (m = 32, ef_construction = 128);
 
 -- Dead letter queue indexes
 CREATE INDEX IF NOT EXISTS idx_dlq_user_id ON public.embedding_dead_letter_queue(user_id);
