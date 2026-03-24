@@ -39,7 +39,7 @@ export default function TermsPage() {
 							<h2 className="font-semibold text-xl mb-2">User Conduct</h2>
 							<p className="text-muted-foreground">
 								You agree to use Collabryx only for lawful purposes and in a way that does not 
-								infringe the rights of, restrict or inhibit anyone else's use of the platform. 
+								infringe the rights of, restrict or inhibit anyone else&apos;s use of the platform. 
 								Professional and respectful communication is required.
 							</p>
 						</div>
@@ -56,7 +56,7 @@ export default function TermsPage() {
 							<p className="text-muted-foreground">
 								You retain ownership of content you post. By posting, you grant Collabryx a 
 								license to use, display, and distribute that content on the platform. We respect 
-								others' intellectual property rights and expect you to do the same.
+								others&apos; intellectual property rights and expect you to do the same.
 							</p>
 						</div>
 					</div>
@@ -70,7 +70,7 @@ export default function TermsPage() {
 						<div>
 							<h2 className="font-semibold text-xl mb-2">Disclaimer & Limitations</h2>
 							<p className="text-muted-foreground">
-								Collabryx is provided "as is" without warranties of any kind. We do not guarantee 
+								Collabryx is provided &quot;as is&quot; without warranties of any kind. We do not guarantee 
 								that the platform will be uninterrupted, secure, or error-free. Our liability is 
 								limited to the maximum extent permitted by law.
 							</p>
@@ -86,8 +86,8 @@ export default function TermsPage() {
 						<div>
 							<h2 className="font-semibold text-xl mb-2">Changes to Terms</h2>
 							<p className="text-muted-foreground">
-								We may modify these terms at any time. We'll notify you of significant changes, 
-								but it's your responsibility to review these terms periodically. Continued use 
+								We may modify these terms at any time. We&apos;ll notify you of significant changes, 
+								but it&apos;s your responsibility to review these terms periodically. Continued use 
 								after changes constitutes acceptance of the new terms.
 							</p>
 						</div>

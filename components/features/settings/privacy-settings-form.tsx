@@ -36,9 +36,9 @@ export function PrivacySettingsForm({ userId }: PrivacySettingsFormProps) {
         allow_data_download: true,
     })
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     useEffect(() => {
         if (settings && !hasSyncedRef.current) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setFormData({
                 profile_visibility: settings.profile_visibility ?? 'public',
                 show_email: settings.show_email ?? false,
@@ -216,7 +216,7 @@ export function PrivacySettingsForm({ userId }: PrivacySettingsFormProps) {
                                 <div className="space-y-0.5">
                                     <Label className="text-sm font-medium">Show Connections List</Label>
                                     <p className="text-xs text-muted-foreground">
-                                        Allow others to see who you're connected with
+                                        Allow others to see who you&apos;re connected with
                                     </p>
                                 </div>
                             </div>
@@ -237,7 +237,7 @@ export function PrivacySettingsForm({ userId }: PrivacySettingsFormProps) {
                                 <div className="space-y-0.5">
                                     <Label className="text-sm font-medium">Activity Status</Label>
                                     <p className="text-xs text-muted-foreground">
-                                        Show when you're online or recently active
+                                        Show when you&apos;re online or recently active
                                     </p>
                                 </div>
                             </div>

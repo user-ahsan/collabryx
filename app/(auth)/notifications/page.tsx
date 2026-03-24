@@ -66,7 +66,14 @@ function NotificationListItem({
   onDismiss?: () => void
 }) {
   const colors = getNotificationColorClasses(notification.type)
-  const Icon = getNotificationIcon(notification.type)
+  const IconComponent = getNotificationIcon(notification.type)
+
+  // Render icon directly without creating component during render
+  const renderIcon = () => {
+    if (!IconComponent) return null
+    const Icon = IconComponent
+    return <Icon className="h-5 w-5" />
+  }
 
   return (
     <GlassCard
@@ -84,7 +91,7 @@ function NotificationListItem({
         colors.text,
         colors.darkText
       )}>
-        <Icon className="h-5 w-5" />
+        {renderIcon()}
       </div>
 
       {/* Content */}

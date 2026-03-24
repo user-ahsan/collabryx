@@ -77,8 +77,8 @@ export function ChatWindow({ chatId, onBackToList, isConnected }: ChatWindowProp
                 if (connection) {
                     const isRequester = connection.requester_id === currentUserId
                     const otherUser = isRequester 
-                        ? (connection.receiver as any)?.[0] 
-                        : (connection.requester as any)?.[0]
+                        ? connection.receiver?.[0] 
+                        : connection.requester?.[0]
                     
                     const name = otherUser?.display_name || otherUser?.full_name || "Unknown"
                     setChatUserInfo({

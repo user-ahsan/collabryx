@@ -14,7 +14,7 @@ import { logger } from "@/lib/logger"
 
 export type UserAnalyticsData = UserAnalytics
 
-export interface AnalyticsActivityData extends ActivityData {}
+export type AnalyticsActivityData = ActivityData
 
 export interface AnalyticsTimeRange {
   days: 7 | 30 | 90

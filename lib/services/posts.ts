@@ -168,7 +168,7 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
     }))
 
     return { data: mappedPosts, error: null, queryCount, duration: queryDuration }
-  } catch (error: any) {
+  } catch (error) {
     const queryDuration = Date.now() - queryStartTime
     logger.api.error("Error fetching posts", error, { queryCount, duration: queryDuration })
     return { data: [], error: error instanceof Error ? error : new Error("Unknown error"), queryCount, duration: queryDuration }
@@ -449,12 +449,12 @@ export async function updatePostWithLock(
       }
 
       return { data, error: null, conflict: false }
-    } catch (error: any) {
+    } catch (error) {
       if (attempt === maxRetries) {
         console.error("Error updating post after retries:", error)
         return { data: null, error: error instanceof Error ? error : new Error("Unknown error") }
       }
-      onRetry?.(attempt, error)
+      onRetry?.(attempt, error as Error)
       await new Promise(resolve => setTimeout(resolve, 50 * attempt))
     }
   }
@@ -494,7 +494,7 @@ export async function incrementPostCounter(
     }
 
     return { error: null }
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error incrementing counter:", error)
     return { error: error instanceof Error ? error : new Error("Failed to update counter") }
   }
@@ -547,11 +547,11 @@ export async function updatePostCounterWithLock(
       }
 
       return { success: true, conflict: false }
-    } catch (error: any) {
+    } catch (error) {
       if (attempt === maxRetries) {
         return { success: false, error: error instanceof Error ? error : new Error("Failed to update counter") }
       }
-      onRetry?.(attempt, error)
+      onRetry?.(attempt, error as Error)
       await new Promise(resolve => setTimeout(resolve, 50 * attempt))
     }
   }

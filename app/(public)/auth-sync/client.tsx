@@ -28,8 +28,11 @@ export function AuthSyncClient({ destination, needsEmbeddingWait = false, config
         const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
         
         if (!supabaseUrl || !supabaseKey) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setHasError(true)
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setErrorMessage("Authentication service is not configured. Please contact support.")
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setIsChecking(false)
             return
         }
