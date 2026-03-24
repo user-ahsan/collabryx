@@ -194,6 +194,27 @@ export function useMessages(conversationId?: string, currentUserId?: string): Us
           )
         }
       )
+      .on(
+        "broadcast",
+        {
+          event: "read_receipt",
+          channel: `read:${conversationId}`,
+        },
+        (payload) => {
+          const { user_id, read_at } = payload.payload
+          if (user_id !== currentUserId) {
+            queryClient.setQueryData(
+              MESSAGE_QUERY_KEYS.conversation(conversationId),
+              (old: Message[] = []) =>
+                old.map((msg) =>
+                  msg.sender_id === user_id && (!msg.read_at || msg.read_at < read_at)
+                    ? { ...msg, is_read: true, read_at }
+                    : msg
+                )
+            )
+          }
+        }
+      )
       .subscribe()
 
     return () => {
