@@ -31,7 +31,7 @@ export interface SkillFlipCardProps {
   onRemove: () => void
 }
 
-const categoryIconMap: Record<string, React.ElementType> = {
+const categoryIconMap: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
   'Programming Languages': Code2,
   'Mobile Development': Smartphone,
   'Cloud Platforms': Cloud,
