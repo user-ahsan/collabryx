@@ -187,15 +187,19 @@ export interface MatchSuggestion {
 export interface MatchScore {
   id: string; // UUID
   suggestion_id: string; // UUID
+  semantic_similarity: number;
   skills_overlap: number; // 0-100
   complementary_score: number; // 0-100
   shared_interests: number; // 0-100
-  availability_score?: number; // 0-100
+  activity_match: number;
+  overall_score: number;
+  model_version: string;
   overlapping_skills: string[];
   complementary_explanation?: string;
   shared_interest_tags: string[];
   insights?: string[]; // JSONB
   created_at: string; // TIMESTAMPTZ
+  updated_at: string; // TIMESTAMPTZ
 }
 
 // ===========================================
