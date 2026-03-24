@@ -167,19 +167,20 @@ export function useRealtimeNotifications() {
 
   useEffect(() => {
     const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
     
+    // Use user-specific channel instead of postgres_changes for efficiency
     const channel = supabase
-      .channel('notifications')
+      .channel(`notifications:user:${user?.id}`)
       .on(
-        'postgres_changes',
+        'broadcast',
         {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
+          event: 'new_notification',
         },
         () => {
           // Invalidate queries to refetch
           queryClient.invalidateQueries({ queryKey: NOTIFICATION_QUERY_KEYS.all })
+          queryClient.invalidateQueries({ queryKey: NOTIFICATION_QUERY_KEYS.unread() })
         }
       )
       .subscribe()
