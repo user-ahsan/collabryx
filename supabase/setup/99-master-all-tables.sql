@@ -1597,7 +1597,7 @@ BEGIN
   
   RETURN current_value;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 GRANT EXECUTE ON FUNCTION public.increment_post_counter(UUID, TEXT, INTEGER) TO authenticated;
 
