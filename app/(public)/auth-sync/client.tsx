@@ -51,8 +51,8 @@ export function AuthSyncClient({ destination, needsEmbeddingWait = false }: Auth
         const redirectTimer = setTimeout(() => {
             try {
                 router.push(destination)
-            } catch {
-                console.error('Redirect failed:', error)
+            } catch (err) {
+                console.error('Redirect failed:', err)
                 setHasError(true)
                 setErrorMessage("Navigation failed. Please try again.")
                 setIsChecking(false)
