@@ -1,8 +1,6 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
 import { SESSION_DURATION_SECONDS } from '@/lib/config/session'
-import { getSupabasePoolConfig } from '@/lib/config/database'
-import type { Database } from "@/types/database.types"
 
 /**
  * Supabase Server Client Configuration
