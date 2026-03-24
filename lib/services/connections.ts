@@ -336,20 +336,22 @@ export async function acceptConnectionRequest(
       const participant1 = connData.requester_id < connData.receiver_id ? connData.requester_id : connData.receiver_id
       const participant2 = connData.requester_id < connData.receiver_id ? connData.receiver_id : connData.requester_id
 
-      await supabase
-        .from("conversations")
-        .insert({
-          participant_1: participant1,
-          participant_2: participant2,
-        })
-        .select()
-        .single()
-        .catch((err) => {
-          // Ignore unique constraint violations (conversation may already exist)
-          if (err.code !== "23505") {
-            log.error("Failed to create conversation:", err)
-          }
-        })
+      try {
+        await supabase
+          .from("conversations")
+          .insert({
+            participant_1: participant1,
+            participant_2: participant2,
+          })
+          .select()
+          .single()
+      } catch (err) {
+        // Ignore unique constraint violations (conversation may already exist)
+        const error = err as { code?: string }
+        if (error.code !== "23505") {
+          log.error("Failed to create conversation:", err)
+        }
+      }
     }
 
     toast.success("Connection accepted")

@@ -197,10 +197,11 @@ export function useMessages(conversationId?: string, currentUserId?: string): Us
           )
         }
       )
-      .on(
-        "broadcast",
+      // Read receipt broadcast listener
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .on('broadcast' as any,
         {
-          event: "read_receipt",
+          event: 'read_receipt',
           channel: `read:${conversationId}`,
         },
         (payload) => {
