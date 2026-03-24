@@ -1924,6 +1924,38 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
+-- --------------------------------------------
+-- FUNCTION: get_user_profile_with_embedding
+-- --------------------------------------------
+-- Returns profile with embedding for Python worker match generation
+CREATE OR REPLACE FUNCTION public.get_user_profile_with_embedding(p_user_id UUID)
+RETURNS TABLE (
+    id UUID,
+    email TEXT,
+    display_name TEXT,
+    headline TEXT,
+    bio TEXT,
+    profile_completion INTEGER,
+    onboarding_completed BOOLEAN,
+    embedding VECTOR(384)
+) AS $$
+BEGIN
+    RETURN QUERY
+    SELECT 
+        p.id,
+        p.email,
+        p.display_name,
+        p.headline,
+        p.bio,
+        p.profile_completion,
+        p.onboarding_completed,
+        pe.embedding
+    FROM profiles p
+    LEFT JOIN profile_embeddings pe ON p.id = pe.user_id AND pe.status = 'completed'
+    WHERE p.id = p_user_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
 -- Grant permissions for new functions
 GRANT EXECUTE ON FUNCTION public.find_similar_users(VECTOR, INTEGER, UUID) TO service_role;
 GRANT EXECUTE ON FUNCTION public.get_user_skills(UUID) TO authenticated;
