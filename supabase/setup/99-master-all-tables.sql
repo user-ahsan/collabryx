@@ -2310,6 +2310,12 @@ CREATE POLICY "Users can view own AI mentor messages" ON public.ai_mentor_messag
 CREATE POLICY "Users can create AI mentor messages" ON public.ai_mentor_messages
     FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM public.ai_mentor_sessions s WHERE s.id = ai_mentor_messages.session_id AND s.user_id = (SELECT auth.uid())));
 
+CREATE POLICY "Users can update own AI mentor messages" ON public.ai_mentor_messages
+    FOR UPDATE USING (EXISTS (SELECT 1 FROM public.ai_mentor_sessions s WHERE s.id = ai_mentor_messages.session_id AND s.user_id = (SELECT auth.uid())));
+
+CREATE POLICY "Users can delete own AI mentor messages" ON public.ai_mentor_messages
+    FOR DELETE USING (EXISTS (SELECT 1 FROM public.ai_mentor_sessions s WHERE s.id = ai_mentor_messages.session_id AND s.user_id = (SELECT auth.uid())));
+
 -- --------------------------------------------
 -- NOTIFICATION PREFERENCES RLS
 -- --------------------------------------------
