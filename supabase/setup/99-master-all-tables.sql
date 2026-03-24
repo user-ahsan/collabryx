@@ -2892,7 +2892,7 @@ CREATE POLICY "Users can unblock" ON public.blocked_users FOR DELETE USING (auth
 
 -- audit_logs RLS
 CREATE POLICY "Users can view own audit logs" ON public.audit_logs FOR SELECT USING (user_id = auth.uid());
-CREATE POLICY "System can insert audit logs" ON public.audit_logs FOR INSERT WITH CHECK (true);
+CREATE POLICY "System can insert audit logs" ON public.audit_logs FOR INSERT WITH CHECK ((SELECT auth.jwt() ->> 'role') = 'service_role');
 
 -- Add new tables to realtime (ignore if already exists)
 DO $$
