@@ -981,6 +981,23 @@ CREATE TRIGGER on_profile_created_theme
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_theme_preferences();
 
 -- --------------------------------------------
+-- FUNCTION: handle_new_privacy_settings
+-- --------------------------------------------
+CREATE FUNCTION public.handle_new_privacy_settings()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO public.privacy_settings (user_id)
+    VALUES (NEW.id);
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+DROP TRIGGER IF EXISTS on_profile_created_privacy ON public.profiles;
+CREATE TRIGGER on_profile_created_privacy
+    AFTER INSERT ON public.profiles
+    FOR EACH ROW EXECUTE FUNCTION public.handle_new_privacy_settings();
+
+-- --------------------------------------------
 -- FUNCTION: trigger_embedding_generation
 -- --------------------------------------------
 -- Triggers embedding generation when onboarding is completed
