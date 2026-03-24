@@ -1748,10 +1748,9 @@ BEGIN
     RETURN QUERY
     SELECT 
         ui.id as interest_id,
-        i.name,
-        i.category
+        ui.interest as name,
+        NULL::TEXT as category
     FROM user_interests ui
-    INNER JOIN interests i ON ui.interest_id = i.id
     WHERE ui.user_id = p_user_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
