@@ -92,8 +92,8 @@ export function AuthSyncClient({ destination, needsEmbeddingWait = false }: Auth
                         clearTimeout(redirectTimer)
                         router.push(destination)
                     }
-                } catch {
-                    console.error('Error checking embedding status:', error)
+                } catch (err) {
+                    console.error('Error checking embedding status:', err)
                     // Don't fail on embedding check errors - just continue with redirect
                     if (!isUnmounted) setIsChecking(false)
                 }
