@@ -231,7 +231,7 @@ export async function fetchPersonalizedFeed(options: PostsQueryOptions = {}): Pr
     const queryDuration = Date.now() - queryStartTime
     logger.api.debug("Personalized feed fetched", { count: feedData.length, duration: queryDuration })
 
-    const mappedPosts: PostWithAuthor[] = feedData.map((item: any) => ({
+    const mappedPosts: PostWithAuthor[] = feedData.map((item) => ({
       ...item.post,
       author_name: item.post.author?.display_name || item.post.author?.full_name || "Unknown",
       author_role: "Member",
@@ -241,7 +241,7 @@ export async function fetchPersonalizedFeed(options: PostsQueryOptions = {}): Pr
     }))
 
     return { data: mappedPosts, error: null, queryCount, duration: queryDuration }
-  } catch (error: any) {
+  } catch (error) {
     const queryDuration = Date.now() - queryStartTime
     logger.api.error("Error fetching personalized feed", error, { queryCount, duration: queryDuration })
     return { data: [], error: error instanceof Error ? error : new Error("Unknown error"), queryCount, duration: queryDuration }

@@ -1,0 +1,274 @@
+
+> collabryx@0.1.0 lint
+> eslint
+
+
+D:\Projects\collabryx\app\(auth)\admin\moderation\moderation-dashboard-client.tsx
+  33:10  warning  'ReportContentDialog' is defined but never used                                                                 @typescript-eslint/no-unused-vars
+  71:6   warning  React Hook useEffect has a missing dependency: 'loadReports'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\Projects\collabryx\app\(auth)\bookmarks\page.tsx
+  46:9   warning  'filter' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  46:17  warning  'setFilter' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\app\(auth)\notifications\page.tsx
+  164:53  warning  'isActionLoading' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  258:9   warning  'toggleSelection' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\app\(auth)\privacy\page.tsx
+  3:39  warning  'ArrowRight' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\app\(public)\auth-sync\client.tsx
+   18:75  warning  'configError' is assigned a value but never used                                                                    @typescript-eslint/no-unused-vars
+   33:13  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/set-state-in-effect')
+   35:13  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/set-state-in-effect')
+  121:8   warning  React Hook useEffect has a missing dependency: 'embeddingStatus'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\Projects\collabryx\app\(public)\auth-sync\page.tsx
+  59:14  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\app\api\matches\health\route.ts
+  40:21  warning  'user' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\app\api\upload\route.ts
+  9:3  warning  'FILE_SIZE_LIMITS' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\components\features\activity\activity-item.tsx
+  48:11  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Projects\collabryx\components\features\auth\login-form.tsx
+  108:27  warning  'authData' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  126:18  warning  'err' is defined but never used                @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\components\features\dashboard\create-post\create-post-modal.tsx
+  76:11  warning  'handleFileChange' is assigned a value but never used   @typescript-eslint/no-unused-vars
+  84:11  warning  'handleRemoveMedia' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\components\features\dashboard\feed.tsx
+  110:8  warning  React Hook useEffect has a missing dependency: 'posts.length'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\Projects\collabryx\components\features\dashboard\match-activity-card.tsx
+  38:17  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/set-state-in-effect')
+  41:17  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/set-state-in-effect')
+  45:13  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/set-state-in-effect')
+
+D:\Projects\collabryx\components\features\dashboard\notifications-widget.tsx
+    7:10  warning  'ScrollArea' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+   12:3   warning  'Check' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   @typescript-eslint/no-unused-vars
+   21:18  warning  'AnimatePresence' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+   38:3   warning  'NOTIFICATION_SPACING' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+  173:9   warning  'markAsRead' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+  186:23  warning  Compilation Skipped: Use of incompatible library
+
+This API returns functions which cannot be memoized without leading to stale UI. To prevent this, by default React Compiler will skip memoizing this component/hook. However, you may see issues if values from this API are passed to other components/hooks that are memoized.
+
+D:\Projects\collabryx\components\features\dashboard\notifications-widget.tsx:186:23
+  184 |
+  185 |   // Virtual scrolling for performance
+> 186 |   const virtualizer = useVirtualizer({
+      |                       ^^^^^^^^^^^^^^ TanStack Virtual's `useVirtualizer()` API returns functions that cannot be memoized safely
+  187 |     count: filteredNotifications.length,
+  188 |     getScrollElement: () => parentRef.current,
+  189 |     estimateSize: () => 100, // Estimate each item is ~100px  react-hooks/incompatible-library
+  316:3   warning  'children' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+  321:10  warning  'deletedIds' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\components\features\matches\match-card.tsx
+  3:27  warning  'useMemo' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\components\features\messages\chat-window.tsx
+  90:22  warning  'error' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\components\features\messages\message-bubble.tsx
+  36:11  warning  'fullTime' is assigned a value but never used                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+  60:25  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Projects\collabryx\components\features\profile\avatar-upload.tsx
+    5:10  warning  'Crop' is defined but never used                                                                                                                                                                                                                                                         @typescript-eslint/no-unused-vars
+   24:3   warning  'userId' is defined but never used                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+   66:13  warning  'data' is assigned a value but never used                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+  165:14  warning  'err' is defined but never used                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+  173:9   warning  'allowedTypes' is assigned a value but never used                                                                                                                                                                                                                                        @typescript-eslint/no-unused-vars
+  191:13  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Projects\collabryx\components\features\profile\banner-upload.tsx
+   13:3   warning  'ALLOWED_IMAGE_TYPES' is defined but never used                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+   24:3   warning  'userId' is defined but never used                                                                                                                                                                                                                                                       @typescript-eslint/no-unused-vars
+   79:13  warning  'data' is assigned a value but never used                                                                                                                                                                                                                                                @typescript-eslint/no-unused-vars
+  198:14  warning  'err' is defined but never used                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+  222:11  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Projects\collabryx\components\features\settings\blocked-users-list.tsx
+   23:5   warning  'CommandInput' is defined but never used                                                                              @typescript-eslint/no-unused-vars
+   52:8   warning  React Hook useEffect has a missing dependency: 'fetchBlockedUsers'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  163:8   warning  React Hook useEffect has a missing dependency: 'searchUsers'. Either include it or remove the dependency array        react-hooks/exhaustive-deps
+  214:57  warning  'userName' is defined but never used                                                                                  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\components\features\settings\delete-account-dialog.tsx
+    7:10  warning  'motion' is defined but never used                  @typescript-eslint/no-unused-vars
+  123:11  warning  'buttonClasses' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\components\features\settings\experience-projects-settings-tab.tsx
+  158:33  warning  '_id' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  173:33  warning  '_id' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\components\shared\file-upload.tsx
+  219:15  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+D:\Projects\collabryx\components\shared\notification-bell.tsx
+  25:7  warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/set-state-in-effect')
+
+D:\Projects\collabryx\components\ui\match-reason-badge.tsx
+  3:10  warning  'glass' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\hooks\use-connection-requests.ts
+  81:15  warning  'data' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\hooks\use-conversations.ts
+  44:49  warning  'conversationsError' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\hooks\use-messages.ts
+  229:6  warning  React Hook useEffect has a missing dependency: 'currentUserId'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+D:\Projects\collabryx\lib\actions\audit.server.ts
+  3:10  warning  'createClient' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\lib\actions\posts.server.ts
+    8:52  warning  'updatePostCounterWithLock' is defined but never used  @typescript-eslint/no-unused-vars
+  100:38  warning  'fetchError' is assigned a value but never used        @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\lib\config\database.ts
+  270:1  warning  Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+
+D:\Projects\collabryx\lib\database-connection-manager.ts
+  15:10  warning  'SupabaseClient' is defined but never used           @typescript-eslint/no-unused-vars
+  16:26  warning  'CircuitBreakerOpenError' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\lib\database-optimization.ts
+   4:3  warning  'executeProtectedQuery' is defined but never used   @typescript-eslint/no-unused-vars
+   5:3  warning  'withRetry' is defined but never used               @typescript-eslint/no-unused-vars
+   6:3  warning  'withTimeout' is defined but never used             @typescript-eslint/no-unused-vars
+   7:3  warning  'withCircuitBreaker' is defined but never used      @typescript-eslint/no-unused-vars
+   8:3  warning  'trackDatabaseOperation' is defined but never used  @typescript-eslint/no-unused-vars
+   9:3  warning  'getConnectionHealth' is defined but never used     @typescript-eslint/no-unused-vars
+  11:8  warning  'RetryOptions' is defined but never used            @typescript-eslint/no-unused-vars
+  12:8  warning  'TimeoutOptions' is defined but never used          @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\lib\query-cache.ts
+  7:23  warning  'DefaultOptions' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\lib\services\embeddings.ts
+  240:47  warning  '_userId' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\lib\services\matches.ts
+  6:10  warning  'withDatabaseProtection' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\lib\services\posts.ts
+  234:63  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  244:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Projects\collabryx\lib\supabase\client.ts
+  2:15  warning  'Database' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\lib\supabase\server.ts
+  4:10  warning  'getSupabasePoolConfig' is defined but never used  @typescript-eslint/no-unused-vars
+  5:15  warning  'Database' is defined but never used               @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\lib\utils\sanitize-input.ts
+  76:7  warning  'ALLOWED_TAGS' is assigned a value but never used         @typescript-eslint/no-unused-vars
+  89:7  warning  'ALLOWED_ATTRS' is assigned a value but never used        @typescript-eslint/no-unused-vars
+  99:7  warning  'DANGEROUS_PROTOCOLS' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\scripts\docker-clean.mjs
+   59:12  warning  'error' is defined but never used   @typescript-eslint/no-unused-vars
+   96:12  warning  '_error' is defined but never used  @typescript-eslint/no-unused-vars
+  158:14  warning  '_error' is defined but never used  @typescript-eslint/no-unused-vars
+  169:14  warning  'error' is defined but never used   @typescript-eslint/no-unused-vars
+  205:14  warning  'error' is defined but never used   @typescript-eslint/no-unused-vars
+  239:14  warning  'error' is defined but never used   @typescript-eslint/no-unused-vars
+  264:14  warning  'error' is defined but never used   @typescript-eslint/no-unused-vars
+  288:12  warning  'error' is defined but never used   @typescript-eslint/no-unused-vars
+  301:12  warning  'error' is defined but never used   @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\scripts\docker-health.mjs
+   75:18  warning  '_error' is defined but never used  @typescript-eslint/no-unused-vars
+  100:12  warning  '_error' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\scripts\docker-inspect.mjs
+   53:12  warning  '_error' is defined but never used  @typescript-eslint/no-unused-vars
+   63:12  warning  '_error' is defined but never used  @typescript-eslint/no-unused-vars
+  222:16  warning  '_error' is defined but never used  @typescript-eslint/no-unused-vars
+  226:12  warning  '_error' is defined but never used  @typescript-eslint/no-unused-vars
+  251:12  warning  '_error' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\scripts\docker-rebuild.mjs
+   80:12  warning  '_error' is defined but never used  @typescript-eslint/no-unused-vars
+   93:12  warning  'error' is defined but never used   @typescript-eslint/no-unused-vars
+  112:12  warning  'error' is defined but never used   @typescript-eslint/no-unused-vars
+  184:18  warning  '_error' is defined but never used  @typescript-eslint/no-unused-vars
+  272:12  warning  '_error' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\scripts\docker-status.mjs
+   51:12  warning  '_error' is defined but never used          @typescript-eslint/no-unused-vars
+   60:12  warning  '_error' is defined but never used          @typescript-eslint/no-unused-vars
+   69:12  warning  '_error' is defined but never used          @typescript-eslint/no-unused-vars
+   78:12  warning  '_error' is defined but never used          @typescript-eslint/no-unused-vars
+   83:10  warning  'getNetworkInfo' is defined but never used  @typescript-eslint/no-unused-vars
+   87:12  warning  '_error' is defined but never used          @typescript-eslint/no-unused-vars
+   96:12  warning  '_error' is defined but never used          @typescript-eslint/no-unused-vars
+  120:16  warning  'displayStatus' is defined but never used   @typescript-eslint/no-unused-vars
+  171:12  warning  '_error' is defined but never used          @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\scripts\docker-up.mjs
+   39:12  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+   47:12  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+  141:12  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\scripts\verify-backup.ts
+  69:13  warning  'data' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\test\setup.ts
+  33:6  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Projects\collabryx\tests\components\step-basic-info.test.tsx
+  15:39  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Projects\collabryx\tests\components\step-skills.test.tsx
+   13:6   error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+   46:39  error    Unexpected any. Specify a different type       @typescript-eslint/no-explicit-any
+  158:11  warning  'combobox' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+D:\Projects\collabryx\tests\unit\csrf.test.ts
+   6:32  warning  'beforeEach' is defined but never used    @typescript-eslint/no-unused-vars
+   6:44  warning  'vi' is defined but never used            @typescript-eslint/no-unused-vars
+  45:38  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  49:43  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Projects\collabryx\tests\unit\lib\bot-detection.test.ts
+  17:8  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Projects\collabryx\tests\unit\lib\csrf.test.ts
+  57:45  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  61:40  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Projects\collabryx\tests\unit\lib\rate-limiter.test.ts
+  15:8  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Projects\collabryx\tests\unit\onboarding-actions.test.ts
+   54:63  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   55:70  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   56:65  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  302:73  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  332:73  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  347:73  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  361:73  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  375:73  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  403:73  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+D:\Projects\collabryx\tests\unit\onboarding-validation.test.ts
+  1:32  warning  'beforeEach' is defined but never used  @typescript-eslint/no-unused-vars
+  1:44  warning  'vi' is defined but never used          @typescript-eslint/no-unused-vars
+
+✖ 143 problems (21 errors, 122 warnings)
+  0 errors and 6 warnings potentially fixable with the `--fix` option.
+
