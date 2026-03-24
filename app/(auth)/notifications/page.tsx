@@ -255,18 +255,6 @@ export default function NotificationsPage() {
     }
   }, [declineRequest, markAsRead])
 
-  const toggleSelection = useCallback((id: string) => {
-    setSelectedIds((prev) => {
-      const newSet = new Set(prev)
-      if (newSet.has(id)) {
-        newSet.delete(id)
-      } else {
-        newSet.add(id)
-      }
-      return newSet
-    })
-  }, [])
-
   if (isLoadingNotifications) {
     return (
       <div className="container max-w-4xl mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-8">
