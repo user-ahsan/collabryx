@@ -2770,6 +2770,34 @@ GRANT EXECUTE ON FUNCTION notify_new_message TO service_role;
 GRANT EXECUTE ON FUNCTION notify_match_suggested TO service_role;
 GRANT EXECUTE ON FUNCTION notify_connection_accepted TO service_role;
 
+-- notify_comment_like (NEW)
+CREATE OR REPLACE FUNCTION notify_comment_like()
+RETURNS trigger AS $$
+DECLARE
+  comment_author uuid;
+  prefs notification_preferences;
+BEGIN
+  SELECT author_id INTO comment_author FROM comments WHERE comments.id = NEW.comment_id;
+  IF comment_author IS NOT NULL AND comment_author != NEW.user_id THEN
+    -- Check notification preferences
+    SELECT * INTO prefs FROM notification_preferences WHERE user_id = comment_author;
+    IF prefs.email_comments = TRUE THEN
+      INSERT INTO notifications (user_id, type, actor_id, content, resource_type, resource_id)
+      VALUES (comment_author, 'like', NEW.user_id, 'liked your comment', 'post', NEW.comment_id);
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+DROP TRIGGER IF EXISTS notify_comment_like_trigger ON public.comment_likes;
+CREATE TRIGGER notify_comment_like_trigger
+  AFTER INSERT ON comment_likes
+  FOR EACH ROW
+  EXECUTE FUNCTION notify_comment_like();
+
+GRANT EXECUTE ON FUNCTION notify_comment_like TO service_role;
+
 -- ============================================================================
 -- SECTION 5.8: EVENT CAPTURE TRIGGERS
 -- ============================================================================
