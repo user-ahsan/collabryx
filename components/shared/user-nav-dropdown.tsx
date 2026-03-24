@@ -17,6 +17,9 @@ import {
 } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { useSettings } from "@/hooks/use-settings"
+import { useUser } from "@/hooks/use-user"
+import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 import {
     User,
     Settings,
@@ -25,28 +28,45 @@ import {
 } from "lucide-react"
 
 export function UserNavDropdown() {
+    const { user, profile } = useUser()
     const { openSettings } = useSettings()
+    const router = useRouter()
+    const supabase = createClient()
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut()
+        router.push('/login')
+    }
 
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-12 w-full justify-start gap-2 rounded-xl px-2 hover:bg-accent">
                     <Avatar className="h-8 w-8">
-                        <AvatarImage src="/avatars/01.png" alt="@user" />
-                        <AvatarFallback>SC</AvatarFallback>
+                        <AvatarImage src={profile?.avatar_url || '/avatars/01.png'} alt={profile?.full_name || '@user'} />
+                        <AvatarFallback>
+                            {profile?.full_name 
+                                ? profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+                                : user?.email?.charAt(0).toUpperCase() || 'U'
+                            }
+                        </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col items-start text-sm">
-                        <span className="font-medium">Sophie Chen</span>
-                        <span className="text-xs text-muted-foreground">Pro Plan</span>
+                        <span className="font-medium">
+                            {profile?.full_name || user?.email?.split('@')[0] || 'User'}
+                        </span>
+                        <span className="text-xs text-muted-foreground">Member</span>
                     </div>
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">Sophie Chen</p>
+                        <p className="text-sm font-medium leading-none">
+                            {profile?.full_name || user?.email?.split('@')[0] || 'User'}
+                        </p>
                         <p className="text-xs leading-none text-muted-foreground">
-                            sophie@example.com
+                            {user?.email || 'user@example.com'}
                         </p>
                     </div>
                 </DropdownMenuLabel>
@@ -69,7 +89,7 @@ export function UserNavDropdown() {
                     </DropdownMenuItem>
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>Log out</span>
                     <DropdownMenuShortcut>⇧⌘Q</DropdownMenuShortcut>
