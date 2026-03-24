@@ -1891,7 +1891,8 @@ RETURNS TABLE (
     user1_skills TEXT[],
     user2_skills TEXT[],
     shared_skills TEXT[],
-    complementary_skills TEXT[]
+    complementary_skills TEXT[],
+    complementary_explanation TEXT
 ) AS $$
 DECLARE
     user1_skill_names TEXT[];
