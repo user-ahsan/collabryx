@@ -166,6 +166,30 @@ export const glassVariants = {
   footer: "bg-background/80 backdrop-blur-xl border-t border-border/40",
 
   /**
+   * TIER 11: Skill Matrix Glass
+   * For: Skill cards, Proficiency indicators, Skill grid tiles
+   */
+  skillCard: "relative overflow-hidden bg-blue-950/[0.04] backdrop-blur-xl border border-blue-400/10 shadow-[0_4px_24px_0_rgba(59,130,246,0.04)] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-blue-300/30 before:to-transparent before:pointer-events-none after:absolute after:inset-y-0 after:left-0 after:w-px after:bg-gradient-to-b after:from-blue-300/20 after:via-transparent after:to-transparent after:pointer-events-none",
+  
+  /**
+   * TIER 11.5: Skill Card Active/Selected
+   * For: Selected skill tiles, Active state with stronger glow
+   */
+  skillCardActive: "relative overflow-hidden bg-blue-950/[0.04] backdrop-blur-xl border border-blue-400/30 shadow-[0_8px_40px_0_rgba(59,130,246,0.15)] before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-gradient-to-r before:from-transparent before:via-blue-300/30 before:to-transparent before:pointer-events-none after:absolute after:inset-y-0 after:left-0 after:w-px after:bg-gradient-to-b after:from-blue-300/20 after:via-transparent after:to-transparent after:pointer-events-none",
+  
+  /**
+   * TIER 11.7: Proficiency Ring Background
+   * For: Subtle glass background behind proficiency rings/circles
+   */
+  proficiencyRing: "bg-blue-950/[0.06] backdrop-blur-xl border border-blue-400/15 rounded-full",
+  
+  /**
+   * TIER 11.9: Skill Card Hoverable
+   * For: Interactive skill cards with hover effects
+   */
+  skillCardHoverable: "transition-all duration-500 hover:shadow-[0_8px_40px_0_rgba(59,130,246,0.12)] hover:-translate-y-1",
+
+  /**
    * UTILITY: Glass Card Hover Effects
    * Add to any glass card for hover interaction
    */
