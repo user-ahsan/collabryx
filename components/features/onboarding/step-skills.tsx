@@ -4,17 +4,10 @@ import React from "react"
 import { useFormContext, Controller } from "react-hook-form"
 import { Label } from "@/components/ui/label"
 import { InlineSearchableCombobox, ComboboxOption } from "@/components/ui/inline-searchable-combobox"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { skillsDatabase, type Skill } from "@/lib/data/skills-database"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
-
-const PROFICIENCY_LEVELS = [
-  { value: "beginner", label: "Beginner", description: "Just starting out" },
-  { value: "intermediate", label: "Intermediate", description: "Comfortable using it" },
-  { value: "advanced", label: "Advanced", description: "Can teach others" },
-  { value: "expert", label: "Expert", description: "Industry professional" },
-]
+import { SkillMatrixGrid } from "./skill-matrix-grid"
 
 interface SkillWithProficiency {
   id: string
@@ -95,41 +88,36 @@ export function StepSkills() {
 
               {/* Proficiency selector for each skill */}
               {skills.length > 0 && (
-                <div className="space-y-3">
-                  <Label className="text-sm font-semibold text-foreground">Proficiency Levels (Optional)</Label>
-                  {skills.map((skill, index) => (
-                    <div key={skill.id} className="flex items-center gap-3">
-                      <span className="text-sm text-muted-foreground w-32 truncate">{skill.label}</span>
-                      <Select
-                        value={skill.proficiency || "intermediate"}
-                        onValueChange={(value) => {
-                          const newSkills = [...skills]
-                          newSkills[index] = { ...skill, proficiency: value }
-                          field.onChange(newSkills)
-                        }}
-                      >
-                        <SelectTrigger className="w-[180px]">
-                          <SelectValue placeholder="Select proficiency" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {PROFICIENCY_LEVELS.map((level) => (
-                            <SelectItem key={level.value} value={level.value}>
-                              {level.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  ))}
+                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+                  <div className="w-2 h-2 rounded-full bg-green-500/50" />
+                  <span>{skills.length} skill{skills.length > 1 ? 's' : ''} added</span>
                 </div>
               )}
+
+              <SkillMatrixGrid
+                skills={skills.map((skill) => ({
+                  id: skill.id,
+                  label: skill.label,
+                  proficiency: (skill.proficiency || "intermediate") as "beginner" | "intermediate" | "advanced" | "expert",
+                }))}
+                onProficiencyChange={(skillId, proficiency) => {
+                  const newSkills = skills.map((skill) =>
+                    skill.id === skillId ? { ...skill, proficiency } : skill
+                  )
+                  field.onChange(newSkills)
+                }}
+                onRemove={(skillId) => {
+                  const newSkills = skills.filter((skill) => skill.id !== skillId)
+                  field.onChange(newSkills)
+                }}
+              />
 
               <div className={cn(
                 "p-4 rounded-lg",
                 glass("subtle")
               )}>
                 <p id="skills-hint" className="text-sm text-muted-foreground">
-                  💡 <strong>Tip:</strong> You can select from our list of 1000+ skills across all categories including technical, trades, services, creative, and more. Or type to add custom skills not in the list.
+                  💡 Tip: Click on any skill card to flip it and adjust proficiency. Your skills are matched with opportunities based on both category and expertise level.
                 </p>
               </div>
             </div>
