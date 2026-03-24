@@ -3200,8 +3200,8 @@ CREATE TRIGGER update_privacy_settings_updated_at BEFORE UPDATE ON public.privac
 -- - Embedding timestamp trigger (1)
 -- - Optimistic locking trigger (posts_bump_version)
 -- 
--- INDEXES: 103 total (including HNSW for vector search)
--- RLS POLICIES: 100 total
+-- INDEXES: 104+ total (including HNSW for vector search, post_impressions, feed_thompson_params)
+-- RLS POLICIES: 100+ total
 -- STORAGE BUCKETS: 3 (post-media, profile-media, project-media)
 -- REALTIME: Enabled for all 34 tables
 -- 
