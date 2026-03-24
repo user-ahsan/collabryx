@@ -54,14 +54,7 @@ async function sendMessageMutation({ conversationId, text }: { conversationId: s
 
   if (insertError) throw insertError
 
-  await supabase
-    .from("conversations")
-    .update({
-      last_message_text: text.trim(),
-      last_message_at: new Date().toISOString(),
-    })
-    .eq("id", conversationId)
-
+  // Trigger handles conversation update automatically
   return data
 }
 
