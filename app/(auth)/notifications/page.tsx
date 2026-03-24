@@ -1,17 +1,15 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { GlassCard } from "@/components/shared/glass-card"
-import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import {
   Bell,
   CheckCheck,
   Trash2,
-  Filter,
+  Loader2,
 } from "lucide-react"
 import {
   NOTIFICATION_TABS,
@@ -21,8 +19,18 @@ import {
   type NotificationType,
   type NotificationCategory,
 } from "@/lib/constants/notifications"
+import {
+  useNotifications,
+  useMarkNotificationAsRead,
+  useMarkAllNotificationsAsRead,
+  useDeleteNotification,
+  useRealtimeNotifications,
+} from "@/hooks/use-notifications"
+import { useConnectionRequests } from "@/hooks/use-connection-requests"
+import { toast } from "sonner"
+import type { Notification } from "@/types/database.types"
 
-interface Notification {
+interface DisplayNotification {
   id: string
   type: NotificationType
   actor: { name: string; avatar: string }
@@ -31,77 +39,20 @@ interface Notification {
   read: boolean
   resourceType?: 'post' | 'profile' | 'conversation' | 'match'
   resourceId?: string
+  connectionId?: string
 }
 
-// Mock data - replace with useNotifications hook
-const MOCK_NOTIFICATIONS: Notification[] = [
-  {
-    id: "1",
-    type: "connect",
-    actor: { name: "David Kim", avatar: "/avatars/04.png" },
-    content: "sent you a connection request",
-    time: "2m ago",
-    read: false,
-    resourceType: "profile",
-    resourceId: "user-123",
-  },
-  {
-    id: "2",
-    type: "message",
-    actor: { name: "Sarah Chen", avatar: "/avatars/01.png" },
-    content: "messaged you: 'Hey! I saw your profile...'",
-    time: "1h ago",
-    read: false,
-    resourceType: "conversation",
-    resourceId: "conv-456",
-  },
-  {
-    id: "3",
-    type: "like",
-    actor: { name: "Alex Rivera", avatar: "/avatars/02.png" },
-    content: "liked your project 'AI Generator'",
-    time: "3h ago",
-    read: true,
-    resourceType: "post",
-    resourceId: "post-789",
-  },
-  {
-    id: "4",
-    type: "match",
-    actor: { name: "Emma Wilson", avatar: "/avatars/03.png" },
-    content: "is a 95% match with your profile!",
-    time: "5h ago",
-    read: false,
-    resourceType: "match",
-    resourceId: "match-321",
-  },
-  {
-    id: "5",
-    type: "comment",
-    actor: { name: "John Doe", avatar: "/avatars/05.png" },
-    content: "commented on your post",
-    time: "1d ago",
-    read: true,
-    resourceType: "post",
-    resourceId: "post-789",
-  },
-  {
-    id: "6",
-    type: "achievement",
-    actor: { name: "Collabryx", avatar: "" },
-    content: "You earned the 'Early Adopter' badge!",
-    time: "2d ago",
-    read: true,
-  },
-  {
-    id: "7",
-    type: "system",
-    actor: { name: "Collabryx", avatar: "" },
-    content: "Your profile is getting attention! 5 new views this week",
-    time: "3d ago",
-    read: true,
-  },
-]
+function formatTimeAgo(dateString: string): string {
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+  
+  if (diffInSeconds < 60) return 'just now'
+  if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`
+  if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`
+  if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}d ago`
+  return date.toLocaleDateString()
+}
 
 function NotificationListItem({
   notification,
@@ -109,7 +60,7 @@ function NotificationListItem({
   onIgnore,
   onDismiss,
 }: {
-  notification: Notification
+  notification: DisplayNotification
   onAccept?: () => void
   onIgnore?: () => void
   onDismiss?: () => void
@@ -195,18 +146,45 @@ function NotificationListItem({
 
 export default function NotificationsPage() {
   const router = useRouter()
-  const [notifications, setNotifications] = useState<Notification[]>(MOCK_NOTIFICATIONS)
   const [activeTab, setActiveTab] = useState<NotificationCategory>("all")
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
-  const unreadCount = notifications.filter((n) => !n.read).length
+  // Fetch real notifications
+  const { data: notifications = [], isLoading: isLoadingNotifications } = useNotifications({ limit: 50 })
+  const { mutate: markAsRead } = useMarkNotificationAsRead()
+  const { mutate: markAllAsRead } = useMarkAllNotificationsAsRead()
+  const { mutate: deleteNotification } = useDeleteNotification()
+  const { acceptRequest, declineRequest, isLoading: isActionLoading } = useConnectionRequests()
+  
+  // Subscribe to real-time notifications
+  useRealtimeNotifications()
+
+  // Transform database notifications to display format
+  const displayNotifications: DisplayNotification[] = useMemo(() => {
+    return notifications.map((notif: Notification) => ({
+      id: notif.id,
+      type: notif.type as NotificationType,
+      actor: {
+        name: notif.actor_name || 'Unknown',
+        avatar: notif.actor_avatar || '',
+      },
+      content: notif.content,
+      time: formatTimeAgo(notif.created_at),
+      read: notif.is_read,
+      resourceType: notif.resource_type,
+      resourceId: notif.resource_id,
+      connectionId: notif.type === 'connect' ? notif.id : undefined,
+    }))
+  }, [notifications])
+
+  const unreadCount = displayNotifications.filter((n) => !n.read).length
 
   const handleBack = useCallback(() => {
     router.back()
   }, [router])
 
   // Filter notifications based on active tab
-  const filteredNotifications = notifications.filter((n) => {
+  const filteredNotifications = displayNotifications.filter((n) => {
     if (activeTab === "all") return true
     if (activeTab === "unread") return !n.read
     const category = getNotificationCategory(n.type)
@@ -214,26 +192,61 @@ export default function NotificationsPage() {
   })
 
   const handleMarkAllAsRead = useCallback(() => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })))
-  }, [])
+    markAllAsRead(undefined, {
+      onSuccess: () => {
+        toast.success('All notifications marked as read')
+      },
+      onError: () => {
+        toast.error('Failed to mark all as read')
+      },
+    })
+  }, [markAllAsRead])
 
   const handleClearAllRead = useCallback(() => {
-    setNotifications((prev) => prev.filter((n) => !n.read))
-  }, [])
+    const readIds = displayNotifications.filter((n) => n.read).map((n) => n.id)
+    readIds.forEach((id) => {
+      deleteNotification(id, {
+        onSuccess: () => {
+          toast.success('Notification deleted')
+        },
+        onError: () => {
+          toast.error('Failed to delete notification')
+        },
+      })
+    })
+    toast.success(`${readIds.length} notifications cleared`)
+  }, [displayNotifications, deleteNotification])
 
   const handleDismiss = useCallback((id: string) => {
-    setNotifications((prev) => prev.filter((n) => n.id !== id))
-  }, [])
+    deleteNotification(id, {
+      onSuccess: () => {
+        toast.success('Notification dismissed')
+      },
+      onError: () => {
+        toast.error('Failed to dismiss notification')
+      },
+    })
+  }, [deleteNotification])
 
-  const handleAccept = useCallback((id: string) => {
-    console.log("Accept connection:", id)
-    // TODO: Implement accept logic
-  }, [])
+  const handleAccept = useCallback(async (notificationId: string) => {
+    const success = await acceptRequest(notificationId)
+    if (success) {
+      toast.success('Connection request accepted')
+      markAsRead(notificationId)
+    } else {
+      toast.error('Failed to accept connection request')
+    }
+  }, [acceptRequest, markAsRead])
 
-  const handleIgnore = useCallback((id: string) => {
-    console.log("Ignore connection:", id)
-    // TODO: Implement ignore logic
-  }, [])
+  const handleIgnore = useCallback(async (notificationId: string) => {
+    const success = await declineRequest(notificationId)
+    if (success) {
+      toast.success('Connection request declined')
+      markAsRead(notificationId)
+    } else {
+      toast.error('Failed to decline connection request')
+    }
+  }, [declineRequest, markAsRead])
 
   const toggleSelection = useCallback((id: string) => {
     setSelectedIds((prev) => {
@@ -246,6 +259,19 @@ export default function NotificationsPage() {
       return newSet
     })
   }, [])
+
+  if (isLoadingNotifications) {
+    return (
+      <div className="container max-w-4xl mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-8">
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Loading notifications...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="container max-w-4xl mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-8">
@@ -370,10 +396,11 @@ export default function NotificationsPage() {
               variant="ghost"
               className="h-8 text-xs text-destructive hover:text-destructive"
               onClick={() => {
-                setNotifications((prev) =>
-                  prev.filter((n) => !selectedIds.has(n.id))
-                )
+                selectedIds.forEach((id) => {
+                  deleteNotification(id)
+                })
                 setSelectedIds(new Set())
+                toast.success(`${selectedIds.size} notifications deleted`)
               }}
             >
               <Trash2 className="h-3.5 w-3.5 mr-1.5" />
@@ -413,7 +440,7 @@ export default function NotificationsPage() {
       </div>
 
       {/* Footer Actions */}
-      {notifications.some((n) => n.read) && (
+      {displayNotifications.some((n) => n.read) && (
         <div className="mt-6 flex justify-center">
           <Button
             variant="ghost"
