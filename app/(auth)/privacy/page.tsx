@@ -1,6 +1,6 @@
 import { GlassCard } from "@/components/shared/glass-card"
 import { Button } from "@/components/ui/button"
-import { Shield, Lock, Eye, Database, ArrowRight } from "lucide-react"
+import { Shield, Lock, Eye, Database } from "lucide-react"
 import Link from "next/link"
 
 export default function PrivacyPage() {
