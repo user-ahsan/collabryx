@@ -54,10 +54,10 @@ export interface UserInterest {
 export interface UserExperience {
   id: string; // UUID
   user_id: string; // UUID
-  title: string;
-  company: string;
+  title?: string;
+  company?: string;
   description?: string;
-  start_date: string; // DATE
+  start_date?: string; // DATE
   end_date?: string; // DATE
   is_current: boolean;
   order_index: number;
