@@ -40,55 +40,38 @@ export function useConversations(): UseConversationsReturn {
                 return
             }
 
-            // Fetch accepted connections
-            const { data: connections, error: connectionsError } = await supabase
-                .from("connections")
+            // Fetch conversations
+            const { data: conversations, error: conversationsError } = await supabase
+                .from("conversations")
                 .select(`
                     id,
-                    requester_id,
-                    receiver_id,
-                    updated_at,
-                    requester:profiles!connections_requester_id_fkey (
+                    participant_1,
+                    participant_2,
+                    last_message_text,
+                    last_message_at,
+                    unread_count_1,
+                    unread_count_2,
+                    requester:profiles!conversations_participant_1_fkey (
                         id,
                         display_name,
                         full_name,
                         avatar_url
                     ),
-                    receiver:profiles!connections_receiver_id_fkey (
+                    receiver:profiles!conversations_participant_2_fkey (
                         id,
                         display_name,
                         full_name,
                         avatar_url
                     )
                 `)
-                .eq("status", "accepted")
-                .or(`requester_id.eq.${user.id},receiver_id.eq.${user.id}`)
-                .order("updated_at", { ascending: false })
+                .or(`participant_1.eq.${user.id},participant_2.eq.${user.id}`)
+                .order("last_message_at", { ascending: false, nullsFirst: false })
 
-            if (connectionsError) throw connectionsError
-
-            // For each connection, get the last message
-            const conversationsPromises = (connections || []).map(async (conn) => {
-                const isRequester = conn.requester_id === user.id
-                // Access the first element since the select returns an array
-                const otherUser = isRequester ? (conn.receiver?.[0] ?? null) : (conn.requester?.[0] ?? null)
-                
-                // Get last message from messages table
-                const { data: lastMessage } = await supabase
-                    .from("messages")
-                    .select("content, created_at")
-                    .eq("conversation_id", conn.id)
-                    .order("created_at", { ascending: false })
-                    .limit(1)
-                    .single()
-
-                // Get unread count
-                const { count: unreadCount } = await supabase
-                    .from("messages")
-                    .select("*", { count: "exact", head: true })
-                    .eq("conversation_id", conn.id)
-                    .eq("receiver_id", user.id)
-                    .eq("is_read", false)
+            // For each conversation, get the other user info
+            const conversationsPromises = (conversations || []).map(async (conv) => {
+                const isParticipant1 = conv.participant_1 === user.id
+                const otherUser = isParticipant1 ? conv.receiver?.[0] : conv.requester?.[0]
+                const unreadCount = isParticipant1 ? conv.unread_count_2 : conv.unread_count_1
 
                 return {
                     id: conn.id,
