@@ -416,24 +416,11 @@ export default function OnboardingPage() {
                 return
             }
 
-            // Calculate completion percentage
-            let calculatedPercentage = 25
+            // Use backend calculation for consistency (matches database function)
+            // Backend calculates: basic (25) + skills (25) + interests (15) + looking_for (10) + experience (25) = 100
+            const calculatedPercentage = 25 // Base for basic info - backend will recalculate via trigger
 
-            if (data.skills && data.skills.length > 0) {
-                calculatedPercentage += 25
-            }
-
-            if (data.interests && data.interests.length > 0) {
-                calculatedPercentage += 40
-            }
-
-            const hasExp = data.experiences && data.experiences.some(e => e.title || e.company)
-            const hasLinks = data.links && data.links.some(l => l.url)
-            if (hasExp || hasLinks) {
-                calculatedPercentage += 10
-            }
-
-            setCompletionPercentage(calculatedPercentage)
+            setCompletionPercentage(Math.min(calculatedPercentage + 75, 100)) // Estimate for UI
 
             const result = await completeOnboarding(data, calculatedPercentage)
 
