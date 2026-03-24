@@ -6,13 +6,11 @@ import { redirect } from 'next/navigation'
 export default async function AuthSyncPage() {
     let destination = "/dashboard"
     let needsEmbeddingWait = false
-    let configError = false
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     
     if (!supabaseUrl || !supabaseKey) {
-        configError = true
         return redirect("/login?error=config")
     }
     
@@ -57,7 +55,6 @@ export default async function AuthSyncPage() {
             }
         }
     } catch {
-        configError = true
         return redirect("/login?error=unknown")
     }
 

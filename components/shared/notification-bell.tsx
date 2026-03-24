@@ -22,7 +22,7 @@ export function NotificationBell({ onClick }: NotificationBellProps) {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setAnnouncement(`${unreadCount - previousCount} new notification${unreadCount - previousCount > 1 ? 's' : ''}`)
       }
-      // eslint-disable-next-line react-hooks/set-state-in-effect
+       
       setPreviousCount(unreadCount)
     }
   }, [unreadCount, previousCount])
