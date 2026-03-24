@@ -79,7 +79,7 @@ export function useConversations(): UseConversationsReturn {
                     other_user_name: otherUser?.display_name || otherUser?.full_name || "Unknown",
                     other_user_avatar: otherUser?.avatar_url || "",
                     last_message: conv.last_message_text || "Start a conversation",
-                    last_message_time: formatTimeAgo(conv.last_message_at || conv.updated_at),
+                    last_message_time: formatTimeAgo(conv.last_message_at),
                     unread_count: unreadCount || 0
                 } as Conversation
             })
