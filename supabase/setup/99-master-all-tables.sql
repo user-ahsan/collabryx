@@ -1084,6 +1084,37 @@ CREATE TRIGGER trigger_generate_embedding
     EXECUTE FUNCTION public.trigger_embedding_generation();
 
 -- --------------------------------------------
+-- FUNCTION: retry_failed_embedding
+-- --------------------------------------------
+-- Retries embedding generation when profile with failed status is updated
+CREATE FUNCTION public.retry_failed_embedding()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Check if embedding failed and profile was updated
+    IF EXISTS (
+        SELECT 1 FROM profile_embeddings pe 
+        WHERE pe.user_id = NEW.id AND pe.status = 'failed'
+    ) AND (
+        OLD.full_name IS DISTINCT FROM NEW.full_name OR
+        OLD.headline IS DISTINCT FROM NEW.headline OR
+        OLD.bio IS DISTINCT FROM NEW.bio
+    ) THEN
+        -- Reset embedding status to pending for retry
+        UPDATE profile_embeddings 
+        SET status = 'pending', retry_count = retry_count + 1, error_message = NULL
+        WHERE user_id = NEW.id AND status = 'failed';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+DROP TRIGGER IF EXISTS retry_failed_embedding_trigger ON public.profiles;
+CREATE TRIGGER retry_failed_embedding_trigger
+    AFTER UPDATE ON public.profiles
+    FOR EACH ROW
+    EXECUTE FUNCTION public.retry_failed_embedding();
+
+-- --------------------------------------------
 -- FUNCTION: increment_post_reaction_count
 -- --------------------------------------------
 CREATE FUNCTION public.increment_post_reaction_count()
