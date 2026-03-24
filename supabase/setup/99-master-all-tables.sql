@@ -2129,6 +2129,8 @@ CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING
 
 CREATE POLICY "Users can insert own profile" ON public.profiles FOR INSERT WITH CHECK ((SELECT auth.uid()) = id);
 
+CREATE POLICY "Users can delete own profile (GDPR)" ON public.profiles FOR DELETE USING ((SELECT auth.uid()) = id);
+
 -- --------------------------------------------
 -- USER SKILLS RLS
 -- --------------------------------------------
