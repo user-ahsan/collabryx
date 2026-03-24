@@ -16,6 +16,7 @@ import { AlignJustify, Bell, User, Settings, LogOut } from "lucide-react"
 import { SidebarNav } from "@/components/shared/sidebar-nav"
 import { NotificationsWidget } from "@/components/features/dashboard/notifications-widget"
 import { useSettings } from "@/hooks/use-settings"
+import { useUser } from "@/hooks/use-user"
 import Link from "next/link"
 import { useState } from "react"
 import { usePathname } from "next/navigation"
@@ -23,6 +24,7 @@ import { usePathname } from "next/navigation"
 
 export function MobileNav() {
     const [open, setOpen] = useState(false)
+    const { user, profile } = useUser()
 
     const pathname = usePathname()
     const [prevPathname, setPrevPathname] = useState(pathname)
@@ -77,16 +79,25 @@ export function MobileNav() {
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="h-8 w-8 rounded-full p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                                 <Avatar className="h-8 w-8 cursor-pointer ring-1 ring-border">
-                                    <AvatarImage src="/avatars/05.png" />
-                                    <AvatarFallback className="text-xs">MR</AvatarFallback>
+                                    <AvatarImage src={profile?.avatar_url || '/avatars/01.png'} />
+                                    <AvatarFallback className="text-xs">
+                                        {profile?.full_name 
+                                            ? profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+                                            : user?.email?.charAt(0).toUpperCase() || 'U'
+                                        }
+                                    </AvatarFallback>
                                 </Avatar>
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="w-48" align="end" sideOffset={8}>
                             <DropdownMenuLabel className="font-normal">
                                 <div className="flex flex-col space-y-0.5">
-                                    <p className="text-sm font-medium">Sophie Chen</p>
-                                    <p className="text-xs text-muted-foreground">sophie@example.com</p>
+                                    <p className="text-sm font-medium">
+                                        {profile?.full_name || user?.email?.split('@')[0] || 'User'}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                        {user?.email || 'user@example.com'}
+                                    </p>
                                 </div>
                             </DropdownMenuLabel>
                             <DropdownMenuSeparator />
