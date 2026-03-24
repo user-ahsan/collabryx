@@ -2810,6 +2810,9 @@ RETURNS integer AS $$
 DECLARE
   v_score integer := 0;
   v_profile RECORD;
+  v_has_skills integer := 0;
+  v_has_interests integer := 0;
+  v_has_experience integer := 0;
 BEGIN
   SELECT * INTO v_profile FROM profiles WHERE id = p_user_id;
   IF NOT FOUND THEN RETURN 0; END IF;
@@ -2818,16 +2821,16 @@ BEGIN
   IF v_profile.headline IS NOT NULL THEN v_score := v_score + 10; END IF;
   IF v_profile.bio IS NOT NULL THEN v_score := v_score + 5; END IF;
   
-  SELECT COUNT(*) INTO v_score FROM user_skills WHERE user_id = p_user_id HAVING COUNT(*) > 0;
-  v_score := v_score + 25;
+  SELECT COUNT(*)::integer INTO v_has_skills FROM user_skills WHERE user_id = p_user_id;
+  IF v_has_skills > 0 THEN v_score := v_score + 25; END IF;
   
-  SELECT COUNT(*) INTO v_score FROM user_interests WHERE user_id = p_user_id HAVING COUNT(*) > 0;
-  v_score := v_score + 15;
+  SELECT COUNT(*)::integer INTO v_has_interests FROM user_interests WHERE user_id = p_user_id;
+  IF v_has_interests > 0 THEN v_score := v_score + 15; END IF;
   
   IF v_profile.looking_for IS NOT NULL AND array_length(v_profile.looking_for, 1) > 0 THEN v_score := v_score + 10; END IF;
   
-  SELECT COUNT(*) INTO v_score FROM user_experiences WHERE user_id = p_user_id HAVING COUNT(*) > 0;
-  v_score := v_score + 25;
+  SELECT COUNT(*)::integer INTO v_has_experience FROM user_experiences WHERE user_id = p_user_id;
+  IF v_has_experience > 0 THEN v_score := v_score + 25; END IF;
   
   RETURN LEAST(v_score, 100);
 END;
