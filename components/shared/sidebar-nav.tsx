@@ -30,6 +30,7 @@ import {
     LucideIcon
 } from "lucide-react"
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
+import { useUser } from "@/hooks/use-user"
 
 interface SidebarNavProps extends React.HTMLAttributes<HTMLDivElement> {
     isMobile?: boolean
@@ -37,10 +38,7 @@ interface SidebarNavProps extends React.HTMLAttributes<HTMLDivElement> {
 
 export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
     const pathname = usePathname()
-    // If usage is mobile, we don't need the context toggler, we just want it expanded.
-    // However, hooks cannot be conditional. We must call useSidebar always or handle it gracefully.
-    // We'll call it, but ignore isCollapsed if isMobile is true.
-    // We'll call it, but ignore isCollapsed if isMobile is true.
+    const { user, profile } = useUser()
     const sidebarContext = useSidebar()
     const isCollapsed = isMobile ? false : sidebarContext.isCollapsed
     const toggleSidebar = sidebarContext.toggleSidebar
@@ -168,8 +166,13 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
                                     <div className={cn("relative transition-all duration-300", isCollapsed ? "mb-0" : "mb-3")}>
                                         <div className={cn("rounded-full bg-background transition-all duration-300", !isCollapsed ? "ring-2 ring-border/50 p-1" : "ring-2 ring-primary/10 shadow-sm group-hover:ring-primary/30")}>
                                             <Avatar className={cn("transition-all duration-300", !isCollapsed ? "h-20 w-20" : "h-10 w-10")}>
-                                                <AvatarImage src="/avatars/01.png" alt="@sophie" />
-                                                <AvatarFallback>SC</AvatarFallback>
+                                                <AvatarImage src={profile?.avatar_url || '/avatars/01.png'} alt={profile?.full_name || '@user'} />
+                                                <AvatarFallback>
+                                                    {profile?.full_name 
+                                                        ? profile.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+                                                        : user?.email?.charAt(0).toUpperCase() || 'U'
+                                                    }
+                                                </AvatarFallback>
                                             </Avatar>
                                         </div>
                                         <div className={cn("absolute bg-green-500 rounded-full shadow-sm transition-all duration-300",
@@ -180,10 +183,12 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
 
                                     <div className={cn("text-center transition-all duration-300 whitespace-nowrap overflow-hidden",
                                         isCollapsed ? "max-w-0 max-h-0 opacity-0" : "max-w-[200px] max-h-[50px] opacity-100 delay-[50ms]")}>
-                                        <h3 className="font-bold text-lg text-foreground tracking-tight truncate">Sophie Chen</h3>
+                                        <h3 className="font-bold text-lg text-foreground tracking-tight truncate">
+                                            {profile?.full_name || user?.email?.split('@')[0] || 'User'}
+                                        </h3>
                                         <p className="text-xs text-muted-foreground font-medium mt-0.5 flex items-center justify-center gap-1.5 truncate">
                                             <Briefcase className="h-3 w-3 shrink-0" />
-                                            Frontend Architect
+                                            {profile?.headline || 'Member'}
                                         </p>
                                     </div>
                                 </div>
@@ -192,7 +197,7 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
                         </TooltipTrigger>
                         {isCollapsed && showTooltips && (
                             <TooltipContent side="right" className="font-medium">
-                                <p>Sophie Chen</p>
+                                <p>{profile?.full_name || user?.email || 'User'}</p>
                             </TooltipContent>
                         )}
                     </Tooltip>
