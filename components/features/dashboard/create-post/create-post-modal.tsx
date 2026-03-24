@@ -73,18 +73,6 @@ export function CreatePostModal() {
         }
     })
 
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) {
-            const files = Array.from(e.target.files)
-            handleFileSelect(files)
-        }
-        if (fileInputRef.current) fileInputRef.current.value = ''
-    }
-
-    const handleRemoveMedia = (index: number) => {
-        removeFile(index)
-    }
-
     const onSubmit = (data: PostFormValues) => {
         mutate({
             ...data,
