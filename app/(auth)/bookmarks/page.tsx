@@ -43,8 +43,6 @@ const MOCK_BOOKMARKS = [
 ]
 
 export default function BookmarksPage() {
-	const [filter, setFilter] = useState<"all" | "articles" | "posts">("all")
-
 	return (
 		<div className="container max-w-4xl mx-auto py-8 px-4 md:px-6">
 			<div className="mb-8">
