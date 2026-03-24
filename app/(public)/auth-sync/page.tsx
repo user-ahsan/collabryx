@@ -61,5 +61,5 @@ export default async function AuthSyncPage() {
         return redirect("/login?error=unknown")
     }
 
-    return <AuthSyncClient destination={destination} needsEmbeddingWait={needsEmbeddingWait} configError={configError} />
+    return <AuthSyncClient destination={destination} needsEmbeddingWait={needsEmbeddingWait} />
 }
