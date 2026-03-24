@@ -17,6 +17,8 @@ import { SidebarNav } from "@/components/shared/sidebar-nav"
 import { NotificationsWidget } from "@/components/features/dashboard/notifications-widget"
 import { useSettings } from "@/hooks/use-settings"
 import { useUser } from "@/hooks/use-user"
+import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 import Link from "next/link"
 import { useState } from "react"
 import { usePathname } from "next/navigation"
@@ -25,10 +27,17 @@ import { usePathname } from "next/navigation"
 export function MobileNav() {
     const [open, setOpen] = useState(false)
     const { user, profile } = useUser()
+    const router = useRouter()
+    const supabase = createClient()
 
     const pathname = usePathname()
     const [prevPathname, setPrevPathname] = useState(pathname)
     const { openSettings } = useSettings()
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut()
+        router.push('/login')
+    }
 
     // Close sheet when route changes
     if (pathname !== prevPathname) {
@@ -112,7 +121,7 @@ export function MobileNav() {
                                 </DropdownMenuItem>
                             </DropdownMenuGroup>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem>
+                            <DropdownMenuItem onClick={handleLogout}>
                                 <LogOut className="mr-2 h-4 w-4" />
                                 Log out
                             </DropdownMenuItem>
