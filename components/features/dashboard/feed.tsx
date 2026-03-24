@@ -86,7 +86,7 @@ export function Feed() {
             } else {
                 setHasMore(false)
             }
-        } catch (err) {
+        } catch {
             console.error('Error fetching posts:', err)
             setFetchError(err instanceof Error ? err : new Error('Failed to fetch posts'))
             // Fallback to cache
@@ -134,7 +134,7 @@ export function Feed() {
                     .single()
 
                 setHasEmbedding(embedding?.status === 'completed')
-            } catch (error) {
+            } catch {
                 console.error('Error checking embedding status:', error)
                 setHasEmbedding(false)
             }
@@ -182,7 +182,7 @@ export function Feed() {
             } else {
                 setHasMore(false)
             }
-        } catch (error) {
+        } catch {
             console.error('Error loading more posts:', error)
         } finally {
             setIsLoadingMore(false)

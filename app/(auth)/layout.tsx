@@ -61,7 +61,7 @@ function AuthLayoutContent({ children }: { children: React.ReactNode }) {
                 }
                 
                 setIsChecking(false)
-            } catch (error) {
+            } catch {
                 console.error('Auth check failed:', error)
                 // On error, clear cache and redirect to login
                 queryClient.clear()

@@ -70,7 +70,7 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
 
                 // New user if profile doesn't exist or onboarding not completed
                 if (mounted) setIsNewUser(!profile || profile.onboarding_completed !== true)
-            } catch (error) {
+            } catch {
                 console.error("Error checking onboarding status:", error)
                 if (mounted) setIsNewUser(false)
             }

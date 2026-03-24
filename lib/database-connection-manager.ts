@@ -192,7 +192,7 @@ export async function withRetry<T>(
   for (let attempt = 0; attempt <= config.maxRetries; attempt++) {
     try {
       return await operation()
-    } catch (error) {
+    } catch {
       const classified = classifyDatabaseError(error)
       lastError = classified
 
@@ -336,7 +336,7 @@ export async function withDatabaseProtection<T>(
 
   try {
     return await wrappedOperation()
-  } catch (error) {
+  } catch {
     const classified = classifyDatabaseError(error)
     
     logger.db.error('Database operation failed', {
@@ -428,7 +428,7 @@ export async function executeProtectedQuery<T>(
     const result = await withDatabaseProtection(queryFn, options)
     trackDatabaseOperation(true)
     return { data: (result as { data: T | null }).data, error: null }
-  } catch (error) {
+  } catch {
     trackDatabaseOperation(false, error as Error)
     return { data: null, error: error instanceof Error ? error : new Error(String(error)) }
   }

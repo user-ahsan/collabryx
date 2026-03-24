@@ -213,7 +213,7 @@ export async function fetchComments(
     })
     
     return { data: mappedComments, error: null, queryCount }
-  } catch (error) {
+  } catch {
     const queryDuration = Date.now() - queryStartTime
     log.error("Error fetching comments:", error)
     log.error('Query performance metrics', {
@@ -275,7 +275,7 @@ export async function fetchCommentById(commentId: string): Promise<{
     }
 
     return { data: mappedComment, error: null }
-  } catch (error) {
+  } catch {
     log.error("Error fetching comment:", error)
     return { 
       data: null, 
@@ -333,7 +333,7 @@ export async function createComment(
     if (error) throw error
 
     return { data, error: null }
-  } catch (error) {
+  } catch {
     log.error("Error creating comment:", error)
     return { 
       data: null, 
@@ -402,7 +402,7 @@ export async function updateComment(
     if (error) throw error
 
     return { data, error: null }
-  } catch (error) {
+  } catch {
     log.error("Error updating comment:", error)
     return { 
       data: null, 
@@ -455,7 +455,7 @@ export async function deleteComment(commentId: string): Promise<{ error: Error |
     if (error) throw error
 
     return { error: null }
-  } catch (error) {
+  } catch {
     log.error("Error deleting comment:", error)
     return { error: error instanceof Error ? error : new Error("[Comments] Failed to delete comment") }
   }
@@ -499,7 +499,7 @@ export async function likeComment(commentId: string): Promise<{
     if (error) throw error
 
     return { data, error: null }
-  } catch (error) {
+  } catch {
     log.error("Error liking comment:", error)
     return { 
       data: null, 
@@ -536,7 +536,7 @@ export async function unlikeComment(commentId: string): Promise<{ error: Error |
     if (error) throw error
 
     return { error: null }
-  } catch (error) {
+  } catch {
     log.error("Error unliking comment:", error)
     return { error: error instanceof Error ? error : new Error("[Comments] Failed to unlike comment") }
   }

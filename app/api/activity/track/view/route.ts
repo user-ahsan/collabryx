@@ -198,7 +198,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-  } catch (error) {
+  } catch {
     console.error("Error in profile view tracking:", error);
 
     return NextResponse.json(

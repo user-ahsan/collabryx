@@ -47,7 +47,7 @@ export function SkillsInterestsSettingsTab({ userId }: { userId: string }) {
 
                 setSkills(skillsRes.data || [])
                 setInterests(interestsRes.data || [])
-            } catch (err) {
+            } catch {
                 console.error("Error fetching skills/interests:", err)
                 setError("Failed to load data.")
             } finally {

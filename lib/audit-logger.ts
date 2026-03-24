@@ -170,7 +170,7 @@ export async function logAuditEvent(input: AuditLogInput): Promise<AuditLogResul
       success: true,
       logId: data?.id,
     }
-  } catch (error) {
+  } catch {
     console.error('Audit logging failed:', error)
     return {
       success: false,
@@ -212,7 +212,7 @@ export async function withAudit<T>(
     })
     
     return result
-  } catch (error) {
+  } catch {
     // Log failure
     await logAuditEvent({
       action: `${eventType}_failed`,
@@ -370,7 +370,7 @@ export async function getUserAuditLogs(
     }
     
     return { success: true, logs: data }
-  } catch (error) {
+  } catch {
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -408,7 +408,7 @@ export async function getFailedLoginAttempts(
     }
     
     return { success: true, logs: data }
-  } catch (error) {
+  } catch {
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',

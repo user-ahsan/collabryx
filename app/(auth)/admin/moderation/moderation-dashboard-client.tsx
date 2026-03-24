@@ -79,7 +79,7 @@ export function ModerationDashboardClient() {
 
       const data = await response.json()
       setReports(data.reports || [])
-    } catch (error) {
+    } catch {
       console.error("Error loading reports:", error)
       toast.error("Failed to load moderation reports")
     } finally {
@@ -111,7 +111,7 @@ export function ModerationDashboardClient() {
 
       toast.success("Content approved")
       loadReports()
-    } catch (error) {
+    } catch {
       console.error("Error approving content:", error)
       toast.error("Failed to approve content")
     } finally {
@@ -141,7 +141,7 @@ export function ModerationDashboardClient() {
 
       toast.success("Content removed")
       loadReports()
-    } catch (error) {
+    } catch {
       console.error("Error rejecting content:", error)
       toast.error("Failed to reject content")
     } finally {
@@ -168,7 +168,7 @@ export function ModerationDashboardClient() {
 
       toast.success("User has been banned")
       loadReports()
-    } catch (error) {
+    } catch {
       console.error("Error banning user:", error)
       toast.error("Failed to ban user")
     }

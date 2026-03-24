@@ -207,7 +207,7 @@ Be concise, encouraging, and practical. Focus on actionable advice.`
       },
     })
 
-  } catch (error) {
+  } catch {
     console.error("Chat API error:", error)
     return NextResponse.json(
       { 

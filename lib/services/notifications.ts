@@ -115,7 +115,7 @@ export async function fetchNotifications(
     }))
 
     return { data: mappedNotifications, error: null }
-  } catch (error) {
+  } catch {
     log.error("Error fetching notifications:", error)
     return { 
       data: [], 
@@ -161,7 +161,7 @@ export async function markNotificationAsRead(
     if (error) throw error
 
     return { data, error: null }
-  } catch (error) {
+  } catch {
     log.error("Error marking notification as read:", error)
     return { 
       data: null, 
@@ -199,7 +199,7 @@ export async function markAllNotificationsAsRead(): Promise<{ error: Error | nul
     if (error) throw error
 
     return { error: null }
-  } catch (error) {
+  } catch {
     log.error("Error marking all notifications as read:", error)
     return { error: error instanceof Error ? error : new Error("[Notifications] Failed to mark all notifications as read") }
   }
@@ -235,7 +235,7 @@ export async function deleteNotification(
     if (error) throw error
 
     return { error: null }
-  } catch (error) {
+  } catch {
     log.error("Error deleting notification:", error)
     return { error: error instanceof Error ? error : new Error("[Notifications] Failed to delete notification") }
   }
@@ -267,7 +267,7 @@ export async function deleteAllNotifications(): Promise<{ error: Error | null }>
     if (error) throw error
 
     return { error: null }
-  } catch (error) {
+  } catch {
     log.error("Error deleting all notifications:", error)
     return { error: error instanceof Error ? error : new Error("[Notifications] Failed to delete all notifications") }
   }
@@ -303,7 +303,7 @@ export async function getUnreadCount(): Promise<{
     if (error) throw error
 
     return { count: count || 0, error: null }
-  } catch (error) {
+  } catch {
     log.error("Error getting unread count:", error)
     return { count: 0, error: error instanceof Error ? error : new Error("[Notifications] Failed to get unread count") }
   }
@@ -349,7 +349,7 @@ export async function createNotification(
     if (error) throw error
 
     return { data, error: null }
-  } catch (error) {
+  } catch {
     log.error("Error creating notification:", error)
     return { 
       data: null, 

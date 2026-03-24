@@ -38,7 +38,7 @@ export async function GET() {
     if (!response.ok) {
       pythonWorkerError = `Worker returned status ${response.status}`
     }
-  } catch (error) {
+  } catch {
     pythonWorkerHealthy = false
     pythonWorkerError = error instanceof Error ? error.message : 'Unknown error'
   }

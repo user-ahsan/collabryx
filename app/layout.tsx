@@ -87,7 +87,7 @@ export default function RootLayout({
   if (process.env.NODE_ENV === 'production') {
     try {
       validateEnv()
-    } catch (error) {
+    } catch {
       console.error('❌ Production environment validation failed:', error)
       // Don't throw in production - let app continue with degraded functionality
     }

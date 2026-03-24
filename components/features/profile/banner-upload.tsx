@@ -140,7 +140,7 @@ export function BannerUpload({
       })
 
       toast.success('Banner updated successfully')
-    } catch (err) {
+    } catch {
       if (err instanceof Error && err.message.includes('aspect ratio')) {
         // Aspect ratio error, already handled
         return
@@ -195,7 +195,7 @@ export function BannerUpload({
       })
       setPreview(null)
       toast.success('Banner removed')
-    } catch (err) {
+    } catch {
       toast.error('Failed to remove banner')
     } finally {
       setIsUploading(false)

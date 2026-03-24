@@ -296,7 +296,7 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
             console.log('✅ Embedding queued successfully in DB:', queueData);
             embeddingQueuedInDb = true;
         }
-    } catch (error) {
+    } catch {
         console.error('❌ Embedding queue exception:', error);
         // Continue - DB queue is reliable, API trigger is best-effort
     }
@@ -329,7 +329,7 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
             embeddingError = `API returned ${response.status}: ${errorText}`;
             // Don't fail - DB queue will handle it
         }
-    } catch (error) {
+    } catch {
         // Already queued in DB, background processor will handle
         embeddingError = error instanceof Error ? error.message : 'Unknown error';
         console.error('❌ Embedding API trigger failed (DB queue will handle):', embeddingError);
@@ -379,7 +379,7 @@ export async function triggerEmbeddingGeneration(userId: string) {
         const data = await response.json()
         console.log("Embedding generation triggered:", data)
         return { success: true, data }
-    } catch (error) {
+    } catch {
         console.error("Error triggering embedding generation:", error)
         return { 
             success: false, 

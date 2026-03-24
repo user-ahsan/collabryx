@@ -48,7 +48,7 @@ function exec(command, options = {}) {
       stdio: 'pipe',
       ...options
     });
-  } catch (_error) {
+  } catch {
     return null;
   }
 }
@@ -57,7 +57,7 @@ function getContainerStatus() {
   try {
     const status = exec(`cd "${CONFIG.workerDir}" && docker-compose ps`);
     return status.trim();
-  } catch (_error) {
+  } catch {
     return '';
   }
 }
@@ -66,7 +66,7 @@ function getImageInfo() {
   try {
     const info = exec(`docker images ${CONFIG.imageName} --format "{{.Repository}}:{{.Tag}} - Created: {{.CreatedAt}} - Size: {{.Size}}"`);
     return info.trim();
-  } catch (_error) {
+  } catch {
     return null;
   }
 }
@@ -75,7 +75,7 @@ function getContainerStats() {
   try {
     const stats = exec(`docker stats ${CONFIG.serviceName} --no-stream --format "CPU: {{.CPUPerc}}, Memory: {{.MemUsage}}, Network I/O: {{.NetIO}}"`);
     return stats.trim();
-  } catch (_error) {
+  } catch {
     return null;
   }
 }
@@ -84,7 +84,7 @@ function getNetworkInfo() {
   try {
     const networks = exec(`cd "${CONFIG.workerDir}" && docker-compose ps --format json`);
     return networks.trim();
-  } catch (_error) {
+  } catch {
     return null;
   }
 }
@@ -93,7 +93,7 @@ function getVolumeInfo() {
   try {
     const volumes = exec('docker volume ls --format "{{.Name}}"');
     return volumes.trim().split('\n').filter(v => v.includes('collabryx') || v.includes('python-worker'));
-  } catch (_error) {
+  } catch {
     return [];
   }
 }
@@ -168,7 +168,7 @@ async function displayStatus() {
     } else {
       log('   No collabryx network found', 'yellow');
     }
-  } catch (_error) {
+  } catch {
     log('❌ Failed to get container status', 'red');
   }
   

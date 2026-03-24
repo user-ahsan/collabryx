@@ -352,7 +352,7 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
 
-  } catch (error) {
+  } catch {
     console.error("Error in embeddings generate:", error);
     
     // Mark as failed

@@ -64,7 +64,7 @@ export function ProfileSettingsTab({ userId }: { userId: string }) {
                         website_url: data.website_url || ""
                     })
                 }
-            } catch (err) {
+            } catch {
                 console.error("Error fetching profile:", err)
                 setError("Failed to load profile details.")
             } finally {

@@ -107,7 +107,7 @@ export function VerifyEmailForm() {
                 if (isDebugEnabled()) {
                     devLog("perf", "⏱️ Email verification check completed", { durationMs: duration.toFixed(2) })
                 }
-            } catch (err) {
+            } catch {
                 console.error("Email verification error:", err)
                 devLog("auth", "❌ Email verification error - unexpected exception", {
                     error: err instanceof Error ? err.message : "Unknown error",
@@ -141,7 +141,7 @@ export function VerifyEmailForm() {
                 devLog("auth", "Verification email resent successfully", { email: userEmail })
                 setMessage("Verification email resent! Please check your inbox.")
             }
-        } catch (err) {
+        } catch {
             console.error("Resend email error:", err)
             devLog("auth", "Resend email error - unexpected exception", {
                 email: userEmail,

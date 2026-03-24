@@ -29,7 +29,7 @@ export function ShareDialog({ isOpen, onClose, postUrl }: ShareDialogProps) {
             await navigator.clipboard.writeText(postUrl)
             setCopied(true)
             setTimeout(() => setCopied(false), 2000)
-        } catch (err) {
+        } catch {
             console.error('Failed to copy text: ', err)
         }
     }

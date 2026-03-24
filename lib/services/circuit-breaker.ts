@@ -58,7 +58,7 @@ export class CircuitBreaker {
       const result = await fn()
       this.onSuccess()
       return result
-    } catch (error) {
+    } catch {
       this.onFailure()
       throw error
     }
@@ -73,7 +73,7 @@ export class CircuitBreaker {
   ): Promise<T> {
     try {
       return await this.execute(fn)
-    } catch (error) {
+    } catch {
       if (error instanceof CircuitBreakerOpenError) {
         return fallback()
       }

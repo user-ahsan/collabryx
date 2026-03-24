@@ -119,7 +119,7 @@ function showRecentLogs() {
       { encoding: 'utf-8' }
     );
     log(logs, 'reset');
-  } catch (error) {
+  } catch {
     log('❌ Failed to retrieve logs', 'red');
     log(error.message, 'yellow');
   }

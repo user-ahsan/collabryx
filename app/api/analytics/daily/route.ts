@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(data);
     
-  } catch (error) {
+  } catch {
     console.error("Analytics API error:", error);
     
     // Fallback to basic analytics
@@ -213,7 +213,7 @@ async function fallbackAnalytics(dateStr?: string): Promise<AnalyticsDailyRespon
         new_messages: newMessagesResponse.count || 0,
       },
     };
-  } catch (error) {
+  } catch {
     console.error("Fallback analytics error:", error);
     return {
       status: "error",

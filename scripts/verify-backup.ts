@@ -98,7 +98,7 @@ async function checkBackupConfiguration(): Promise<BackupStatus> {
         ? 'Automatic backups enabled (managed by Supabase)'
         : 'Automatic backups only available in production',
     }
-  } catch (error) {
+  } catch {
     return {
       enabled: false,
       lastBackupTime: null,

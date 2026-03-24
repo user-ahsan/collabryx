@@ -88,7 +88,7 @@ export function ResetPasswordForm() {
             setTimeout(() => {
                 router.push("/login")
             }, 3000)
-        } catch (err) {
+        } catch {
             console.error("Password update error:", err)
             setError("An unexpected error occurred. Please try again.")
             setIsLoading(false)

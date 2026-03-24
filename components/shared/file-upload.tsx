@@ -129,7 +129,7 @@ export function FileUpload({
         setProgress(0)
       }, 1000)
 
-    } catch (err) {
+    } catch {
       const errorMessage = err instanceof Error ? err.message : 'Upload failed'
       setError(errorMessage)
       onError?.(errorMessage)

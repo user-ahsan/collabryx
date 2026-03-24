@@ -113,7 +113,7 @@ export function ReportContentDialog({
       setSelectedReason(null)
       setAdditionalDetails("")
       onReportSuccess?.()
-    } catch (error) {
+    } catch {
       const errorMessage = error instanceof Error ? error.message : "Failed to submit report"
       toast.error(errorMessage)
     } finally {

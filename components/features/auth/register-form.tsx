@@ -148,7 +148,7 @@ export function RegisterForm() {
             toast.success("Account created! Please check your email to verify your account.")
             // Redirect to a verification page or show verification UI
             window.location.assign("/verify-email")
-        } catch (err) {
+        } catch {
             console.error('Signup error:', err)
             devLog("auth", "Signup failed - unexpected exception", {
                 email: data.email,

@@ -82,7 +82,7 @@ export default function AssistantPage() {
                 }
                 
                 setSessionId(result.data.id)
-            } catch (err) {
+            } catch {
                 console.error("Error loading session:", err)
                 toast.error("Failed to load AI Mentor")
             } finally {

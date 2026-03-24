@@ -89,7 +89,7 @@ export async function getMatchScore(
       },
       error: null
     }
-  } catch (error) {
+  } catch {
     logger.app.error("Failed to get match score", error)
     return {
       data: null,

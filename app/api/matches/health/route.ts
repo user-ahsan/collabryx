@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
       },
     });
 
-  } catch (error) {
+  } catch {
     console.error("Health check error:", error);
     
     const errorResponse: HealthCheckResponse = {

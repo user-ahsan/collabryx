@@ -60,7 +60,7 @@ export function PrivacySettingsForm({ userId }: PrivacySettingsFormProps) {
             await updateSettings(formData)
             setHasChanges(false)
             toast.success("Privacy settings saved successfully")
-        } catch (err) {
+        } catch {
             console.error("Error saving privacy settings:", err)
             toast.error("Failed to save privacy settings")
         }

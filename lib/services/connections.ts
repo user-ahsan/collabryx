@@ -101,7 +101,7 @@ export async function fetchConnectionRequests(): Promise<{
     }))
 
     return { data: mappedConnections, error: null }
-  } catch (error) {
+  } catch {
     log.error("Error fetching connection requests:", error)
     return { 
       data: [], 
@@ -181,7 +181,7 @@ export async function fetchConnections(
     })
 
     return { data: mappedConnections, error: null }
-  } catch (error) {
+  } catch {
     log.error("Error fetching connections:", error)
     return { 
       data: [], 
@@ -258,7 +258,7 @@ export async function sendConnectionRequest(
 
     toast.success("Connection request sent")
     return { data, error: null }
-  } catch (error) {
+  } catch {
     log.error("Error sending connection request:", error)
     toast.error("Failed to send connection request")
     return { 
@@ -345,7 +345,7 @@ export async function acceptConnectionRequest(
           })
           .select()
           .single()
-      } catch (err) {
+      } catch {
         // Ignore unique constraint violations (conversation may already exist)
         const error = err as { code?: string }
         if (error.code !== "23505") {
@@ -356,7 +356,7 @@ export async function acceptConnectionRequest(
 
     toast.success("Connection accepted")
     return { data, error: null }
-  } catch (error) {
+  } catch {
     log.error("Error accepting connection request:", error)
     toast.error("Failed to accept connection")
     return { 
@@ -412,7 +412,7 @@ export async function declineConnectionRequest(
 
     toast.success("Connection request declined")
     return { error: null }
-  } catch (error) {
+  } catch {
     log.error("Error declining connection request:", error)
     toast.error("Failed to decline connection")
     return { error: error instanceof Error ? error : new Error("[Connections] Failed to decline connection request") }
@@ -468,7 +468,7 @@ export async function cancelConnectionRequest(
     if (error) throw error
 
     return { error: null }
-  } catch (error) {
+  } catch {
     log.error("Error canceling connection request:", error)
     return { error: error instanceof Error ? error : new Error("[Connections] Failed to cancel connection request") }
   }
@@ -523,7 +523,7 @@ export async function removeConnection(
     if (error) throw error
 
     return { error: null }
-  } catch (error) {
+  } catch {
     log.error("Error removing connection:", error)
     return { error: error instanceof Error ? error : new Error("[Connections] Failed to remove connection") }
   }
@@ -589,7 +589,7 @@ export async function blockUser(
     }
 
     return { error: null }
-  } catch (error) {
+  } catch {
     log.error("Error blocking user:", error)
     return { error: error instanceof Error ? error : new Error("[Connections] Failed to block user") }
   }
@@ -641,7 +641,7 @@ export async function checkConnectionStatus(
     }
 
     return { status: data?.status || "not_connected", error: null }
-  } catch (error) {
+  } catch {
     log.error("Error checking connection status:", error)
     return { 
       status: "not_connected", 

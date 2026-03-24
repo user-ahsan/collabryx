@@ -106,7 +106,7 @@ export function BlockedUsersList({ userId }: BlockedUsersListProps) {
             }))
             
             setBlockedUsers(transformed)
-        } catch (err) {
+        } catch {
             console.error('Error fetching blocked users:', err)
             toast.error('Failed to load blocked users')
         } finally {
@@ -145,7 +145,7 @@ export function BlockedUsersList({ userId }: BlockedUsersListProps) {
             const filtered = data?.filter(user => !blockedIds.has(user.id)) || []
             
             setSearchResults(filtered)
-        } catch (err) {
+        } catch {
             console.error('Error searching users:', err)
         }
     }
@@ -200,7 +200,7 @@ export function BlockedUsersList({ userId }: BlockedUsersListProps) {
 
             toast.success(`Blocked ${userToBlock.name}`)
             await fetchBlockedUsers()
-        } catch (err) {
+        } catch {
             console.error('Error blocking user:', err)
             toast.error('Failed to block user')
         } finally {
@@ -232,7 +232,7 @@ export function BlockedUsersList({ userId }: BlockedUsersListProps) {
 
             toast.success('User unblocked')
             await fetchBlockedUsers()
-        } catch (err) {
+        } catch {
             console.error('Error unblocking user:', err)
             toast.error('Failed to unblock user')
         } finally {

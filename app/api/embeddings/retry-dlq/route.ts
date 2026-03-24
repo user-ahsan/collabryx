@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
       data: { id, user_id, status: "pending" }
     });
     
-  } catch (error) {
+  } catch {
     console.error("DLQ retry failed:", error);
     return NextResponse.json(
       { success: false, error: "Internal server error" },

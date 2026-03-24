@@ -182,7 +182,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-  } catch (error) {
+  } catch {
     console.error("Error in batch match generation:", error);
 
     return NextResponse.json(

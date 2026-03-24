@@ -117,7 +117,7 @@ export async function POST(request: NextRequest) {
       expiresAt: new Date(Date.now() + 60 * 1000).toISOString()
     })
 
-  } catch (error) {
+  } catch {
     console.error('Sign URL error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

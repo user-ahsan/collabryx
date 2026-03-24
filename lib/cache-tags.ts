@@ -35,7 +35,7 @@ export const REVALIDATION = {
 export function revalidateByTag(tag: CacheTag) {
   try {
     revalidateTag(tag, 'default')
-  } catch (error) {
+  } catch {
     console.error(`Failed to revalidate tag ${tag}:`, error)
   }
 }
@@ -44,7 +44,7 @@ export function revalidateMultipleTags(tags: CacheTag[]) {
   tags.forEach(tag => {
     try {
       revalidateTag(tag, 'default')
-    } catch (error) {
+    } catch {
       console.error(`Failed to revalidate tag ${tag}:`, error)
     }
   })
@@ -53,7 +53,7 @@ export function revalidateMultipleTags(tags: CacheTag[]) {
 export function revalidateAll() {
   try {
     revalidateTag(CACHE_TAGS.ALL, 'default')
-  } catch (error) {
+  } catch {
     console.error('Failed to revalidate all:', error)
   }
 }

@@ -233,7 +233,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-  } catch (error) {
+  } catch {
     console.error("Error in match generation:", error);
 
     return NextResponse.json(

@@ -76,7 +76,7 @@ export async function GET(
     }
 
     return NextResponse.json(status);
-  } catch (error) {
+  } catch {
     console.error("Error in embeddings status:", error);
     return NextResponse.json(
       { error: "Internal server error" },

@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
       bucket: bucket
     })
 
-  } catch (error) {
+  } catch {
     console.error('Upload error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },

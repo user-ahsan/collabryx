@@ -217,7 +217,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-  } catch (error) {
+  } catch {
     console.error("Error in notification send:", error);
 
     return NextResponse.json(

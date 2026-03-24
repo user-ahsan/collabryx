@@ -101,7 +101,7 @@ export async function fetchUserAnalytics(): Promise<{
     }
 
     return { data, error: null }
-  } catch (error) {
+  } catch {
     logger.app.error("Failed to fetch user analytics", error)
     return { data: null, error: error instanceof Error ? error : new Error("Unknown error") }
   }
@@ -147,7 +147,7 @@ export async function fetchAnalyticsActivity(
     const aggregatedData = aggregateActivityByDay(data || [], days)
 
     return { data: aggregatedData, error: null }
-  } catch (error) {
+  } catch {
     logger.app.error("Failed to fetch analytics activity", error)
     return { data: [], error: error instanceof Error ? error : new Error("Unknown error") }
   }

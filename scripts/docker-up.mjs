@@ -36,7 +36,7 @@ function log(msg, color = 'reset') {
 function exec(cmd) {
   try {
     return execSync(cmd, { encoding: 'utf-8', stdio: 'pipe' });
-  } catch (e) {
+  } catch {
     return '';
   }
 }
@@ -44,7 +44,7 @@ function exec(cmd) {
 function execVerbose(cmd) {
   try {
     execSync(cmd, { encoding: 'utf-8', stdio: 'inherit' });
-  } catch (e) {
+  } catch {
     throw new Error(`Command failed: ${cmd}`);
   }
 }
@@ -138,7 +138,7 @@ async function main() {
     log('   Stop: npm run docker:down', 'cyan');
     log('   Rebuild: npm run docker:rebuild', 'cyan');
     log('');
-  } catch (e) {
+  } catch {
     log('\n❌ Failed to start', 'red');
     log('   Check: npm run docker:logs', 'yellow');
     process.exit(1);

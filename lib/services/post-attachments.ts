@@ -115,7 +115,7 @@ export async function uploadAttachment(
     }
     
     return { data: attachment, error: null }
-  } catch (error) {
+  } catch {
     console.error("Unexpected error uploading attachment:", error)
     return { 
       data: null, 
@@ -223,7 +223,7 @@ export async function deleteAttachment(
     }
     
     return { error: null }
-  } catch (error) {
+  } catch {
     console.error("Error deleting attachment:", error)
     return { error: error instanceof Error ? error : new Error("Failed to delete attachment") }
   }
@@ -249,7 +249,7 @@ export async function getPostAttachments(
     }
     
     return { data: data as PostAttachment[], error: null }
-  } catch (error) {
+  } catch {
     console.error("Error fetching attachments:", error)
     return { 
       data: [], 

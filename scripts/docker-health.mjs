@@ -49,7 +49,7 @@ function exec(command, options = {}) {
       stdio: 'pipe',
       ...options
     });
-  } catch (error) {
+  } catch {
     throw new Error(`Command failed: ${command}\n${error.message}`);
   }
 }
@@ -72,7 +72,7 @@ function checkHttp(url) {
             statusCode: response.statusCode,
             data: jsonData
           });
-        } catch (_error) {
+        } catch {
           resolve({
             statusCode: response.statusCode,
             data: data
@@ -97,7 +97,7 @@ function getContainerStatus() {
   try {
     const status = exec(`cd "${workerDir}" && docker-compose ps`);
     return status.trim();
-  } catch (_error) {
+  } catch {
     return 'Container not running';
   }
 }
@@ -119,7 +119,7 @@ async function checkHealth() {
         data: response.data
       };
     }
-  } catch (error) {
+  } catch {
     return {
       healthy: false,
       error: error.message

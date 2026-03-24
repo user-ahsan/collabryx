@@ -81,7 +81,7 @@ export async function generateMatches(
     })
 
     return { data, error: null }
-  } catch (error) {
+  } catch {
     const errorMessage = error instanceof Error ? error.message : "Failed to generate matches"
     
     logger.app.error("Match generation failed", error as Error)
@@ -131,7 +131,7 @@ export async function generateBatchMatches(
     })
 
     return { data, error: null }
-  } catch (error) {
+  } catch {
     const errorMessage = error instanceof Error ? error.message : "Failed to start batch generation"
     
     logger.app.error("Batch match generation failed", error as Error)
@@ -207,7 +207,7 @@ export async function checkMatchGenerationStatus(
     }
 
     return { data: status, error: null }
-  } catch (error) {
+  } catch {
     logger.app.error("Failed to check match generation status", error as Error)
     
     return {

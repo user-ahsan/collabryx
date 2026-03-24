@@ -54,7 +54,7 @@ export function NotificationPreferencesForm({ userId }: NotificationPreferencesF
         try {
             await updatePreferences(formData)
             setHasChanges(false)
-        } catch (err) {
+        } catch {
             console.error("Error saving preferences:", err)
         }
     }

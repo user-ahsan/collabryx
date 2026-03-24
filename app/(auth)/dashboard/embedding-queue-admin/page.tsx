@@ -74,7 +74,7 @@ export default function EmbeddingQueueAdminPage() {
       if (dlqData) {
         setDlqItems(dlqData);
       }
-    } catch (error) {
+    } catch {
       console.error('Error loading queue items:', error);
     } finally {
       setLoading(false);

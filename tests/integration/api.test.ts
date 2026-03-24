@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any */
+ 
 import { describe, it, expect } from 'vitest'
 
 describe('API Integration Tests', () => {

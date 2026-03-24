@@ -64,7 +64,7 @@ class CircuitBreaker {
       }
       
       return result
-    } catch (error) {
+    } catch {
       this.failures++
       this.lastFailureTime = Date.now()
       
@@ -361,7 +361,7 @@ export async function withBackendHealth<T>(
   
   try {
     return await handler()
-  } catch (error) {
+  } catch {
     console.error('Backend error, falling back:', error)
     return fallbackHandler()
   }
