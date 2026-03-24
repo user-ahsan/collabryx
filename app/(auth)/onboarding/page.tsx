@@ -161,7 +161,6 @@ export default function OnboardingPage() {
                 setIsEmailVerified(emailIsVerified)
                 
                 if (!emailIsVerified) {
-                    console.log('📧 Email not verified, showing warning')
                     setHasAcknowledgedWarning(false)
                 }
             } catch (error) {
