@@ -176,6 +176,79 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
 }
 
 /**
+ * Fetch personalized feed using feed_scores table
+ * Falls back to chronological feed if no scores available
+ */
+export async function fetchPersonalizedFeed(options: PostsQueryOptions = {}): Promise<{
+  data: PostWithAuthor[]
+  error: Error | null
+  queryCount?: number
+  duration?: number
+}> {
+  const queryStartTime = Date.now()
+  let queryCount = 0
+  
+  try {
+    const supabase = createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError || !user) {
+      logger.api.error("Auth error fetching personalized feed", authError)
+      return { data: [], error: new Error("Authentication failed"), queryCount: 0 }
+    }
+
+    logger.api.debug("Fetching personalized feed", { userId: user.id, options })
+
+    // Query feed_scores with JOIN to posts
+    const { data: feedData, error } = await supabase
+      .from("feed_scores")
+      .select(`
+        score,
+        post:posts (
+          *,
+          author:profiles (
+            full_name,
+            display_name,
+            avatar_url
+          )
+        )
+      `, { count: 'exact' })
+      .eq("user_id", user.id)
+      .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
+      .order("score", { ascending: false })
+      .limit(options.limit || 20)
+
+    if (error) throw error
+
+    queryCount++
+
+    // Fallback to chronological if no scores
+    if (!feedData || feedData.length === 0) {
+      logger.api.debug("No feed scores found, falling back to chronological")
+      return fetchPosts(options)
+    }
+
+    const queryDuration = Date.now() - queryStartTime
+    logger.api.debug("Personalized feed fetched", { count: feedData.length, duration: queryDuration })
+
+    const mappedPosts: PostWithAuthor[] = feedData.map((item: any) => ({
+      ...item.post,
+      author_name: item.post.author?.display_name || item.post.author?.full_name || "Unknown",
+      author_role: "Member",
+      author_avatar: item.post.author?.avatar_url || "",
+      time_ago: formatTimeAgo(item.post.created_at),
+      feed_score: item.score,
+    }))
+
+    return { data: mappedPosts, error: null, queryCount, duration: queryDuration }
+  } catch (error: any) {
+    const queryDuration = Date.now() - queryStartTime
+    logger.api.error("Error fetching personalized feed", error, { queryCount, duration: queryDuration })
+    return { data: [], error: error instanceof Error ? error : new Error("Unknown error"), queryCount, duration: queryDuration }
+  }
+}
+
+/**
  * Fetch a single post by ID
  */
 export async function fetchPostById(postId: string): Promise<{
