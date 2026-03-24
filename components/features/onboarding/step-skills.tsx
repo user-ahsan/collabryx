@@ -59,13 +59,13 @@ export function StepSkills() {
                 </Label>
                 <InlineSearchableCombobox
                   options={skillOptions}
-                  selected={skills.map(s => ({ id: s.id, label: s.label }))}
+                  selected={skills.map(s => s.label)}
                   onChange={(selected) => {
-                    const newSkills = selected.map((s) => {
-                      const existing = skills.find(skill => skill.id === s.id)
+                    const newSkills = selected.map((label) => {
+                      const existing = skills.find(skill => skill.label === label)
                       return {
-                        id: s.id,
-                        label: s.label,
+                        id: existing?.id || `custom-${label}`,
+                        label,
                         proficiency: existing?.proficiency || "intermediate",
                       }
                     })
