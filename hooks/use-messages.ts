@@ -137,7 +137,8 @@ export function useMessages(conversationId?: string, currentUserId?: string): Us
       toast.success("Message sent")
     },
     onError: (error) => {
-      toast.error("Failed to send message")
+      const isConversationNotFound = error.message?.includes("Conversation not found")
+      toast.error(isConversationNotFound ? "Conversation no longer exists" : "Failed to send message")
       console.error("Error sending message:", error)
     },
   })
