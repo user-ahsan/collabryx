@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(data);
     
-  } catch {
+  } catch (error) {
     console.error("Moderation API error:", error);
     
     // Fallback to basic moderation on error

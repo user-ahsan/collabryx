@@ -109,8 +109,8 @@ export function DeleteAccountForm() {
             // Redirect to home page
             router.push("/")
             window.location.reload()
-        } catch {
-            console.error("Account deletion error:", err)
+        } catch (error) {
+            console.error("Account deletion error:", error)
             setError("An unexpected error occurred. Please try again.")
             setIsLoading(false)
         }

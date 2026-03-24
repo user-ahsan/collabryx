@@ -90,7 +90,7 @@ export async function GET(request: Request) {
       count: count || 0,
       hasMore: offset + limit < (count || 0),
     })
-  } catch {
+  } catch (error) {
     logger.app.error("Error in activity feed API", error)
     return NextResponse.json(
       { error: "Internal server error" },

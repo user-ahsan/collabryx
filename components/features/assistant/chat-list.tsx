@@ -32,7 +32,7 @@ export function ChatList({ sessionId }: ChatListProps) {
                 }
                 
                 setMessages(result.data || [])
-            } catch {
+            } catch (error) {
                 console.error("Error loading messages:", error)
             } finally {
                 setIsLoading(false)

@@ -51,8 +51,8 @@ export function AuthSyncClient({ destination, needsEmbeddingWait = false }: Auth
         const redirectTimer = setTimeout(() => {
             try {
                 router.push(destination)
-            } catch (err) {
-                console.error('Redirect failed:', err)
+            } catch (error) {
+                console.error('Redirect failed:', error)
                 setHasError(true)
                 setErrorMessage("Navigation failed. Please try again.")
                 setIsChecking(false)
@@ -92,8 +92,8 @@ export function AuthSyncClient({ destination, needsEmbeddingWait = false }: Auth
                         clearTimeout(redirectTimer)
                         router.push(destination)
                     }
-                } catch (err) {
-                    console.error('Error checking embedding status:', err)
+                } catch (error) {
+                    console.error('Error checking embedding status:', error)
                     // Don't fail on embedding check errors - just continue with redirect
                     if (!isUnmounted) setIsChecking(false)
                 }

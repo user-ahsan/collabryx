@@ -197,11 +197,11 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
                 updated_at: new Date().toISOString()
             }, { onConflict: "id" })
         profileError = result.error
-    } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : "Unknown database error"
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown database error"
         // Check if it's a trigger/constraint error
         if (errorMessage.includes("profile_embeddings") || errorMessage.includes("does not exist")) {
-            console.error("Missing database table. Please run migration for profile_embeddings table.", err)
+            console.error("Missing database table. Please run migration for profile_embeddings table.", error)
             throw new Error("Database setup incomplete. Please contact support or try again later. (Error: Missing table)")
         }
         throw new Error(`Database error: ${errorMessage}`)
@@ -296,7 +296,7 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
             console.log('✅ Embedding queued successfully in DB:', queueData);
             embeddingQueuedInDb = true;
         }
-    } catch {
+    } catch (error) {
         console.error('❌ Embedding queue exception:', error);
         // Continue - DB queue is reliable, API trigger is best-effort
     }
@@ -329,7 +329,7 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
             embeddingError = `API returned ${response.status}: ${errorText}`;
             // Don't fail - DB queue will handle it
         }
-    } catch {
+    } catch (error) {
         // Already queued in DB, background processor will handle
         embeddingError = error instanceof Error ? error.message : 'Unknown error';
         console.error('❌ Embedding API trigger failed (DB queue will handle):', embeddingError);
@@ -379,7 +379,7 @@ export async function triggerEmbeddingGeneration(userId: string) {
         const data = await response.json()
         console.log("Embedding generation triggered:", data)
         return { success: true, data }
-    } catch {
+    } catch (error) {
         console.error("Error triggering embedding generation:", error)
         return { 
             success: false, 

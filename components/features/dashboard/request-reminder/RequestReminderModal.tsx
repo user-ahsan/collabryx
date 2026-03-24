@@ -93,7 +93,7 @@ function getCachedRequests(): PendingRequest[] | null {
         const parsed = JSON.parse(cached)
         if (Array.isArray(parsed) && parsed.length > 0) return parsed
         return null
-    } catch {
+    } catch (error) {
         return null
     }
 }
@@ -101,7 +101,7 @@ function getCachedRequests(): PendingRequest[] | null {
 function setCachedRequests(data: PendingRequest[]) {
     try {
         localStorage.setItem(CACHE_KEY, JSON.stringify(data))
-    } catch {
+    } catch (error) {
         // localStorage full or unavailable — no-op
     }
 }
@@ -167,7 +167,7 @@ export function RequestReminderModal({ className }: RequestReminderModalProps) {
                 setLocalRequests([])
                 setCachedRequests([])
             }
-        } catch {
+        } catch (error) {
             // API failed — try cache, then fallback
             const cached = getCachedRequests()
             setLocalRequests(cached ?? DEFAULT_REQUESTS)
@@ -204,7 +204,7 @@ export function RequestReminderModal({ className }: RequestReminderModalProps) {
                 .from("connections")
                 .update({ status: type === "accept" ? "accepted" : "declined" })
                 .eq("id", id)
-        } catch {
+        } catch (error) {
             // API call failed — still remove locally for UX, will sync on next fetch
         }
 
@@ -236,7 +236,7 @@ export function RequestReminderModal({ className }: RequestReminderModalProps) {
                                     .update({ status: "pending" })
                                     .eq("id", id)
                                     .then(() => { })
-                            } catch {
+                            } catch (error) {
                                 // silent — will reconcile on next fetch
                             }
                         },
@@ -526,7 +526,7 @@ function formatTimestamp(isoString: string): string {
         if (diffHours < 24) return `${diffHours}h ago`
         if (diffDays < 7) return `${diffDays}d ago`
         return date.toLocaleDateString()
-    } catch {
+    } catch (error) {
         return isoString
     }
 }

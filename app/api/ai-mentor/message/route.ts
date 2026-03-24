@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
     
     return NextResponse.json(data);
     
-  } catch {
+  } catch (error) {
     console.error("AI Mentor API error:", error);
     
     // Fallback to predefined responses

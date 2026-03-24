@@ -215,7 +215,7 @@ export async function refreshSessionIfNeeded(supabase: SupabaseAuthClient): Prom
     }
     
     return { refreshed: false, expired: false }
-  } catch {
+  } catch (error) {
     return {
       refreshed: false,
       expired: false,

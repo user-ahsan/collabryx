@@ -50,7 +50,7 @@ export function EmbeddingDeadLetterQueueAdmin() {
 
       if (error) throw error
       if (data) setDlqItems(data)
-    } catch {
+    } catch (error) {
       console.error("Failed to load DLQ items:", error)
     } finally {
       setLoading(false)
@@ -82,7 +82,7 @@ export function EmbeddingDeadLetterQueueAdmin() {
           item.id === id ? { ...item, status: "pending", next_retry: new Date().toISOString() } : item
         )
       )
-    } catch {
+    } catch (error) {
       console.error("Retry failed:", error)
     } finally {
       setRetryingId(null)

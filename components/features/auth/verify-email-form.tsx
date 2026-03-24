@@ -107,10 +107,10 @@ export function VerifyEmailForm() {
                 if (isDebugEnabled()) {
                     devLog("perf", "⏱️ Email verification check completed", { durationMs: duration.toFixed(2) })
                 }
-            } catch {
-                console.error("Email verification error:", err)
+            } catch (error) {
+                console.error("Email verification error:", error)
                 devLog("auth", "❌ Email verification error - unexpected exception", {
-                    error: err instanceof Error ? err.message : "Unknown error",
+                    error: error instanceof Error ? error.message : "Unknown error",
                 })
                 setStatus("error")
                 setMessage("An unexpected error occurred. Please try again.")
@@ -141,11 +141,11 @@ export function VerifyEmailForm() {
                 devLog("auth", "Verification email resent successfully", { email: userEmail })
                 setMessage("Verification email resent! Please check your inbox.")
             }
-        } catch {
-            console.error("Resend email error:", err)
+        } catch (error) {
+            console.error("Resend email error:", error)
             devLog("auth", "Resend email error - unexpected exception", {
                 email: userEmail,
-                error: err instanceof Error ? err.message : "Unknown error",
+                error: error instanceof Error ? error.message : "Unknown error",
             })
             setMessage("Failed to resend verification email. Please try again.")
         } finally {

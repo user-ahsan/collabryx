@@ -115,7 +115,7 @@ export async function fetchWithTimeout(
       signal: controller.signal,
     })
     return response
-  } catch {
+  } catch (error) {
     if (error instanceof TimeoutError) {
       throw error
     }
@@ -156,7 +156,7 @@ export async function withTimeout<T>(
       }),
     ])
     return result
-  } catch {
+  } catch (error) {
     if (error instanceof TimeoutError) {
       throw error
     }
@@ -217,7 +217,7 @@ export async function retryWithTimeout<T>(
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await withTimeout(operation, timeoutMs, `Attempt ${attempt + 1}`)
-    } catch {
+    } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error))
       
       // Don't retry if we've exhausted retries or shouldn't retry on this error

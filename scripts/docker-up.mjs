@@ -36,7 +36,7 @@ function log(msg, color = 'reset') {
 function exec(cmd) {
   try {
     return execSync(cmd, { encoding: 'utf-8', stdio: 'pipe' });
-  } catch {
+  } catch (error) {
     return '';
   }
 }
@@ -44,7 +44,7 @@ function exec(cmd) {
 function execVerbose(cmd) {
   try {
     execSync(cmd, { encoding: 'utf-8', stdio: 'inherit' });
-  } catch {
+  } catch (error) {
     throw new Error(`Command failed: ${cmd}`);
   }
 }
@@ -54,7 +54,7 @@ function checkDocker() {
     exec('docker --version');
     exec('docker ps');
     return true;
-  } catch {
+  } catch (error) {
     log('❌ Docker not running. Start Docker Desktop first.', 'red');
     process.exit(1);
   }
@@ -83,7 +83,7 @@ async function waitForHealth() {
         log(`✅ Service running on port ${CONFIG.port}`, 'green');
         return true;
       }
-    } catch {
+    } catch (error) {
       log(`   Attempt ${i}/${CONFIG.maxRetries}`, 'yellow');
     }
     
@@ -109,7 +109,7 @@ async function showStatus() {
     if (res.model_info) {
       log(`   Model: ${res.model_info.model_name}`, 'cyan');
     }
-  } catch {
+  } catch (error) {
     log('   (Status unavailable)', 'yellow');
   }
 }
@@ -138,7 +138,7 @@ async function main() {
     log('   Stop: npm run docker:down', 'cyan');
     log('   Rebuild: npm run docker:rebuild', 'cyan');
     log('');
-  } catch {
+  } catch (error) {
     log('\n❌ Failed to start', 'red');
     log('   Check: npm run docker:logs', 'yellow');
     process.exit(1);

@@ -53,7 +53,7 @@ export function EmbeddingQualityIndicator({ userId }: EmbeddingQualityIndicatorP
         } else {
           setQuality({ status: 'unknown' });
         }
-      } catch {
+      } catch (error) {
         console.error('Failed to load embedding quality:', error);
         setQuality({ status: 'invalid' });
       } finally {

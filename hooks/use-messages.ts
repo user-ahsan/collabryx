@@ -234,7 +234,7 @@ export function useMessages(conversationId?: string, currentUserId?: string): Us
       try {
         await sendMessageMutationHook.mutateAsync({ conversationId: convId, text })
         return true
-      } catch {
+      } catch (error) {
         return false
       }
     },

@@ -66,8 +66,8 @@ const [experiences, setExperiences] = useState<Experience[]>([])
 
                 setExperiences(expRes.data || [])
                 setProjects(projRes.data || [])
-            } catch (err: unknown) {
-                console.error("Error fetching data:", err)
+            } catch (error) {
+                console.error("Error fetching data:", error)
                 setError("Failed to load experiences and projects.")
             } finally {
                 setIsLoading(false)
@@ -193,9 +193,9 @@ const [experiences, setExperiences] = useState<Experience[]>([])
             setExperiences(expRes.data || [])
             setProjects(projRes.data || [])
 
-        } catch (err: unknown) {
-            console.error(err)
-            const errorMessage = err instanceof Error ? err.message : "Failed to save data."
+        } catch (error) {
+            console.error(error)
+            const errorMessage = error instanceof Error ? error.message : "Failed to save data."
             setError(errorMessage)
             toast.error(errorMessage)
         } finally {

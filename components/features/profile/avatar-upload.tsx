@@ -111,8 +111,8 @@ export function AvatarUpload({
       })
 
       toast.success('Avatar updated successfully')
-    } catch {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to upload avatar'
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to upload avatar'
       setError(errorMessage)
       toast.error(errorMessage)
     } finally {
@@ -162,7 +162,7 @@ export function AvatarUpload({
       })
       setPreview(null)
       toast.success('Avatar removed')
-    } catch {
+    } catch (error) {
       toast.error('Failed to remove avatar')
     } finally {
       setIsUploading(false)

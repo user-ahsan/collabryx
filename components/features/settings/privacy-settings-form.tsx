@@ -60,8 +60,8 @@ export function PrivacySettingsForm({ userId }: PrivacySettingsFormProps) {
             await updateSettings(formData)
             setHasChanges(false)
             toast.success("Privacy settings saved successfully")
-        } catch {
-            console.error("Error saving privacy settings:", err)
+        } catch (error) {
+            console.error("Error saving privacy settings:", error)
             toast.error("Failed to save privacy settings")
         }
     }
@@ -70,7 +70,7 @@ export function PrivacySettingsForm({ userId }: PrivacySettingsFormProps) {
         updateField(field, value)
         const updatedData = { ...formData, [field]: value }
         updateSettings(updatedData).catch((err) => {
-            console.error("Error updating privacy setting:", err)
+            console.error("Error updating privacy setting:", error)
             toast.error("Failed to update privacy setting")
         })
     }

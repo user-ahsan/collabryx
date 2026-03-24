@@ -228,7 +228,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-  } catch {
+  } catch (error) {
     console.error("Error in notification digest:", error);
 
     return NextResponse.json(

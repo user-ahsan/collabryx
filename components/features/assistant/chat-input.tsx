@@ -34,7 +34,7 @@ export function ChatInput({ sessionId, onMessageSent }: ChatInputProps) {
             setInput("")
             onMessageSent()
             toast.success("Message sent")
-        } catch {
+        } catch (error) {
             console.error("Error sending message:", error)
             toast.error("Failed to send message. Please try again.")
         } finally {

@@ -201,7 +201,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-  } catch {
+  } catch (error) {
     console.error("Error in match building tracking:", error);
 
     return NextResponse.json(

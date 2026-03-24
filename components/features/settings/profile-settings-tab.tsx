@@ -64,8 +64,8 @@ export function ProfileSettingsTab({ userId }: { userId: string }) {
                         website_url: data.website_url || ""
                     })
                 }
-            } catch {
-                console.error("Error fetching profile:", err)
+            } catch (error) {
+                console.error("Error fetching profile:", error)
                 setError("Failed to load profile details.")
             } finally {
                 setIsLoading(false)
@@ -172,9 +172,9 @@ export function ProfileSettingsTab({ userId }: { userId: string }) {
 
             // Re-fetch to ensure sync
             setTimeout(() => setSuccessMsg(null), 3000)
-        } catch (err: unknown) {
-            console.error(err)
-            const errorMessage = err instanceof Error ? err.message : "Failed to save profile."
+        } catch (error) {
+            console.error(error)
+            const errorMessage = error instanceof Error ? error.message : "Failed to save profile."
             setError(errorMessage)
             toast.error(errorMessage)
         } finally {

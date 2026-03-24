@@ -165,7 +165,7 @@ export function sanitizeUrl(url: string): string | null {
     }
     
     return trimmed
-  } catch {
+  } catch (error) {
     // If not absolute URL, check if it's a valid relative URL
     if (trimmed.startsWith('/') || trimmed.startsWith('#')) {
       return trimmed
@@ -284,7 +284,7 @@ export function sanitizeJson<T>(input: unknown): T | null {
     }
     
     return parsed as T
-  } catch {
+  } catch (error) {
     return null
   }
 }

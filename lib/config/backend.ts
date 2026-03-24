@@ -64,7 +64,7 @@ class CircuitBreaker {
       }
       
       return result
-    } catch {
+    } catch (error) {
       this.failures++
       this.lastFailureTime = Date.now()
       
@@ -134,7 +134,7 @@ async function checkHealth(url: string, timeoutMs = 5000): Promise<boolean> {
     healthCache.set(url, { healthy, timestamp: Date.now() })
     
     return healthy
-  } catch {
+  } catch (error) {
     // Cache the failure
     healthCache.set(url, { healthy: false, timestamp: Date.now() })
     return false
@@ -219,7 +219,7 @@ export async function getBackendConfig(): Promise<BackendConfig> {
         isHealthy,
         healthCheck: () => checkHealth(renderUrl),
       }
-    } catch {
+    } catch (error) {
       // Circuit breaker opened or request failed
       return {
         endpoint: null,
@@ -254,7 +254,7 @@ export async function getBackendConfig(): Promise<BackendConfig> {
         isHealthy,
         healthCheck: () => checkHealth(dockerUrl),
       }
-    } catch {
+    } catch (error) {
       return {
         endpoint: null,
         mode: 'edge-only',
@@ -289,7 +289,7 @@ export async function getBackendConfig(): Promise<BackendConfig> {
         isHealthy,
         healthCheck: () => checkHealth(renderUrl),
       }
-    } catch {
+    } catch (error) {
       return {
         endpoint: null,
         mode: 'edge-only',
@@ -323,7 +323,7 @@ export async function getBackendConfig(): Promise<BackendConfig> {
       isHealthy,
       healthCheck: () => checkHealth(dockerUrl),
     }
-  } catch {
+  } catch (error) {
     console.log('⚠️ Docker backend not available, using Edge Function fallback')
     console.log('💡 Tip: Run "npm run docker:up" to start local backend')
     
@@ -361,7 +361,7 @@ export async function withBackendHealth<T>(
   
   try {
     return await handler()
-  } catch {
+  } catch (error) {
     console.error('Backend error, falling back:', error)
     return fallbackHandler()
   }

@@ -47,8 +47,8 @@ export default function SettingsPage() {
 
 					setUserId(user.id)
 					setEmail(user.email || "")
-				} catch (err: unknown) {
-					console.error("Error fetching settings:", err)
+				} catch (error) {
+					console.error("Error fetching settings:", error)
 					setError("Failed to load settings.")
 				} finally {
 					setIsLoading(false)
@@ -81,8 +81,8 @@ export default function SettingsPage() {
 			toast.success("Password changed successfully")
 			setNewPassword("")
 			setConfirmPassword("")
-		} catch (err: unknown) {
-			const errorMessage = err instanceof Error ? err.message : "Failed to change password"
+		} catch (error) {
+			const errorMessage = error instanceof Error ? error.message : "Failed to change password"
 			toast.error(errorMessage)
 		} finally {
 			setIsChangingPassword(false)

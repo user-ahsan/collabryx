@@ -43,7 +43,7 @@ export async function executeOptimizedQuery<T>(
         cacheHit: false,
       },
     }
-  } catch {
+  } catch (error) {
     const executionTime = performance.now() - startTime
     return {
       data: null,
@@ -80,7 +80,7 @@ export async function fetchWithRetry<T>(
     try {
       const data = await fetchFn()
       return { data, error: null, attempts: attempt + 1 }
-    } catch {
+    } catch (error) {
       lastError = error instanceof Error ? error : new Error('Fetch failed')
       
       if (attempt < maxRetries) {

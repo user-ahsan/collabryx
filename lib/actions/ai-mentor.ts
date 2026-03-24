@@ -65,7 +65,7 @@ class CircuitBreaker {
         this.failures = 0
       }
       return result
-    } catch {
+    } catch (error) {
       this.failures++
       this.lastFailureTime = Date.now()
       if (this.failures >= this.threshold) {

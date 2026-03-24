@@ -56,7 +56,7 @@ function exec(command, options = {}) {
       stdio: 'pipe',
       ...options
     });
-  } catch {
+  } catch (error) {
     // Return empty string if command fails (e.g., no containers to remove)
     return '';
   }
@@ -69,7 +69,7 @@ function execVerbose(command, options = {}) {
       stdio: 'inherit',
       ...options
     });
-  } catch {
+  } catch (error) {
     throw new Error(`Command failed: ${command}\n${error.message}`);
   }
 }
@@ -93,7 +93,7 @@ function checkDocker() {
     exec('docker ps');
     log('✅ Docker is running', 'green');
     return true;
-  } catch {
+  } catch (error) {
     log('❌ Docker is not installed or not running', 'red');
     log('Please install Docker Desktop: https://www.docker.com/products/docker-desktop', 'yellow');
     process.exit(1);
@@ -155,7 +155,7 @@ async function cleanupContainers() {
   containers.forEach(id => {
     try {
       exec(`docker stop ${id}`);
-    } catch {
+    } catch (error) {
       // Container already stopped
     }
   });
@@ -166,7 +166,7 @@ async function cleanupContainers() {
     try {
       exec(`docker rm ${id}`);
       log(`   ✅ Removed ${id.substring(0, 12)}`, 'green');
-    } catch {
+    } catch (error) {
       log(`   ❌ Failed to remove ${id.substring(0, 12)}`, 'red');
     }
   });
@@ -202,7 +202,7 @@ async function cleanupImages(force) {
     try {
       exec(`docker rmi -f ${id}`);
       log(`   ✅ Removed ${id.substring(0, 12)}`, 'green');
-    } catch {
+    } catch (error) {
       log(`   ❌ Failed to remove ${id.substring(0, 12)}`, 'red');
     }
   });
@@ -236,7 +236,7 @@ async function cleanupVolumes(force) {
     try {
       exec(`docker volume rm ${name}`);
       log(`   ✅ Removed ${name}`, 'green');
-    } catch {
+    } catch (error) {
       log(`   ❌ Failed to remove ${name}`, 'red');
     }
   });
@@ -261,7 +261,7 @@ async function cleanupNetworks() {
     try {
       exec(`docker network rm ${id}`);
       log(`   ✅ Removed network ${id.substring(0, 12)}`, 'green');
-    } catch {
+    } catch (error) {
       log(`   ❌ Failed to remove network ${id.substring(0, 12)}`, 'red');
     }
   });
@@ -285,7 +285,7 @@ async function cleanupBuildCache() {
     execVerbose('docker builder prune -f');
     log('   ✅ Build cache cleared', 'green');
     return 1;
-  } catch {
+  } catch (error) {
     log('   ❌ Failed to clear build cache', 'red');
     return 0;
   }
@@ -298,7 +298,7 @@ async function cleanupSystem() {
     execVerbose('docker system prune -f');
     log('   ✅ System cleanup complete', 'green');
     return true;
-  } catch {
+  } catch (error) {
     log('   ❌ System cleanup failed', 'red');
     return false;
   }

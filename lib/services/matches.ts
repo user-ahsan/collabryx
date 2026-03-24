@@ -184,7 +184,7 @@ export async function dismissMatch(matchId: string): Promise<{ error: Error | nu
     if (error) throw error
 
     return { error: null }
-  } catch {
+  } catch (error) {
     logger.app.error("Failed to dismiss match", error)
     return { error: error instanceof Error ? error : new Error("Unknown error") }
   }
@@ -239,7 +239,7 @@ export async function connectWithMatch(matchedUserId: string): Promise<{ error: 
     }
 
     return { error: null }
-  } catch {
+  } catch (error) {
     logger.app.error("Failed to connect with match", error)
     return { error: error instanceof Error ? error : new Error("Failed to connect with match") }
   }
@@ -323,7 +323,7 @@ export async function fetchMatchActivity(
     })
 
     return { data: mappedActivities, error: null }
-  } catch {
+  } catch (error) {
     const errorMessage = error instanceof Error 
       ? error.message 
       : typeof error === 'object' && error !== null
@@ -358,7 +358,7 @@ export async function markActivityRead(activityId: string): Promise<{ error: Err
     if (error) throw error
 
     return { error: null }
-  } catch {
+  } catch (error) {
     logger.app.error("Failed to mark activity as read", error)
     return { error: error instanceof Error ? error : new Error("Unknown error") }
   }
@@ -389,7 +389,7 @@ export async function fetchMatchPreferences(): Promise<{
     if (error) throw error
 
     return { data, error: null }
-  } catch {
+  } catch (error) {
     logger.app.error("Failed to fetch match preferences", error)
     return { data: null, error: error instanceof Error ? error : new Error("Unknown error") }
   }
@@ -420,7 +420,7 @@ export async function updateMatchPreferences(
     if (error) throw error
 
     return { data, error: null }
-  } catch {
+  } catch (error) {
     logger.app.error("Failed to update match preferences", error)
     return { data: null, error: error instanceof Error ? error : new Error("Unknown error") }
   }

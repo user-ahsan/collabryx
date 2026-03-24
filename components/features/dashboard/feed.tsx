@@ -86,9 +86,9 @@ export function Feed() {
             } else {
                 setHasMore(false)
             }
-        } catch {
-            console.error('Error fetching posts:', err)
-            setFetchError(err instanceof Error ? err : new Error('Failed to fetch posts'))
+        } catch (error) {
+            console.error('Error fetching posts:', error)
+            setFetchError(error instanceof Error ? error : new Error('Failed to fetch posts'))
             // Fallback to cache
             const cached = getCache<PostUI[]>(CACHE_KEYS.FEED_POSTS)
             if (cached) {
@@ -134,7 +134,7 @@ export function Feed() {
                     .single()
 
                 setHasEmbedding(embedding?.status === 'completed')
-            } catch {
+            } catch (error) {
                 console.error('Error checking embedding status:', error)
                 setHasEmbedding(false)
             }
@@ -182,7 +182,7 @@ export function Feed() {
             } else {
                 setHasMore(false)
             }
-        } catch {
+        } catch (error) {
             console.error('Error loading more posts:', error)
         } finally {
             setIsLoadingMore(false)

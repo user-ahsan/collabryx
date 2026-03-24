@@ -123,7 +123,7 @@ export function LoginForm() {
             await new Promise(resolve => setTimeout(resolve, 1000))
             
             window.location.href = "/auth-sync"
-        } catch {
+        } catch (error) {
             toast.error("An unexpected error occurred.")
             setIsLoading(false)
         }

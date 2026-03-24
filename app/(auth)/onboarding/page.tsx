@@ -166,7 +166,7 @@ export default function OnboardingPage() {
                 if (!emailIsVerified) {
                     setHasAcknowledgedWarning(false)
                 }
-            } catch {
+            } catch (error) {
                 console.error("Error fetching user:", error)
                 toast.error("Failed to load user information.")
             }
@@ -197,7 +197,7 @@ export default function OnboardingPage() {
                     step: currentStep,
                     timestamp: Date.now()
                 }))
-            } catch {
+            } catch (error) {
                 console.warn("Failed to persist form data:", error)
             }
         }
@@ -219,7 +219,7 @@ export default function OnboardingPage() {
                     sessionStorage.removeItem("onboarding_draft")
                 }
             }
-        } catch {
+        } catch (error) {
             console.warn("Failed to restore form data:", error)
             sessionStorage.removeItem("onboarding_draft")
         }

@@ -62,8 +62,8 @@ export function SettingsDialog() {
 
                 setUserId(user.id)
                 setEmail(user.email || "")
-            } catch (err: unknown) {
-                console.error("Error fetching settings:", err)
+            } catch (error) {
+                console.error("Error fetching settings:", error)
                 setError("Failed to load settings. Showing local defaults.")
             } finally {
                 setIsLoading(false)

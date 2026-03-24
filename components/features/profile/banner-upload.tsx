@@ -140,12 +140,12 @@ export function BannerUpload({
       })
 
       toast.success('Banner updated successfully')
-    } catch {
-      if (err instanceof Error && err.message.includes('aspect ratio')) {
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('aspect ratio')) {
         // Aspect ratio error, already handled
         return
       }
-      const errorMessage = err instanceof Error ? err.message : 'Failed to upload banner'
+      const errorMessage = error instanceof Error ? error.message : 'Failed to upload banner'
       setError(errorMessage)
       toast.error(errorMessage)
     } finally {
@@ -195,7 +195,7 @@ export function BannerUpload({
       })
       setPreview(null)
       toast.success('Banner removed')
-    } catch {
+    } catch (error) {
       toast.error('Failed to remove banner')
     } finally {
       setIsUploading(false)

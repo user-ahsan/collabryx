@@ -231,7 +231,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-  } catch {
+  } catch (error) {
     console.error("Error in notification cleanup:", error);
 
     return NextResponse.json(

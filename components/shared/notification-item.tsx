@@ -75,7 +75,7 @@ export function NotificationItem({ notification }: NotificationItemProps) {
           }
         }
       })
-    } catch {
+    } catch (error) {
       toast.error("Failed to delete notification")
     } finally {
       setIsDeleting(false)

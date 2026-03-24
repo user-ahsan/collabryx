@@ -47,8 +47,8 @@ export function SkillsInterestsSettingsTab({ userId }: { userId: string }) {
 
                 setSkills(skillsRes.data || [])
                 setInterests(interestsRes.data || [])
-            } catch {
-                console.error("Error fetching skills/interests:", err)
+            } catch (error) {
+                console.error("Error fetching skills/interests:", error)
                 setError("Failed to load data.")
             } finally {
                 setIsLoading(false)
@@ -137,9 +137,9 @@ export function SkillsInterestsSettingsTab({ userId }: { userId: string }) {
             setSuccessMsg("Skills & Interests saved successfully.")
             toast.success("Skills & interests updated")
             setTimeout(() => setSuccessMsg(null), 3000)
-        } catch (err: unknown) {
-            console.error(err)
-            const errorMessage = err instanceof Error ? err.message : "Failed to save data."
+        } catch (error) {
+            console.error(error)
+            const errorMessage = error instanceof Error ? error.message : "Failed to save data."
             setError(errorMessage)
             toast.error(errorMessage)
         } finally {

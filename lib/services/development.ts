@@ -362,7 +362,7 @@ export async function getOrCreateTestUser(): Promise<{
     })
     stopTimer()
     return { user: { id: newUser?.id || "", email: newUser?.email }, error: null, isNewUser: true }
-  } catch {
+  } catch (error) {
     console.error("[Dev Mode] Error with test user:", error)
     devLog("dev-mode", "Unexpected error", { error })
     stopTimer()
@@ -468,7 +468,7 @@ export async function completeTestUserOnboarding(): Promise<{
     devLog("dev-mode", "Test user onboarding completed successfully")
     stopTimer()
     return { success: true, error: null }
-  } catch {
+  } catch (error) {
     console.error("[Dev Mode] Error completing onboarding:", error)
     devLog("dev-mode", "Onboarding failed with error", { error })
     stopTimer()

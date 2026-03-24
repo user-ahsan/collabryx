@@ -107,7 +107,7 @@ export function SuggestionsSidebar({ className }: MatchIntelligencePanelProps) {
                 setMatches(mapped)
                 setCache(CACHE_KEYS.MATCHES, mapped)
             }
-        } catch {
+        } catch (error) {
             logger.app.error('Failed to fetch matches', {
                 error: error instanceof Error ? error.message : String(error),
                 limit: 5

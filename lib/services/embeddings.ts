@@ -93,7 +93,7 @@ export async function generateUserEmbedding(userId: string): Promise<EmbeddingGe
     }
 
     return response.json();
-  } catch {
+  } catch (error) {
     if (error instanceof RateLimitError) {
       const minutes = Math.ceil(error.retryAfter / 60);
       return {
@@ -163,7 +163,7 @@ export async function getEmbeddingStatus(userId: string): Promise<EmbeddingStatu
     }
 
     return data;
-  } catch {
+  } catch (error) {
     console.error("Error fetching embedding status:", error);
     return null;
   }
@@ -292,7 +292,7 @@ export async function checkEmbeddingRateLimit(_userId?: string): Promise<{
       resetAt: data.reset_at,
       retryAfter: data.retry_after,
     };
-  } catch {
+  } catch (error) {
     console.error("Error checking embedding rate limit:", error);
     return {
       allowed: true,

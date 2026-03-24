@@ -46,7 +46,7 @@ function MatchCardErrorBoundary({ children, matchId }: MatchCardErrorBoundaryPro
             if (children && typeof children === 'object' && 'type' in children) {
                 // Valid React element
             }
-        } catch {
+        } catch (error) {
             logger.app.error("Failed to render match card", {
                 matchId,
                 error: error instanceof Error ? error.message : String(error),
@@ -84,7 +84,7 @@ function renderMatchCard(match: UIMatch, index: number, viewMode: ViewMode) {
                 </MatchCardErrorBoundary>
             </div>
         )
-    } catch {
+    } catch (error) {
         logger.app.error("Failed to render match card", {
             matchId: match.id,
             error: error instanceof Error ? error.message : String(error),
@@ -159,7 +159,7 @@ export function MatchesClient() {
                 userId: user.id,
                 limit: 20,
             })
-        } catch {
+        } catch (error) {
             console.error("Match generation failed:", error)
         }
     }

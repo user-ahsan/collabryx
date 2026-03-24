@@ -250,7 +250,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
-  } catch {
+  } catch (error) {
     logger.auth.error('Login endpoint error', {
       error: error instanceof Error ? error.message : 'Unknown error',
       ip: request.headers.get('x-forwarded-for')?.split(',')[0] || 'unknown',

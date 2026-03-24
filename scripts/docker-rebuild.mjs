@@ -54,7 +54,7 @@ function exec(command, options = {}) {
       stdio: 'pipe',
       ...options
     });
-  } catch {
+  } catch (error) {
     throw new Error(`Command failed: ${command}\n${error.message}`);
   }
 }
@@ -65,7 +65,7 @@ function execVerbose(command) {
       encoding: 'utf-8',
       stdio: 'inherit',
     });
-  } catch {
+  } catch (error) {
     throw new Error(`Command failed: ${command}\n${error.message}`);
   }
 }
@@ -77,7 +77,7 @@ function checkDocker() {
     exec('docker ps');
     log('✅ Docker is running', 'green');
     return true;
-  } catch {
+  } catch (error) {
     log('❌ Docker is not installed or not running', 'red');
     process.exit(1);
   }
@@ -90,7 +90,7 @@ function stopContainers() {
     execVerbose(`cd "${CONFIG.workerDir}" && docker-compose down --timeout 30`);
     log('✅ Containers stopped', 'green');
     return true;
-  } catch {
+  } catch (error) {
     log('⚠️  No containers to stop', 'yellow');
     return false;
   }
@@ -109,7 +109,7 @@ function removeImages() {
       log('ℹ️  No old images to remove', 'blue');
       return false;
     }
-  } catch {
+  } catch (error) {
     log('⚠️  Could not remove images', 'yellow');
     return false;
   }
@@ -127,7 +127,7 @@ function buildImage() {
     const buildTime = ((Date.now() - startTime) / 1000).toFixed(1);
     log(`✅ Image built successfully in ${buildTime}s`, 'green');
     return true;
-  } catch {
+  } catch (error) {
     log('❌ Failed to build Docker image', 'red');
     log(error.message, 'red');
     process.exit(1);
@@ -141,7 +141,7 @@ function startContainers() {
     execVerbose(`cd "${CONFIG.workerDir}" && docker-compose up -d`);
     log('✅ Containers started', 'green');
     return true;
-  } catch {
+  } catch (error) {
     log('❌ Failed to start containers', 'red');
     log(error.message, 'red');
     process.exit(1);
@@ -181,7 +181,7 @@ async function getHealthDetails() {
       res.on('end', () => {
         try {
           resolve(JSON.parse(data));
-        } catch {
+        } catch (error) {
           resolve(null);
         }
       });
@@ -269,7 +269,7 @@ async function main() {
     log('   Monitor health: npm run docker:health:monitor', 'blue');
     log('   Check status: npm run docker:status', 'blue');
     log('');
-  } catch {
+  } catch (error) {
     log('\n❌ Service failed to start properly', 'red');
     log('Check logs with: npm run docker:logs', 'yellow');
     process.exit(1);

@@ -156,7 +156,7 @@ export async function compressImage(
       height: newHeight,
       format,
     }
-  } catch {
+  } catch (error) {
     console.error('Image compression failed:', error)
     // Return original buffer on error
     return {
@@ -326,7 +326,7 @@ export async function getImageMetadata(buffer: Buffer): Promise<ImageMetadata> {
       size: buffer.length,
       aspectRatio: width / height,
     }
-  } catch {
+  } catch (error) {
     console.error('Error getting image metadata:', error)
     return {
       width: 0,

@@ -168,7 +168,7 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
     }))
 
     return { data: mappedPosts, error: null, queryCount, duration: queryDuration }
-  } catch {
+  } catch (error) {
     const queryDuration = Date.now() - queryStartTime
     logger.api.error("Error fetching posts", error, { queryCount, duration: queryDuration })
     return { data: [], error: error instanceof Error ? error : new Error("Unknown error"), queryCount, duration: queryDuration }
@@ -244,7 +244,7 @@ export async function fetchPersonalizedFeed(options: PostsQueryOptions = {}): Pr
     })
 
     return { data: mappedPosts, error: null, queryCount, duration: queryDuration }
-  } catch {
+  } catch (error) {
     const queryDuration = Date.now() - queryStartTime
     logger.api.error("Error fetching personalized feed", error, { queryCount, duration: queryDuration })
     return { data: [], error: error instanceof Error ? error : new Error("Unknown error"), queryCount, duration: queryDuration }
@@ -309,7 +309,7 @@ export async function fetchPostById(postId: string): Promise<{
     }
 
     return { data: mappedPost, error: null }
-  } catch {
+  } catch (error) {
     logger.api.error("Error fetching post", error, { postId })
     return { data: null, error: error instanceof Error ? error : new Error("Unknown error") }
   }
@@ -351,7 +351,7 @@ export async function createPost(input: CreatePostInput): Promise<{
     if (error) throw error
 
     return { data, error: null }
-  } catch {
+  } catch (error) {
     logger.api.error("Error creating post", error)
     return { data: null, error: error instanceof Error ? error : new Error("Unknown error") }
   }
@@ -383,7 +383,7 @@ export async function deletePost(postId: string): Promise<{ error: Error | null 
     if (error) throw error
 
     return { error: null }
-  } catch {
+  } catch (error) {
     console.error("Error deleting post:", error)
     return { error: error instanceof Error ? error : new Error("Unknown error") }
   }
@@ -452,7 +452,7 @@ export async function updatePostWithLock(
       }
 
       return { data, error: null, conflict: false }
-    } catch {
+    } catch (error) {
       if (attempt === maxRetries) {
         console.error("Error updating post after retries:", error)
         return { data: null, error: error instanceof Error ? error : new Error("Unknown error") }
@@ -497,7 +497,7 @@ export async function incrementPostCounter(
     }
 
     return { error: null }
-  } catch {
+  } catch (error) {
     console.error("Error incrementing counter:", error)
     return { error: error instanceof Error ? error : new Error("Failed to update counter") }
   }
@@ -550,7 +550,7 @@ export async function updatePostCounterWithLock(
       }
 
       return { success: true, conflict: false }
-    } catch {
+    } catch (error) {
       if (attempt === maxRetries) {
         return { success: false, error: error instanceof Error ? error : new Error("Failed to update counter") }
       }
@@ -599,7 +599,7 @@ export async function addReaction(
     if (error) throw error
 
     return { data, error: null }
-  } catch {
+  } catch (error) {
     console.error("Error adding reaction:", error)
     return { data: null, error: error instanceof Error ? error : new Error("Unknown error") }
   }
@@ -628,7 +628,7 @@ export async function removeReaction(postId: string): Promise<{ error: Error | n
     if (error) throw error
 
     return { error: null }
-  } catch {
+  } catch (error) {
     console.error("Error removing reaction:", error)
     return { error: error instanceof Error ? error : new Error("Unknown error") }
   }
@@ -683,7 +683,7 @@ export async function addAttachment(
     if (error) throw error
 
     return { data, error: null }
-  } catch {
+  } catch (error) {
     console.error("Error adding attachment:", error)
     return { data: null, error: error instanceof Error ? error : new Error("Unknown error") }
   }

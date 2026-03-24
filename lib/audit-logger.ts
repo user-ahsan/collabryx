@@ -98,7 +98,7 @@ export async function getClientIp(): Promise<string | null> {
     }
     
     return null
-  } catch {
+  } catch (error) {
     return null
   }
 }
@@ -110,7 +110,7 @@ export async function getUserAgent(): Promise<string | null> {
   try {
     const headersList = await headers()
     return headersList.get('user-agent')
-  } catch {
+  } catch (error) {
     return null
   }
 }
@@ -170,7 +170,7 @@ export async function logAuditEvent(input: AuditLogInput): Promise<AuditLogResul
       success: true,
       logId: data?.id,
     }
-  } catch {
+  } catch (error) {
     console.error('Audit logging failed:', error)
     return {
       success: false,
@@ -212,7 +212,7 @@ export async function withAudit<T>(
     })
     
     return result
-  } catch {
+  } catch (error) {
     // Log failure
     await logAuditEvent({
       action: `${eventType}_failed`,
@@ -370,7 +370,7 @@ export async function getUserAuditLogs(
     }
     
     return { success: true, logs: data }
-  } catch {
+  } catch (error) {
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -408,7 +408,7 @@ export async function getFailedLoginAttempts(
     }
     
     return { success: true, logs: data }
-  } catch {
+  } catch (error) {
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',

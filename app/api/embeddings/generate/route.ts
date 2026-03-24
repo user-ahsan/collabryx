@@ -352,13 +352,13 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
 
-  } catch {
+  } catch (error) {
     console.error("Error in embeddings generate:", error);
     
     // Mark as failed
     try {
         await updateEmbeddingStatus(supabase, userId, "failed");
-    } catch {
+    } catch (error) {
         // Ignore
     }
 

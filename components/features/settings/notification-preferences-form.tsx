@@ -54,8 +54,8 @@ export function NotificationPreferencesForm({ userId }: NotificationPreferencesF
         try {
             await updatePreferences(formData)
             setHasChanges(false)
-        } catch {
-            console.error("Error saving preferences:", err)
+        } catch (error) {
+            console.error("Error saving preferences:", error)
         }
     }
 
@@ -63,7 +63,7 @@ export function NotificationPreferencesForm({ userId }: NotificationPreferencesF
         updateField(field, value)
         const updatedData = { ...formData, [field]: value }
         updatePreferences(updatedData).catch((err) => {
-            console.error("Error updating preference:", err)
+            console.error("Error updating preference:", error)
             toast.error("Failed to update preference")
         })
     }

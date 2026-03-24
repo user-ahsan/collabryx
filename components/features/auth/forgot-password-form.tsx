@@ -57,8 +57,8 @@ export function ForgotPasswordForm() {
             }
 
             setIsSuccess(true)
-        } catch {
-            console.error("Password reset error:", err)
+        } catch (error) {
+            console.error("Password reset error:", error)
             setError("An unexpected error occurred. Please try again.")
             setIsLoading(false)
         }

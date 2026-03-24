@@ -50,7 +50,7 @@ export async function fetchCurrentProfile(): Promise<{
     }
 
     return { data: profile, error: null }
-  } catch {
+  } catch (error) {
     console.error("Error fetching profile:", error)
     return { data: null, error: error instanceof Error ? error : new Error("Unknown error") }
   }
@@ -89,7 +89,7 @@ export async function fetchProfileById(userId: string): Promise<{
     }
 
     return { data: profile, error: null }
-  } catch {
+  } catch (error) {
     console.error("Error fetching profile:", error)
     return { data: null, error: error instanceof Error ? error : new Error("Unknown error") }
   }
@@ -119,7 +119,7 @@ export async function updateProfile(
     if (error) throw error
 
     return { data, error: null }
-  } catch {
+  } catch (error) {
     console.error("Error updating profile:", error)
     return { data: null, error: error instanceof Error ? error : new Error("Unknown error") }
   }
@@ -145,7 +145,7 @@ export async function fetchUserSkills(userId: string): Promise<{
     if (error) throw error
 
     return { data: data || [], error: null }
-  } catch {
+  } catch (error) {
     console.error("Error fetching skills:", error)
     return { data: [], error: error instanceof Error ? error : new Error("Unknown error") }
   }
@@ -176,7 +176,7 @@ export async function addSkill(
     if (error) throw error
 
     return { data, error: null }
-  } catch {
+  } catch (error) {
     console.error("Error adding skill:", error)
     return { data: null, error: error instanceof Error ? error : new Error("Unknown error") }
   }
@@ -200,7 +200,7 @@ export async function removeSkill(skillId: string): Promise<{ error: Error | nul
     if (error) throw error
 
     return { error: null }
-  } catch {
+  } catch (error) {
     console.error("Error removing skill:", error)
     return { error: error instanceof Error ? error : new Error("Unknown error") }
   }
@@ -226,7 +226,7 @@ export async function fetchUserInterests(userId: string): Promise<{
     if (error) throw error
 
     return { data: data || [], error: null }
-  } catch {
+  } catch (error) {
     console.error("Error fetching interests:", error)
     return { data: [], error: error instanceof Error ? error : new Error("Unknown error") }
   }
@@ -255,7 +255,7 @@ export async function addInterest(
     if (error) throw error
 
     return { data, error: null }
-  } catch {
+  } catch (error) {
     console.error("Error adding interest:", error)
     return { data: null, error: error instanceof Error ? error : new Error("Unknown error") }
   }
@@ -281,7 +281,7 @@ export async function removeInterest(
     if (error) throw error
 
     return { error: null }
-  } catch {
+  } catch (error) {
     console.error("Error removing interest:", error)
     return { error: error instanceof Error ? error : new Error("Unknown error") }
   }
@@ -307,7 +307,7 @@ export async function fetchUserExperiences(userId: string): Promise<{
     if (error) throw error
 
     return { data: data || [], error: null }
-  } catch {
+  } catch (error) {
     console.error("Error fetching experiences:", error)
     return { data: [], error: error instanceof Error ? error : new Error("Unknown error") }
   }
@@ -342,7 +342,7 @@ export async function addExperience(
     if (error) throw error
 
     return { data, error: null }
-  } catch {
+  } catch (error) {
     console.error("Error adding experience:", error)
     return { data: null, error: error instanceof Error ? error : new Error("Unknown error") }
   }
@@ -366,7 +366,7 @@ export async function removeExperience(experienceId: string): Promise<{ error: E
     if (error) throw error
 
     return { error: null }
-  } catch {
+  } catch (error) {
     console.error("Error removing experience:", error)
     return { error: error instanceof Error ? error : new Error("Unknown error") }
   }
@@ -393,7 +393,7 @@ export async function fetchUserProjects(userId: string): Promise<{
     if (error) throw error
 
     return { data: data || [], error: null }
-  } catch {
+  } catch (error) {
     console.error("Error fetching projects:", error)
     return { data: [], error: error instanceof Error ? error : new Error("Unknown error") }
   }
@@ -428,7 +428,7 @@ export async function addProject(
     if (error) throw error
 
     return { data, error: null }
-  } catch {
+  } catch (error) {
     console.error("Error adding project:", error)
     return { data: null, error: error instanceof Error ? error : new Error("Unknown error") }
   }
@@ -452,7 +452,7 @@ export async function removeProject(projectId: string): Promise<{ error: Error |
     if (error) throw error
 
     return { error: null }
-  } catch {
+  } catch (error) {
     console.error("Error removing project:", error)
     return { error: error instanceof Error ? error : new Error("Unknown error") }
   }

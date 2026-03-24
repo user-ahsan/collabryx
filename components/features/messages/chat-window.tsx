@@ -87,7 +87,7 @@ export function ChatWindow({ chatId, onBackToList, isConnected }: ChatWindowProp
                         initials: formatInitials(name)
                     })
                 }
-            } catch {
+            } catch (error) {
                 // Fallback to default
                 setChatUserInfo(null)
             }

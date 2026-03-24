@@ -55,7 +55,7 @@ export function SessionExpiryWarning({ className }: SessionExpiryWarningProps) {
             setShowWarning(false)
           }
         }
-      } catch {
+      } catch (error) {
         console.error('Session check failed:', error)
       }
     }
@@ -87,7 +87,7 @@ export function SessionExpiryWarning({ className }: SessionExpiryWarningProps) {
       } else {
         toast.error('Failed to refresh session')
       }
-    } catch {
+    } catch (error) {
       console.error('Session refresh failed:', error)
       toast.error('Failed to refresh session')
     } finally {
