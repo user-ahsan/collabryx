@@ -2641,7 +2641,7 @@ RETURNS trigger AS $$
 BEGIN
   IF NEW.status = 'accepted' AND OLD.status = 'pending' THEN
     INSERT INTO notifications (user_id, type, actor_id, content, resource_type, resource_id)
-    VALUES (NEW.requester_id, 'connection_accepted', NEW.receiver_id, 'accepted your connection request', 'connection', NEW.id);
+    VALUES (NEW.requester_id, 'connect', NEW.receiver_id, 'accepted your connection request', 'profile', NEW.id);
   END IF;
   RETURN NEW;
 END;
