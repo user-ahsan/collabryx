@@ -2906,6 +2906,62 @@ CREATE TRIGGER broadcast_match_suggestion_realtime AFTER INSERT ON match_suggest
 GRANT EXECUTE ON FUNCTION broadcast_realtime TO service_role;
 
 -- ============================================================================
+-- SECTION 5.9.1: FEED SCORE CACHE INVALIDATION TRIGGERS (NEW)
+-- ============================================================================
+-- Invalidate feed scores when engagement events occur
+
+CREATE OR REPLACE FUNCTION public.invalidate_feed_score_on_reaction()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE public.feed_scores 
+    SET expires_at = NOW() - INTERVAL '1 second'
+    WHERE post_id = NEW.post_id;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+CREATE TRIGGER trg_invalidate_feed_score_on_reaction
+    AFTER INSERT ON public.post_reactions
+    FOR EACH ROW EXECUTE FUNCTION public.invalidate_feed_score_on_reaction();
+
+CREATE OR REPLACE FUNCTION public.invalidate_feed_score_on_comment()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE public.feed_scores 
+    SET expires_at = NOW() - INTERVAL '1 second'
+    WHERE post_id = NEW.post_id;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+CREATE TRIGGER trg_invalidate_feed_score_on_comment
+    AFTER INSERT ON public.comments
+    FOR EACH ROW EXECUTE FUNCTION public.invalidate_feed_score_on_comment();
+
+CREATE OR REPLACE FUNCTION public.invalidate_feed_score_on_connection()
+RETURNS TRIGGER AS $$
+BEGIN
+    IF NEW.status = 'accepted' THEN
+        UPDATE public.feed_scores 
+        SET expires_at = NOW() - INTERVAL '1 second'
+        WHERE (
+            user_id = NEW.requester_id 
+            AND post_id IN (SELECT id FROM posts WHERE author_id = NEW.receiver_id)
+        )
+        OR (
+            user_id = NEW.receiver_id 
+            AND post_id IN (SELECT id FROM posts WHERE author_id = NEW.requester_id)
+        );
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+CREATE TRIGGER trg_invalidate_feed_score_on_connection
+    AFTER INSERT OR UPDATE OF status ON public.connections
+    FOR EACH ROW EXECUTE FUNCTION public.invalidate_feed_score_on_connection();
+
+-- ============================================================================
 -- SECTION 5.10: PROFILE COMPLETION AUTO-UPDATE
 -- ============================================================================
 
