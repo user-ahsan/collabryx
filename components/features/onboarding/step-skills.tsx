@@ -3,19 +3,10 @@
 import React from "react"
 import { useFormContext, Controller } from "react-hook-form"
 import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
 import { SearchableCombobox, type ComboboxOption } from "@/components/ui/searchable-combobox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
-import { X } from "lucide-react"
+import { X, AlertCircle } from "lucide-react"
 import { skillsDatabase, type Skill } from "@/lib/data/skills-database"
-
-const PROFICIENCY_LEVELS = [
-  { value: "beginner", label: "Beginner" },
-  { value: "intermediate", label: "Intermediate" },
-  { value: "advanced", label: "Advanced" },
-  { value: "expert", label: "Expert" },
-]
 
 interface SkillWithProficiency {
   id: string
@@ -52,34 +43,75 @@ export function StepSkills() {
 
           return (
             <div className="space-y-4" aria-labelledby="skills-heading">
-              {/* Selected Skills Display */}
+              {/* Selected Skills with Integrated Proficiency */}
               {skills.length > 0 && (
                 <div className="space-y-3">
                   <Label className="text-sm font-semibold text-foreground">
-                    Your Skills <span className="text-xs text-muted-foreground font-normal">({skills.length} added)</span>
+                    Your Skills <span className="text-xs text-muted-foreground font-normal">({skills.length}/5 minimum)</span>
                   </Label>
-                  <div className="flex flex-wrap gap-2 p-4 rounded-lg bg-muted/50 backdrop-blur-sm border border-border/50">
-                    {skills.map((skill) => (
-                      <Badge
+                  
+                  <div className="grid gap-2">
+                    {skills.map((skill, index) => (
+                      <div
                         key={skill.id}
-                        variant="secondary"
-                        className="px-3 py-2 text-sm gap-2 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20"
+                        className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 backdrop-blur-sm border border-border/50 hover:border-border/80 transition-colors"
                       >
-                        {skill.label}
+                        {/* Skill name */}
+                        <span className="text-sm font-medium flex-1 min-w-0 truncate">
+                          {skill.label}
+                        </span>
+                        
+                        {/* Proficiency selector */}
+                        <Select
+                          value={skill.proficiency || "intermediate"}
+                          onValueChange={(value) => {
+                            const newSkills = [...skills]
+                            newSkills[index] = { ...skill, proficiency: value }
+                            field.onChange(newSkills)
+                          }}
+                        >
+                          <SelectTrigger className="w-[140px] h-9 text-xs bg-background/50">
+                            <SelectValue placeholder="Select proficiency" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="beginner">Beginner</SelectItem>
+                            <SelectItem value="intermediate">Intermediate</SelectItem>
+                            <SelectItem value="advanced">Advanced</SelectItem>
+                            <SelectItem value="expert">Expert</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        
+                        {/* Remove button */}
                         <button
                           type="button"
                           onClick={() => {
                             const newSkills = skills.filter(s => s.id !== skill.id)
                             field.onChange(newSkills)
                           }}
-                          className="p-0.5 rounded-full hover:bg-primary/20 transition-colors"
+                          className="p-1.5 rounded-full hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
                           aria-label={`Remove ${skill.label}`}
                         >
-                          <X className="w-3.5 h-3.5" aria-hidden="true" />
+                          <X className="w-4 h-4" aria-hidden="true" />
                         </button>
-                      </Badge>
+                      </div>
                     ))}
                   </div>
+                  
+                  {/* Warning if any skill missing proficiency */}
+                  {skills.some(s => !s.proficiency) && (
+                    <p className="text-xs text-amber-500 flex items-center gap-1.5">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      Please set proficiency for all skills
+                    </p>
+                  )}
+                  
+                  {/* Show count vs minimum */}
+                  {skills.length < 5 && (
+                    <p className="text-xs text-amber-500 flex items-center gap-1.5">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      Add {5 - skills.length} more skill{5 - skills.length > 1 ? 's' : ''} to continue
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -118,48 +150,6 @@ export function StepSkills() {
                   aria-required="true"
                   aria-invalid={!!errors.skills}
                 />
-
-                {/* Proficiency for each skill */}
-                {skills.length > 0 && (
-                  <div className="space-y-3 mt-4">
-                    <Label className="text-sm font-semibold text-foreground">Proficiency Levels</Label>
-                    {skills.map((skill, index) => (
-                      <div key={skill.id} className="flex items-center gap-3">
-                        <span className="text-sm text-muted-foreground w-32 truncate">{skill.label}</span>
-                        <Select
-                          value={skill.proficiency || "intermediate"}
-                          onValueChange={(value) => {
-                            const newSkills = [...skills]
-                            newSkills[index] = { ...skill, proficiency: value }
-                            field.onChange(newSkills)
-                          }}
-                        >
-                          <SelectTrigger className="w-[180px] bg-background/40 backdrop-blur-md">
-                            <SelectValue placeholder="Select proficiency" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {PROFICIENCY_LEVELS.map((level) => (
-                              <SelectItem key={level.value} value={level.value}>
-                                {level.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newSkills = skills.filter(s => s.id !== skill.id)
-                            field.onChange(newSkills)
-                          }}
-                          className="p-1 rounded-md hover:bg-red-500/20 transition-colors text-muted-foreground hover:text-red-400"
-                          aria-label={`Remove ${skill.label}`}
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
 
                 {typeof errors.skills?.message === "string" && (
                   <p className="text-xs text-destructive font-medium" role="alert">
