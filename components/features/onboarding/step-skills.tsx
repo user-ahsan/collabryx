@@ -5,9 +5,24 @@ import { useFormContext, Controller } from "react-hook-form"
 import { Label } from "@/components/ui/label"
 import { SearchableCombobox, type ComboboxOption } from "@/components/ui/searchable-combobox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { X, AlertCircle, GripVertical } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { X, AlertCircle, GripVertical, Code2, Sparkles, Plus } from "lucide-react"
 import { skillsDatabase, type Skill } from "@/lib/data/skills-database"
 import { cn } from "@/lib/utils"
+
+// Role-based skill suggestions database
+const ROLE_SKILL_SUGGESTIONS: Record<string, string[]> = {
+  "Mobile Developer": ["Swift", "SwiftUI", "Kotlin", "React Native", "Flutter", "iOS Development", "Android Development"],
+  "Frontend Developer": ["React", "TypeScript", "JavaScript", "Next.js", "Tailwind CSS", "Vue.js", "Angular"],
+  "Backend Developer": ["Node.js", "Python", "PostgreSQL", "Docker", "AWS", "Express", "FastAPI"],
+  "Full Stack Developer": ["React", "Node.js", "TypeScript", "PostgreSQL", "AWS", "Next.js", "Docker"],
+  "DevOps Engineer": ["Docker", "Kubernetes", "AWS", "CI/CD", "Terraform", "Linux", "Python"],
+  "Data Scientist": ["Python", "Machine Learning", "SQL", "TensorFlow", "R", "Data Analysis", "Statistics"],
+  "Designer": ["Figma", "Adobe XD", "Sketch", "UI/UX Design", "Prototyping", "Design Systems", "Illustrator"],
+  "Product Manager": ["Product Strategy", "Agile", "User Research", "Data Analysis", "Roadmapping", "Stakeholder Management"],
+}
+
+const POPULAR_SKILLS = ["React", "TypeScript", "Node.js", "Python", "AWS", "Docker", "Figma", "SQL"]
 
 interface SkillWithProficiency {
   id: string
@@ -16,8 +31,12 @@ interface SkillWithProficiency {
 }
 
 export function StepSkills() {
-  const { control, formState: { errors } } = useFormContext()
+  const { control, formState: { errors }, watch } = useFormContext()
   const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null)
+  
+  // Get role from form context
+  const role = watch("role") || watch("looking_for")?.[0] || null
+  const roleSuggestions = role ? ROLE_SKILL_SUGGESTIONS[role] || POPULAR_SKILLS : POPULAR_SKILLS
 
   const skillOptions: ComboboxOption[] = React.useMemo(() => 
     skillsDatabase.map((skill: Skill) => ({
@@ -56,6 +75,11 @@ export function StepSkills() {
         name="skills"
         render={({ field }) => {
           const skills: SkillWithProficiency[] = field.value || []
+          
+          // Filter out skills already added
+          const suggestedSkills = roleSuggestions.filter(
+            suggestion => !skills.find(s => s.label.toLowerCase() === suggestion.toLowerCase())
+          ).slice(0, 5) // Show max 5 suggestions
 
           return (
             <div className="space-y-4" aria-labelledby="skills-heading">
@@ -198,6 +222,57 @@ export function StepSkills() {
                   </p>
                 )}
               </div>
+
+              {/* Role-based Suggestions */}
+              {skills.length < 3 && suggestedSkills.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Sparkles className="w-4 h-4 text-amber-500" />
+                    <span>
+                      {role 
+                        ? `Based on your role (${role}), consider adding:`
+                        : "Popular skills to consider:"
+                      }
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {suggestedSkills.map((skill) => (
+                      <Button
+                        key={skill}
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const newSkill = {
+                            id: `suggestion-${skill.toLowerCase().replace(/\s+/g, '-')}`,
+                            label: skill,
+                            proficiency: "intermediate"
+                          }
+                          field.onChange([...skills, newSkill])
+                        }}
+                        className="text-xs h-8"
+                      >
+                        <Plus className="w-3.5 h-3.5 mr-1" />
+                        {skill}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Enhanced Empty State */}
+              {skills.length === 0 && (
+                <div className="p-6 rounded-lg bg-muted/30 border border-border/50 text-center space-y-4">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                    <Code2 className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">No skills added yet</p>
+                    <p className="text-sm text-muted-foreground">
+                      Start by adding your top 5 skills from the suggestions below
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Helper Text */}
               <div className="p-4 rounded-lg bg-muted/50 backdrop-blur-sm border border-border/50">
