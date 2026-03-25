@@ -96,7 +96,13 @@ describe('Onboarding Server Actions', () => {
       displayName: 'johndoe',
       headline: 'Software Developer',
       location: 'San Francisco, CA',
-      skills: ['React', 'TypeScript'],
+      skills: [
+        { id: '1', label: 'React', proficiency: 'advanced' as const },
+        { id: '2', label: 'TypeScript', proficiency: 'intermediate' as const },
+        { id: '3', label: 'Node.js', proficiency: 'advanced' as const },
+        { id: '4', label: 'Python', proficiency: 'intermediate' as const },
+        { id: '5', label: 'SQL', proficiency: 'beginner' as const },
+      ],
       interests: ['AI', 'Web Development'],
       goals: ['Learn ML'],
       experiences: [
@@ -306,7 +312,14 @@ describe('Onboarding Server Actions', () => {
         await completeOnboarding(
           {
             ...validOnboardingData,
-            skills: ['Skill1', 'Skill2', 'Skill3', 'Skill4', 'Skill5', 'Skill6'],
+            skills: [
+              { id: '1', label: 'Skill1', proficiency: 'advanced' as const },
+              { id: '2', label: 'Skill2', proficiency: 'intermediate' as const },
+              { id: '3', label: 'Skill3', proficiency: 'advanced' as const },
+              { id: '4', label: 'Skill4', proficiency: 'intermediate' as const },
+              { id: '5', label: 'Skill5', proficiency: 'beginner' as const },
+              { id: '6', label: 'Skill6', proficiency: 'expert' as const },
+            ],
           },
           90
         )

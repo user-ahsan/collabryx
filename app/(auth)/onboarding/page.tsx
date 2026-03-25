@@ -49,7 +49,13 @@ const basicInfoSchema = z.object({
 })
 
 const skillsSchema = z.object({
-    skills: z.array(z.string()).min(1, "Please add at least one skill."),
+    skills: z.array(z.object({
+        id: z.string(),
+        label: z.string(),
+        proficiency: z.enum(["beginner", "intermediate", "advanced", "expert"], {
+            required_error: "Please select proficiency level"
+        })
+    })).min(5, "Please add at least 5 skills to continue"),
 })
 
 const interestsGoalsSchema = z.object({
@@ -246,7 +252,7 @@ export default function OnboardingPage() {
         } else if (currentStep === 2) {
             isStepValid = await trigger(['skills'])
             if (!isStepValid) {
-                toast.error("Please add at least one skill")
+                toast.error("Please add at least 5 skills with proficiency levels")
                 return
             }
         } else if (currentStep === 3) {
@@ -301,8 +307,8 @@ export default function OnboardingPage() {
                 return
             }
             
-            if (!values.skills || values.skills.length === 0) {
-                toast.error("At least one skill is required")
+            if (!values.skills || values.skills.length < 5) {
+                toast.error("At least 5 skills with proficiency levels are required")
                 setIsSubmitting(false)
                 return
             }
@@ -407,8 +413,8 @@ export default function OnboardingPage() {
                 return
             }
             
-            if (!data.skills || data.skills.length === 0) {
-                toast.error("At least one skill is required")
+            if (!data.skills || data.skills.length < 5) {
+                toast.error("At least 5 skills with proficiency levels are required")
                 setIsSubmitting(false)
                 return
             }

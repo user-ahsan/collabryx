@@ -9,7 +9,11 @@ interface OnboardingData {
     displayName?: string;
     headline: string;
     location?: string;
-    skills: string[];
+    skills: Array<{
+        id: string;
+        label: string;
+        proficiency: "beginner" | "intermediate" | "advanced" | "expert";
+    }>;
     interests: string[];
     goals?: string[];
     experiences?: {
@@ -214,9 +218,10 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
 
     // 2. Insert/Update Skills
     if (data.skills && data.skills.length > 0) {
-        const skillsToInsert = data.skills.map((skill: string, index: number) => ({
+        const skillsToInsert = data.skills.map((skill, index: number) => ({
             user_id: userId,
-            skill_name: skill,
+            skill_name: skill.label,
+            proficiency: skill.proficiency,
             is_primary: index < 5,
         }))
 
