@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label"
 import { SearchableCombobox, type ComboboxOption } from "@/components/ui/searchable-combobox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
-import { X, AlertCircle, GripVertical, Code2, Sparkles, Plus } from "lucide-react"
+import { X, AlertCircle, CheckCircle, GripVertical, Code2, Sparkles, Plus } from "lucide-react"
 import { skillsDatabase, type Skill } from "@/lib/data/skills-database"
 import { cn } from "@/lib/utils"
 
@@ -67,7 +67,9 @@ export function StepSkills() {
     <div className="space-y-6">
       <div className="space-y-2 text-center md:text-left">
         <h2 className="text-3xl font-bold tracking-tight text-foreground">Your Skills</h2>
-        <p className="text-base text-muted-foreground">Add your skills to help us match you with the right opportunities.</p>
+        <p className="text-base text-muted-foreground mt-1">
+          Add your skills to help us match you with the right opportunities. Proficiency level required for each skill.
+        </p>
       </div>
 
       <Controller
@@ -83,13 +85,41 @@ export function StepSkills() {
 
           return (
             <div className="space-y-4" aria-labelledby="skills-heading">
+              {/* Progress Badge */}
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-semibold text-foreground">
+                  Your Skills <span className="text-xs text-muted-foreground font-normal">({skills.length}/5 minimum)</span>
+                </Label>
+                <div className={cn(
+                  "px-4 py-2 rounded-full text-sm font-semibold transition-colors",
+                  skills.length >= 5 
+                    ? "bg-green-500/20 text-green-500 border border-green-500/30" 
+                    : "bg-amber-500/20 text-amber-500 border border-amber-500/30"
+                )}>
+                  {skills.length}/5 {skills.length >= 5 ? '✓' : '✨'}
+                </div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Profile completion</span>
+                  <span>{Math.min((skills.length / 5) * 100, 100)}%</span>
+                </div>
+                <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                  <div 
+                    className={cn(
+                      "h-full transition-all duration-500 ease-out",
+                      skills.length >= 5 ? "bg-green-500" : "bg-amber-500"
+                    )}
+                    style={{ width: `${Math.min((skills.length / 5) * 100, 100)}%` }}
+                  />
+                </div>
+              </div>
+
               {/* Selected Skills with Integrated Proficiency */}
               {skills.length > 0 && (
                 <div className="space-y-3">
-                  <Label className="text-sm font-semibold text-foreground">
-                    Your Skills <span className="text-xs text-muted-foreground font-normal">({skills.length}/5 minimum)</span>
-                  </Label>
-                  
                   <div className="grid gap-2">
                     {skills.map((skill, index) => (
                       <div
@@ -170,12 +200,29 @@ export function StepSkills() {
                     </p>
                   )}
                   
-                  {/* Show count vs minimum */}
-                  {skills.length < 5 && (
-                    <p className="text-xs text-amber-500 flex items-center gap-1.5">
-                      <AlertCircle className="w-3.5 h-3.5" />
-                      Add {5 - skills.length} more skill{5 - skills.length > 1 ? 's' : ''} to continue
-                    </p>
+                  {/* Warning if not enough skills */}
+                  {skills.length > 0 && skills.length < 5 && (
+                    <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-start gap-3">
+                      <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-amber-500">
+                          {5 - skills.length} more skill{5 - skills.length > 1 ? 's' : ''} needed
+                        </p>
+                        <p className="text-xs text-amber-500/80 mt-0.5">
+                          Add at least 5 skills with proficiency levels to continue. This helps us match you with better opportunities.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Success message when 5+ skills */}
+                  {skills.length >= 5 && (
+                    <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
+                      <p className="text-sm font-medium text-green-500">
+                        Great! You have enough skills to get great matches
+                      </p>
+                    </div>
                   )}
                 </div>
               )}
