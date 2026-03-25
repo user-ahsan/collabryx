@@ -61,18 +61,18 @@ const SkillsList = React.memo(({
           }}
           onDragEnd={onDragEnd}
           className={cn(
-            "flex items-center gap-2 p-3 rounded-lg bg-muted/30 border border-border/30 hover:border-border/50 transition-colors duration-200 cursor-grab active:cursor-grabbing",
+            "flex flex-col md:flex-row md:items-center gap-3 md:gap-2 p-4 md:p-3 rounded-lg bg-muted/30 border border-border/30 hover:border-border/50 transition-colors duration-200 cursor-grab active:cursor-grabbing",
             draggedIndex === index && "opacity-60"
           )}
         >
-          {/* Drag handle */}
+          {/* Drag handle - larger touch target on mobile */}
           <button
             type="button"
-            className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground transition-colors duration-200"
+            className="cursor-grab active:cursor-grabbing p-2 md:p-1 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 hover:bg-muted rounded text-muted-foreground hover:text-foreground transition-colors duration-200"
             aria-label="Drag to reorder"
             tabIndex={-1}
           >
-            <GripVertical className="w-4 h-4" aria-hidden="true" />
+            <GripVertical className="w-5 h-5 md:w-4 md:h-4" aria-hidden="true" />
           </button>
           
           {/* Priority number */}
@@ -80,19 +80,19 @@ const SkillsList = React.memo(({
             {index + 1}
           </span>
           
-          {/* Skill name */}
-          <span className="text-sm font-medium flex-1 min-w-0 truncate">
+          {/* Skill name - full width on mobile */}
+          <span className="text-sm md:text-base font-medium w-full md:flex-1 min-w-0 truncate break-words max-w-full">
             {skill.label}
           </span>
           
-          {/* Proficiency selector */}
+          {/* Proficiency selector - full width on mobile */}
           <Select
             value={skill.proficiency || "intermediate"}
             onValueChange={(value) => {
               onProficiencyChange(skill.id, index, value)
             }}
           >
-            <SelectTrigger className="w-[140px] h-9 text-xs bg-background/30">
+            <SelectTrigger className="w-full md:w-[140px] h-10 md:h-9 text-xs md:text-sm bg-background/30">
               <SelectValue placeholder="Select proficiency" />
             </SelectTrigger>
             <SelectContent>
@@ -103,19 +103,26 @@ const SkillsList = React.memo(({
             </SelectContent>
           </Select>
           
-          {/* Remove button */}
+          {/* Remove button - larger touch target on mobile */}
           <button
             type="button"
             onClick={() => {
               onRemove(skill.id)
             }}
-            className="p-1.5 rounded-full hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors duration-200"
+            className="p-2 md:p-1.5 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 rounded-full hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors duration-200"
             aria-label={`Remove ${skill.label}`}
           >
-            <X className="w-4 h-4" aria-hidden="true" />
+            <X className="w-5 h-5 md:w-4 md:h-4" aria-hidden="true" />
           </button>
         </div>
       ))}
+      {/* Mobile drag hint */}
+      {skills.length > 1 && (
+        <p className="text-xs text-muted-foreground md:hidden flex items-center gap-1.5 mt-2">
+          <GripVertical className="w-3.5 h-3.5" />
+          Swipe up/down on skill to reorder priority
+        </p>
+      )}
     </div>
   )
 })
@@ -145,10 +152,10 @@ export function StepSkills() {
   const handleDragEnd = () => setDraggedIndex(null)
 
   return (
-    <div className="space-y-6">
+    <div className="w-full max-w-full overflow-x-hidden space-y-6">
       <div className="space-y-2 text-center md:text-left">
-        <h2 className="text-3xl font-bold tracking-tight text-foreground">Your Skills</h2>
-        <p className="text-base text-muted-foreground mt-1">
+        <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">Your Skills</h2>
+        <p className="text-sm md:text-base text-muted-foreground mt-1">
           Add your skills to help us match you with the right opportunities. Proficiency level required for each skill.
         </p>
       </div>
@@ -189,12 +196,12 @@ export function StepSkills() {
           return (
             <div className="space-y-4" aria-labelledby="skills-heading">
               {/* Progress Badge */}
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <Label className="text-sm font-semibold text-foreground">
                   Your Skills <span className="text-xs text-muted-foreground font-normal">({skills.length}/5 minimum)</span>
                 </Label>
                 <div className={cn(
-                  "px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-200",
+                  "px-3 py-1.5 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-semibold transition-colors duration-200",
                   skills.length >= 5 
                     ? "bg-green-500/20 text-green-500 border border-green-500/30" 
                     : "bg-amber-500/20 text-amber-500 border border-amber-500/30"
@@ -222,7 +229,7 @@ export function StepSkills() {
 
               {/* Selected Skills with Integrated Proficiency - Hide when empty */}
               {skills.length > 0 && (
-                <div className="space-y-3" style={{ contain: 'layout', willChange: 'auto' }}>
+                <div className="space-y-3 md:space-y-4" style={{ contain: 'layout', willChange: 'auto' }}>
                   <SkillsList
                     skills={skills}
                     onRemove={handleRemoveSkill}
@@ -236,17 +243,17 @@ export function StepSkills() {
                   {/* Warning if any skill missing proficiency */}
                   {skills.some(s => !s.proficiency) && (
                     <p className="text-xs text-amber-500 flex items-center gap-1.5">
-                      <AlertCircle className="w-3.5 h-3.5" />
+                      <AlertCircle className="w-3.5 h-3.5 md:w-4 md:h-4" />
                       Please set proficiency for all skills
                     </p>
                   )}
                   
                   {/* Warning if not enough skills */}
                   {skills.length > 0 && skills.length < 5 && (
-                    <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-start gap-3">
-                      <AlertCircle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
+                    <div className="p-3 md:p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-start gap-3">
+                      <AlertCircle className="w-5 h-5 md:w-6 md:h-6 text-amber-500 flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-sm font-medium text-amber-500">
+                        <p className="text-sm md:text-base font-medium text-amber-500">
                           {5 - skills.length} more skill{5 - skills.length > 1 ? 's' : ''} needed
                         </p>
                         <p className="text-xs text-amber-500/80 mt-0.5">
@@ -258,9 +265,9 @@ export function StepSkills() {
 
                   {/* Success message when 5+ skills */}
                   {skills.length >= 5 && (
-                    <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/20 flex items-center gap-3">
-                      <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                      <p className="text-sm font-medium text-green-500">
+                    <div className="p-3 md:p-4 rounded-lg bg-green-500/10 border border-green-500/20 flex items-center gap-3">
+                      <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-green-500 flex-shrink-0" />
+                      <p className="text-sm md:text-base font-medium text-green-500">
                         Great! You have enough skills to get great matches
                       </p>
                     </div>
@@ -270,7 +277,7 @@ export function StepSkills() {
 
               {/* Add Skills Combobox - Fixed position container to prevent jumping */}
               <div className="grid gap-2" style={{ contain: 'layout', willChange: 'auto' }}>
-                <Label htmlFor="skills-combobox" className="text-sm font-semibold text-foreground">
+                <Label htmlFor="skills-combobox" className="text-sm md:text-base font-semibold text-foreground">
                   {skills.length > 0 ? "Add more skills" : "Add Skills"} <span className="text-destructive">*</span>
                 </Label>
                 
@@ -308,7 +315,7 @@ export function StepSkills() {
                 </div>
 
                 {typeof errors.skills?.message === "string" && (
-                  <p className="text-xs text-destructive font-medium" role="alert">
+                  <p className="text-xs md:text-sm text-destructive font-medium" role="alert">
                     {errors.skills.message}
                   </p>
                 )}
@@ -317,8 +324,8 @@ export function StepSkills() {
               {/* Role-based Suggestions - Hide when empty (enhanced empty state shows instead) */}
               {skills.length > 0 && skills.length < 3 && suggestedSkills.length > 0 && (
                 <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Sparkles className="w-4 h-4 text-amber-500" />
+                  <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
+                    <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-amber-500" />
                     <span>
                       {role 
                         ? `Based on your role (${role}), consider adding:`
@@ -326,7 +333,7 @@ export function StepSkills() {
                       }
                     </span>
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 max-w-full">
                     {suggestedSkills.map((skill) => (
                       <Button
                         key={skill}
@@ -340,10 +347,10 @@ export function StepSkills() {
                           }
                           field.onChange([...skills, newSkill])
                         }}
-                        className="text-xs h-8"
+                        className="text-xs md:text-sm h-9 md:h-8 min-h-[44px]"
                       >
-                        <Plus className="w-3.5 h-3.5 mr-1" />
-                        {skill}
+                        <Plus className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1" />
+                        <span className="truncate max-w-[150px] md:max-w-none">{skill}</span>
                       </Button>
                     ))}
                   </div>
@@ -352,48 +359,48 @@ export function StepSkills() {
 
               {/* Enhanced Empty State - Show when no skills added */}
               {skills.length === 0 && (
-                <div className="p-8 rounded-xl bg-gradient-to-b from-muted/30 to-muted/20 border border-border/30 text-center space-y-6">
+                <div className="p-6 md:p-8 rounded-xl bg-gradient-to-b from-muted/30 to-muted/20 border border-border/30 text-center space-y-4 md:space-y-6">
                   {/* Icon */}
-                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
-                    <Code2 className="w-8 h-8 text-primary" />
+                  <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
+                    <Code2 className="w-7 h-7 md:w-8 md:h-8 text-primary" />
                   </div>
                   
                   {/* Title & Description */}
                   <div className="space-y-2">
-                    <h3 className="text-lg font-semibold text-foreground">No skills added yet</h3>
-                    <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                    <h3 className="text-base md:text-lg font-semibold text-foreground">No skills added yet</h3>
+                    <p className="text-xs md:text-sm text-muted-foreground max-w-sm mx-auto">
                       Start by adding your top 5 skills. This helps us match you with the right opportunities and collaborators.
                     </p>
                   </div>
                   
                   {/* Guidance Cards */}
                   <div className="grid gap-3 max-w-md mx-auto">
-                    <div className="p-3 rounded-lg bg-background/30 border border-border/30 text-left flex items-start gap-3">
+                    <div className="p-3 md:p-4 rounded-lg bg-background/30 border border-border/30 text-left flex items-start gap-3">
                       <div className="w-6 h-6 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                         <span className="text-xs font-bold text-blue-500">1</span>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-foreground">What do you use most often?</p>
+                        <p className="text-sm md:text-base font-medium text-foreground">What do you use most often?</p>
                         <p className="text-xs text-muted-foreground mt-0.5">Your daily tools and technologies</p>
                       </div>
                     </div>
                     
-                    <div className="p-3 rounded-lg bg-background/30 border border-border/30 text-left flex items-start gap-3">
+                    <div className="p-3 md:p-4 rounded-lg bg-background/30 border border-border/30 text-left flex items-start gap-3">
                       <div className="w-6 h-6 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                         <span className="text-xs font-bold text-green-500">2</span>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-foreground">What are you best at?</p>
+                        <p className="text-sm md:text-base font-medium text-foreground">What are you best at?</p>
                         <p className="text-xs text-muted-foreground mt-0.5">Your strongest expertise areas</p>
                       </div>
                     </div>
                     
-                    <div className="p-3 rounded-lg bg-background/30 border border-border/30 text-left flex items-start gap-3">
+                    <div className="p-3 md:p-4 rounded-lg bg-background/30 border border-border/30 text-left flex items-start gap-3">
                       <div className="w-6 h-6 rounded-full bg-purple-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                         <span className="text-xs font-bold text-purple-500">3</span>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-foreground">What do you want to be hired for?</p>
+                        <p className="text-sm md:text-base font-medium text-foreground">What do you want to be hired for?</p>
                         <p className="text-xs text-muted-foreground mt-0.5">Your target role or projects</p>
                       </div>
                     </div>
@@ -404,7 +411,7 @@ export function StepSkills() {
                     <p className="text-xs text-muted-foreground mb-3">
                       Or start with popular skills:
                     </p>
-                    <div className="flex flex-wrap justify-center gap-2">
+                    <div className="flex flex-wrap justify-center gap-2 max-w-full">
                       {["React", "TypeScript", "Python", "Node.js"].map((skill) => (
                         <Button
                           key={skill}
@@ -418,10 +425,10 @@ export function StepSkills() {
                             }
                             field.onChange([newSkill])
                           }}
-                          className="text-xs h-8"
+                          className="text-xs md:text-sm h-9 md:h-8 min-h-[44px]"
                         >
-                          <Plus className="w-3.5 h-3.5 mr-1" />
-                          {skill}
+                          <Plus className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1" />
+                          <span className="truncate max-w-[120px] md:max-w-none">{skill}</span>
                         </Button>
                       ))}
                     </div>
@@ -430,8 +437,8 @@ export function StepSkills() {
               )}
 
               {/* Helper Text */}
-              <div className="p-4 rounded-lg bg-muted/30 border border-border/30">
-                <p className="text-sm text-muted-foreground">
+              <div className="p-3 md:p-4 rounded-lg bg-muted/30 border border-border/30">
+                <p className="text-xs md:text-sm text-muted-foreground">
                   💡 <strong>Tip:</strong> Select from 1000+ skills or type to add custom skills. Set proficiency levels to help us match you better.
                 </p>
               </div>
