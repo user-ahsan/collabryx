@@ -5,8 +5,9 @@ import { useFormContext, Controller } from "react-hook-form"
 import { Label } from "@/components/ui/label"
 import { SearchableCombobox, type ComboboxOption } from "@/components/ui/searchable-combobox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { X, AlertCircle } from "lucide-react"
+import { X, AlertCircle, GripVertical } from "lucide-react"
 import { skillsDatabase, type Skill } from "@/lib/data/skills-database"
+import { cn } from "@/lib/utils"
 
 interface SkillWithProficiency {
   id: string
@@ -16,6 +17,7 @@ interface SkillWithProficiency {
 
 export function StepSkills() {
   const { control, formState: { errors } } = useFormContext()
+  const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null)
 
   const skillOptions: ComboboxOption[] = React.useMemo(() => 
     skillsDatabase.map((skill: Skill) => ({
@@ -27,6 +29,20 @@ export function StepSkills() {
     })),
     []
   )
+
+  const handleDragStart = (index: number) => setDraggedIndex(index)
+  
+  const handleDragOver = (index: number, skills: SkillWithProficiency[], onChange: (value: SkillWithProficiency[]) => void) => {
+    if (draggedIndex === null || draggedIndex === index) return
+    const newSkills = [...skills]
+    const dragged = newSkills[draggedIndex]
+    newSkills.splice(draggedIndex, 1)
+    newSkills.splice(index, 0, dragged)
+    onChange(newSkills)
+    setDraggedIndex(index)
+  }
+  
+  const handleDragEnd = () => setDraggedIndex(null)
 
   return (
     <div className="space-y-6">
@@ -54,8 +70,33 @@ export function StepSkills() {
                     {skills.map((skill, index) => (
                       <div
                         key={skill.id}
-                        className="flex items-center gap-2 p-3 rounded-lg bg-muted/50 backdrop-blur-sm border border-border/50 hover:border-border/80 transition-colors"
+                        draggable
+                        onDragStart={() => handleDragStart(index)}
+                        onDragOver={(e) => {
+                          e.preventDefault()
+                          handleDragOver(index, skills, field.onChange)
+                        }}
+                        onDragEnd={handleDragEnd}
+                        className={cn(
+                          "flex items-center gap-2 p-3 rounded-lg bg-muted/50 backdrop-blur-sm border border-border/50 hover:border-border/80 transition-all cursor-grab active:cursor-grabbing",
+                          draggedIndex === index && "opacity-50 scale-[0.98]"
+                        )}
                       >
+                        {/* Drag handle */}
+                        <button
+                          type="button"
+                          className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground transition-colors"
+                          aria-label="Drag to reorder"
+                          tabIndex={-1}
+                        >
+                          <GripVertical className="w-4 h-4" aria-hidden="true" />
+                        </button>
+                        
+                        {/* Priority number */}
+                        <span className="text-xs text-muted-foreground w-5 text-center font-medium">
+                          {index + 1}
+                        </span>
+                        
                         {/* Skill name */}
                         <span className="text-sm font-medium flex-1 min-w-0 truncate">
                           {skill.label}
