@@ -119,8 +119,8 @@ export function StepSkills() {
 
               {/* Selected Skills with Integrated Proficiency - Hide when empty */}
               {skills.length > 0 && (
-                <div className="space-y-3">
-                  <div className="grid gap-2">
+                <div className="space-y-3" style={{ contain: 'layout', willChange: 'auto' }}>
+                  <div className="grid gap-2" style={{ contain: 'layout' }}>
                     {skills.map((skill, index) => (
                       <div
                         key={skill.id}
@@ -227,41 +227,44 @@ export function StepSkills() {
                 </div>
               )}
 
-              {/* Add Skills Combobox */}
-              <div className="grid gap-2">
+              {/* Add Skills Combobox - Fixed position container to prevent jumping */}
+              <div className="grid gap-2" style={{ contain: 'layout', willChange: 'auto' }}>
                 <Label htmlFor="skills-combobox" className="text-sm font-semibold text-foreground">
                   {skills.length > 0 ? "Add more skills" : "Add Skills"} <span className="text-destructive">*</span>
                 </Label>
                 
-                <SearchableCombobox
-                  options={skillOptions}
-                  selected={skills.map(s => s.id)}
-                  onChange={(selectedIds) => {
-                    const newSkills = selectedIds.map((id) => {
-                      const existing = skills.find(s => s.id === id)
-                      const option = skillOptions.find(opt => opt.id === id)
-                      return {
-                        id,
-                        label: option?.label || id,
-                        proficiency: existing?.proficiency || "intermediate",
+                {/* Stable container with fixed minimum height to prevent layout shift */}
+                <div className="relative min-h-[56px]" style={{ position: 'relative', contain: 'layout' }}>
+                  <SearchableCombobox
+                    options={skillOptions}
+                    selected={skills.map(s => s.id)}
+                    onChange={(selectedIds) => {
+                      const newSkills = selectedIds.map((id) => {
+                        const existing = skills.find(s => s.id === id)
+                        const option = skillOptions.find(opt => opt.id === id)
+                        return {
+                          id,
+                          label: option?.label || id,
+                          proficiency: existing?.proficiency || "intermediate",
+                        }
+                      })
+                      field.onChange(newSkills)
+                    }}
+                    searchPlaceholder="Search skills (e.g., React, Python, Plumbing)..."
+                    emptyMessage="No skills found. Type to add a custom skill."
+                    maxHeight={350}
+                    allowCustom={true}
+                    onAddCustom={(customSkill) => {
+                      if (!skills.find(s => s.label === customSkill)) {
+                        field.onChange([...skills, { id: `custom-${customSkill}`, label: customSkill, proficiency: "intermediate" }])
                       }
-                    })
-                    field.onChange(newSkills)
-                  }}
-                  searchPlaceholder="Search skills (e.g., React, Python, Plumbing)..."
-                  emptyMessage="No skills found. Type to add a custom skill."
-                  maxHeight={350}
-                  allowCustom={true}
-                  onAddCustom={(customSkill) => {
-                    if (!skills.find(s => s.label === customSkill)) {
-                      field.onChange([...skills, { id: `custom-${customSkill}`, label: customSkill, proficiency: "intermediate" }])
-                    }
-                  }}
-                  showCategories={true}
-                  className="skills-combobox"
-                  aria-required="true"
-                  aria-invalid={!!errors.skills}
-                />
+                    }}
+                    showCategories={true}
+                    className="skills-combobox w-full"
+                    aria-required="true"
+                    aria-invalid={!!errors.skills}
+                  />
+                </div>
 
                 {typeof errors.skills?.message === "string" && (
                   <p className="text-xs text-destructive font-medium" role="alert">
