@@ -1,0 +1,112 @@
+
+> collabryx@0.1.0 build
+> next build
+
+▲ Next.js 16.1.7 (Turbopack)
+- Environments: .env.production, .env
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 13.5s
+  Running TypeScript ...
+  Collecting page data using 15 workers ...
+⚠ Using edge runtime on a page currently disables static generation for that page
+  Generating static pages using 15 workers (0/23) ...
+✅ Environment validation passed
+📋 Configuration: { supabase: '✓', backendMode: 'auto', pythonWorker: '✓' }
+✅ Environment validation passed
+📋 Configuration: { supabase: '✓', backendMode: 'auto', pythonWorker: '✓' }
+✅ Environment validation passed
+📋 Configuration: { supabase: '✓', backendMode: 'auto', pythonWorker: '✓' }
+✅ Environment validation passed
+📋 Configuration: { supabase: '✓', backendMode: 'auto', pythonWorker: '✓' }
+✅ Environment validation passed
+📋 Configuration: { supabase: '✓', backendMode: 'auto', pythonWorker: '✓' }
+✅ Environment validation passed
+📋 Configuration: { supabase: '✓', backendMode: 'auto', pythonWorker: '✓' }
+✅ Environment validation passed
+📋 Configuration: { supabase: '✓', backendMode: 'auto', pythonWorker: '✓' }
+  Generating static pages using 15 workers (5/23) 
+✅ Environment validation passed
+📋 Configuration: { supabase: '✓', backendMode: 'auto', pythonWorker: '✓' }
+✅ Environment validation passed
+📋 Configuration: { supabase: '✓', backendMode: 'auto', pythonWorker: '✓' }
+✅ Environment validation passed
+📋 Configuration: { supabase: '✓', backendMode: 'auto', pythonWorker: '✓' }
+✅ Environment validation passed
+📋 Configuration: { supabase: '✓', backendMode: 'auto', pythonWorker: '✓' }
+✅ Environment validation passed
+📋 Configuration: { supabase: '✓', backendMode: 'auto', pythonWorker: '✓' }
+✅ Environment validation passed
+📋 Configuration: { supabase: '✓', backendMode: 'auto', pythonWorker: '✓' }
+✅ Environment validation passed
+📋 Configuration: { supabase: '✓', backendMode: 'auto', pythonWorker: '✓' }
+✅ Environment validation passed
+📋 Configuration: { supabase: '✓', backendMode: 'auto', pythonWorker: '✓' }
+  Generating static pages using 15 workers (11/23) 
+  Generating static pages using 15 workers (17/23) 
+✅ Environment validation passed
+📋 Configuration: { supabase: '✓', backendMode: 'auto', pythonWorker: '✓' }
+✅ Environment validation passed
+📋 Configuration: { supabase: '✓', backendMode: 'auto', pythonWorker: '✓' }
+✓ Generating static pages using 15 workers (23/23) in 956.5ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /activity
+├ ƒ /admin/moderation
+├ ○ /analytics
+├ ƒ /api/activity/feed
+├ ƒ /api/activity/track/build
+├ ƒ /api/activity/track/view
+├ ƒ /api/ai-mentor/message
+├ ƒ /api/analytics/daily
+├ ƒ /api/auth/callback
+├ ƒ /api/auth/login
+├ ƒ /api/chat
+├ ƒ /api/embeddings/generate
+├ ƒ /api/embeddings/retry-dlq
+├ ƒ /api/embeddings/status/[userId]
+├ ƒ /api/health
+├ ƒ /api/matches/generate
+├ ƒ /api/matches/generate/batch
+├ ƒ /api/matches/health
+├ ƒ /api/moderate
+├ ƒ /api/notifications/cleanup
+├ ƒ /api/notifications/digest
+├ ƒ /api/notifications/send
+├ ƒ /api/upload
+├ ƒ /api/upload/sign
+├ ○ /assistant
+├ ƒ /auth-sync
+├ ○ /bookmarks
+├ ƒ /dashboard
+├ ○ /dashboard/embedding-queue-admin
+├ ƒ /forgot-password
+├ ○ /help
+├ ƒ /login
+├ ƒ /matches
+├ ƒ /messages
+├ ƒ /messages/[id]
+├ ƒ /my-profile
+├ ○ /notifications
+├ ○ /onboarding
+├ ƒ /post/[id]
+├ ○ /privacy
+├ ƒ /profile/[id]
+├ ƒ /register
+├ ○ /requests
+├ ƒ /reset-password
+├ ○ /settings
+├ ○ /settings/billing
+├ ƒ /settings/delete-account
+├ ○ /terms
+└ ƒ /verify-email
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
