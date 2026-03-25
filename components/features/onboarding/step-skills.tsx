@@ -30,6 +30,97 @@ interface SkillWithProficiency {
   proficiency?: string
 }
 
+// Memoized skills list component to prevent re-renders
+const SkillsList = React.memo(({ 
+  skills, 
+  onRemove, 
+  onProficiencyChange,
+  draggedIndex,
+  onDragStart,
+  onDragOver,
+  onDragEnd
+}: {
+  skills: SkillWithProficiency[]
+  onRemove: (id: string) => void
+  onProficiencyChange: (id: string, index: number, val: string) => void
+  draggedIndex: number | null
+  onDragStart: (index: number) => void
+  onDragOver: (index: number) => void
+  onDragEnd: () => void
+}) => {
+  return (
+    <div className="grid gap-2" style={{ contain: 'layout' }}>
+      {skills.map((skill, index) => (
+        <div
+          key={skill.id}
+          draggable
+          onDragStart={() => onDragStart(index)}
+          onDragOver={(e) => {
+            e.preventDefault()
+            onDragOver(index)
+          }}
+          onDragEnd={onDragEnd}
+          className={cn(
+            "flex items-center gap-2 p-3 rounded-lg bg-muted/30 border border-border/30 hover:border-border/50 transition-colors duration-200 cursor-grab active:cursor-grabbing",
+            draggedIndex === index && "opacity-60"
+          )}
+        >
+          {/* Drag handle */}
+          <button
+            type="button"
+            className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground transition-colors duration-200"
+            aria-label="Drag to reorder"
+            tabIndex={-1}
+          >
+            <GripVertical className="w-4 h-4" aria-hidden="true" />
+          </button>
+          
+          {/* Priority number */}
+          <span className="text-xs text-muted-foreground w-5 text-center font-medium">
+            {index + 1}
+          </span>
+          
+          {/* Skill name */}
+          <span className="text-sm font-medium flex-1 min-w-0 truncate">
+            {skill.label}
+          </span>
+          
+          {/* Proficiency selector */}
+          <Select
+            value={skill.proficiency || "intermediate"}
+            onValueChange={(value) => {
+              onProficiencyChange(skill.id, index, value)
+            }}
+          >
+            <SelectTrigger className="w-[140px] h-9 text-xs bg-background/30">
+              <SelectValue placeholder="Select proficiency" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="beginner">Beginner</SelectItem>
+              <SelectItem value="intermediate">Intermediate</SelectItem>
+              <SelectItem value="advanced">Advanced</SelectItem>
+              <SelectItem value="expert">Expert</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          {/* Remove button */}
+          <button
+            type="button"
+            onClick={() => {
+              onRemove(skill.id)
+            }}
+            className="p-1.5 rounded-full hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors duration-200"
+            aria-label={`Remove ${skill.label}`}
+          >
+            <X className="w-4 h-4" aria-hidden="true" />
+          </button>
+        </div>
+      ))}
+    </div>
+  )
+})
+SkillsList.displayName = 'SkillsList'
+
 export function StepSkills() {
   const { control, formState: { errors }, watch } = useFormContext()
   const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null)
@@ -50,16 +141,6 @@ export function StepSkills() {
   )
 
   const handleDragStart = (index: number) => setDraggedIndex(index)
-  
-  const handleDragOver = (index: number, skills: SkillWithProficiency[], onChange: (value: SkillWithProficiency[]) => void) => {
-    if (draggedIndex === null || draggedIndex === index) return
-    const newSkills = [...skills]
-    const dragged = newSkills[draggedIndex]
-    newSkills.splice(draggedIndex, 1)
-    newSkills.splice(index, 0, dragged)
-    onChange(newSkills)
-    setDraggedIndex(index)
-  }
   
   const handleDragEnd = () => setDraggedIndex(null)
 
@@ -83,6 +164,28 @@ export function StepSkills() {
             suggestion => !skills.find(s => s.label.toLowerCase() === suggestion.toLowerCase())
           ).slice(0, 5) // Show max 5 suggestions
 
+          // Handler functions for SkillsList
+          const handleRemoveSkill = (id: string) => {
+            const newSkills = skills.filter(s => s.id !== id)
+            field.onChange(newSkills)
+          }
+          
+          const handleProficiencyChange = (id: string, index: number, value: string) => {
+            const newSkills = [...skills]
+            newSkills[index] = { ...skills[index], proficiency: value }
+            field.onChange(newSkills)
+          }
+          
+          const handleDragOverWithUpdate = (index: number) => {
+            if (draggedIndex === null || draggedIndex === index) return
+            const newSkills = [...skills]
+            const dragged = newSkills[draggedIndex]
+            newSkills.splice(draggedIndex, 1)
+            newSkills.splice(index, 0, dragged)
+            field.onChange(newSkills)
+            setDraggedIndex(index)
+          }
+
           return (
             <div className="space-y-4" aria-labelledby="skills-heading">
               {/* Progress Badge */}
@@ -91,7 +194,7 @@ export function StepSkills() {
                   Your Skills <span className="text-xs text-muted-foreground font-normal">({skills.length}/5 minimum)</span>
                 </Label>
                 <div className={cn(
-                  "px-4 py-2 rounded-full text-sm font-semibold transition-colors",
+                  "px-4 py-2 rounded-full text-sm font-semibold transition-colors duration-200",
                   skills.length >= 5 
                     ? "bg-green-500/20 text-green-500 border border-green-500/30" 
                     : "bg-amber-500/20 text-amber-500 border border-amber-500/30"
@@ -109,7 +212,7 @@ export function StepSkills() {
                 <div className="h-2 bg-secondary rounded-full overflow-hidden">
                   <div 
                     className={cn(
-                      "h-full transition-all duration-500 ease-out",
+                      "h-full transition-all duration-200 ease-out",
                       skills.length >= 5 ? "bg-green-500" : "bg-amber-500"
                     )}
                     style={{ width: `${Math.min((skills.length / 5) * 100, 100)}%` }}
@@ -120,77 +223,15 @@ export function StepSkills() {
               {/* Selected Skills with Integrated Proficiency - Hide when empty */}
               {skills.length > 0 && (
                 <div className="space-y-3" style={{ contain: 'layout', willChange: 'auto' }}>
-                  <div className="grid gap-2" style={{ contain: 'layout' }}>
-                    {skills.map((skill, index) => (
-                      <div
-                        key={skill.id}
-                        draggable
-                        onDragStart={() => handleDragStart(index)}
-                        onDragOver={(e) => {
-                          e.preventDefault()
-                          handleDragOver(index, skills, field.onChange)
-                        }}
-                        onDragEnd={handleDragEnd}
-                        className={cn(
-                          "flex items-center gap-2 p-3 rounded-lg bg-muted/50 backdrop-blur-sm border border-border/50 hover:border-border/80 transition-all cursor-grab active:cursor-grabbing",
-                          draggedIndex === index && "opacity-50 scale-[0.98]"
-                        )}
-                      >
-                        {/* Drag handle */}
-                        <button
-                          type="button"
-                          className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground transition-colors"
-                          aria-label="Drag to reorder"
-                          tabIndex={-1}
-                        >
-                          <GripVertical className="w-4 h-4" aria-hidden="true" />
-                        </button>
-                        
-                        {/* Priority number */}
-                        <span className="text-xs text-muted-foreground w-5 text-center font-medium">
-                          {index + 1}
-                        </span>
-                        
-                        {/* Skill name */}
-                        <span className="text-sm font-medium flex-1 min-w-0 truncate">
-                          {skill.label}
-                        </span>
-                        
-                        {/* Proficiency selector */}
-                        <Select
-                          value={skill.proficiency || "intermediate"}
-                          onValueChange={(value) => {
-                            const newSkills = [...skills]
-                            newSkills[index] = { ...skill, proficiency: value }
-                            field.onChange(newSkills)
-                          }}
-                        >
-                          <SelectTrigger className="w-[140px] h-9 text-xs bg-background/50">
-                            <SelectValue placeholder="Select proficiency" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="beginner">Beginner</SelectItem>
-                            <SelectItem value="intermediate">Intermediate</SelectItem>
-                            <SelectItem value="advanced">Advanced</SelectItem>
-                            <SelectItem value="expert">Expert</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        
-                        {/* Remove button */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newSkills = skills.filter(s => s.id !== skill.id)
-                            field.onChange(newSkills)
-                          }}
-                          className="p-1.5 rounded-full hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
-                          aria-label={`Remove ${skill.label}`}
-                        >
-                          <X className="w-4 h-4" aria-hidden="true" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+                  <SkillsList
+                    skills={skills}
+                    onRemove={handleRemoveSkill}
+                    onProficiencyChange={handleProficiencyChange}
+                    draggedIndex={draggedIndex}
+                    onDragStart={handleDragStart}
+                    onDragOver={handleDragOverWithUpdate}
+                    onDragEnd={handleDragEnd}
+                  />
                   
                   {/* Warning if any skill missing proficiency */}
                   {skills.some(s => !s.proficiency) && (
@@ -311,9 +352,9 @@ export function StepSkills() {
 
               {/* Enhanced Empty State - Show when no skills added */}
               {skills.length === 0 && (
-                <div className="p-8 rounded-xl bg-gradient-to-b from-muted/50 to-muted/30 border border-border/50 text-center space-y-6">
+                <div className="p-8 rounded-xl bg-gradient-to-b from-muted/30 to-muted/20 border border-border/30 text-center space-y-6">
                   {/* Icon */}
-                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto shadow-lg shadow-primary/5">
+                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
                     <Code2 className="w-8 h-8 text-primary" />
                   </div>
                   
@@ -327,7 +368,7 @@ export function StepSkills() {
                   
                   {/* Guidance Cards */}
                   <div className="grid gap-3 max-w-md mx-auto">
-                    <div className="p-3 rounded-lg bg-background/50 border border-border/50 text-left flex items-start gap-3">
+                    <div className="p-3 rounded-lg bg-background/30 border border-border/30 text-left flex items-start gap-3">
                       <div className="w-6 h-6 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                         <span className="text-xs font-bold text-blue-500">1</span>
                       </div>
@@ -337,7 +378,7 @@ export function StepSkills() {
                       </div>
                     </div>
                     
-                    <div className="p-3 rounded-lg bg-background/50 border border-border/50 text-left flex items-start gap-3">
+                    <div className="p-3 rounded-lg bg-background/30 border border-border/30 text-left flex items-start gap-3">
                       <div className="w-6 h-6 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                         <span className="text-xs font-bold text-green-500">2</span>
                       </div>
@@ -347,7 +388,7 @@ export function StepSkills() {
                       </div>
                     </div>
                     
-                    <div className="p-3 rounded-lg bg-background/50 border border-border/50 text-left flex items-start gap-3">
+                    <div className="p-3 rounded-lg bg-background/30 border border-border/30 text-left flex items-start gap-3">
                       <div className="w-6 h-6 rounded-full bg-purple-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                         <span className="text-xs font-bold text-purple-500">3</span>
                       </div>
@@ -389,7 +430,7 @@ export function StepSkills() {
               )}
 
               {/* Helper Text */}
-              <div className="p-4 rounded-lg bg-muted/50 backdrop-blur-sm border border-border/50">
+              <div className="p-4 rounded-lg bg-muted/30 border border-border/30">
                 <p className="text-sm text-muted-foreground">
                   💡 <strong>Tip:</strong> Select from 1000+ skills or type to add custom skills. Set proficiency levels to help us match you better.
                 </p>
