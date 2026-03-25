@@ -52,10 +52,41 @@ export function StepSkills() {
 
           return (
             <div className="space-y-4" aria-labelledby="skills-heading">
+              {/* Selected Skills Display */}
+              {skills.length > 0 && (
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold text-foreground">
+                    Your Skills <span className="text-xs text-muted-foreground font-normal">({skills.length} added)</span>
+                  </Label>
+                  <div className="flex flex-wrap gap-2 p-4 rounded-lg bg-muted/50 backdrop-blur-sm border border-border/50">
+                    {skills.map((skill) => (
+                      <Badge
+                        key={skill.id}
+                        variant="secondary"
+                        className="px-3 py-2 text-sm gap-2 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20"
+                      >
+                        {skill.label}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newSkills = skills.filter(s => s.id !== skill.id)
+                            field.onChange(newSkills)
+                          }}
+                          className="p-0.5 rounded-full hover:bg-primary/20 transition-colors"
+                          aria-label={`Remove ${skill.label}`}
+                        >
+                          <X className="w-3.5 h-3.5" aria-hidden="true" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Add Skills Combobox */}
               <div className="grid gap-2">
                 <Label htmlFor="skills-combobox" className="text-sm font-semibold text-foreground">
-                  Add Skills <span className="text-destructive">*</span>
+                  {skills.length > 0 ? "Add more skills" : "Add Skills"} <span className="text-destructive">*</span>
                 </Label>
                 
                 <SearchableCombobox
