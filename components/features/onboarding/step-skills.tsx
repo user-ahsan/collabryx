@@ -117,7 +117,7 @@ export function StepSkills() {
                 </div>
               </div>
 
-              {/* Selected Skills with Integrated Proficiency */}
+              {/* Selected Skills with Integrated Proficiency - Hide when empty */}
               {skills.length > 0 && (
                 <div className="space-y-3">
                   <div className="grid gap-2">
@@ -270,8 +270,8 @@ export function StepSkills() {
                 )}
               </div>
 
-              {/* Role-based Suggestions */}
-              {skills.length < 3 && suggestedSkills.length > 0 && (
+              {/* Role-based Suggestions - Hide when empty (enhanced empty state shows instead) */}
+              {skills.length > 0 && skills.length < 3 && suggestedSkills.length > 0 && (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Sparkles className="w-4 h-4 text-amber-500" />
@@ -306,17 +306,81 @@ export function StepSkills() {
                 </div>
               )}
 
-              {/* Enhanced Empty State */}
+              {/* Enhanced Empty State - Show when no skills added */}
               {skills.length === 0 && (
-                <div className="p-6 rounded-lg bg-muted/30 border border-border/50 text-center space-y-4">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
-                    <Code2 className="w-6 h-6 text-primary" />
+                <div className="p-8 rounded-xl bg-gradient-to-b from-muted/50 to-muted/30 border border-border/50 text-center space-y-6">
+                  {/* Icon */}
+                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto shadow-lg shadow-primary/5">
+                    <Code2 className="w-8 h-8 text-primary" />
                   </div>
-                  <div>
-                    <p className="font-medium">No skills added yet</p>
-                    <p className="text-sm text-muted-foreground">
-                      Start by adding your top 5 skills from the suggestions below
+                  
+                  {/* Title & Description */}
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-semibold text-foreground">No skills added yet</h3>
+                    <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                      Start by adding your top 5 skills. This helps us match you with the right opportunities and collaborators.
                     </p>
+                  </div>
+                  
+                  {/* Guidance Cards */}
+                  <div className="grid gap-3 max-w-md mx-auto">
+                    <div className="p-3 rounded-lg bg-background/50 border border-border/50 text-left flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="text-xs font-bold text-blue-500">1</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">What do you use most often?</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Your daily tools and technologies</p>
+                      </div>
+                    </div>
+                    
+                    <div className="p-3 rounded-lg bg-background/50 border border-border/50 text-left flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="text-xs font-bold text-green-500">2</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">What are you best at?</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Your strongest expertise areas</p>
+                      </div>
+                    </div>
+                    
+                    <div className="p-3 rounded-lg bg-background/50 border border-border/50 text-left flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-full bg-purple-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="text-xs font-bold text-purple-500">3</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">What do you want to be hired for?</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Your target role or projects</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Quick Start CTA */}
+                  <div className="pt-2">
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Or start with popular skills:
+                    </p>
+                    <div className="flex flex-wrap justify-center gap-2">
+                      {["React", "TypeScript", "Python", "Node.js"].map((skill) => (
+                        <Button
+                          key={skill}
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const newSkill = {
+                              id: `quick-${skill.toLowerCase()}`,
+                              label: skill,
+                              proficiency: "intermediate"
+                            }
+                            field.onChange([newSkill])
+                          }}
+                          className="text-xs h-8"
+                        >
+                          <Plus className="w-3.5 h-3.5 mr-1" />
+                          {skill}
+                        </Button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
