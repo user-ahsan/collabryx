@@ -27,6 +27,8 @@ services:
       - /tmp:noexec,nosuid,size=256m
       - /app/logs:noexec,nosuid,size=512m
       - /home/appuser/.cache:noexec,nosuid,size=512m
+      - /app/.cache:noexec,nosuid,size=256m
+      - /app/.pytest_cache:noexec,nosuid,size=64m
     deploy:
       resources:
         limits:

@@ -4,8 +4,13 @@ Pytest fixtures for embedding service tests
 
 import pytest
 import asyncio
+import logging
 from typing import AsyncGenerator, Generator
 from embedding_generator import EmbeddingGenerator, construct_semantic_text
+
+# Configure logging for tests
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 @pytest.fixture(scope="session")
@@ -17,9 +22,14 @@ def event_loop() -> Generator[asyncio.AbstractEventLoop, None, None]:
 
 
 @pytest.fixture(scope="session")
-async def embedding_generator() -> AsyncGenerator[EmbeddingGenerator, None]:
-    """Provide a singleton embedding generator instance for tests."""
+def embedding_generator() -> EmbeddingGenerator:
+    """
+    Provide a singleton embedding generator instance for tests.
+    Synchronous fixture since EmbeddingGenerator.__init__() is synchronous.
+    """
+    logger.info("Initializing EmbeddingGenerator for tests...")
     generator = EmbeddingGenerator()
+    logger.info("EmbeddingGenerator initialized successfully")
     yield generator
 
 

@@ -37,9 +37,10 @@ COPY --from=builder /app/requirements.txt /app/
 # Pre-download the model during build (as root to avoid permission issues)
 ENV PATH="/app/.venv/bin:$PATH"
 ENV TRANSFORMERS_CACHE=/app/.cache/huggingface
+ENV HF_HOME=/app/.cache/huggingface
 RUN mkdir -p /app/.cache/huggingface && \
     python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')" && \
-    chmod -R 755 /app/.cache/huggingface
+    chmod -R 777 /app/.cache/huggingface
 
 # Copy application code
 COPY main.py .
@@ -53,9 +54,9 @@ COPY tests/ ./tests/
 RUN useradd --create-home --shell /bin/bash appuser
 
 # Create required directories with proper permissions
-RUN mkdir -p /app/logs /tmp && \
+RUN mkdir -p /app/logs /app/.cache /app/.pytest_cache /tmp && \
     chown -R appuser:appuser /app /tmp && \
-    chmod -R 755 /app/.cache
+    chmod -R 777 /app/.cache /app/.pytest_cache /tmp
 
 # Set ownership before switching user
 RUN chown -R appuser:appuser /app

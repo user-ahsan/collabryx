@@ -36,11 +36,11 @@ class EmbeddingGenerator:
 
     def __init__(self):
         if not hasattr(self, "model"):
-            print("Loading embedding model...")
+            logger.info("Loading embedding model...")
             self.model = SentenceTransformer("all-MiniLM-L6-v2")
             self.device = "cuda" if torch.cuda.is_available() else "cpu"
             # No lock needed - SentenceTransformer.encode() is thread-safe
-            print(f"Embedding model loaded successfully. Using device: {self.device}")
+            logger.info(f"Embedding model loaded successfully. Using device: {self.device}")
 
     @retry(
         stop=stop_after_attempt(3),
@@ -90,7 +90,7 @@ class EmbeddingGenerator:
 
             return fixed_embedding
         except Exception as e:
-            print(f"Error generating embedding: {e}")
+            logger.error(f"Error generating embedding: {e}")
             raise
 
     def get_model_info(self) -> dict:
@@ -104,8 +104,12 @@ class EmbeddingGenerator:
         }
 
 
-# Singleton instance
-generator = EmbeddingGenerator()
+def get_generator() -> EmbeddingGenerator:
+    """
+    Lazy initialization of embedding generator singleton.
+    Use this function instead of direct instantiation for clarity.
+    """
+    return EmbeddingGenerator()
 
 
 def construct_semantic_text(profile: dict, skills: list, interests: list) -> str:
