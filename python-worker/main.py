@@ -30,7 +30,7 @@ from prometheus_client import (
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
-from embedding_generator import generator, construct_semantic_text
+from embedding_generator import get_generator, construct_semantic_text
 from rate_limiter import RateLimiter
 from embedding_validator import EmbeddingValidator
 from services.match_generator import MatchGenerator
@@ -604,7 +604,7 @@ async def generate_and_store_embedding(
 
             # Add timeout to prevent hung workers on model failures
             embedding = await asyncio.wait_for(
-                generator.generate_embedding(text),
+                get_generator().generate_embedding(text),
                 timeout=30.0,  # 30 second timeout for embedding generation
             )
             elapsed_ms = (time.time() - start_time) * 1000
@@ -756,7 +756,7 @@ async def process_dead_letter_queue():
                         continue
 
                     # Generate embedding
-                    embedding = await generator.generate_embedding(
+                    embedding = await get_generator().generate_embedding(
                         item["semantic_text"]
                     )
 
@@ -876,7 +876,7 @@ async def process_pending_queue():
                     )
 
                     # Generate embedding
-                    embedding = await generator.generate_embedding(semantic_text)
+                    embedding = await get_generator().generate_embedding(semantic_text)
 
                     # Store embedding
                     success = store_embedding(item["user_id"], embedding, "completed")
@@ -962,7 +962,7 @@ async def root():
     """Root endpoint with service info"""
     return {
         "message": "Collabryx Embedding Service",
-        "model_info": generator.get_model_info(),
+        "model_info": get_generator().get_model_info(),
         "queue_size": request_queue.qsize(),
     }
 
@@ -1001,7 +1001,7 @@ async def health():
     return {
         "status": status,
         "timestamp": time.time(),
-        "model_info": generator.get_model_info(),
+        "model_info": get_generator().get_model_info(),
         "supabase_connected": supabase_healthy,
         "queue_size": request_queue.qsize(),
         "queue_capacity": MAX_QUEUE_SIZE,
@@ -1056,7 +1056,7 @@ async def metrics():
 @app.get("/model-info")
 async def model_info():
     """Get information about the embedding model"""
-    return generator.get_model_info()
+    return get_generator().get_model_info()
 
 
 @app.post("/generate-embedding", response_model=EmbeddingResponse)
