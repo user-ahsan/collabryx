@@ -2,7 +2,6 @@
 
 
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useState, useEffect, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { 
@@ -81,7 +80,7 @@ export function useConnectionRequests(): UseConnectionRequestsReturn {
 
   const acceptRequest = async (connectionId: string): Promise<boolean> => {
     try {
-      const { data, error } = await acceptConnectionRequest(connectionId)
+      const { data: _data, error } = await acceptConnectionRequest(connectionId)
       
       if (error) {
         logger.app.error("Failed to accept connection request", error)
