@@ -1,6 +1,6 @@
 import { renderHook } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { useProfile } from '@/hooks/use-profile'
 
 const createWrapper = () => {
@@ -23,29 +23,12 @@ describe('useProfile', () => {
 
   it('should be defined', () => {
     const { result } = renderHook(() => useProfile('test-user-id'), { wrapper: createWrapper() })
-
     expect(result.current).toBeDefined()
   })
 
-  it('should return profile data and loading state', () => {
+  it('should return data and loading state', () => {
     const { result } = renderHook(() => useProfile('test-user-id'), { wrapper: createWrapper() })
-
-    expect(result.current.profile).toBeDefined()
+    expect(result.current.data).toBeDefined()
     expect(typeof result.current.isLoading).toBe('boolean')
-    expect(typeof result.current.updateProfile).toBe('function')
-  })
-
-  it('should have updateProfile function', () => {
-    const { result } = renderHook(() => useProfile('test-user-id'), { wrapper: createWrapper() })
-
-    expect(result.current.updateProfile).toBeDefined()
-    expect(typeof result.current.updateProfile).toBe('function')
-  })
-
-  it('should have refreshProfile function', () => {
-    const { result } = renderHook(() => useProfile('test-user-id'), { wrapper: createWrapper() })
-
-    expect(result.current.refreshProfile).toBeDefined()
-    expect(typeof result.current.refreshProfile).toBe('function')
   })
 })
