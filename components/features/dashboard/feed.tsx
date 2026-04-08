@@ -71,13 +71,14 @@ export function Feed() {
     const fetchInitialPosts = useCallback(async () => {
         setIsInitialLoading(true)
         try {
-            const { data, error } = await fetchPosts({ 
+            const result = await fetchPosts({ 
                 limit: 20,
                 random: hasEmbedding === false
             })
             
-            if (error) throw error
+            if (result.error) throw result.error
             
+            const data = result.data
             if (data && data.length > 0) {
                 const mapped = data.map(mapPostToUI)
                 setPosts(mapped)
@@ -107,6 +108,7 @@ export function Feed() {
         if (hasEmbedding !== null && posts.length === 0) {
             fetchInitialPosts()
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [hasEmbedding, fetchInitialPosts])
 
     // Stable sort to prevent reordering flickers
