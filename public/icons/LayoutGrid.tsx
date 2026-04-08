@@ -4,7 +4,6 @@ import { motion, useAnimation } from "motion/react";
 import type { Variants } from "motion/react";
 
 const boxVariants: Variants = {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   normal: (_i: number) => ({
     x: 0,
     y: 0,
