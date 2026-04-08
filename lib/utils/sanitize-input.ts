@@ -73,7 +73,7 @@ export function escapeHtml(text: string): string {
 /**
  * Allowed HTML tags for sanitization
  */
-const ALLOWED_TAGS = new Set([
+const _ALLOWED_TAGS = new Set([
   'p', 'br', 'strong', 'em', 'u', 's', 'del', 'ins',
   'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
   'ul', 'ol', 'li',
@@ -86,7 +86,7 @@ const ALLOWED_TAGS = new Set([
 /**
  * Allowed HTML attributes
  */
-const ALLOWED_ATTRS = new Set([
+const _ALLOWED_ATTRS = new Set([
   'href', 'title', 'target', 'rel',
   'src', 'alt', 'width', 'height',
   'colspan', 'rowspan',
@@ -96,7 +96,7 @@ const ALLOWED_ATTRS = new Set([
 /**
  * Dangerous protocols to block
  */
-const DANGEROUS_PROTOCOLS = ['javascript:', 'data:', 'vbscript:']
+const _DANGEROUS_PROTOCOLS = ['javascript:', 'data:', 'vbscript:']
 
 /**
  * Sanitize HTML content
@@ -165,7 +165,7 @@ export function sanitizeUrl(url: string): string | null {
     }
     
     return trimmed
-  } catch (error) {
+  } catch (_error) {
     // If not absolute URL, check if it's a valid relative URL
     if (trimmed.startsWith('/') || trimmed.startsWith('#')) {
       return trimmed
@@ -284,7 +284,7 @@ export function sanitizeJson<T>(input: unknown): T | null {
     }
     
     return parsed as T
-  } catch (error) {
+  } catch (_error) {
     return null
   }
 }
