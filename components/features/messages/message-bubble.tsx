@@ -33,7 +33,7 @@ export function MessageBubble({
         minute: "2-digit" 
     })
 
-    const fullTime = new Date(createdAt).toLocaleString([], {
+    const _fullTime = new Date(createdAt).toLocaleString([], {
         dateStyle: "medium",
         timeStyle: "short"
     })
@@ -57,6 +57,7 @@ export function MessageBubble({
                 {/* Attachment */}
                 {attachmentUrl && attachmentType === "image" && (
                     <div className="mb-2 rounded-lg overflow-hidden">
+                        {/* eslint-disable @next/next/no-img-element */}
                         <img
                             src={attachmentUrl}
                             alt="Attachment"
