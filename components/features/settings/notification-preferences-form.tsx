@@ -62,8 +62,8 @@ export function NotificationPreferencesForm({ userId }: NotificationPreferencesF
     const handleQuickToggle = (field: keyof typeof formData, value: boolean) => {
         updateField(field, value)
         const updatedData = { ...formData, [field]: value }
-        updatePreferences(updatedData).catch((err) => {
-            console.error("Error updating preference:", error)
+        updatePreferences(updatedData).catch((_err) => {
+            console.error("Error updating preference:", _err)
             toast.error("Failed to update preference")
         })
     }
