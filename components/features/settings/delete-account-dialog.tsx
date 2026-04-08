@@ -4,7 +4,6 @@ import * as React from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { motion } from "motion/react"
 import { Loader2, Lock, AlertTriangle, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -120,7 +119,7 @@ export function DeleteAccountForm() {
         "pl-10 h-12 transition-all rounded-xl",
         glass("input")
     )
-    const buttonClasses = cn(
+    const _buttonClasses = cn(
         "w-full h-12 text-lg font-medium shadow-none hover:shadow-lg hover:shadow-primary/20 transition-all rounded-xl",
         glass("buttonPrimary")
     )
