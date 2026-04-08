@@ -72,7 +72,7 @@ function checkHttp(url) {
             statusCode: response.statusCode,
             data: jsonData
           });
-        } catch (error) {
+  } catch (_error) {
           resolve({
             statusCode: response.statusCode,
             data: data
@@ -97,7 +97,7 @@ function getContainerStatus() {
   try {
     const status = exec(`cd "${workerDir}" && docker-compose ps`);
     return status.trim();
-  } catch (error) {
+  } catch (_error) {
     return 'Container not running';
   }
 }
