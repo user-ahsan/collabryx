@@ -59,7 +59,6 @@ export function CreatePostModal() {
         files: mediaFiles,
         previews: mediaPreviews,
         handleFileSelect,
-        removeFile,
         clearFiles
     } = useAttachmentUploadPrePost()
 
