@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { useState, useRef, useEffect } from 'react'
-import { Crop, Upload, X, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { Upload, X, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { useUpdateProfile } from '@/hooks/use-profile'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
@@ -21,7 +21,7 @@ interface AvatarUploadProps {
 
 export function AvatarUpload({
   currentAvatarUrl,
-  userId,
+  userId: _userId,
   className
 }: AvatarUploadProps) {
   const [isUploading, setIsUploading] = useState(false)
@@ -63,7 +63,7 @@ export function AvatarUpload({
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
-    const { data, error } = await supabase.storage
+    const { data: _data, error } = await supabase.storage
       .from('profile-media')
       .upload(fileName, buffer, {
         contentType: file.type,
@@ -162,7 +162,7 @@ export function AvatarUpload({
       })
       setPreview(null)
       toast.success('Avatar removed')
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to remove avatar')
     } finally {
       setIsUploading(false)
@@ -170,7 +170,7 @@ export function AvatarUpload({
   }
 
   const maxSizeMB = (FILE_SIZE_LIMITS.AVATAR / 1024 / 1024).toFixed(1)
-  const allowedTypes = ALLOWED_IMAGE_TYPES.map(t => t.split('/')[1]).join(', ')
+  const _allowedTypes = ALLOWED_IMAGE_TYPES.map(t => t.split('/')[1]).join(', ')
 
   return (
     <div className={cn('w-full', className)}>
@@ -188,6 +188,7 @@ export function AvatarUpload({
           onDrop={handleDrop}
         >
           {preview ? (
+            /* eslint-disable @next/next/no-img-element */
             <img
               src={preview}
               alt="Avatar"
