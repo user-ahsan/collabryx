@@ -1,6 +1,5 @@
- 
 import { describe, it, expect } from 'vitest'
-import { formatInitials } from '../lib/utils/format-initials'
+import { formatInitials } from '@/lib/utils/format-initials'
 
 describe('formatInitials', () => {
   it('should format single name', () => {
