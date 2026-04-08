@@ -352,15 +352,15 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
 
-  } catch (error) {
-    console.error("Error in embeddings generate:", error);
-    
-    // Mark as failed
-    try {
-        await updateEmbeddingStatus(supabase, userId, "failed");
     } catch (error) {
-        // Ignore
-    }
+        console.error("Error in embeddings generate:", error);
+        
+        // Mark as failed
+        try {
+            await updateEmbeddingStatus(supabase, userId, "failed");
+        } catch (_error) {
+            // Ignore
+        }
 
     return NextResponse.json(
       { success: false, error: "Internal server error" },
