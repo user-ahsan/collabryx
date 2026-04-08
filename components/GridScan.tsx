@@ -430,7 +430,7 @@ export const GridScan: React.FC<GridScanProps> = ({
         try {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           await (DeviceOrientationEvent as any).requestPermission();
-        } catch (error) { }
+        } catch (_error) { }
       }
     };
     const onEnter = () => {
@@ -720,7 +720,7 @@ export const GridScan: React.FC<GridScanProps> = ({
           faceapi.nets.faceLandmark68TinyNet.loadFromUri(modelsPath)
         ]);
         if (!canceled) setModelsReady(true);
-      } catch (error) {
+      } catch (_error) {
         if (!canceled) setModelsReady(false);
       }
     };
@@ -746,7 +746,7 @@ export const GridScan: React.FC<GridScanProps> = ({
         });
         video.srcObject = stream;
         await video.play();
-      } catch (error) {
+      } catch (_error) {
         return;
       }
 
@@ -805,7 +805,7 @@ export const GridScan: React.FC<GridScanProps> = ({
             } else {
               setUiFaceActive(false);
             }
-          } catch (error) {
+          } catch (_error) {
             setUiFaceActive(false);
           }
         }
