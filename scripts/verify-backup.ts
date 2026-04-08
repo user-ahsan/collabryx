@@ -66,7 +66,7 @@ async function checkBackupConfiguration(): Promise<BackupStatus> {
     // This check verifies database connectivity and logs the backup policy
     
     // Check if we can access the database
-    const { data, error } = await supabase
+    const { data: _data, error } = await supabase
       .from('profiles')
       .select('id')
       .limit(1)
