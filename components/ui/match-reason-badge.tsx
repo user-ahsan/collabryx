@@ -1,6 +1,5 @@
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
-import { glass } from "@/lib/utils/glass-variants"
 
 export type MatchReasonType = "skill" | "interest" | "availability" | "stage" | "complementary"
 

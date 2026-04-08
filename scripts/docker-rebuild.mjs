@@ -77,7 +77,7 @@ function checkDocker() {
     exec('docker ps');
     log('✅ Docker is running', 'green');
     return true;
-  } catch (error) {
+  } catch (_error) {
     log('❌ Docker is not installed or not running', 'red');
     process.exit(1);
   }
@@ -90,7 +90,7 @@ function stopContainers() {
     execVerbose(`cd "${CONFIG.workerDir}" && docker-compose down --timeout 30`);
     log('✅ Containers stopped', 'green');
     return true;
-  } catch (error) {
+  } catch (_error) {
     log('⚠️  No containers to stop', 'yellow');
     return false;
   }
@@ -109,7 +109,7 @@ function removeImages() {
       log('ℹ️  No old images to remove', 'blue');
       return false;
     }
-  } catch (error) {
+  } catch (_error) {
     log('⚠️  Could not remove images', 'yellow');
     return false;
   }
@@ -181,7 +181,7 @@ async function getHealthDetails() {
       res.on('end', () => {
         try {
           resolve(JSON.parse(data));
-        } catch (error) {
+  } catch (_error) {
           resolve(null);
         }
       });
@@ -269,7 +269,7 @@ async function main() {
     log('   Monitor health: npm run docker:health:monitor', 'blue');
     log('   Check status: npm run docker:status', 'blue');
     log('');
-  } catch (error) {
+  } catch (_error) {
     log('\n❌ Service failed to start properly', 'red');
     log('Check logs with: npm run docker:logs', 'yellow');
     process.exit(1);

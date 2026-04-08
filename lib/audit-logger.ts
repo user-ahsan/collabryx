@@ -98,7 +98,7 @@ export async function getClientIp(): Promise<string | null> {
     }
     
     return null
-  } catch (error) {
+  } catch (_error) {
     return null
   }
 }
@@ -110,7 +110,7 @@ export async function getUserAgent(): Promise<string | null> {
   try {
     const headersList = await headers()
     return headersList.get('user-agent')
-  } catch (error) {
+  } catch (_error) {
     return null
   }
 }

@@ -4,12 +4,10 @@ import { useState, useCallback, useEffect } from "react"
 import { useIsMobile } from "@/hooks/use-media-query"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
 import {
   Bell,
-  Check,
   Trash2,
   X,
   CheckCheck,
@@ -18,7 +16,7 @@ import {
   Heart,
   Star,
 } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 import { toast } from "sonner"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { useRef } from "react"
@@ -35,7 +33,6 @@ import {
   NOTIFICATION_TABS,
   getNotificationCategory,
   NOTIFICATION_TYPOGRAPHY,
-  NOTIFICATION_SPACING,
   type NotificationType,
   type NotificationCategory,
 } from "@/lib/constants/notifications"
@@ -170,7 +167,7 @@ function NotificationList({
   onDelete: (id: string) => void
 }) {
   const { data: notifications, isLoading, error } = useNotifications({ limit: 100 })
-  const markAsRead = useMarkNotificationAsRead()
+  const _markAsRead = useMarkNotificationAsRead()
   const markAllAsRead = useMarkAllNotificationsAsRead()
   const parentRef = useRef<HTMLDivElement>(null)
 
@@ -183,6 +180,7 @@ function NotificationList({
   }) || []
 
   // Virtual scrolling for performance
+  // eslint-disable-next-line react-hooks/incompatible-library
   const virtualizer = useVirtualizer({
     count: filteredNotifications.length,
     getScrollElement: () => parentRef.current,
@@ -313,12 +311,12 @@ function NotificationList({
 }
 
 export function NotificationsWidget({
-  children,
+  children: _children,
 }: NotificationsWidgetProps) {
   const isMobile = useIsMobile()
   const [open, setOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<NotificationCategory>("all")
-  const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set())
+  const [_deletedIds, setDeletedIds] = useState<Set<string>>(new Set())
   const { data: unreadCount } = useUnreadCount()
   
   // Enable real-time updates

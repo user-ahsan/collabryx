@@ -267,7 +267,7 @@ export function logPoolConfig(): void {
 // ===========================================
 
 export { DATABASE_POOL_CONFIG as databasePoolConfig }
-export default {
+const databaseConfig = {
   getPoolConfig,
   getSupabasePoolConfig,
   getPoolSize,
@@ -280,3 +280,4 @@ export default {
   PoolExhaustedError,
   DATABASE_POOL_CONFIG,
 }
+export default databaseConfig

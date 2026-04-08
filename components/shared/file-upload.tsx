@@ -216,6 +216,7 @@ export function FileUpload({
           // Preview Mode
           <div className="relative">
             {accept.includes('image') ? (
+              /* eslint-disable @next/next/no-img-element */
               <img
                 src={preview}
                 alt="Preview"

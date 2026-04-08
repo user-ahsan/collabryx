@@ -45,6 +45,7 @@ export function ActivityItem({ activity }: ActivityItemProps) {
       {/* Avatar */}
       <div className="shrink-0">
         {activity.actor.avatar ? (
+          /* eslint-disable @next/next/no-img-element */
           <img
             src={activity.actor.avatar}
             alt={activity.actor.name}

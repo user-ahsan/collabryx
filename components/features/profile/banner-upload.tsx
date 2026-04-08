@@ -9,8 +9,7 @@ import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import {
   validateBanner,
-  FILE_SIZE_LIMITS,
-  ALLOWED_IMAGE_TYPES
+  FILE_SIZE_LIMITS
 } from '@/lib/utils/file-validation'
 
 interface BannerUploadProps {
@@ -21,7 +20,7 @@ interface BannerUploadProps {
 
 export function BannerUpload({
   currentBannerUrl,
-  userId,
+  userId: _userId,
   className
 }: BannerUploadProps) {
   const [isUploading, setIsUploading] = useState(false)
@@ -76,7 +75,7 @@ export function BannerUpload({
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
-    const { data, error } = await supabase.storage
+    const { data: _data, error } = await supabase.storage
       .from('profile-media')
       .upload(fileName, buffer, {
         contentType: file.type,
@@ -195,7 +194,7 @@ export function BannerUpload({
       })
       setPreview(null)
       toast.success('Banner removed')
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to remove banner')
     } finally {
       setIsUploading(false)
@@ -219,6 +218,7 @@ export function BannerUpload({
         onDrop={handleDrop}
       >
         {preview ? (
+          /* eslint-disable @next/next/no-img-element */
           <img
             ref={imageRef}
             src={preview}

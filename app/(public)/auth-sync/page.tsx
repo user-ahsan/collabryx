@@ -54,7 +54,7 @@ export default async function AuthSyncPage() {
                 destination = "/onboarding"
             }
         }
-    } catch (error) {
+    } catch (_error) {
         return redirect("/login?error=unknown")
     }
 

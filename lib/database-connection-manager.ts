@@ -12,8 +12,7 @@
  * - Connection health monitoring
  */
 
-import { SupabaseClient } from '@supabase/supabase-js'
-import { CircuitBreaker, CircuitBreakerOpenError } from '@/lib/services/circuit-breaker'
+import { CircuitBreaker } from '@/lib/services/circuit-breaker'
 import { logger } from '@/lib/logger'
 
 // ===========================================

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -20,7 +20,6 @@ import {
     Command,
     CommandEmpty,
     CommandGroup,
-    CommandInput,
     CommandItem,
     CommandList,
 } from "@/components/ui/command"
@@ -47,11 +46,7 @@ export function BlockedUsersList({ userId }: BlockedUsersListProps) {
     const [isSearchOpen, setIsSearchOpen] = useState(false)
     const [confirmBlockUser, setConfirmBlockUser] = useState<{ id: string; name: string } | null>(null)
 
-    useEffect(() => {
-        fetchBlockedUsers()
-    }, [userId])
-
-    const fetchBlockedUsers = async () => {
+    const fetchBlockedUsers = useCallback(async () => {
         try {
             setIsLoading(true)
 
@@ -112,9 +107,14 @@ export function BlockedUsersList({ userId }: BlockedUsersListProps) {
         } finally {
             setIsLoading(false)
         }
-    }
+    }, [userId, supabase])
 
-    const searchUsers = async (query: string) => {
+    useEffect(() => {
+        fetchBlockedUsers()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [userId])
+
+    const searchUsers = useCallback(async (query: string) => {
         if (!query || query.length < 2) {
             setSearchResults([])
             return
@@ -148,7 +148,7 @@ export function BlockedUsersList({ userId }: BlockedUsersListProps) {
         } catch (error) {
             console.error('Error searching users:', error)
         }
-    }
+    }, [blockedUsers, userId, supabase])
 
     useEffect(() => {
         const debounce = setTimeout(() => {
@@ -160,7 +160,7 @@ export function BlockedUsersList({ userId }: BlockedUsersListProps) {
         }, 300)
 
         return () => clearTimeout(debounce)
-    }, [searchQuery, blockedUsers, userId])
+    }, [searchQuery, blockedUsers, userId, searchUsers])
 
     const handleBlockUser = async (userToBlock: { id: string; name: string }) => {
         try {
@@ -211,7 +211,7 @@ export function BlockedUsersList({ userId }: BlockedUsersListProps) {
         }
     }
 
-    const handleUnblockUser = async (blockedId: string, userName?: string) => {
+    const handleUnblockUser = async (blockedId: string, _userName?: string) => {
         try {
             setIsUnblocking(blockedId)
 

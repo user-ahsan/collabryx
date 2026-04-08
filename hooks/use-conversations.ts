@@ -2,7 +2,6 @@
 
 
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useState, useEffect, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { logger } from "@/lib/logger"
@@ -44,7 +43,7 @@ export function useConversations(): UseConversationsReturn {
             }
 
             // Fetch conversations
-            const { data: conversations, error: conversationsError } = await supabase
+            const { data: conversations, error: _conversationsError } = await supabase
                 .from("conversations")
                 .select(`
                     id,

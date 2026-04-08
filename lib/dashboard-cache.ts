@@ -46,7 +46,7 @@ export function getCache<T>(key: string): T | null {
         }
         
         return parsed.data
-    } catch (error) {
+    } catch (_error) {
         return null
     }
 }
@@ -61,7 +61,7 @@ export function setCache<T>(key: string, data: T, ttl?: number): void {
             version: CACHE_VERSION,
         }
         localStorage.setItem(key, JSON.stringify(cached))
-    } catch (error) {
+    } catch (_error) {
         // localStorage full or unavailable — no-op
     }
 }
@@ -70,7 +70,7 @@ export function clearCache(key: string): void {
     try {
         if (typeof window === "undefined") return
         localStorage.removeItem(key)
-    } catch (error) {
+    } catch (_error) {
         // no-op
     }
 }

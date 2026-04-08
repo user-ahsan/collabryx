@@ -4,7 +4,7 @@
  * Centralized cache configuration and utilities for React Query
  */
 
-import { QueryClient, DefaultOptions } from "@tanstack/react-query"
+import { QueryClient } from "@tanstack/react-query"
 
 /**
  * Default cache configuration for all queries

@@ -1,6 +1,5 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
 import type { AuditLogInput } from '@/types/actions'
 import type { AuditEventType } from '@/lib/audit-logger'
 import { 
