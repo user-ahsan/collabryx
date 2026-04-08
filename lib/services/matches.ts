@@ -3,7 +3,7 @@ import type { MatchSuggestion, MatchActivity, MatchPreference } from "@/types/da
 import { executeOptimizedQuery } from "@/lib/database-optimization"
 import { formatInitials } from "@/lib/utils/format-initials"
 import { logger } from "@/lib/logger"
-import { withDatabaseProtection, trackDatabaseOperation } from "@/lib/database-connection-manager"
+import { trackDatabaseOperation } from "@/lib/database-connection-manager"
 
 // ===========================================
 // MATCH SUGGESTIONS SERVICE
