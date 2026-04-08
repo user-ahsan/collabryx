@@ -30,7 +30,7 @@ function log(msg, color = 'reset') {
 function execVerbose(cmd) {
   try {
     execSync(cmd, { encoding: 'utf-8', stdio: 'inherit' });
-  } catch (error) {
+  } catch (_error) {
     // Ignore errors
   }
 }
