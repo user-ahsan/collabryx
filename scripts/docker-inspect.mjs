@@ -50,7 +50,7 @@ function exec(command) {
       encoding: 'utf-8',
       stdio: 'pipe'
     }).trim();
-  } catch (error) {
+  } catch (_error) {
     return '';
   }
 }
@@ -60,7 +60,7 @@ function checkDocker() {
     exec('docker --version');
     exec('docker ps');
     return true;
-  } catch (error) {
+  } catch (_error) {
     log('❌ Docker is not installed or not running', 'red');
     process.exit(1);
   }
@@ -219,11 +219,11 @@ async function showHealthChecks() {
           log(`   Model: ${parsed.model_info.model_name}`, 'blue');
           log(`   Queue: ${parsed.queue_size}/${parsed.queue_capacity || 100}`, 'blue');
         }
-      } catch (error) {
+  } catch (_error) {
         log(`   ${health}`, 'gray');
       }
     }
-  } catch (error) {
+  } catch (_error) {
     log('   Could not fetch health endpoint', 'yellow');
   }
 }
@@ -248,7 +248,7 @@ async function showEnvironment() {
       log('   ⚠️  .env file not found', 'yellow');
       log('   Copy .env.example to .env and configure', 'yellow');
     }
-  } catch (error) {
+  } catch (_error) {
     log('   Could not read .env file', 'yellow');
   }
 }
