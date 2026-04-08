@@ -69,8 +69,8 @@ export function PrivacySettingsForm({ userId }: PrivacySettingsFormProps) {
     const handleQuickToggle = <K extends keyof typeof formData>(field: K, value: typeof formData[K]) => {
         updateField(field, value)
         const updatedData = { ...formData, [field]: value }
-        updateSettings(updatedData).catch((err) => {
-            console.error("Error updating privacy setting:", error)
+        updateSettings(updatedData).catch((_err) => {
+            console.error("Error updating privacy setting:", _err)
             toast.error("Failed to update privacy setting")
         })
     }
