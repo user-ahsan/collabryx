@@ -48,7 +48,7 @@ function exec(command, options = {}) {
       stdio: 'pipe',
       ...options
     });
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }
@@ -57,7 +57,7 @@ function getContainerStatus() {
   try {
     const status = exec(`cd "${CONFIG.workerDir}" && docker-compose ps`);
     return status.trim();
-  } catch (error) {
+  } catch (_error) {
     return '';
   }
 }
@@ -66,7 +66,7 @@ function getImageInfo() {
   try {
     const info = exec(`docker images ${CONFIG.imageName} --format "{{.Repository}}:{{.Tag}} - Created: {{.CreatedAt}} - Size: {{.Size}}"`);
     return info.trim();
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }
@@ -75,16 +75,16 @@ function getContainerStats() {
   try {
     const stats = exec(`docker stats ${CONFIG.serviceName} --no-stream --format "CPU: {{.CPUPerc}}, Memory: {{.MemUsage}}, Network I/O: {{.NetIO}}"`);
     return stats.trim();
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }
 
-function getNetworkInfo() {
+function _getNetworkInfo() {
   try {
     const networks = exec(`cd "${CONFIG.workerDir}" && docker-compose ps --format json`);
     return networks.trim();
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 }
@@ -93,7 +93,7 @@ function getVolumeInfo() {
   try {
     const volumes = exec('docker volume ls --format "{{.Name}}"');
     return volumes.trim().split('\n').filter(v => v.includes('collabryx') || v.includes('python-worker'));
-  } catch (error) {
+  } catch (_error) {
     return [];
   }
 }
@@ -117,7 +117,7 @@ function checkPort() {
   });
 }
 
-async function displayStatus() {
+async function _displayStatus() {
   log('\n' + '='.repeat(60), 'cyan');
   log('📊 Docker Status - Python Worker Embedding Service', 'cyan');
   log('='.repeat(60) + '\n', 'cyan');
@@ -168,7 +168,7 @@ async function displayStatus() {
     } else {
       log('   No collabryx network found', 'yellow');
     }
-  } catch (error) {
+  } catch (_error) {
     log('❌ Failed to get container status', 'red');
   }
   
@@ -195,7 +195,7 @@ async function displayStatus() {
               statusCode: res.statusCode,
               data: jsonData
             });
-          } catch (error) {
+          } catch (_error) {
             resolve({
               statusCode: res.statusCode,
               data: data
@@ -212,7 +212,7 @@ async function displayStatus() {
       log('⚠️  Worker responded but may not be healthy', 'yellow');
       log(JSON.stringify(response, null, 2), 'dim');
     }
-  } catch (error) {
+  } catch (_error) {
     log('❌ Health check failed', 'red');
   }
   
