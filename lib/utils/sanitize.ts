@@ -194,7 +194,7 @@ export function sanitizeUrl(url: string): string | null {
     // Validate URL format
     new URL(trimmed)
     return trimmed
-  } catch (error) {
+  } catch (_error) {
     // If not absolute URL, check if it's a valid relative URL
     if (trimmed.startsWith("/") || trimmed.startsWith("#")) {
       return trimmed
