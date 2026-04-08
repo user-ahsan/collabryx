@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import type { PostReactionType } from '@/types/actions'
 import { withAudit } from './audit.server'
-import { updatePostWithLock, incrementPostCounter, updatePostCounterWithLock } from '@/lib/services/posts'
+import { updatePostWithLock, incrementPostCounter } from '@/lib/services/posts'
 
 // ===========================================
 // POSTS SERVER ACTIONS
@@ -97,7 +97,7 @@ export async function updatePost(postId: string, formData: FormData) {
   }
 
   // Get current post with version
-  const { data: existingPost, error: fetchError } = await supabase
+  const { data: existingPost, error: _fetchError } = await supabase
     .from('posts')
     .select('author_id, version')
     .eq('id', postId)
