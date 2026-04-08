@@ -226,7 +226,7 @@ export function useMessages(conversationId?: string, currentUserId?: string): Us
         supabase.removeChannel(channelRef.current)
       }
     }
-  }, [conversationId, queryClient])
+  }, [conversationId, queryClient, currentUserId])
 
   const sendMessage = useCallback(
     async (convId: string, text: string): Promise<boolean> => {
@@ -234,7 +234,7 @@ export function useMessages(conversationId?: string, currentUserId?: string): Us
       try {
         await sendMessageMutationHook.mutateAsync({ conversationId: convId, text })
         return true
-      } catch (error) {
+      } catch (_error) {
         return false
       }
     },
