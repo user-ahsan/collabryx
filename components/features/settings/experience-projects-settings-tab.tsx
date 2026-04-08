@@ -155,7 +155,7 @@ const [experiences, setExperiences] = useState<Experience[]>([])
             const expsToInsert = experiences
                 .filter(e => e.title || e.company)
                 .map(e => {
-                    const { id: _id, ...rest } = e;
+                    const { ...rest } = e;
                     return { user_id: userId, ...rest };
                 })
 
@@ -170,7 +170,7 @@ const [experiences, setExperiences] = useState<Experience[]>([])
             const projsToInsert = projects
                 .filter(p => p.title)
                 .map(p => {
-                    const { id: _id, ...rest } = p;
+                    const { ...rest } = p;
                     return { user_id: userId, ...rest };
                 })
 
