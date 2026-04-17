@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { EffectComposer, RenderPass, EffectPass, BloomEffect, ChromaticAberrationEffect } from 'postprocessing';
 import * as THREE from 'three';
-import * as faceapi from 'face-api.js';
 import './GridScan.css';
 
 type GridScanProps = {
@@ -715,6 +714,7 @@ export const GridScan: React.FC<GridScanProps> = ({
     let canceled = false;
     const load = async () => {
       try {
+        const faceapi = await import('face-api.js');
         await Promise.all([
           faceapi.nets.tinyFaceDetector.loadFromUri(modelsPath),
           faceapi.nets.faceLandmark68TinyNet.loadFromUri(modelsPath)
@@ -727,7 +727,7 @@ export const GridScan: React.FC<GridScanProps> = ({
     load();
     return () => {
       canceled = true;
-    };
+    }
   }, [modelsPath]);
 
   useEffect(() => {
@@ -750,6 +750,7 @@ export const GridScan: React.FC<GridScanProps> = ({
         return;
       }
 
+      const faceapi = await import('face-api.js');
       const opts = new faceapi.TinyFaceDetectorOptions({ inputSize: 320, scoreThreshold: 0.5 });
 
       const detect = async (ts: number) => {

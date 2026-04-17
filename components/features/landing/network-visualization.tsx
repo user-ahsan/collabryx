@@ -1,7 +1,7 @@
 "use client"
 
-import { motion } from "motion/react"
-import { useState } from "react"
+import { motion, useReducedMotion } from "motion/react"
+import { useState, useEffect, useRef } from "react"
 
 interface Node {
     id: number
@@ -16,6 +16,25 @@ interface Connection {
 }
 
 export const NetworkVisualization = () => {
+    const containerRef = useRef<HTMLDivElement>(null)
+    const [isVisible, setIsVisible] = useState(true)
+    const prefersReducedMotion = useReducedMotion()
+
+    useEffect(() => {
+        const container = containerRef.current
+        if (!container) return
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                setIsVisible(entry.isIntersecting)
+            },
+            { threshold: 0.1 }
+        )
+
+        observer.observe(container)
+        return () => observer.disconnect()
+    }, [])
+
     const [nodes] = useState<Node[]>([
         { id: 1, x: 20, y: 20, size: 12 },
         { id: 2, x: 80, y: 15, size: 10 },
@@ -43,8 +62,10 @@ export const NetworkVisualization = () => {
         return node ? { x: node.x, y: node.y } : { x: 0, y: 0 }
     }
 
+    const shouldAnimate = isVisible && !prefersReducedMotion
+
     return (
-        <div className="relative w-full h-full flex items-center justify-center">
+        <div ref={containerRef} className="relative w-full h-full flex items-center justify-center">
             <svg
                 viewBox="0 0 100 100"
                 className="w-full h-full max-w-[500px] max-h-[500px]"
@@ -89,17 +110,17 @@ export const NetworkVisualization = () => {
                             strokeWidth="1"
                             strokeLinecap="round"
                             initial={{ pathLength: 0, opacity: 0 }}
-                            animate={{
+                            animate={shouldAnimate ? {
                                 pathLength: [0, 1, 0],
                                 opacity: [0, 1, 0]
-                            }}
-                            transition={{
+                            } : { pathLength: 1, opacity: 1 }}
+                            transition={shouldAnimate ? {
                                 duration: 3,
                                 delay: idx * 0.8,
                                 repeat: Infinity,
                                 repeatDelay: 2,
                                 ease: "easeInOut"
-                            }}
+                            } : { duration: 0 }}
                         />
                     )
                 })}
@@ -116,14 +137,14 @@ export const NetworkVisualization = () => {
                             stroke="hsl(var(--primary) / 0.2)"
                             strokeWidth="0.5"
                             initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] }}
-                            transition={{
+                            animate={shouldAnimate ? { scale: [1, 1.3, 1], opacity: [0.5, 0, 0.5] } : { scale: 1, opacity: 0 }}
+                            transition={shouldAnimate ? {
                                 duration: 2,
                                 delay: idx * 0.15,
                                 repeat: Infinity,
                                 repeatDelay: 1,
                                 ease: "easeInOut"
-                            }}
+                            } : { duration: 0 }}
                         />
 
                         {/* Main node */}

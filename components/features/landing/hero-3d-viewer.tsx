@@ -6,8 +6,7 @@ import { Suspense, useEffect, useState } from "react"
 import { Slider } from "@/components/ui/slider"
 import * as THREE from "three"
 
-// Preload the model to prevent stuttering and repeated loading
-useGLTF.preload("/Models/scene.gltf")
+
 
 function Model() {
     const { scene } = useGLTF("/Models/scene.gltf")

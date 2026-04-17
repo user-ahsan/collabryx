@@ -48,6 +48,7 @@ export function Globe({
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const pointerInteracting = useRef<number | null>(null)
   const pointerInteractionMovement = useRef(0)
+  const isVisibleRef = useRef(true)
 
   const r = useMotionValue(0)
   const rs = useSpring(r, {
@@ -86,7 +87,7 @@ export function Globe({
       width: widthRef.current * 2,
       height: widthRef.current * 2,
       onRender: (state) => {
-        if (!pointerInteracting.current) phiRef.current += 0.005
+        if (!pointerInteracting.current && isVisibleRef.current) phiRef.current += 0.005
         state.phi = phiRef.current + rs.get()
         state.width = widthRef.current * 2
         state.height = widthRef.current * 2
@@ -99,9 +100,25 @@ export function Globe({
         canvasRef.current.style.opacity = "1"
       }
     }, 500)
+
+    // Visibility observer to pause animation when off-screen
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          isVisibleRef.current = entry.isIntersecting
+        })
+      },
+      { threshold: 0 }
+    )
+
+    if (canvasRef.current) {
+      observer.observe(canvasRef.current)
+    }
+
     return () => {
       globe.destroy()
       window.removeEventListener("resize", onResize)
+      observer.disconnect()
     }
   }, [rs, config])
 
