@@ -1,7 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useCallback } from "react"
 
 export const MeshGradientBackground = ({ className }: { className?: string }) => {
     const containerRef = useRef<HTMLDivElement>(null)
@@ -10,7 +10,14 @@ export const MeshGradientBackground = ({ className }: { className?: string }) =>
         const container = containerRef.current
         if (!container) return
 
+        let lastTime = 0
+        const throttleMs = 16 // ~60fps
+
         const handleMouseMove = (e: MouseEvent) => {
+            const now = performance.now()
+            if (now - lastTime < throttleMs) return
+            lastTime = now
+
             const { clientX, clientY } = e
             const { innerWidth, innerHeight } = window
 
