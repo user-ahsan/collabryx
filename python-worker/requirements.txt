@@ -23,7 +23,7 @@ supabase>=2.3.0
 tenacity==9.0.0
 
 # Environment
-python-dotenv==1.0.1
+python-dotenv==1.2.2
 
 # Testing (dev only)
 pytest==8.3.4
