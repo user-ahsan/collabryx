@@ -205,7 +205,7 @@ export async function getOrCreateActiveSession() {
   // Try to get existing active session
   const { data: existingSession } = await supabase
     .from('ai_mentor_sessions')
-    .select('*')
+    .select('id, user_id, title, status, created_at, updated_at')
     .eq('user_id', user.id)
     .eq('status', 'active')
     .order('created_at', { ascending: false })
@@ -234,7 +234,7 @@ export async function sendMessage(sessionId: string, content: string) {
   // Verify session ownership
   const { data: session, error: sessionError } = await supabase
     .from('ai_mentor_sessions')
-    .select('*')
+    .select('id, user_id, title, status, created_at, updated_at')
     .eq('id', sessionId)
     .eq('user_id', user.id)
     .single()
@@ -338,7 +338,7 @@ export async function getSessionHistory(sessionId: string) {
   // Fetch messages (session ownership verified)
   const { data, error } = await supabase
     .from('ai_mentor_messages')
-    .select('*')
+    .select('id, session_id, role, content, is_saved_to_profile, created_at')
     .eq('session_id', sessionId)
     .order('created_at', { ascending: true })
 
@@ -362,7 +362,7 @@ export async function getUserSessions() {
 
   const { data, error } = await supabase
     .from('ai_mentor_sessions')
-    .select('*')
+    .select('id, user_id, title, status, created_at, updated_at')
     .eq('user_id', user.id)
     .eq('status', 'active')
     .order('created_at', { ascending: false })

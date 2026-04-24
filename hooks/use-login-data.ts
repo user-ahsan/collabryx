@@ -100,7 +100,7 @@ export function useLoginData() {
         
         const { data, error } = await supabase
           .from('profiles')
-          .select('*')
+          .select('id, email, display_name, full_name, headline, bio, avatar_url, banner_url, location, website_url, collaboration_readiness, is_verified, verification_type, university, profile_completion, looking_for, onboarding_completed, created_at, updated_at')
           .eq('id', user.id)
           .single()
         
@@ -133,7 +133,7 @@ export function useLoginData() {
         
         const { data, error } = await supabase
           .from('notifications')
-          .select('*')
+          .select('id, user_id, type, actor_id, actor_name, actor_avatar, content, resource_type, resource_id, is_read, is_actioned, created_at')
           .eq('user_id', user.id)
           .eq('is_read', false)
           .order('created_at', { ascending: false })

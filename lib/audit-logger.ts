@@ -339,7 +339,7 @@ export async function getUserAuditLogs(
     
     let query = supabase
       .from('audit_logs')
-      .select('*')
+      .select('id, user_id, action, resource_type, resource_id, details, ip_address, user_agent, created_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
     
@@ -392,7 +392,7 @@ export async function getFailedLoginAttempts(
     
     let query = supabase
       .from('audit_logs')
-      .select('*')
+      .select('id, user_id, action, resource_type, resource_id, details, ip_address, user_agent, created_at')
       .eq('action', 'auth_login_failed')
       .order('created_at', { ascending: false })
       .limit(options.limit || 100)

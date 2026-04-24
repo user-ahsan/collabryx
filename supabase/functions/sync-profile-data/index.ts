@@ -38,7 +38,7 @@ serve(async (req) => {
     // Get main profile data
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('*')
+      .select('id, email, display_name, full_name, headline, bio, avatar_url, banner_url, location, website_url, collaboration_readiness, is_verified, verification_type, university, profile_completion, looking_for, onboarding_completed, created_at, updated_at')
       .eq('id', userId)
       .single()
 

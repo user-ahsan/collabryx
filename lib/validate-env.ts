@@ -83,9 +83,5 @@ export async function validateEnvRuntime() {
   }
 }
 
-// Only validate at runtime, not during build
-// Vercel sets environment variables at runtime, not build time
-if (typeof window !== 'undefined' && process.env.NODE_ENV === 'production') {
-  // Client-side validation in production
-  validateEnv()
-}
+// Server-side only - environment validation should only run on server
+// Client-side code should never validate server-only env vars like SUPABASE_SERVICE_ROLE_KEY
