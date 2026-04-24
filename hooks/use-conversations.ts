@@ -1,10 +1,11 @@
 "use client"
 
-
-
-import { useState, useEffect, useCallback } from "react"
+import { useQuery } from "@tanstack/react-query"
 import { createClient } from "@/lib/supabase/client"
 import { logger } from "@/lib/logger"
+import { QUERY_PRESETS } from "@/lib/query-cache"
+
+export const CONVERSATIONS_QUERY_KEY = ["conversations"] as const
 
 interface Conversation {
     id: string
@@ -16,98 +17,57 @@ interface Conversation {
     unread_count: number
 }
 
-interface UseConversationsReturn {
-    conversations: Conversation[]
-    isLoading: boolean
-    error: string | null
-    refreshConversations: () => Promise<void>
-}
+async function fetchConversations(): Promise<Conversation[]> {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
 
-export function useConversations(): UseConversationsReturn {
-    const [conversations, setConversations] = useState<Conversation[]>([])
-    const [isLoading, setIsLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
-
-    const fetchConversations = useCallback(async () => {
-        setIsLoading(true)
-        setError(null)
-        
-        try {
-            const supabase = createClient()
-            const { data: { user } } = await supabase.auth.getUser()
-
-            if (!user) {
-                setConversations([])
-                setIsLoading(false)
-                return
-            }
-
-            // Fetch conversations
-            const { data: conversations, error: _conversationsError } = await supabase
-                .from("conversations")
-                .select(`
-                    id,
-                    participant_1,
-                    participant_2,
-                    last_message_text,
-                    last_message_at,
-                    unread_count_1,
-                    unread_count_2,
-                    requester:profiles!conversations_participant_1_fkey (
-                        id,
-                        display_name,
-                        full_name,
-                        avatar_url
-                    ),
-                    receiver:profiles!conversations_participant_2_fkey (
-                        id,
-                        display_name,
-                        full_name,
-                        avatar_url
-                    )
-                `)
-                .or(`participant_1.eq.${user.id},participant_2.eq.${user.id}`)
-                .order("last_message_at", { ascending: false, nullsFirst: false })
-
-            // For each conversation, get the other user info
-            const conversationsPromises = (conversations || []).map(async (conv) => {
-                const isParticipant1 = conv.participant_1 === user.id
-                const otherUser = isParticipant1 ? conv.receiver?.[0] : conv.requester?.[0]
-                const unreadCount = isParticipant1 ? conv.unread_count_2 : conv.unread_count_1
-
-                return {
-                    id: conv.id,
-                    other_user_id: otherUser?.id || "",
-                    other_user_name: otherUser?.display_name || otherUser?.full_name || "Unknown",
-                    other_user_avatar: otherUser?.avatar_url || "",
-                    last_message: conv.last_message_text || "Start a conversation",
-                    last_message_time: formatTimeAgo(conv.last_message_at),
-                    unread_count: unreadCount || 0
-                } as Conversation
-            })
-
-            const conversationsData = await Promise.all(conversationsPromises)
-            setConversations(conversationsData)
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : "Failed to fetch conversations"
-            logger.app.error("Error fetching conversations", err)
-            setError(errorMessage)
-            setConversations([])
-        } finally {
-            setIsLoading(false)
-        }
-    }, [])
-
-    useEffect(() => {
-        fetchConversations()
-    }, [fetchConversations])
-
-    return {
-        conversations,
-        isLoading,
-        error,
-        refreshConversations: fetchConversations
+    if (!user) {
+        return []
     }
+
+    const { data: conversations, error: _conversationsError } = await supabase
+        .from("conversations")
+        .select(`
+            id,
+            participant_1,
+            participant_2,
+            last_message_text,
+            last_message_at,
+            unread_count_1,
+            unread_count_2,
+            requester:profiles!conversations_participant_1_fkey (
+                id,
+                display_name,
+                full_name,
+                avatar_url
+            ),
+            receiver:profiles!conversations_participant_2_fkey (
+                id,
+                display_name,
+                full_name,
+                avatar_url
+            )
+        `)
+        .or(`participant_1.eq.${user.id},participant_2.eq.${user.id}`)
+        .order("last_message_at", { ascending: false, nullsFirst: false })
+
+    const conversationsPromises = (conversations || []).map(async (conv) => {
+        const isParticipant1 = conv.participant_1 === user.id
+        const otherUser = isParticipant1 ? conv.receiver?.[0] : conv.requester?.[0]
+        const unreadCount = isParticipant1 ? conv.unread_count_2 : conv.unread_count_1
+
+        return {
+            id: conv.id,
+            other_user_id: otherUser?.id || "",
+            other_user_name: otherUser?.display_name || otherUser?.full_name || "Unknown",
+            other_user_avatar: otherUser?.avatar_url || "",
+            last_message: conv.last_message_text || "Start a conversation",
+            last_message_time: formatTimeAgo(conv.last_message_at),
+            unread_count: unreadCount || 0,
+        } as Conversation
+    })
+
+    return Promise.all(conversationsPromises)
 }
 
 function formatTimeAgo(dateString: string): string {
@@ -121,4 +81,30 @@ function formatTimeAgo(dateString: string): string {
     if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`
 
     return date.toLocaleDateString()
+}
+
+interface UseConversationsReturn {
+    conversations: Conversation[]
+    isLoading: boolean
+    error: Error | null
+    refreshConversations: () => Promise<void>
+}
+
+export function useConversations(): UseConversationsReturn {
+    const { data: conversations = [], isLoading, error, refetch } = useQuery({
+        queryKey: CONVERSATIONS_QUERY_KEY,
+        queryFn: fetchConversations,
+        staleTime: QUERY_PRESETS.realtime.staleTime,
+        gcTime: QUERY_PRESETS.realtime.gcTime,
+        retry: 1,
+    })
+
+    return {
+        conversations,
+        isLoading,
+        error: error as Error | null,
+        refreshConversations: async () => {
+            await refetch()
+        },
+    }
 }

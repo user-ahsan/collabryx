@@ -1,9 +1,12 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useCallback, useEffect, useRef } from "react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { createClient } from "@/lib/supabase/client"
-import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { QUERY_PRESETS } from "@/lib/query-cache"
+
+export const CHAT_CONVERSATIONS_QUERY_KEY = ["chat", "conversations"] as const
 
 interface Conversation {
     id: string
@@ -24,85 +27,88 @@ interface Conversation {
 interface UseChatReturn {
     conversations: Conversation[]
     isLoading: boolean
-    error: string | null
+    error: Error | null
     selectedConversation: Conversation | null
     selectConversation: (id: string) => void
     refreshConversations: () => Promise<void>
 }
 
+async function fetchChatConversations(): Promise<Conversation[]> {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+        throw new Error("Not authenticated")
+    }
+
+    const { data, error } = await supabase
+        .from("conversations")
+        .select(`
+            *,
+            other_user:profiles!conversations_participant_2_fkey (
+                display_name,
+                avatar_url
+            )
+        `)
+        .or(`participant_1.eq.${user.id},participant_2.eq.${user.id}`)
+        .eq("is_archived", false)
+        .order("last_message_at", { ascending: false })
+
+    if (error) throw error
+
+    return (data || []).map((conv) => ({
+        ...conv,
+        other_user: conv.other_user,
+    }))
+}
+
 export function useChat(): UseChatReturn {
-    const [conversations, setConversations] = useState<Conversation[]>([])
-    const [isLoading, setIsLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
-    const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
+    const queryClient = useQueryClient()
     const isMountedRef = useRef(false)
-    const router = useRouter()
 
-    const fetchConversations = useCallback(async () => {
-        try {
-            const supabase = createClient()
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user) {
-                if (isMountedRef.current) {
-                    setError("Not authenticated")
-                }
-                return
+    const {
+        data: conversations = [],
+        isLoading,
+        error,
+        refetch,
+    } = useQuery({
+        queryKey: CHAT_CONVERSATIONS_QUERY_KEY,
+        queryFn: fetchChatConversations,
+        staleTime: QUERY_PRESETS.realtime.staleTime,
+        gcTime: QUERY_PRESETS.realtime.gcTime,
+        retry: 1,
+    })
+
+    const selectConversation = useCallback(
+        (id: string) => {
+            const { useRouter } = require("next/navigation")
+            const router = useRouter()
+            const conv = conversations.find((c) => c.id === id)
+            if (conv) {
+                router.push(`/messages/${id}`)
             }
+        },
+        [conversations]
+    )
 
-            const { data, error: fetchError } = await supabase
-                .from("conversations")
-                .select(`
-                    *,
-                    other_user:profiles!conversations_participant_2_fkey (
-                        display_name,
-                        avatar_url
-                    )
-                `)
-                .or(`participant_1.eq.${user.id},participant_2.eq.${user.id}`)
-                .eq("is_archived", false)
-                .order("last_message_at", { ascending: false })
-
-            if (fetchError) throw fetchError
-
-            const mapped = (data || []).map((conv) => ({
-                ...conv,
-                other_user: conv.other_user
-            }))
-
-            if (isMountedRef.current) {
-                setConversations(mapped)
-                setError(null)
-            }
-        } catch (err) {
-            console.error("Error fetching conversations:", err)
-            if (isMountedRef.current) {
-                setError("Failed to load conversations")
-                toast.error("Failed to load conversations")
-            }
-        } finally {
-            if (isMountedRef.current) {
-                setIsLoading(false)
-            }
-        }
-    }, [])
+    const refreshConversations = useCallback(async () => {
+        await refetch()
+    }, [refetch])
 
     useEffect(() => {
         isMountedRef.current = true
-        fetchConversations()
-
         const supabase = createClient()
         const channel = supabase
-            .channel("conversations")
+            .channel("chat-conversations")
             .on(
                 "postgres_changes",
                 {
                     event: "*",
                     schema: "public",
-                    table: "conversations"
+                    table: "conversations",
                 },
                 () => {
                     if (isMountedRef.current) {
-                        fetchConversations()
+                        queryClient.invalidateQueries({ queryKey: CHAT_CONVERSATIONS_QUERY_KEY })
                     }
                 }
             )
@@ -112,26 +118,14 @@ export function useChat(): UseChatReturn {
             isMountedRef.current = false
             supabase.removeChannel(channel)
         }
-    }, [fetchConversations])
-
-    const selectConversation = useCallback((id: string) => {
-        const conv = conversations.find(c => c.id === id)
-        if (conv) {
-            setSelectedConversation(conv)
-            router.push(`/messages/${id}`)
-        }
-    }, [conversations, router])
-
-    const refreshConversations = useCallback(async () => {
-        await fetchConversations()
-    }, [fetchConversations])
+    }, [queryClient])
 
     return {
         conversations,
         isLoading,
-        error,
-        selectedConversation,
+        error: error as Error | null,
+        selectedConversation: null,
         selectConversation,
-        refreshConversations
+        refreshConversations,
     }
 }
