@@ -50,6 +50,17 @@ const RATE_LIMITS = {
   },
 } as const
 
+// In-memory store for single-instance deployments (development/local)
+// Limitations:
+// - Resets on server restart
+// - Does not work across multiple serverless instances (Vercel, etc.)
+// - Each serverless function instance has its own isolated store
+//
+// For production with multiple instances, use:
+// - Redis (recommended): Use ioredis or @upstash/redis
+// - Supabase RPC: Create a rate_limit_check RPC function
+//
+// TODO: Implement distributed rate limiting with Redis or Supabase for production
 const store = new Map<string, RateLimitEntry>()
 
 function cleanup() {
