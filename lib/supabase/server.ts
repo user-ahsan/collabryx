@@ -1,23 +1,18 @@
 import { createServerClient } from "@supabase/ssr"
 import { cookies } from "next/headers"
+import { Database } from "@/types/database.types"
 import { SESSION_DURATION_SECONDS } from '@/lib/config/session'
 
 /**
  * Supabase Server Client Configuration
- * 
+ *
  * Server components create new client instances per request.
- * Connection pooling is managed by Supabase's edge infrastructure.
- * We implement application-layer retry logic and timeout handling.
- * 
- * @deprecated Database generic requires type regeneration from Supabase CLI.
- * Current usage: createServerClient() without generic.
- * Target usage: createServerClient<Database>() after running:
- *   npx supabase gen types typescript --local > types/database.types.ts
+ * Configured with Database generic for type-safe queries.
  */
 export async function createClient() {
     const cookieStore = await cookies()
 
-    return createServerClient(
+    return createServerClient<Database>(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
