@@ -25,6 +25,7 @@ import { toast } from "sonner"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
+import { logger } from "@/lib/logger"
 
 // Live announcer for screen reader announcements
 function LiveAnnouncer({ message, priority = "polite" }: { message: string; priority?: "polite" | "assertive" }) {
@@ -123,7 +124,8 @@ export function LoginForm() {
             await new Promise(resolve => setTimeout(resolve, 1000))
             
             window.location.href = "/auth-sync"
-        } catch (_error) {
+        } catch (error) {
+            logger.auth.error('Login failed', { error })
             toast.error("An unexpected error occurred.")
             setIsLoading(false)
         }
