@@ -41,13 +41,14 @@ describe('Chat API', () => {
 
     it('should validate message is not empty', async () => {
       // Override the mock for this specific test to return authenticated user
-      vi.mocked(createClient).mockReturnValue({
+      vi.mocked(createClient).mockResolvedValue({
         auth: { getUser: vi.fn(() => ({ data: { user: { id: '123' } }, error: null })) },
         from: vi.fn(() => ({
           insert: vi.fn(() => ({ data: { id: 'session-123' }, error: null })),
           select: vi.fn(() => ({ data: [], error: null })),
         })),
-      })
+        storage: { from: vi.fn(() => ({ upload: vi.fn(() => ({ data: { path: 'test' }, error: null })), getPublicUrl: vi.fn(() => ({ data: { publicUrl: 'https://example.com' } })) })) },
+      } as any)
 
       const request = new NextRequest('http://localhost/api/chat', {
         method: 'POST',

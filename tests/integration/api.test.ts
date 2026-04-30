@@ -4,8 +4,22 @@ import { NextRequest } from 'next/server'
 
 // Helper to create a mock query builder that supports chained methods
 // All methods explicitly return the builder to support chaining
-const createMockQueryBuilder = (overrides: Record<string, unknown> = {}) => {
-  const builder: Record<string, unknown> = {
+interface MockQueryBuilder {
+  select: ReturnType<typeof vi.fn>
+  insert: ReturnType<typeof vi.fn>
+  update: ReturnType<typeof vi.fn>
+  delete: ReturnType<typeof vi.fn>
+  eq: ReturnType<typeof vi.fn>
+  order: ReturnType<typeof vi.fn>
+  limit: ReturnType<typeof vi.fn>
+  range: ReturnType<typeof vi.fn>
+  single: ReturnType<typeof vi.fn>
+  maybeSingle: ReturnType<typeof vi.fn>
+  upsert: ReturnType<typeof vi.fn>
+}
+
+const createMockQueryBuilder = (overrides: Partial<MockQueryBuilder> = {}): MockQueryBuilder => {
+  const builder: MockQueryBuilder = {
     select: vi.fn().mockReturnValue(undefined),
     insert: vi.fn().mockReturnValue(undefined),
     update: vi.fn().mockReturnValue(undefined),
@@ -21,12 +35,12 @@ const createMockQueryBuilder = (overrides: Record<string, unknown> = {}) => {
   }
 
   // Override all chain methods to return the builder itself
-  const chainMethods = ['select', 'insert', 'update', 'delete', 'eq', 'order', 'limit', 'range', 'upsert']
+  const chainMethods = ['select', 'insert', 'update', 'delete', 'eq', 'order', 'limit', 'range', 'upsert'] as const
   for (const method of chainMethods) {
     builder[method] = vi.fn().mockReturnValue(builder)
   }
 
-  return builder as unknown as ReturnType<typeof createMockQueryBuilder>
+  return builder
 }
 
 // Helper to get a fresh mock builder with proper chain support
@@ -566,10 +580,19 @@ describe('API Integration Tests', () => {
       })
       
       // Mock storage from() - return fresh mock for each call
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       mockSupabaseClient.storage.from.mockReturnValue({
         upload: vi.fn().mockResolvedValue({ data: { path: 'test/path' }, error: null }),
         getPublicUrl: vi.fn().mockReturnValue({ data: { publicUrl: 'https://example.com/test/path' } }),
-      })
+        select: vi.fn(),
+        insert: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+        eq: vi.fn(),
+        order: vi.fn(),
+        limit: vi.fn(),
+        range: vi.fn(),
+      } as any)
       
       // Create form data with a file
       const formData = new FormData()
