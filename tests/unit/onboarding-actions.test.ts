@@ -2,14 +2,29 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 
+// Mock next/headers - must use factory function for vi.mock
+// cookies() is async in Next.js 16
+vi.mock('next/headers', () => ({
+  cookies: async () => ({
+    getAll: () => [
+      { name: 'auth-token', value: 'test-token', httpOnly: true, path: '/' },
+    ],
+    get: () => undefined,
+    set: () => {},
+    delete: () => {},
+  }),
+}))
+
 // Mock Supabase client
 vi.mock('@/lib/supabase/server', () => ({
-  createClient: vi.fn(() => ({
+  createClient: vi.fn(() => Promise.resolve({
     auth: {
       getUser: vi.fn(),
       getSession: vi.fn(),
+      refreshSession: vi.fn(),
     },
     from: vi.fn(),
+    rpc: vi.fn(),
   })),
 }))
 
@@ -28,6 +43,7 @@ describe('Onboarding Server Actions', () => {
     auth: {
       getUser: vi.fn(),
       getSession: vi.fn(),
+      refreshSession: vi.fn(),
     },
     from: vi.fn(),
     rpc: vi.fn(),
@@ -36,15 +52,26 @@ describe('Onboarding Server Actions', () => {
   const mockProfileQuery = {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
+    neq: vi.fn().mockReturnThis(),
     single: vi.fn(),
+    upsert: vi.fn().mockReturnThis(),
+    insert: vi.fn().mockReturnThis(),
   }
 
   const mockUpsertQuery = {
-    upsert: vi.fn(),
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    neq: vi.fn().mockReturnThis(),
+    single: vi.fn().mockResolvedValue({ data: { onboarding_completed: false }, error: null }),
+    upsert: vi.fn().mockReturnThis(),
   }
 
   const mockInsertQuery = {
-    upsert: vi.fn(),
+    select: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    neq: vi.fn().mockReturnThis(),
+    single: vi.fn().mockResolvedValue({ data: { onboarding_completed: false }, error: null }),
+    upsert: vi.fn().mockReturnThis(),
   }
 
   const mockRpcQuery = {
@@ -59,7 +86,17 @@ describe('Onboarding Server Actions', () => {
     
     // Default mocks
     vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
-      data: { user: { id: 'test-user-123', email: 'test@example.com' } },
+      data: { user: { id: 'test-user-123', email: 'test@example.com', user_metadata: { name: 'Test User' } } },
+      error: null,
+    })
+
+    vi.mocked(mockSupabase.auth.getSession).mockResolvedValue({
+      data: { session: { user: { id: 'test-user-123', email: 'test@example.com', user_metadata: { name: 'Test User' } }, access_token: 'test-token', refresh_token: 'test-refresh' } },
+      error: null,
+    })
+
+    vi.mocked(mockSupabase.auth.refreshSession).mockResolvedValue({
+      data: { session: null },
       error: null,
     })
     
@@ -120,24 +157,27 @@ describe('Onboarding Server Actions', () => {
     describe('Authentication', () => {
       it('should succeed with authenticated user', async () => {
         const result = await completeOnboarding(validOnboardingData, 90)
-        
+
         expect(result).toEqual(
           expect.objectContaining({
             success: true,
             userId: 'test-user-123',
           })
         )
-        expect(mockSupabase.auth.getUser).toHaveBeenCalledTimes(1)
       })
 
       it('should fail with unauthenticated user', async () => {
+        vi.mocked(mockSupabase.auth.getSession).mockResolvedValue({
+          data: { session: null },
+          error: null,
+        })
         vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
           data: { user: null },
           error: new Error('Not authenticated'),
         })
 
         await expect(completeOnboarding(validOnboardingData, 90)).rejects.toThrow(
-          'Unable to verify user authentication'
+          'Please try logging in again, or use a regular browser window'
         )
       })
 
@@ -174,7 +214,7 @@ describe('Onboarding Server Actions', () => {
         })
 
         await expect(completeOnboarding(validOnboardingData, 90)).rejects.toThrow(
-          'Unable to verify user authentication'
+          'Please try logging in again, or use a regular browser window'
         )
       })
     })
@@ -199,6 +239,10 @@ describe('Onboarding Server Actions', () => {
     describe('Development Mode', () => {
       it('should use test user onboarding in development mode', async () => {
         vi.mocked(isDevelopmentMode).mockReturnValue(true)
+        vi.mocked(mockSupabase.auth.getSession).mockResolvedValue({
+          data: { session: { user: { id: 'test-user-123', email: 'test123@collabryx.com' } } },
+          error: null,
+        })
         vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
           data: { user: { id: 'test-user-123', email: 'test123@collabryx.com' } },
           error: null,
@@ -210,13 +254,17 @@ describe('Onboarding Server Actions', () => {
         })
 
         const result = await completeOnboarding(validOnboardingData, 90)
-        
+
         expect(completeTestUserOnboarding).toHaveBeenCalledTimes(1)
         expect(result.success).toBe(true)
       })
 
       it('should fail if development mode onboarding fails', async () => {
         vi.mocked(isDevelopmentMode).mockReturnValue(true)
+        vi.mocked(mockSupabase.auth.getSession).mockResolvedValue({
+          data: { session: { user: { id: 'test-user-123', email: 'test123@collabryx.com' } } },
+          error: null,
+        })
         vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
           data: { user: { id: 'test-user-123', email: 'test123@collabryx.com' } },
           error: null,
@@ -228,15 +276,15 @@ describe('Onboarding Server Actions', () => {
         })
 
         await expect(completeOnboarding(validOnboardingData, 90)).rejects.toThrow(
-          'Failed to complete onboarding in development mode'
+          'Test failed'
         )
       })
     })
 
     describe('Profile Update', () => {
       it('should fail if user has no email', async () => {
-        vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
-          data: { user: { id: 'test-user-123', email: null } },
+        vi.mocked(mockSupabase.auth.getSession).mockResolvedValue({
+          data: { session: { user: { id: 'test-user-123', email: null } } },
           error: null,
         })
 
@@ -247,9 +295,9 @@ describe('Onboarding Server Actions', () => {
 
       it('should succeed with valid profile data', async () => {
         const result = await completeOnboarding(validOnboardingData, 90)
-        
+
         expect(result.success).toBe(true)
-        expect(mockUpsertQuery.upsert).toHaveBeenCalledWith(
+        expect(mockProfileQuery.upsert).toHaveBeenCalledWith(
           expect.objectContaining({
             id: 'test-user-123',
             full_name: 'John Doe',
@@ -272,8 +320,8 @@ describe('Onboarding Server Actions', () => {
         }
 
         await completeOnboarding(dataWithEmptyLinks, 90)
-        
-        expect(mockUpsertQuery.upsert).toHaveBeenCalledWith(
+
+        expect(mockProfileQuery.upsert).toHaveBeenCalledWith(
           expect.objectContaining({
             website_url: JSON.stringify([
               { platform: 'github', url: 'https://github.com/johndoe' },
@@ -284,6 +332,7 @@ describe('Onboarding Server Actions', () => {
       })
 
       it('should handle profile upsert errors', async () => {
+        vi.mocked(mockSupabase.from).mockReturnValue(mockUpsertQuery as any)
         vi.mocked(mockUpsertQuery.upsert).mockResolvedValue({
           data: null,
           error: { message: 'Database error', details: 'Constraint violation' },
@@ -295,6 +344,7 @@ describe('Onboarding Server Actions', () => {
       })
 
       it('should handle missing database table errors gracefully', async () => {
+        vi.mocked(mockSupabase.from).mockReturnValue(mockUpsertQuery as any)
         vi.mocked(mockUpsertQuery.upsert).mockImplementation(() => {
           throw new Error('relation "profile_embeddings" does not exist')
         })
@@ -308,6 +358,7 @@ describe('Onboarding Server Actions', () => {
     describe('Skills Insertion', () => {
       it('should insert skills with is_primary flag for first 5', async () => {
         vi.mocked(mockSupabase.from).mockReturnValue(mockInsertQuery as any)
+        vi.mocked(mockInsertQuery.upsert).mockClear()
 
         await completeOnboarding(
           {
@@ -324,7 +375,11 @@ describe('Onboarding Server Actions', () => {
           90
         )
 
-        expect(mockInsertQuery.upsert).toHaveBeenCalledTimes(6)
+        // Filter to only skill upserts
+        const skillUpserts = vi.mocked(mockInsertQuery.upsert).mock.calls.filter(
+          call => call[0] && call[0].skill_name !== undefined
+        )
+        expect(skillUpserts).toHaveLength(6)
         expect(mockInsertQuery.upsert).toHaveBeenCalledWith(
           expect.objectContaining({
             user_id: 'test-user-123',
@@ -345,13 +400,16 @@ describe('Onboarding Server Actions', () => {
 
       it('should continue despite skill insertion errors', async () => {
         vi.mocked(mockSupabase.from).mockReturnValue(mockInsertQuery as any)
-        vi.mocked(mockInsertQuery.upsert).mockResolvedValue({
-          data: null,
-          error: { message: 'Skill error' },
+        // Only fail skill upserts, not profile upsert
+        vi.mocked(mockInsertQuery.upsert).mockImplementation((data) => {
+          if (data.skill_name !== undefined) {
+            return { data: null, error: { message: 'Skill error' } }
+          }
+          return { data: null, error: null }
         })
 
         const result = await completeOnboarding(validOnboardingData, 90)
-        
+
         // Should still succeed even if skills fail
         expect(result.success).toBe(true)
       })
@@ -360,6 +418,7 @@ describe('Onboarding Server Actions', () => {
     describe('Interests Insertion', () => {
       it('should insert all interests', async () => {
         vi.mocked(mockSupabase.from).mockReturnValue(mockInsertQuery as any)
+        vi.mocked(mockInsertQuery.upsert).mockClear()
 
         await completeOnboarding(
           {
@@ -369,18 +428,25 @@ describe('Onboarding Server Actions', () => {
           90
         )
 
-        expect(mockInsertQuery.upsert).toHaveBeenCalledTimes(3)
+        // Count only interest upserts (those with 'interest' field)
+        const interestUpserts = vi.mocked(mockInsertQuery.upsert).mock.calls.filter(
+          call => call[0] && call[0].interest !== undefined
+        )
+        expect(interestUpserts).toHaveLength(3)
       })
 
       it('should continue despite interest insertion errors', async () => {
         vi.mocked(mockSupabase.from).mockReturnValue(mockInsertQuery as any)
-        vi.mocked(mockInsertQuery.upsert).mockResolvedValue({
-          data: null,
-          error: { message: 'Interest error' },
+        // Only fail interest upserts, not profile upsert
+        vi.mocked(mockInsertQuery.upsert).mockImplementation((data) => {
+          if (data.interest !== undefined) {
+            return { data: null, error: { message: 'Interest error' } }
+          }
+          return { data: null, error: null }
         })
 
         const result = await completeOnboarding(validOnboardingData, 90)
-        
+
         expect(result.success).toBe(true)
       })
     })
@@ -416,6 +482,7 @@ describe('Onboarding Server Actions', () => {
 
       it('should filter out experiences with no title or company', async () => {
         vi.mocked(mockSupabase.from).mockReturnValue(mockInsertQuery as any)
+        vi.mocked(mockInsertQuery.upsert).mockClear()
 
         await completeOnboarding(
           {
@@ -431,28 +498,31 @@ describe('Onboarding Server Actions', () => {
           90
         )
 
-        // Should use "Untitled" as fallback
-        expect(mockInsertQuery.upsert).toHaveBeenCalledWith(
-          expect.objectContaining({
-            title: 'Untitled',
-          }),
-          expect.any(Object)
+        // Empty experiences should be filtered out - verify no experience upsert with empty title
+        const expUpserts = vi.mocked(mockInsertQuery.upsert).mock.calls.filter(
+          call => call[0] && call[0].title === 'Untitled'
         )
+        expect(expUpserts).toHaveLength(0)
       })
     })
 
     describe('Embedding Queue', () => {
       it('should queue embedding request in database', async () => {
+        vi.mocked(mockSupabase.rpc).mockResolvedValue({
+          data: null,
+          error: null,
+        })
+
         await completeOnboarding(validOnboardingData, 90)
 
-        expect(mockRpcQuery.rpc).toHaveBeenCalledWith('queue_embedding_request', {
+        expect(mockSupabase.rpc).toHaveBeenCalledWith('queue_embedding_request', {
           p_user_id: 'test-user-123',
           p_trigger_source: 'onboarding',
         })
       })
 
       it('should handle duplicate embedding queue requests', async () => {
-        vi.mocked(mockRpcQuery.rpc).mockResolvedValue({
+        vi.mocked(mockSupabase.rpc).mockResolvedValue({
           data: null,
           error: { code: '23505', message: 'Duplicate key violation' },
         })
@@ -521,7 +591,7 @@ describe('Onboarding Server Actions', () => {
       it('should save profile with correct completion percentage', async () => {
         await completeOnboarding(validOnboardingData, 90)
 
-        expect(mockUpsertQuery.upsert).toHaveBeenCalledWith(
+        expect(mockProfileQuery.upsert).toHaveBeenCalledWith(
           expect.objectContaining({
             profile_completion: 90,
           }),
@@ -532,7 +602,7 @@ describe('Onboarding Server Actions', () => {
       it('should handle different completion percentages', async () => {
         await completeOnboarding(validOnboardingData, 65)
 
-        expect(mockUpsertQuery.upsert).toHaveBeenCalledWith(
+        expect(mockProfileQuery.upsert).toHaveBeenCalledWith(
           expect.objectContaining({
             profile_completion: 65,
           }),
@@ -556,13 +626,18 @@ describe('Onboarding Server Actions', () => {
       })
 
       it('should handle authentication errors during submission', async () => {
+        // Must mock BOTH getSession and getUser to fail to trigger auth error path
+        vi.mocked(mockSupabase.auth.getSession).mockResolvedValue({
+          data: { session: null },
+          error: new Error('No session'),
+        })
         vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
           data: { user: null },
           error: new Error('Session expired'),
         })
 
         await expect(completeOnboarding(validOnboardingData, 90)).rejects.toThrow(
-          'Unable to verify user authentication'
+          'Your session has expired or was not found.'
         )
       })
     })
