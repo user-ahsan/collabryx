@@ -22,19 +22,19 @@ declare global {
       scrollTo: (target: string | number | HTMLElement, options?: object) => void
     }
   }
-}
 
-interface DeviceOrientationEventWithPermission extends DeviceOrientationEvent {
-  requestPermission?: () => Promise<'granted' | 'denied'>
-}
-
-interface BloomEffectWithLuminanceMaterial {
-  blendMode: {
-    opacity: { value: number }
+  interface DeviceOrientationEventWithPermission extends DeviceOrientationEvent {
+    requestPermission?: () => Promise<'granted' | 'denied'>
   }
-  luminanceMaterial: {
-    threshold: number
-    smoothing: number
+
+  interface BloomEffectWithLuminanceMaterial {
+    blendMode: {
+      opacity: { value: number }
+    }
+    luminanceMaterial: {
+      threshold: number
+      smoothing: number
+    }
   }
 }
 
