@@ -1,24 +1,26 @@
 import { describe, it, expect } from 'vitest'
-import { stripHtml } from '@/lib/utils/sanitize'
+import { stripHtml, sanitizeText, escapeHtml, sanitizeMarkdown } from '@/lib/utils/sanitize'
 
 describe('Sanitize', () => {
-  it('should handle plain text', () => {
-    expect(stripHtml('Hello')).toBe('Hello')
+  describe('stripHtml', () => {
+    it('should handle plain text', () => {
+      expect(stripHtml('Hello')).toBe('Hello')
+    })
+
+    it('should remove HTML tags', () => {
+      expect(stripHtml('<p>Hello</p>')).toBe('Hello')
+    })
+
+    it('should handle mixed content', () => {
+      expect(stripHtml('Hello <b>world</b>!')).toBe('Hello world!')
+    })
+
+    it('should handle empty string', () => {
+      expect(stripHtml('')).toBe('')
+    })
   })
 
-  it('should remove HTML tags', () => {
-    expect(stripHtml('<p>Hello</p>')).toBe('Hello')
-  })
-
-  it('should handle mixed content', () => {
-    expect(stripHtml('Hello <b>world</b>!')).toBe('Hello world!')
-  })
-
-  it('should handle empty string', () => {
-    expect(stripHtml('')).toBe('')
-  })
-})
-
+  describe('sanitizeText', () => {
     it('should trim whitespace by default', () => {
       expect(sanitizeText('  Hello  ')).toBe('Hello')
     })

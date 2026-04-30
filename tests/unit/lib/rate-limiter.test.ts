@@ -52,20 +52,18 @@ describe('Rate Limiter', () => {
 
     it('should include retry-after header when blocked', () => {
       const request = createMockRequest('10.0.0.3')
-      
+
       // Exceed limit
       for (let i = 0; i < 105; i++) {
         rateLimit(request, 'general')
       }
-      
+
       const result = rateLimit(request, 'general')
-      
-      if (result.response) {
-        // Retry-After is included in the response JSON body, not in returned headers
-        const body = result.response as unknown as { retryAfter?: number }
-        expect(body.retryAfter).toBeDefined()
-        expect(typeof body.retryAfter).toBe('number')
-      }
+
+      expect(result.allowed).toBe(false)
+      // Retry-After is at top level of return value
+      expect(result.retryAfter).toBeDefined()
+      expect(typeof result.retryAfter).toBe('number')
     })
 
     it('should use different limits for different types', () => {

@@ -4,7 +4,14 @@ import { cosineSimilarity } from '@/lib/utils/vector-math'
 import { BM25, BM25Document } from '@/lib/services/bm25'
 import type { RetrievedContext } from './types'
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+let openaiInstance: OpenAI | null = null
+
+function getOpenAIClient(): OpenAI {
+  if (!openaiInstance) {
+    openaiInstance = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  }
+  return openaiInstance
+}
 
 export interface VectorRetrieverOptions {
   limit?: number
@@ -64,7 +71,7 @@ export async function retrieveContextFromVectorStore(
 }
 
 async function generateQueryEmbedding(query: string): Promise<number[]> {
-  const response = await openai.embeddings.create({
+  const response = await getOpenAIClient().embeddings.create({
     model: 'text-embedding-3-small',
     input: query,
     dimensions: 384

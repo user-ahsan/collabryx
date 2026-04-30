@@ -1,17 +1,39 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { retrieveContextFromVectorStore } from '@/lib/rag/vector-retriever'
 
+// Create mock chain for Supabase query builder
+const createMockQueryBuilder = () => {
+  const queryBuilder = {
+    select: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockResolvedValue({ data: [], error: null })
+  }
+  return queryBuilder
+}
+
+const createMockSupabaseClient = () => ({
+  from: vi.fn().mockReturnValue(createMockQueryBuilder()),
+  rpc: vi.fn()
+})
+
 vi.mock('@/lib/supabase/server', () => ({
-  createClient: vi.fn(() => ({
-    rpc: vi.fn()
-  }))
+  createClient: vi.fn(() => createMockSupabaseClient())
 }))
 
-const mockEmbeddings = { create: vi.fn() }
+const { mockEmbeddings, MockOpenAI } = vi.hoisted(() => {
+  const mockEmbeddings = { create: vi.fn() }
+  // Use regular function, not arrow function, so it can be used as constructor
+  const MockOpenAI = vi.fn().mockImplementation(function(this: { embeddings: typeof mockEmbeddings }) {
+    return {
+      embeddings: mockEmbeddings
+    }
+  })
+  return { mockEmbeddings, MockOpenAI }
+})
+
 vi.mock('openai', () => ({
-  default: vi.fn().mockImplementation(() => ({
-    embeddings: mockEmbeddings
-  }))
+  __esModule: true,
+  default: MockOpenAI,
+  OpenAI: MockOpenAI
 }))
 
 describe('vector-retriever', () => {
@@ -28,16 +50,14 @@ describe('vector-retriever', () => {
 
     it('should combine vector and keyword scores correctly', async () => {
       const { createClient } = await import('@/lib/supabase/server')
-      const { OpenAI } = await import('openai')
 
-      const mockSupabaseClient = {
-        rpc: vi.fn()
-      }
+      const mockSupabaseClient = createMockSupabaseClient()
       ;(createClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabaseClient)
-      ;(OpenAI as unknown as { embeddings: { create: ReturnType<typeof vi.fn> } }).embeddings.create.mockResolvedValue({
+      ;(new MockOpenAI() as unknown as { embeddings: { create: ReturnType<typeof vi.fn> } }).embeddings.create.mockResolvedValue({
         data: [{ embedding: mockEmbedding }]
       })
 
+      // Mock vector search (match_profile_embeddings RPC)
       mockSupabaseClient.rpc.mockResolvedValueOnce({
         data: [
           {
@@ -54,12 +74,17 @@ describe('vector-retriever', () => {
         error: null
       })
 
-      mockSupabaseClient.rpc.mockResolvedValueOnce({
-        data: [
-          { id: 'user-1', display_name: 'Alice', headline: 'React Developer', bio: '5 years experience', looking_for: ['mentorship'], skills: [{ skill_name: 'React' }], interests: [{ interest: 'AI' }] },
-          { id: 'user-2', display_name: 'Bob', headline: 'Backend Engineer', bio: '3 years experience', looking_for: ['collaboration'], skills: [{ skill_name: 'Node' }], interests: [{ interest: 'Databases' }] }
-        ],
-        error: null
+      // Mock keyword search (profiles select with limit 100)
+      const mockQueryBuilder = mockSupabaseClient.from('profiles')
+      ;(mockQueryBuilder.select as ReturnType<typeof vi.fn>).mockReturnValue({
+        ...mockQueryBuilder,
+        limit: vi.fn().mockResolvedValue({
+          data: [
+            { id: 'user-1', display_name: 'Alice', headline: 'React Developer', bio: '5 years experience', looking_for: ['mentorship'], skills: [{ skill_name: 'React' }], interests: [{ interest: 'AI' }] },
+            { id: 'user-2', display_name: 'Bob', headline: 'Backend Engineer', bio: '3 years experience', looking_for: ['collaboration'], skills: [{ skill_name: 'Node' }], interests: [{ interest: 'Databases' }] }
+          ],
+          error: null
+        })
       })
 
       const result = await retrieveContextFromVectorStore('React developer', 'current-user')
@@ -70,23 +95,24 @@ describe('vector-retriever', () => {
 
     it('should handle vector search failure and fallback to keyword only', async () => {
       const { createClient } = await import('@/lib/supabase/server')
-      const { OpenAI } = await import('openai')
 
-      const mockSupabaseClient = {
-        rpc: vi.fn()
-      }
+      const mockSupabaseClient = createMockSupabaseClient()
       ;(createClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabaseClient)
-      ;(OpenAI as unknown as { embeddings: { create: ReturnType<typeof vi.fn> } }).embeddings.create.mockResolvedValue({
+      ;(new MockOpenAI() as unknown as { embeddings: { create: ReturnType<typeof vi.fn> } }).embeddings.create.mockResolvedValue({
         data: [{ embedding: mockEmbedding }]
       })
 
       mockSupabaseClient.rpc.mockRejectedValueOnce(new Error('Database connection failed'))
 
-      mockSupabaseClient.rpc.mockResolvedValueOnce({
-        data: [
-          { id: 'user-2', display_name: 'Bob', headline: 'Backend Engineer', bio: 'Node.js developer', looking_for: ['collaboration'], skills: [{ skill_name: 'Node' }], interests: [{ interest: 'Databases' }] }
-        ],
-        error: null
+      const mockQueryBuilder = mockSupabaseClient.from('profiles')
+      ;(mockQueryBuilder.select as ReturnType<typeof vi.fn>).mockReturnValue({
+        ...mockQueryBuilder,
+        limit: vi.fn().mockResolvedValue({
+          data: [
+            { id: 'user-2', display_name: 'Bob', headline: 'Backend Engineer', bio: 'Node.js developer', looking_for: ['collaboration'], skills: [{ skill_name: 'Node' }], interests: [{ interest: 'Databases' }] }
+          ],
+          error: null
+        })
       })
 
       const result = await retrieveContextFromVectorStore('backend developer', 'current-user')
@@ -97,13 +123,10 @@ describe('vector-retriever', () => {
 
     it('should handle embedding generation failure gracefully', async () => {
       const { createClient } = await import('@/lib/supabase/server')
-      const { OpenAI } = await import('openai')
 
-      const mockSupabaseClient = {
-        rpc: vi.fn()
-      }
+      const mockSupabaseClient = createMockSupabaseClient()
       ;(createClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabaseClient)
-      ;(OpenAI as unknown as { embeddings: { create: ReturnType<typeof vi.fn> } }).embeddings.create.mockRejectedValue(
+      ;(new MockOpenAI() as unknown as { embeddings: { create: ReturnType<typeof vi.fn> } }).embeddings.create.mockRejectedValue(
         new Error('OpenAI API error')
       )
 
@@ -116,18 +139,20 @@ describe('vector-retriever', () => {
 
     it('should return empty array when both searches fail', async () => {
       const { createClient } = await import('@/lib/supabase/server')
-      const { OpenAI } = await import('openai')
 
-      const mockSupabaseClient = {
-        rpc: vi.fn()
-      }
+      const mockSupabaseClient = createMockSupabaseClient()
       ;(createClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabaseClient)
-      ;(OpenAI as unknown as { embeddings: { create: ReturnType<typeof vi.fn> } }).embeddings.create.mockResolvedValue({
+      ;(new MockOpenAI() as unknown as { embeddings: { create: ReturnType<typeof vi.fn> } }).embeddings.create.mockResolvedValue({
         data: [{ embedding: mockEmbedding }]
       })
 
       mockSupabaseClient.rpc.mockRejectedValueOnce(new Error('Database error'))
-      mockSupabaseClient.rpc.mockRejectedValueOnce(new Error('Database error'))
+
+      const mockQueryBuilder = mockSupabaseClient.from('profiles')
+      ;(mockQueryBuilder.select as ReturnType<typeof vi.fn>).mockReturnValue({
+        ...mockQueryBuilder,
+        limit: vi.fn().mockRejectedValue(new Error('Keyword search error'))
+      })
 
       const result = await retrieveContextFromVectorStore('test', 'current-user')
 
@@ -137,13 +162,10 @@ describe('vector-retriever', () => {
 
     it('should use custom weights when provided', async () => {
       const { createClient } = await import('@/lib/supabase/server')
-      const { OpenAI } = await import('openai')
 
-      const mockSupabaseClient = {
-        rpc: vi.fn()
-      }
+      const mockSupabaseClient = createMockSupabaseClient()
       ;(createClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabaseClient)
-      ;(OpenAI as unknown as { embeddings: { create: ReturnType<typeof vi.fn> } }).embeddings.create.mockResolvedValue({
+      ;(new MockOpenAI() as unknown as { embeddings: { create: ReturnType<typeof vi.fn> } }).embeddings.create.mockResolvedValue({
         data: [{ embedding: mockEmbedding }]
       })
 
@@ -163,11 +185,15 @@ describe('vector-retriever', () => {
         error: null
       })
 
-      mockSupabaseClient.rpc.mockResolvedValueOnce({
-        data: [
-          { id: 'user-1', display_name: 'Alice', headline: 'Full Stack Developer', bio: null, looking_for: [], skills: [], interests: [] }
-        ],
-        error: null
+      const mockQueryBuilder = mockSupabaseClient.from('profiles')
+      ;(mockQueryBuilder.select as ReturnType<typeof vi.fn>).mockReturnValue({
+        ...mockQueryBuilder,
+        limit: vi.fn().mockResolvedValue({
+          data: [
+            { id: 'user-1', display_name: 'Alice', headline: 'Full Stack Developer', bio: null, looking_for: [], skills: [], interests: [] }
+          ],
+          error: null
+        })
       })
 
       const result = await retrieveContextFromVectorStore('full stack', 'current-user', {
@@ -180,19 +206,20 @@ describe('vector-retriever', () => {
 
     it('should handle database query returning no results', async () => {
       const { createClient } = await import('@/lib/supabase/server')
-      const { OpenAI } = await import('openai')
 
-      const mockSupabaseClient = {
-        rpc: vi.fn()
-      }
+      const mockSupabaseClient = createMockSupabaseClient()
       ;(createClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabaseClient)
-      ;(OpenAI as unknown as { embeddings: { create: ReturnType<typeof vi.fn> } }).embeddings.create.mockResolvedValue({
+      ;(new MockOpenAI() as unknown as { embeddings: { create: ReturnType<typeof vi.fn> } }).embeddings.create.mockResolvedValue({
         data: [{ embedding: mockEmbedding }]
       })
 
       mockSupabaseClient.rpc.mockResolvedValueOnce({ data: [], error: null })
 
-      mockSupabaseClient.rpc.mockResolvedValueOnce({ data: [], error: null })
+      const mockQueryBuilder = mockSupabaseClient.from('profiles')
+      ;(mockQueryBuilder.select as ReturnType<typeof vi.fn>).mockReturnValue({
+        ...mockQueryBuilder,
+        limit: vi.fn().mockResolvedValue({ data: [], error: null })
+      })
 
       const result = await retrieveContextFromVectorStore('nonexistent query xyz', 'current-user')
 

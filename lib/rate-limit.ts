@@ -150,6 +150,7 @@ export function rateLimit(
   allowed: boolean
   response?: NextResponse
   headers: Record<string, string>
+  retryAfter?: number
 } {
   const config = RATE_LIMITS[type]
   const fingerprint = getFingerprint(request)
@@ -162,23 +163,25 @@ export function rateLimit(
   }
 
   if (!result.allowed) {
+    const retryAfter = Math.ceil((result.resetAt - Date.now()) / 1000)
     return {
       allowed: false,
       response: NextResponse.json(
         {
           error: 'Too many requests',
           message: 'Rate limit exceeded. Please try again later.',
-          retryAfter: Math.ceil((result.resetAt - Date.now()) / 1000),
+          retryAfter,
         },
         {
           status: 429,
           headers: {
             ...headers,
-            'Retry-After': Math.ceil((result.resetAt - Date.now()) / 1000).toString(),
+            'Retry-After': retryAfter.toString(),
           },
         }
       ),
       headers,
+      retryAfter,
     }
   }
 

@@ -1,4 +1,4 @@
-import { renderHook } from '@testing-library/react'
+import { renderHook, waitFor } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { useNotifications } from '@/hooks/use-notifications'
@@ -41,7 +41,12 @@ describe('useNotifications', () => {
     mockFrom.mockReturnValue({
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
-          order: vi.fn().mockResolvedValue({ data: [], error: null }),
+          order: vi.fn().mockResolvedValue({
+            data: [
+              { id: '1', type: 'message', content: 'Test notification', user_id: 'user-123', created_at: new Date().toISOString() },
+            ],
+            error: null,
+          }),
         }),
       }),
     })
@@ -52,9 +57,11 @@ describe('useNotifications', () => {
     expect(result.current).toBeDefined()
   })
 
-  it('should return data and loading state', () => {
+  it('should return data and loading state', async () => {
     const { result } = renderHook(() => useNotifications(), { wrapper: createWrapper() })
-    expect(result.current.data).toBeDefined()
+    await waitFor(() => {
+      expect(result.current.data).toBeDefined()
+    })
     expect(Array.isArray(result.current.data)).toBe(true)
     expect(typeof result.current.isLoading).toBe('boolean')
   })

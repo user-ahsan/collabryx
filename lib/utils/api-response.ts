@@ -4,7 +4,7 @@ export function errorResponse(
   code: string,
   message: string,
   status: number,
-  requestId?: string
+  details?: unknown
 ) {
   return NextResponse.json(
     {
@@ -12,7 +12,7 @@ export function errorResponse(
       error: {
         code,
         message,
-        ...(requestId && { requestId }),
+        ...(details !== undefined && { details }),
       },
     },
     { status }
