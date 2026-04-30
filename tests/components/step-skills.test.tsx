@@ -26,7 +26,7 @@ vi.mock('@/components/ui/searchable-combobox', () => ({
     })
     
     // Get unique categories from options
-    const categories = [...new Set(options.map((o: any) => o.category).filter(Boolean))]
+    const categories = [...new Set(options.map((o: any) => o.category).filter(Boolean))] as string[]
     
     return (
       <div data-testid="mock-combobox" className={className}>
