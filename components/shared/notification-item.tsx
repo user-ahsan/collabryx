@@ -1,6 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
+import { logger } from "@/lib/logger"
 import { useMarkNotificationAsRead, useDeleteNotification } from "@/hooks/use-notifications"
 import type { NotificationWithActor } from "@/lib/services/notifications"
 import { useRouter } from "next/navigation"
@@ -75,7 +76,8 @@ export function NotificationItem({ notification }: NotificationItemProps) {
           }
         }
       })
-    } catch (_error) {
+    } catch (error) {
+      logger.app.error('Failed to delete notification', { error })
       toast.error("Failed to delete notification")
     } finally {
       setIsDeleting(false)
