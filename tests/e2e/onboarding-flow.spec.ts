@@ -123,7 +123,7 @@ test.describe('Onboarding Flow - Complete E2E Tests', () => {
       await page.getByLabel('Display Name (Optional)').fill('JohnDoe') // uppercase not allowed
       await page.getByRole('button', { name: 'Next Step' }).click()
 
-      await expect(page.getByText('Display name can only contain lowercase')).toBeVisible()
+      await expect(page.getByText('Display name can only contain lowercase letters, numbers, and underscores')).toBeVisible()
     })
 
     test('should accept valid basic info', async ({ page }) => {
