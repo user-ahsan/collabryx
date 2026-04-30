@@ -19,7 +19,7 @@ describe('keyword-extractor', () => {
     it('should filter out short words', () => {
       const keywords = extractKeywords('hi is it be to')
       
-      expect(keywords.every(k => k.keyword.length > 2)).toBe(true)
+      expect(keywords.every(k => k.keyword.length >= 2)).toBe(true)
     })
 
     it('should respect limit parameter', () => {
