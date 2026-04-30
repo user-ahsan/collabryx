@@ -100,7 +100,7 @@ export function ProfileSettingsTab({ userId }: { userId: string }) {
     }, [])
 
     useEffect(() => {
-        if (!isPlacesApiLoaded || !locationInputRef.current) return
+        if (!isPlacesApiLoaded || !locationInputRef.current || !window.google?.maps?.places) return
 
         const autocomplete = new window.google.maps.places.Autocomplete(locationInputRef.current, {
             types: ['(cities)'],
@@ -109,7 +109,7 @@ export function ProfileSettingsTab({ userId }: { userId: string }) {
         autocomplete.addListener('place_changed', () => {
             const place = autocomplete.getPlace()
             if (place && (place.formatted_address || place.name)) {
-                setProfile(prev => ({ ...prev, location: place.formatted_address || place.name }))
+                setProfile(prev => ({ ...prev, location: place.formatted_address || place.name || '' }))
             }
         })
     }, [isPlacesApiLoaded])

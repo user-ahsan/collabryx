@@ -6,6 +6,7 @@ import { Upload, X, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { useUpdateProfile } from '@/hooks/use-profile'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
+import { logger } from '@/lib/logger'
 import { toast } from 'sonner'
 import {
   validateAvatar,
@@ -162,7 +163,8 @@ export function AvatarUpload({
       })
       setPreview(null)
       toast.success('Avatar removed')
-    } catch (_error) {
+    } catch (error) {
+      logger.app.error('Failed to remove avatar', { error })
       toast.error('Failed to remove avatar')
     } finally {
       setIsUploading(false)
