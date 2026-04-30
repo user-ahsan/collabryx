@@ -427,7 +427,7 @@ export const GridScan: React.FC<GridScanProps> = ({
         'requestPermission' in (DeviceOrientationEvent as unknown as { requestPermission: unknown })
       ) {
         try {
-          await (DeviceOrientationEvent as DeviceOrientationEventWithPermission).requestPermission?.();
+          await (DeviceOrientationEvent as unknown as { requestPermission: () => Promise<string> }).requestPermission?.();
         } catch (_error) { }
       }
     };
@@ -662,7 +662,10 @@ export const GridScan: React.FC<GridScanProps> = ({
       u.uScanDelay.value = Math.max(0.0, scanDelay);
     }
     if (bloomRef.current) {
-      const bloom = bloomRef.current as BloomEffectWithLuminanceMaterial
+      const bloom = bloomRef.current as unknown as {
+        blendMode: { opacity: { value: number } }
+        luminanceMaterial: { threshold: number; smoothing: number }
+      }
       bloom.blendMode.opacity.value = Math.max(0, bloomIntensity);
       bloom.luminanceMaterial.threshold = bloomThreshold;
       bloom.luminanceMaterial.smoothing = bloomSmoothing;
