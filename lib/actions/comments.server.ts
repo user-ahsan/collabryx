@@ -76,7 +76,7 @@ export async function createComment(formData: FormData) {
   )
 
   if (error) {
-    logger.error('Failed to create comment:', error)
+    logger.db.error('Failed to create comment:', error)
     return { error: 'Failed to create comment' }
   }
 
