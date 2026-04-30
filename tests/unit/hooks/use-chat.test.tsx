@@ -1,7 +1,42 @@
 import { renderHook } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { useChat } from '@/hooks/use-chat'
+
+// Mock next/navigation
+const mockPush = vi.fn()
+const mockRefresh = vi.fn()
+vi.mock('next/navigation', async () => {
+  const actual = await vi.importActual('next/navigation')
+  return {
+    ...actual,
+    useRouter: () => ({
+      push: mockPush,
+      refresh: mockRefresh,
+    }),
+  }
+})
+
+// Mock Supabase client
+const mockGetUser = vi.fn()
+const mockFrom = vi.fn()
+const mockRemoveChannel = vi.fn()
+const mockSubscribe = vi.fn()
+const mockChannel = vi.fn()
+
+vi.mock('@/lib/supabase/client', () => ({
+  createClient: () => ({
+    auth: {
+      getUser: mockGetUser,
+    },
+    from: mockFrom,
+    removeChannel: mockRemoveChannel,
+    channel: mockChannel.mockReturnValue({
+      on: vi.fn().mockReturnThis(),
+      subscribe: mockSubscribe,
+    }),
+  }),
+}))
 
 const createWrapper = () => {
   const queryClient = new QueryClient({
@@ -19,6 +54,30 @@ const createWrapper = () => {
 describe('useChat', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    // Default mock for authenticated user
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: 'user-123' } },
+      error: null,
+    })
+    // Default mock for conversations query
+    mockFrom.mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        or: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            order: vi.fn().mockResolvedValue({ data: [], error: null }),
+          }),
+        }),
+      }),
+    })
+    mockChannel.mockReturnValue({
+      on: vi.fn().mockReturnThis(),
+      subscribe: mockSubscribe,
+    })
+    mockSubscribe.mockResolvedValue('SUBSCRIBED')
+  })
+
+  afterEach(() => {
+    vi.resetAllMocks()
   })
 
   it('should be defined', () => {
