@@ -39,7 +39,7 @@ describe('Button', () => {
     expect(destructive.firstChild).toHaveClass('bg-destructive')
   })
 
-  it('should apply size classes', () => {
+it('should apply size classes', () => {
     const { container: sm } = render(<Button size="sm">Small</Button>)
     const { container: lg } = render(<Button size="lg">Large</Button>)
     const { container: icon } = render(<Button size="icon">Icon</Button>)
@@ -47,5 +47,25 @@ describe('Button', () => {
     expect(sm.firstChild).toHaveClass('h-8')
     expect(lg.firstChild).toHaveClass('h-10')
     expect(icon.firstChild).toHaveClass('size-9')
+  })
+
+  it('should have aria-label on icon-only buttons', () => {
+    render(<Button size="icon" aria-label="Close dialog" />)
+    expect(screen.getByRole('button')).toHaveAttribute('aria-label', 'Close dialog')
+  })
+
+  it('should have aria-disabled when disabled', () => {
+    render(<Button disabled>Click me</Button>)
+    expect(screen.getByText('Click me')).toHaveAttribute('aria-disabled', 'true')
+  })
+
+  it('should have aria-invalid on destructive variant', () => {
+    render(<Button variant="destructive">Delete</Button>)
+    expect(screen.getByText('Delete')).toHaveAttribute('aria-invalid', 'true')
+  })
+
+it('should not override explicit aria-label on icon button', () => {
+    render(<Button size="icon" aria-label="Custom label" />)
+    expect(screen.getByRole('button')).toHaveAttribute('aria-label', 'Custom label')
   })
 })

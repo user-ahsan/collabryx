@@ -41,6 +41,7 @@ function Button({
   variant,
   size,
   asChild = false,
+  children,
   ...props
 }: React.ComponentProps<"button"> &
   VariantProps<typeof buttonVariants> & {
@@ -48,10 +49,22 @@ function Button({
   }) {
   const Comp = asChild ? Slot : "button"
 
+  // Determine if this is an icon-only button (no visible text content)
+  const isIconOnly = size === "icon" || size === "icon-sm" || size === "icon-lg"
+  const hasTextContent = React.Children.toArray(children).some(
+    (child) => typeof child === "string" && child.trim().length > 0
+  )
+
+  // Icon-only buttons require aria-label for accessibility
+  const needsAriaLabel = isIconOnly && !hasTextContent && !props["aria-label"]
+
   return (
     <Comp
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
+      aria-disabled={props.disabled || props["aria-disabled"]}
+      aria-invalid={variant === "destructive" ? true : props["aria-invalid"]}
+      aria-label={needsAriaLabel ? "Icon button" : props["aria-label"]}
       {...props}
     />
   )
