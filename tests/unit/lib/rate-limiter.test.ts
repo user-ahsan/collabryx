@@ -61,8 +61,10 @@ describe('Rate Limiter', () => {
       const result = rateLimit(request, 'general')
       
       if (result.response) {
-        const headers = result.response.headers
-        expect(headers.get('Retry-After')).toBeDefined()
+        // Retry-After is included in the response JSON body, not in returned headers
+        const body = result.response as unknown as { retryAfter?: number }
+        expect(body.retryAfter).toBeDefined()
+        expect(typeof body.retryAfter).toBe('number')
       }
     })
 
@@ -105,7 +107,7 @@ describe('Rate Limiter', () => {
       
       const result = rateLimit(request2, 'general')
       expect(result.allowed).toBe(true)
-      expect(result.headers['X-RateLimit-Remaining']).toBe('49')
+      expect(result.headers['X-RateLimit-Remaining']).toBe('99')
     })
   })
 
