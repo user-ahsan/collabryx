@@ -66,7 +66,9 @@ function Button({
       aria-invalid={variant === "destructive" ? true : props["aria-invalid"]}
       aria-label={needsAriaLabel ? "Icon button" : props["aria-label"]}
       {...props}
-    />
+    >
+      {children}
+    </Comp>
   )
 }
 
