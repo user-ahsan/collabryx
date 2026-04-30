@@ -12,11 +12,13 @@ describe('Streaming Utilities', () => {
 
       const tokens: string[] = []
       let result = await reader.read()
+      let timeout = 1000 // 1 second timeout
 
-      while (!result.done) {
+      while (!result.done && timeout > 0) {
         const chunk = decoder.decode(result.value)
         tokens.push(chunk)
         result = await reader.read()
+        timeout -= 10
       }
 
       expect(tokens.length).toBeGreaterThan(0)
@@ -32,10 +34,12 @@ describe('Streaming Utilities', () => {
 
       let lastChunk = ''
       let result = await reader.read()
+      let timeout = 1000 // 1 second timeout
 
-      while (!result.done) {
+      while (!result.done && timeout > 0) {
         lastChunk = decoder.decode(result.value)
         result = await reader.read()
+        timeout -= 10
       }
 
       expect(lastChunk).toContain('data: [DONE]')
@@ -82,9 +86,16 @@ describe('Streaming Utilities', () => {
       vi.clearAllMocks()
     })
 
+    // Helper to create an async generator from an array of strings
+    const createAsyncGenerator = async function* (values: string[]): AsyncGenerator<string> {
+      for (const value of values) {
+        yield value
+      }
+    }
+
     it('should return a Response object', async () => {
-      const mockStream = new ReadableStream()
-      mockProvider.stream = vi.fn().mockReturnValue(mockStream as unknown as AsyncGenerator<string>)
+      const mockStream = createAsyncGenerator(['test'])
+      mockProvider.stream = vi.fn().mockReturnValue(mockStream)
 
       const response = await createMessageStream(mockMessages, mockProvider)
 
@@ -110,17 +121,8 @@ describe('Streaming Utilities', () => {
     })
 
     it('should transform stream to SSE format', async () => {
-      const encoder = new TextEncoder()
-
-      const mockStream = new ReadableStream({
-        start(controller) {
-          controller.enqueue(encoder.encode('Hello'))
-          controller.enqueue(encoder.encode(' World'))
-          controller.close()
-        }
-      })
-
-      mockProvider.stream = vi.fn().mockReturnValue(mockStream as unknown as AsyncGenerator<string>)
+      const mockStream = createAsyncGenerator(['Hello', ' World'])
+      mockProvider.stream = vi.fn().mockReturnValue(mockStream)
 
       const response = await createMessageStream(mockMessages, mockProvider)
       expect(response).toBeInstanceOf(Response)
