@@ -44,8 +44,8 @@ describe('Button', () => {
     const { container: lg } = render(<Button size="lg">Large</Button>)
     const { container: icon } = render(<Button size="icon">Icon</Button>)
 
-    expect(sm.firstChild).toHaveClass('h-9')
-    expect(lg.firstChild).toHaveClass('h-11')
-    expect(icon.firstChild).toHaveClass('h-10')
+    expect(sm.firstChild).toHaveClass('h-8')
+    expect(lg.firstChild).toHaveClass('h-10')
+    expect(icon.firstChild).toHaveClass('size-9')
   })
 })
