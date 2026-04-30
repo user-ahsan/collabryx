@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest'
 import { POST, GET } from '@/app/api/chat/route'
 import { NextRequest } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(() => ({
@@ -28,6 +29,8 @@ describe('Chat API', () => {
 
   describe('POST /api/chat', () => {
     it('should return 401 when not authenticated', async () => {
+      // requiresCSRF returns false, so CSRF check is skipped
+      // createClient mock returns user: null, so auth check returns 401
       const request = new NextRequest('http://localhost/api/chat', {
         method: 'POST',
         body: JSON.stringify({ message: 'Hello' }),
@@ -37,15 +40,14 @@ describe('Chat API', () => {
     })
 
     it('should validate message is not empty', async () => {
-      vi.mock('@/lib/supabase/server', () => ({
-        createClient: vi.fn(() => ({
-          auth: { getUser: vi.fn(() => ({ data: { user: { id: '123' } }, error: null })) },
-          from: vi.fn(() => ({
-            insert: vi.fn(() => ({ data: null, error: null })),
-            select: vi.fn(() => ({ data: [], error: null })),
-          })),
+      // Override the mock for this specific test to return authenticated user
+      vi.mocked(createClient).mockReturnValue({
+        auth: { getUser: vi.fn(() => ({ data: { user: { id: '123' } }, error: null })) },
+        from: vi.fn(() => ({
+          insert: vi.fn(() => ({ data: { id: 'session-123' }, error: null })),
+          select: vi.fn(() => ({ data: [], error: null })),
         })),
-      }))
+      })
 
       const request = new NextRequest('http://localhost/api/chat', {
         method: 'POST',
