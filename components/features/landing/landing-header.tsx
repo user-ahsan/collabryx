@@ -128,7 +128,7 @@ export const LandingHeader: React.FC = () => {
                                     const element = document.querySelector(selector);
                                     if (element) {
                                         if (typeof window !== 'undefined' && 'lenis' in window) {
-                                            window.lenis?.scrollTo(element);
+                                            window.lenis?.scrollTo(element as HTMLElement);
                                         } else {
                                             element.scrollIntoView({ behavior: 'smooth' });
                                         }
@@ -171,7 +171,7 @@ export const LandingHeader: React.FC = () => {
                                         const element = document.querySelector(selector);
                                         if (element) {
                                             if (typeof window !== 'undefined' && 'lenis' in window) {
-                                                window.lenis?.scrollTo(element);
+                                                window.lenis?.scrollTo(element as HTMLElement);
                                             } else {
                                                 element.scrollIntoView({ behavior: 'smooth' });
                                             }
