@@ -35,6 +35,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
+import { logger } from "@/lib/logger"
 import { createClient } from "@/lib/supabase/client"
 import { getInitials } from "@/lib/utils/format-initials"
 
@@ -93,7 +94,8 @@ function getCachedRequests(): PendingRequest[] | null {
         const parsed = JSON.parse(cached)
         if (Array.isArray(parsed) && parsed.length > 0) return parsed
         return null
-    } catch (_error) {
+    } catch (error) {
+        logger.app.error('Failed to parse cached requests', { error })
         return null
     }
 }
@@ -101,8 +103,8 @@ function getCachedRequests(): PendingRequest[] | null {
 function setCachedRequests(data: PendingRequest[]) {
     try {
         localStorage.setItem(CACHE_KEY, JSON.stringify(data))
-    } catch (_error) {
-        // localStorage full or unavailable — no-op
+    } catch (error) {
+        logger.app.error('Failed to cache requests', { error })
     }
 }
 
@@ -167,8 +169,8 @@ export function RequestReminderModal({ className }: RequestReminderModalProps) {
                 setLocalRequests([])
                 setCachedRequests([])
             }
-        } catch (_error) {
-            // API failed — try cache, then fallback
+        } catch (error) {
+            logger.app.error('Failed to fetch requests', { error })
             const cached = getCachedRequests()
             setLocalRequests(cached ?? DEFAULT_REQUESTS)
         } finally {
@@ -204,8 +206,8 @@ export function RequestReminderModal({ className }: RequestReminderModalProps) {
                 .from("connections")
                 .update({ status: type === "accept" ? "accepted" : "declined" })
                 .eq("id", id)
-        } catch (_error) {
-            // API call failed — still remove locally for UX, will sync on next fetch
+        } catch (error) {
+            logger.app.error('Failed to update connection status', { error })
         }
 
         setLocalRequests(prev => prev.filter(r => r.id !== id))
@@ -236,8 +238,8 @@ export function RequestReminderModal({ className }: RequestReminderModalProps) {
                                     .update({ status: "pending" })
                                     .eq("id", id)
                                     .then(() => { })
-                            } catch (_error) {
-                                // silent — will reconcile on next fetch
+                            } catch (error) {
+                                logger.app.error('Failed to undo action', { error })
                             }
                         },
                     },
@@ -526,7 +528,8 @@ function formatTimestamp(isoString: string): string {
         if (diffHours < 24) return `${diffHours}h ago`
         if (diffDays < 7) return `${diffDays}d ago`
         return date.toLocaleDateString()
-    } catch (_error) {
+    } catch (error) {
+        logger.app.error('Failed to format timestamp', { error })
         return isoString
     }
 }
