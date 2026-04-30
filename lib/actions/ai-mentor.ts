@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import OpenAI from 'openai'
 import Anthropic from '@anthropic-ai/sdk'
 import { revalidatePath } from 'next/cache'
+import { assembleAndBuildPrompt } from '@/lib/rag/context-assembler'
 
 // Initialize AI clients
 const openai = new OpenAI({
@@ -264,19 +265,25 @@ export async function sendMessage(sessionId: string, content: string) {
     .order('created_at', { ascending: true })
     .limit(10)
 
-  // Prepare messages for LLM
-  const systemPrompt = `You are Collabryx AI Mentor, a helpful career advisor and collaboration assistant.
-Help users:
-- Find relevant connections based on their goals
-- Improve their profiles
-- Discover project opportunities
-- Navigate career decisions
+  const ragMessages: AIMessage[] = (messages || []).map((m, i) => ({
+    id: `msg-${i}`,
+    role: m.role as 'user' | 'assistant',
+    content: m.content,
+    created_at: new Date().toISOString(),
+  }))
 
-Be concise, encouraging, and practical. Focus on actionable advice.`
+  // Assemble RAG context and build enhanced prompt
+  const { context, systemPrompt, warnings } = await assembleAndBuildPrompt(
+    user.id,
+    content,
+    sessionId,
+    ragMessages
+  )
 
+  // Prepare messages for LLM with RAG-enhanced system prompt
   const llmMessages = [
-    { role: 'system', content: systemPrompt },
-    ...(messages || []).map(m => ({
+    { role: 'system' as const, content: systemPrompt },
+    ...ragMessages.map(m => ({
       role: m.role,
       content: m.content,
     })),
@@ -309,7 +316,15 @@ Be concise, encouraging, and practical. Focus on actionable advice.`
 
   revalidatePath('/assistant')
 
-  return { data: aiMessage }
+  return {
+    data: aiMessage,
+    context_used: {
+      profile: !!context.profile,
+      retrieved_contexts: context.retrieved_contexts?.length || 0,
+      session_summarized: !!context.session_summary
+    },
+    warnings
+  }
 }
 
 /**
