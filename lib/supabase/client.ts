@@ -1,13 +1,12 @@
 import { createBrowserClient } from "@supabase/ssr"
-import { Database } from "@/types/database.types"
 
 /**
  * Supabase Client Configuration
  *
- * Browser client configured with Database generic for type-safe queries.
+ * Browser client for type-safe queries.
  */
 export function createClient() {
-    return createBrowserClient<Database>(
+    return createBrowserClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
         {
