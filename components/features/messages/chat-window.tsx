@@ -14,6 +14,7 @@ import { useMessages } from "@/hooks/use-messages"
 import { useTypingIndicator } from "@/hooks/use-typing-indicator"
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { logger } from "@/lib/logger"
 import { formatInitials } from "@/lib/utils/format-initials"
 
 interface ChatWindowProps {
@@ -87,8 +88,8 @@ export function ChatWindow({ chatId, onBackToList, isConnected }: ChatWindowProp
                         initials: formatInitials(name)
                     })
                 }
-            } catch (_error) {
-                // Fallback to default
+            } catch (error) {
+                logger.app.error('Failed to fetch chat user info', { error })
                 setChatUserInfo(null)
             }
         }
