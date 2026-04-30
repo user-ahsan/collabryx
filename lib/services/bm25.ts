@@ -18,7 +18,7 @@ export class BM25 {
     this.N = documents.length
     this.docLengths = documents.map(d => d.text.split(/\s+/).length)
     this.avgdl = this.docLengths.reduce((a, b) => a + b, 0) / this.N
-    
+
     documents.forEach(doc => {
       const words = new Set(doc.text.toLowerCase().split(/\s+/))
       words.forEach(word => {
@@ -35,19 +35,23 @@ export class BM25 {
       const doc = this.documents[i]
       const docWords = doc.text.toLowerCase().split(/\s+/)
       const docLength = this.docLengths[i]
-      
+
       let score = 0
       for (const word of queryWords) {
+        if (!word) continue
+
         const df = this.docFreqs.get(word) || 0
         if (df === 0) continue
-        
+
         const tf = docWords.filter(w => w === word).length
-        const idf = Math.log((this.N - df + 0.5) / (df + 0.5))
+        if (tf === 0) continue
+
+        // Standard BM25 IDF: log(N / df) - ensure non-negative
+        const idf = Math.max(0, Math.log(this.N / df))
         const tfTerm = (tf * (this.k1 + 1)) / (tf + this.k1 * (1 - this.b + this.b * docLength / this.avgdl))
-        
         score += idf * tfTerm
       }
-      
+
       if (score > 0) {
         scores.push({ doc, score })
       }
