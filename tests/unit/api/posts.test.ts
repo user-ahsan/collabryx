@@ -48,7 +48,7 @@ describe('Chat API', () => {
           select: vi.fn(() => ({ data: [], error: null })),
         })),
         storage: { from: vi.fn(() => ({ upload: vi.fn(() => ({ data: { path: 'test' }, error: null })), getPublicUrl: vi.fn(() => ({ data: { publicUrl: 'https://example.com' } })) })) },
-      } as any)
+      } as unknown as Awaited<ReturnType<typeof createClient>>)
 
       const request = new NextRequest('http://localhost/api/chat', {
         method: 'POST',

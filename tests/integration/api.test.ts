@@ -580,7 +580,6 @@ describe('API Integration Tests', () => {
       })
       
       // Mock storage from() - return fresh mock for each call
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       mockSupabaseClient.storage.from.mockReturnValue({
         upload: vi.fn().mockResolvedValue({ data: { path: 'test/path' }, error: null }),
         getPublicUrl: vi.fn().mockReturnValue({ data: { publicUrl: 'https://example.com/test/path' } }),
@@ -592,7 +591,7 @@ describe('API Integration Tests', () => {
         order: vi.fn(),
         limit: vi.fn(),
         range: vi.fn(),
-      } as any)
+      } as unknown as ReturnType<typeof mockSupabaseClient.storage.from>)
       
       // Create form data with a file
       const formData = new FormData()
