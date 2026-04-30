@@ -25,7 +25,7 @@ const SAFE_BOT_PATTERNS = [
   /duckduckbot/i,
   /baiduspider/i,
   /yandexbot/i,
-  /facebot/i,
+  /facebookexternalhit/i,
   /twitterbot/i,
   /linkedinbot/i,
 ]
