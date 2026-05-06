@@ -51,9 +51,8 @@ export function MobileNav() {
                 <div className="flex items-center gap-3">
                     <Sheet open={open} onOpenChange={setOpen}>
                         <SheetTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-9 w-9">
+                            <Button variant="ghost" size="icon" className="h-9 w-9" aria-label="Open sidebar">
                                 <AlignJustify className="h-5 w-5" />
-                                <span className="sr-only">Toggle navigation menu</span>
                             </Button>
                         </SheetTrigger>
                         <SheetContent side="left" className="p-0 border-r w-72">
@@ -77,10 +76,10 @@ export function MobileNav() {
                             variant="ghost"
                             size="icon"
                             className="h-9 w-9 text-muted-foreground hover:text-foreground relative"
+                            aria-label="Notifications"
                         >
                             <Bell className="h-[18px] w-[18px]" />
                             <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-blue-500 border border-background" />
-                            <span className="sr-only">Notifications</span>
                         </Button>
                     </NotificationsWidget>
 

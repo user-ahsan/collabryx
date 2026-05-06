@@ -113,7 +113,7 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
     ]
 
     return (
-        <div id="sidebar-nav" className={cn("flex h-full flex-col relative bg-background overflow-hidden", className)} {...props}>
+        <div id="sidebar-nav" data-testid="sidebar-nav" data-ismobile={String(!!isMobile)} className={cn("flex h-full flex-col relative bg-background overflow-hidden", className)} {...props}>
             {/* Header Section */}
             <div className={cn("flex shrink-0 transition-all duration-300",
                 isCollapsed ? "flex-col items-center gap-4 py-6" : "items-center justify-between h-20 px-5")}>
