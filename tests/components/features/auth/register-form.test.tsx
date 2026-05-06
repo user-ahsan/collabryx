@@ -6,15 +6,20 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react'
 import { RegisterForm } from '@/components/features/auth/register-form'
 
-// We access the mock via the auto-mocked module path
-import { mockSupabaseClient } from '@/../tests/setup/mocks'
+// Import mockSupabaseClient from mocks.ts directly
+import { mockSupabaseClient } from '@/tests/setup/mocks'
 
 describe('RegisterForm', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+
+    // Mock Supabase env vars so the form's auth check passes
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_URL', 'https://test.supabase.co')
+    vi.stubEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY', 'test-anon-key')
+
     // Reset mock defaults
     mockSupabaseClient.auth.signUp.mockResolvedValue({ data: {}, error: null })
 
@@ -44,16 +49,21 @@ describe('RegisterForm', () => {
       // Arrange
       render(<RegisterForm />)
 
-      // Act
-      fireEvent.change(screen.getByPlaceholderText('m@example.com'), {
-        target: { value: 'newuser@example.com' },
-      })
-      fireEvent.change(screen.getByPlaceholderText('Create a password'), {
-        target: { value: 'StrongP@ss1' },
+      // Act — fill form fields and flush React state via act
+      await act(async () => {
+        fireEvent.change(screen.getByPlaceholderText('m@example.com'), {
+          target: { value: 'newuser@example.com' },
+        })
+        fireEvent.change(screen.getByPlaceholderText('Create a password'), {
+          target: { value: 'StrongP@ss1' },
+        })
       })
 
-      const submitButton = screen.getByRole('button', { name: /sign up/i })
-      fireEvent.click(submitButton)
+      // Submit the form
+      const form = screen.getByLabelText('Email').closest('form')!
+      await act(async () => {
+        fireEvent.submit(form)
+      })
 
       // Assert
       await waitFor(() => {
@@ -72,23 +82,29 @@ describe('RegisterForm', () => {
       mockSupabaseClient.auth.signUp.mockImplementation(
         () => new Promise(() => {}) // never resolves
       )
-
       render(<RegisterForm />)
 
-      // Act
-      fireEvent.change(screen.getByPlaceholderText('m@example.com'), {
-        target: { value: 'newuser@example.com' },
-      })
-      fireEvent.change(screen.getByPlaceholderText('Create a password'), {
-        target: { value: 'StrongP@ss1' },
+      // Act — fill form fields and flush React state
+      await act(async () => {
+        fireEvent.change(screen.getByPlaceholderText('m@example.com'), {
+          target: { value: 'newuser@example.com' },
+        })
+        fireEvent.change(screen.getByPlaceholderText('Create a password'), {
+          target: { value: 'StrongP@ss1' },
+        })
       })
 
-      const submitButton = screen.getByRole('button', { name: /sign up/i })
-      fireEvent.click(submitButton)
+      // Submit the form directly via native submit (more reliable than clicking button)
+      const form = screen.getByLabelText('Email').closest('form')!
+      await act(async () => {
+        fireEvent.submit(form)
+      })
 
-      // Assert — button should be disabled
+      // Assert — button should be disabled (getByRole excludes disabled elements by default)
       await waitFor(() => {
-        expect(submitButton).toBeDisabled()
+        expect(
+          screen.getByRole('button', { name: /^Sign Up$/i })
+        ).toBeDisabled()
       })
     })
 
@@ -98,17 +114,22 @@ describe('RegisterForm', () => {
         data: { user: { id: 'new-user-id' } },
         error: null,
       })
-
       render(<RegisterForm />)
 
-      // Act
-      fireEvent.change(screen.getByPlaceholderText('m@example.com'), {
-        target: { value: 'newuser@example.com' },
+      // Act — fill fields and flush state via act
+      await act(async () => {
+        fireEvent.change(screen.getByPlaceholderText('m@example.com'), {
+          target: { value: 'newuser@example.com' },
+        })
+        fireEvent.change(screen.getByPlaceholderText('Create a password'), {
+          target: { value: 'StrongP@ss1' },
+        })
       })
-      fireEvent.change(screen.getByPlaceholderText('Create a password'), {
-        target: { value: 'StrongP@ss1' },
+
+      // Submit by clicking the button
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /^Sign Up$/i }))
       })
-      fireEvent.click(screen.getByRole('button', { name: /sign up/i }))
 
       // Assert — supabase called, no error toast
       await waitFor(() => {
@@ -124,17 +145,21 @@ describe('RegisterForm', () => {
         data: null,
         error: { message: 'User already registered', code: 'user_already_exists' },
       })
-
       render(<RegisterForm />)
 
-      // Act
-      fireEvent.change(screen.getByPlaceholderText('m@example.com'), {
-        target: { value: 'existing@example.com' },
+      // Act — fill fields and flush state
+      await act(async () => {
+        fireEvent.change(screen.getByPlaceholderText('m@example.com'), {
+          target: { value: 'existing@example.com' },
+        })
+        fireEvent.change(screen.getByPlaceholderText('Create a password'), {
+          target: { value: 'StrongP@ss1' },
+        })
       })
-      fireEvent.change(screen.getByPlaceholderText('Create a password'), {
-        target: { value: 'StrongP@ss1' },
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /^Sign Up$/i }))
       })
-      fireEvent.click(screen.getByRole('button', { name: /sign up/i }))
 
       // Assert
       await waitFor(() => {
@@ -150,17 +175,21 @@ describe('RegisterForm', () => {
         data: null,
         error: { message: 'User already registered', code: 'user_already_exists' },
       })
-
       render(<RegisterForm />)
 
-      // Act
-      fireEvent.change(screen.getByPlaceholderText('m@example.com'), {
-        target: { value: 'existing@example.com' },
+      // Act — fill fields and submit
+      await act(async () => {
+        fireEvent.change(screen.getByPlaceholderText('m@example.com'), {
+          target: { value: 'existing@example.com' },
+        })
+        fireEvent.change(screen.getByPlaceholderText('Create a password'), {
+          target: { value: 'StrongP@ss1' },
+        })
       })
-      fireEvent.change(screen.getByPlaceholderText('Create a password'), {
-        target: { value: 'StrongP@ss1' },
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /^Sign Up$/i }))
       })
-      fireEvent.click(screen.getByRole('button', { name: /sign up/i }))
 
       // Assert — window.location.assign should NOT have been called
       await waitFor(() => {
@@ -185,24 +214,36 @@ describe('RegisterForm', () => {
       render(<RegisterForm />)
 
       // Act — first attempt (duplicate)
-      fireEvent.change(screen.getByPlaceholderText('m@example.com'), {
-        target: { value: 'retry@example.com' },
+      await act(async () => {
+        fireEvent.change(screen.getByPlaceholderText('m@example.com'), {
+          target: { value: 'retry@example.com' },
+        })
+        fireEvent.change(screen.getByPlaceholderText('Create a password'), {
+          target: { value: 'StrongP@ss1' },
+        })
       })
-      fireEvent.change(screen.getByPlaceholderText('Create a password'), {
-        target: { value: 'StrongP@ss1' },
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /^Sign Up$/i }))
       })
-      fireEvent.click(screen.getByRole('button', { name: /sign up/i }))
 
       await waitFor(() => {
         expect(mockSupabaseClient.auth.signUp).toHaveBeenCalledTimes(1)
       })
 
       // Act — second attempt (success) — need to re-type the fields
-      const emailInput = screen.getByPlaceholderText('m@example.com')
-      const passwordInput = screen.getByPlaceholderText('Create a password')
-      fireEvent.change(emailInput, { target: { value: 'newuser@example.com' } })
-      fireEvent.change(passwordInput, { target: { value: 'AnotherP@ss1' } })
-      fireEvent.click(screen.getByRole('button', { name: /sign up/i }))
+      await act(async () => {
+        fireEvent.change(screen.getByPlaceholderText('m@example.com'), {
+          target: { value: 'newuser@example.com' },
+        })
+        fireEvent.change(screen.getByPlaceholderText('Create a password'), {
+          target: { value: 'AnotherP@ss1' },
+        })
+      })
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /^Sign Up$/i }))
+      })
 
       await waitFor(() => {
         expect(mockSupabaseClient.auth.signUp).toHaveBeenCalledTimes(2)
@@ -218,14 +259,21 @@ describe('RegisterForm', () => {
       // Arrange
       render(<RegisterForm />)
 
-      // Act
-      fireEvent.change(screen.getByPlaceholderText('m@example.com'), {
-        target: { value: 'not-an-email' },
+      // Act — fill fields and flush state
+      await act(async () => {
+        fireEvent.change(screen.getByPlaceholderText('m@example.com'), {
+          target: { value: 'not-an-email' },
+        })
+        fireEvent.change(screen.getByPlaceholderText('Create a password'), {
+          target: { value: 'StrongP@ss1' },
+        })
       })
-      fireEvent.change(screen.getByPlaceholderText('Create a password'), {
-        target: { value: 'StrongP@ss1' },
+
+      // Trigger validation by submitting the form
+      const form = screen.getByLabelText('Email').closest('form')!
+      await act(async () => {
+        fireEvent.submit(form)
       })
-      fireEvent.click(screen.getByRole('button', { name: /sign up/i }))
 
       // Assert
       await waitFor(() => {
@@ -239,14 +287,21 @@ describe('RegisterForm', () => {
       // Arrange
       render(<RegisterForm />)
 
-      // Act
-      fireEvent.change(screen.getByPlaceholderText('m@example.com'), {
-        target: { value: 'valid@example.com' },
+      // Act — fill fields and flush state
+      await act(async () => {
+        fireEvent.change(screen.getByPlaceholderText('m@example.com'), {
+          target: { value: 'valid@example.com' },
+        })
+        fireEvent.change(screen.getByPlaceholderText('Create a password'), {
+          target: { value: 'short' },
+        })
       })
-      fireEvent.change(screen.getByPlaceholderText('Create a password'), {
-        target: { value: 'short' },
+
+      // Trigger validation by submitting the form
+      const form = screen.getByLabelText('Email').closest('form')!
+      await act(async () => {
+        fireEvent.submit(form)
       })
-      fireEvent.click(screen.getByRole('button', { name: /sign up/i }))
 
       // Assert
       await waitFor(() => {
