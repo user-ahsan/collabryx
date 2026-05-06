@@ -1,6 +1,14 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
+import React from 'react'
 import { afterEach, vi } from 'vitest'
+
+// Import mockSupabaseClient from mocks.ts so we use the SAME instance
+// that tests import when they do: import { mockSupabaseClient } from '@/tests/setup/mocks'
+import { mockSupabaseClient } from './mocks'
+
+// Re-export for方便 tests that import from setup
+export { mockSupabaseClient }
 
 // Cleanup after each test
 afterEach(() => {
@@ -33,6 +41,17 @@ global.IntersectionObserver = class IntersectionObserver {
   unobserve() {}
 } as any
 
+// Mock MutationObserver
+global.MutationObserver = class MutationObserver {
+  constructor(callback: MutationCallback) {
+    return {
+      observe: vi.fn(),
+      disconnect: vi.fn(),
+      takeRecords: vi.fn().mockReturnValue([]),
+    }
+  }
+} as any
+
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
   useRouter() {
@@ -63,17 +82,49 @@ vi.mock('next/image', () => ({
   },
 }))
 
-// Mock motion/framer-motion
-interface MotionComponentProps {
-  children?: React.ReactNode
-  [key: string]: unknown
+// Mock motion/react and framer-motion
+// motion is a Proxy in framer-motion, so we need to use a Proxy mock
+// IMPORTANT: Return actual function components, not plain objects
+const createMotionComponent = (elementType: string) => {
+  const MotionComponent = ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) => {
+    return React.createElement('div', { 'data-motion': elementType, ...props }, children)
+  }
+  MotionComponent.displayName = `motion.${elementType}`
+  return MotionComponent
 }
 
+const motionProxy = new Proxy(
+  {} as Record<string, ReturnType<typeof createMotionComponent>>,
+  {
+    get: (_target, prop) => {
+      if (prop === 'then' || prop === 'catch') return undefined
+      return createMotionComponent(String(prop))
+    },
+  }
+)
+
 vi.mock('motion/react', () => ({
-  motion: {
-    div: ({ children, ...props }: MotionComponentProps) => ({ type: 'div', props, children }),
-    button: ({ children, ...props }: MotionComponentProps) => ({ type: 'button', props, children }),
-    span: ({ children, ...props }: MotionComponentProps) => ({ type: 'span', props, children }),
-  },
+  motion: motionProxy,
   AnimatePresence: ({ children }: { children?: React.ReactNode }) => children,
+}))
+
+vi.mock('framer-motion', () => ({
+  motion: motionProxy,
+  MotionConfig: ({ children }: { children?: React.ReactNode }) => children,
+  AnimatePresence: ({ children }: { children?: React.ReactNode }) => children,
+  useAnimation: () => ({ start: vi.fn(), set: vi.fn() }),
+  useMotionValue: () => ({ get: () => 0, set: vi.fn() }),
+}))
+
+// Mock sonner toast
+vi.mock('sonner', () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    warning: vi.fn(),
+    promise: vi.fn(),
+    dismiss: vi.fn(),
+    custom: vi.fn(),
+  },
 }))
