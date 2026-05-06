@@ -323,6 +323,8 @@ if (error) {
 ## 📁 File Structure
 
 ```
+proxy.ts              # Next.js auth middleware (SupAuth session, protected routes, onboarding redirect)
+
 app/
 ├── (auth)/           # Protected routes (dashboard, messages, etc.)
 ├── (public)/         # Public routes (landing, login, register)
@@ -341,7 +343,10 @@ lib/
 
 tests/
 ├── unit/             # Unit tests (*.test.ts)
-└── components/       # Component tests (*.test.tsx)
+├── components/       # Component tests (*.test.tsx)
+├── integration/      # Integration tests
+├── e2e/              # E2E tests
+└── setup/            # Test config & mocks
 
 types/                # TypeScript types
 ```
@@ -404,11 +409,13 @@ npm run test -- --coverage
 
 ## 📚 Documentation
 
-- **Architecture:** `docs/ARCHITECTURE.md`
-- **Deployment:** `docs/DEPLOYMENT.md`
-- **API Reference:** `docs/API-REFERENCE.md`
+- **Architecture:** `docs/02-architecture/overview.md` + `docs/02-architecture/diagrams.md`
+- **Deployment:** `docs/05-deployment/overview.md` + `docs/05-deployment/checklist.md`
+- **API Reference:** `docs/03-core-features/api-reference.md`
+- **Auth Flow:** `docs/03-core-features/authentication.md`
 - **Database Schema:** `supabase/setup/99-master-all-tables.sql` (v4.1.0 - 34 tables, 103 indexes, 100 RLS policies)
 - **Security:** `docs/SECURITY.md`
+- **Design System:** `docs/DESIGN-SYSTEM.md`
 
 ---
 
