@@ -254,7 +254,12 @@ describe('generateBatchMatches', () => {
 
     // Assert
     expect(data).not.toBeNull()
-    const body = JSON.parse(mockFetch.mock.calls[0][1].body)
+    // Find the batch call - it may not be the first call due to other tests
+    const batchCall = mockFetch.mock.calls.find(
+      (call: unknown[]) => (call[0] as string).includes('/batch')
+    )
+    expect(batchCall).toBeDefined()
+    const body = JSON.parse(batchCall![1].body)
     expect(body.user_ids).toEqual(userIds)
     expect(body.limit_per_user).toBe(limitPerUser)
   })
