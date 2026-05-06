@@ -60,18 +60,22 @@ vi.mock('@/hooks/use-settings', () => ({
   }),
 }))
 
-vi.mock('@/components/shared/sidebar-nav', () => ({
-  SidebarNav: ({ isMobile }: { isMobile?: boolean }) => (
-    <div data-testid="sidebar-nav" data-ismobile={String(!!isMobile)}>
-      SidebarNav
-    </div>
-  ),
+vi.mock('@/components/features/dashboard/notifications-widget', () => ({
+  NotificationsWidget: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => {
+    // Render children directly without wrapper, preserving their accessible names
+    return <>{children}</>
+  },
 }))
 
-vi.mock('@/components/features/dashboard/notifications-widget', () => ({
-  NotificationsWidget: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="notifications-widget">{children}</div>
-  ),
+vi.mock('@/components/shared/sidebar-context', () => ({
+  useSidebar: () => ({
+    state: 'expanded',
+    isMobile: true,
+    open: vi.fn(),
+    close: vi.fn(),
+    toggle: vi.fn(),
+    setOpen: vi.fn(),
+  }),
 }))
 
 // ---------------------------------------------------------------------------
@@ -117,7 +121,7 @@ describe('MobileNav (TC-036)', () => {
 
     // Assert
     const hamburgerButton = screen.getByRole('button', {
-      name: /toggle navigation menu/i,
+      name: /open sidebar/i,
     })
     expect(hamburgerButton).toBeDefined()
   })
@@ -140,7 +144,11 @@ describe('MobileNav (TC-036)', () => {
     // Act
     render(<MobileNav />)
 
-    // Assert
+    // Open the sheet by clicking the hamburger button
+    const hamburgerButton = screen.getByRole('button', { name: /open sidebar/i })
+    fireEvent.click(hamburgerButton)
+
+    // Assert - SidebarNav is inside SheetContent, only rendered when sheet is open
     const sidebarNav = screen.getByTestId('sidebar-nav')
     expect(sidebarNav).toBeDefined()
     expect(sidebarNav.getAttribute('data-ismobile')).toBe('true')
@@ -154,8 +162,8 @@ describe('MobileNav (TC-036)', () => {
     // Act
     render(<MobileNav />)
 
-    // Assert
-    expect(screen.getByTestId('notifications-widget')).toBeDefined()
+    // Assert – bell button is rendered with accessible label
+    expect(screen.getByRole('button', { name: /notifications/i })).toBeInTheDocument()
   })
 
   // -----------------------------------------------------------------------
