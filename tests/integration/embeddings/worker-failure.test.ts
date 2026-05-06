@@ -11,32 +11,44 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 // Mock Supabase
 // ============================================================
 function createMockQueryBuilder(returnData: unknown[] = [], returnError: unknown = null) {
+  // Use actual functions to preserve 'this' context instead of mockReturnThis()
+  // NOTE: single/maybeSingle call execute() so test mocks on execute() apply
   const builder: Record<string, ReturnType<typeof vi.fn>> = {
-    from: vi.fn().mockReturnThis(),
-    select: vi.fn().mockReturnThis(),
-    insert: vi.fn().mockReturnThis(),
-    update: vi.fn().mockReturnThis(),
-    upsert: vi.fn().mockReturnThis(),
-    delete: vi.fn().mockReturnThis(),
-    eq: vi.fn().mockReturnThis(),
-    neq: vi.fn().mockReturnThis(),
-    lt: vi.fn().mockReturnThis(),
-    lte: vi.fn().mockReturnThis(),
-    gt: vi.fn().mockReturnThis(),
-    gte: vi.fn().mockReturnThis(),
-    order: vi.fn().mockReturnThis(),
-    limit: vi.fn().mockReturnThis(),
-    single: vi.fn().mockResolvedValue({ data: returnData.length > 0 ? returnData[0] : null, error: returnError }),
-    maybeSingle: vi.fn().mockResolvedValue({ data: returnData.length > 0 ? returnData[0] : null, error: returnError }),
-    execute: vi.fn().mockResolvedValue({ data: returnData, error: returnError }),
+    from: vi.fn(function(this: unknown) { return builder }),
+    select: vi.fn(function(this: unknown) { return builder }),
+    insert: vi.fn(function(this: unknown) { return builder }),
+    update: vi.fn(function(this: unknown) { return builder }),
+    upsert: vi.fn(function(this: unknown) { return builder }),
+    delete: vi.fn(function(this: unknown) { return builder }),
+    eq: vi.fn(function(this: unknown) { return builder }),
+    neq: vi.fn(function(this: unknown) { return builder }),
+    lt: vi.fn(function(this: unknown) { return builder }),
+    lte: vi.fn(function(this: unknown) { return builder }),
+    gt: vi.fn(function(this: unknown) { return builder }),
+    gte: vi.fn(function(this: unknown) { return builder }),
+    order: vi.fn(function(this: unknown) { return builder }),
+    limit: vi.fn(function(this: unknown) { return builder }),
+    single: vi.fn(function(this: unknown) {
+      // single() calls execute() so test mocks on execute() apply
+      const execResult = builder.execute() as { data: unknown[]; error: unknown }
+      return { data: execResult.data && execResult.data.length > 0 ? execResult.data[0] : null, error: execResult.error }
+    }),
+    maybeSingle: vi.fn(function(this: unknown) {
+      const execResult = builder.execute() as { data: unknown[]; error: unknown }
+      return { data: execResult.data && execResult.data.length > 0 ? execResult.data[0] : null, error: execResult.error }
+    }),
+    execute: vi.fn(function(this: unknown) { return { data: [] as unknown[], error: null } }),
   }
   return builder
 }
 
-const mockBuilder = createMockQueryBuilder()
+// Module-level builder instance so beforeEach can reset it
+let currentBuilder = createMockQueryBuilder()
+let mockBuilder = currentBuilder // alias for test refs
+
 const mockSupabase = {
-  from: mockBuilder.from,
-  table: mockBuilder.from,
+  from: vi.fn(() => currentBuilder),
+  table: vi.fn(() => currentBuilder),
   channel: vi.fn().mockReturnValue({
     on: vi.fn().mockReturnThis(),
     subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() }),
@@ -109,8 +121,13 @@ function createDLQEntry(
 
 describe('Worker Failure & Recovery', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    mockBuilder.execute.mockResolvedValue({ data: [], error: null })
+    // Reset builder with fresh mocks
+    currentBuilder = createMockQueryBuilder()
+    // mockSupabase.from(table) delegates to currentBuilder.from(table)
+    mockSupabase.from = vi.fn((table: string) => currentBuilder.from(table))
+    mockSupabase.table = vi.fn((table: string) => currentBuilder.table(table))
+    // Alias for test convenience
+    mockBuilder = currentBuilder
   })
 
   afterEach(() => {
@@ -205,9 +222,9 @@ describe('Worker Failure & Recovery', () => {
     it('should NOT insert duplicate pending queue entry for same user (uses upsert)', async () => {
       // Arrange - user already has a pending entry, bio update should upsert
       const existingEntry = createPendingEntry('existing-bio-user')
-      mockBuilder.execute
-        .mockResolvedValueOnce({ data: [existingEntry], error: null }) // select existing
-        .mockResolvedValueOnce({ data: [existingEntry], error: null }) // upsert
+      // Mock single directly since execute() internal call doesn't propagate mock through
+      mockBuilder.single.mockResolvedValueOnce({ data: existingEntry, error: null })
+      mockBuilder.execute.mockResolvedValueOnce({ data: [existingEntry], error: null }) // for upsert path
 
       // Act - query existing first
       const existing = await mockSupabase
