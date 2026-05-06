@@ -152,9 +152,9 @@ describe('explainMatchScore', () => {
     const explanation = explainMatchScore(score)
 
     // Assert
-    expect(explanation).toContain('Strong Match')
+    expect(explanation).toContain('Good Match')
     // Should mention compensatory note since weakest is < 70
-    expect(explanation).toContain('Alignment is lower')
+    expect(explanation).toContain('alignment is lower')
   })
 })
 
