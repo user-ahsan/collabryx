@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { mockSupabaseClient } from '@/../tests/setup/mocks'
-import { mockConversation } from '@/../tests/setup/fixtures'
+import { mockSupabaseClient } from '@/tests/setup/mocks'
+import { mockConversation } from '@/tests/setup/fixtures'
 
 // Mock logger
 vi.mock('@/lib/logger', () => ({
