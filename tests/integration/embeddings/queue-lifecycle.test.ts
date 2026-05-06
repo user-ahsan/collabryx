@@ -34,10 +34,40 @@ function createMockQueryBuilder(returnData: unknown[] = [], returnError: unknown
   return builder
 }
 
-const mockSupabaseBuilder = createMockQueryBuilder()
+// Module-level builder instance so beforeEach can reset it
+let currentBuilder = createMockQueryBuilder()
+let mockSupabaseBuilder = currentBuilder // alias for test refs
+
+// Create a simple builder object that can be returned by mockSupabase.from/table
+// Use actual functions instead of vi.fn().mockReturnThis() to preserve 'this' context
+function createSimpleBuilder() {
+  const builder = {
+    from: vi.fn(function(this: unknown) { return builder }),
+    select: vi.fn(function(this: unknown) { return builder }),
+    insert: vi.fn(function(this: unknown) { return builder }),
+    update: vi.fn(function(this: unknown) { return builder }),
+    upsert: vi.fn(function(this: unknown) { return builder }),
+    delete: vi.fn(function(this: unknown) { return builder }),
+    eq: vi.fn(function(this: unknown) { return builder }),
+    neq: vi.fn(function(this: unknown) { return builder }),
+    lt: vi.fn(function(this: unknown) { return builder }),
+    lte: vi.fn(function(this: unknown) { return builder }),
+    gt: vi.fn(function(this: unknown) { return builder }),
+    gte: vi.fn(function(this: unknown) { return builder }),
+    order: vi.fn(function(this: unknown) { return builder }),
+    limit: vi.fn(function(this: unknown) { return builder }),
+    single: vi.fn(function(this: unknown) { return builder }),
+    maybeSingle: vi.fn(function(this: unknown) { return builder }),
+    execute: vi.fn(function(this: unknown) { return { data: [], error: null } }),
+  }
+  return builder
+}
+
+let simpleBuilder = createSimpleBuilder()
+
 const mockSupabase = {
-  from: mockSupabaseBuilder.from,
-  table: mockSupabaseBuilder.from,
+  from: vi.fn(() => simpleBuilder),
+  table: vi.fn(() => simpleBuilder),
   channel: vi.fn().mockReturnValue({
     on: vi.fn().mockReturnThis(),
     subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() }),
@@ -103,9 +133,14 @@ function createProfileEmbedding(userId: string, status = 'pending' as const): Pr
 
 describe('Embedding Queue Lifecycle', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    // Reset execute mock with default success response
-    mockSupabaseBuilder.execute.mockResolvedValue({ data: [], error: null })
+    // Reset simpleBuilder with fresh mocks
+    simpleBuilder = createSimpleBuilder()
+    // mockSupabase.from(table) delegates to simpleBuilder.from(table)
+    // so assertions on simpleBuilder.from work correctly
+    mockSupabase.from = vi.fn((table: string) => simpleBuilder.from(table))
+    mockSupabase.table = vi.fn((table: string) => simpleBuilder.table(table))
+    // Alias for test convenience - point to simpleBuilder
+    mockSupabaseBuilder = simpleBuilder
   })
 
   afterEach(() => {
