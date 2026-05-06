@@ -18,31 +18,46 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, cleanup } from '@testing-library/react'
 import React from 'react'
+import { motion, AnimatePresence } from 'motion/react'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
 
 // ---------------------------------------------------------------------------
 // Mock GSAP
 // ---------------------------------------------------------------------------
-const mockGsapFrom = vi.fn()
-const mockGsapTo = vi.fn()
-const mockGsapFromTo = vi.fn()
-const mockGsapTimeline = vi.fn(() => ({
-  from: mockGsapFrom,
-  to: mockGsapTo,
-  fromTo: mockGsapFromTo,
-  add: vi.fn(),
-  play: vi.fn(),
-  pause: vi.fn(),
-  kill: vi.fn(),
-  progress: vi.fn(),
+const {
+  mockGsapFrom,
+  mockGsapTo,
+  mockGsapFromTo,
+  mockGsapTimeline,
+  mockGsapContext,
+  mockGsapContextRevert,
+  mockGsapRegisterPlugin,
+  mockScrollTriggerGetAll,
+  mockScrollTriggerKill,
+} = vi.hoisted(() => ({
+  mockGsapFrom: vi.fn(),
+  mockGsapTo: vi.fn(),
+  mockGsapFromTo: vi.fn(),
+  mockGsapTimeline: vi.fn(() => ({
+    from: mockGsapFrom,
+    to: mockGsapTo,
+    fromTo: mockGsapFromTo,
+    add: vi.fn(),
+    play: vi.fn(),
+    pause: vi.fn(),
+    kill: vi.fn(),
+    progress: vi.fn(),
+  })),
+  mockGsapContextRevert: vi.fn(),
+  mockGsapContext: vi.fn((fn: () => void) => {
+    fn()
+    return { revert: mockGsapContextRevert }
+  }),
+  mockGsapRegisterPlugin: vi.fn(),
+  mockScrollTriggerGetAll: vi.fn(() => []),
+  mockScrollTriggerKill: vi.fn(),
 }))
-const mockGsapContextRevert = vi.fn()
-const mockGsapContext = vi.fn((fn: () => void) => {
-  fn()
-  return { revert: mockGsapContextRevert }
-})
-const mockGsapRegisterPlugin = vi.fn()
-const mockScrollTriggerGetAll = vi.fn(() => [])
-const mockScrollTriggerKill = vi.fn()
 
 vi.mock('gsap', () => ({
   gsap: {
@@ -75,9 +90,6 @@ describe('Dashboard Animations – GSAP (TC-038)', () => {
   })
 
   it('should have gsap.from available for fade-in animations', () => {
-    // Arrange – dynamically import gsap (mocked)
-    const { gsap } = require('gsap')
-
     // Act – simulate a fade-in animation
     gsap.from('.dashboard-card', {
       opacity: 0,
@@ -94,9 +106,6 @@ describe('Dashboard Animations – GSAP (TC-038)', () => {
   })
 
   it('should have gsap.to available for exit animations', () => {
-    // Arrange
-    const { gsap } = require('gsap')
-
     // Act – simulate an exit fade
     gsap.to('.modal-overlay', {
       opacity: 0,
@@ -114,7 +123,6 @@ describe('Dashboard Animations – GSAP (TC-038)', () => {
 
   it('should create a gsap.timeline with chained animations', () => {
     // Arrange
-    const { gsap } = require('gsap')
     const timeline = gsap.timeline()
 
     // Act – chain animations on timeline
@@ -128,9 +136,6 @@ describe('Dashboard Animations – GSAP (TC-038)', () => {
   })
 
   it('should support gsap.fromTo for ScrollTrigger animations (ScrollReveal pattern)', () => {
-    // Arrange
-    const { gsap } = require('gsap')
-
     // Act – simulate ScrollReveal fromTo call
     gsap.fromTo(
       '.scroll-reveal',
@@ -163,9 +168,6 @@ describe('Dashboard Animations – GSAP (TC-038)', () => {
   })
 
   it('should support gsap.context for scoped animations (ScrollFloat pattern)', () => {
-    // Arrange
-    const { gsap } = require('gsap')
-
     // Act – simulate ScrollFloat gsap.context pattern
     gsap.context(() => {
       gsap.fromTo(
@@ -191,11 +193,8 @@ describe('Dashboard Animations – GSAP (TC-038)', () => {
   })
 
   it('should register ScrollTrigger plugin', () => {
-    // Arrange
     // Act – import triggers side-effect registration (see ScrollReveal/ScrollFloat)
     // In module scope: gsap.registerPlugin(ScrollTrigger) already ran
-    const { gsap } = require('gsap')
-    const { ScrollTrigger } = require('gsap/ScrollTrigger')
     gsap.registerPlugin(ScrollTrigger)
 
     // Assert
@@ -203,9 +202,6 @@ describe('Dashboard Animations – GSAP (TC-038)', () => {
   })
 
   it('should clean up ScrollTriggers on unmount', () => {
-    // Arrange
-    const { ScrollTrigger } = require('gsap/ScrollTrigger')
-
     // Act – simulate cleanup
     ScrollTrigger.getAll().forEach(
       (trigger: { kill: () => void }) => trigger.kill()
@@ -216,9 +212,6 @@ describe('Dashboard Animations – GSAP (TC-038)', () => {
   })
 
   it('should not call gsap if target element does not exist (guard clause)', () => {
-    // Arrange
-    const { gsap } = require('gsap')
-
     // Act & Assert – gsap.from with valid target should not throw
     expect(() => {
       gsap.from('.non-existent-element', { opacity: 0 })
@@ -239,9 +232,6 @@ describe('Dashboard Animations – Framer Motion (TC-039)', () => {
   })
 
   it('motion.div renders as a plain object (mocked in setup.ts)', () => {
-    // Arrange – motion is already mocked in setup.ts
-    const { motion } = require('motion/react')
-
     // Act
     const result = motion.div({ children: 'Animated content', initial: { opacity: 0 } })
 
@@ -254,10 +244,7 @@ describe('Dashboard Animations – Framer Motion (TC-039)', () => {
     })
   })
 
-  it('motion.button renders as a plain object with correct props', () => {
-    // Arrange
-    const { motion } = require('motion/react')
-
+  it('motion.button renders as a motion component with correct props', () => {
     // Act
     const result = motion.button({
       children: 'Click',
@@ -265,10 +252,11 @@ describe('Dashboard Animations – Framer Motion (TC-039)', () => {
       whileTap: { scale: 0.95 },
     })
 
-    // Assert
+    // Assert – mock returns a div with data-motion attribute
     expect(result).toMatchObject({
-      type: 'button',
+      type: 'div',
       props: expect.objectContaining({
+        'data-motion': 'button',
         whileHover: { scale: 1.05 },
         whileTap: { scale: 0.95 },
       }),
@@ -276,9 +264,6 @@ describe('Dashboard Animations – Framer Motion (TC-039)', () => {
   })
 
   it('AnimatePresence renders children directly', () => {
-    // Arrange
-    const { AnimatePresence } = require('motion/react')
-
     // Act
     const result = AnimatePresence({ children: 'wrapped' })
 
@@ -286,26 +271,21 @@ describe('Dashboard Animations – Framer Motion (TC-039)', () => {
     expect(result).toBe('wrapped')
   })
 
-  it('motion.span renders as a plain object', () => {
-    // Arrange
-    const { motion } = require('motion/react')
-
+  it('motion.span renders as a motion component', () => {
     // Act
     const result = motion.span({ children: 'Badge', animate: { scale: 1 } })
 
-    // Assert
+    // Assert – mock returns a div with data-motion attribute
     expect(result).toMatchObject({
-      type: 'span',
+      type: 'div',
       props: expect.objectContaining({
+        'data-motion': 'span',
         animate: { scale: 1 },
       }),
     })
   })
 
   it('should handle multiple motion components simultaneously', () => {
-    // Arrange
-    const { motion } = require('motion/react')
-
     // Act
     const results = [
       motion.div({ children: 'One', key: 'a' }),
@@ -321,9 +301,6 @@ describe('Dashboard Animations – Framer Motion (TC-039)', () => {
   })
 
   it('motion components can receive tailwind className', () => {
-    // Arrange
-    const { motion } = require('motion/react')
-
     // Act
     const result = motion.div({
       children: 'Styled',
