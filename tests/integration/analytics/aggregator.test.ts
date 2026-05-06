@@ -126,12 +126,12 @@ describe('TC-099 — Analytics Aggregator: Daily Metrics', () => {
       // Arrange
       const targetDate = new Date('2026-05-06T14:30:00Z')
 
-      // Act
+      // Act - use UTC methods to ensure midnight UTC
       const startOfDay = new Date(targetDate)
-      startOfDay.setHours(0, 0, 0, 0)
+      startOfDay.setUTCHours(0, 0, 0, 0)
 
       const endOfDay = new Date(startOfDay)
-      endOfDay.setDate(endOfDay.getDate() + 1)
+      endOfDay.setUTCDate(endOfDay.getUTCDate() + 1)
 
       // Assert
       expect(startOfDay.toISOString()).toBe('2026-05-06T00:00:00.000Z')
@@ -141,20 +141,20 @@ describe('TC-099 — Analytics Aggregator: Daily Metrics', () => {
     test('weekly window: Monday to Sunday', () => {
       // Arrange — May 6, 2026 is a Wednesday
       const today = new Date('2026-05-06T12:00:00Z')
-      const dayOfWeek = today.getDay() // 0=Sun, 3=Wed
+      const dayOfWeek = today.getUTCDay() // 0=Sun, 3=Wed
 
-      // Act — find the start of the current week (Monday)
+      // Act — find the start of the current week (Monday) using UTC
       const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1
       const startOfWeek = new Date(today)
-      startOfWeek.setDate(today.getDate() - daysFromMonday)
-      startOfWeek.setHours(0, 0, 0, 0)
+      startOfWeek.setUTCDate(today.getUTCDate() - daysFromMonday)
+      startOfWeek.setUTCHours(0, 0, 0, 0)
 
       const endOfWeek = new Date(startOfWeek)
-      endOfWeek.setDate(startOfWeek.getDate() + 7)
+      endOfWeek.setUTCDate(startOfWeek.getUTCDate() + 7)
 
       // Assert
       expect(dayOfWeek).toBe(3) // Wednesday
-      expect(startOfWeek.getDay()).toBe(1) // Monday
+      expect(startOfWeek.getUTCDay()).toBe(1) // Monday
       expect(startOfWeek.toISOString()).toBe('2026-05-04T00:00:00.000Z')
       expect(endOfWeek.toISOString()).toBe('2026-05-11T00:00:00.000Z')
     })
@@ -162,17 +162,17 @@ describe('TC-099 — Analytics Aggregator: Daily Metrics', () => {
     test('weekly window: Sunday should go to previous Monday', () => {
       // Arrange — May 3, 2026 is a Sunday
       const sunday = new Date('2026-05-03T12:00:00Z')
-      const dayOfWeek = sunday.getDay() // 0 = Sunday
+      const dayOfWeek = sunday.getUTCDay() // 0 = Sunday
 
-      // Act
+      // Act — find the start of the week (Monday) using UTC
       const daysFromMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1
       const startOfWeek = new Date(sunday)
-      startOfWeek.setDate(sunday.getDate() - daysFromMonday)
-      startOfWeek.setHours(0, 0, 0, 0)
+      startOfWeek.setUTCDate(sunday.getUTCDate() - daysFromMonday)
+      startOfWeek.setUTCHours(0, 0, 0, 0)
 
       // Assert — Sunday should go back to the previous Monday
       expect(dayOfWeek).toBe(0)
-      expect(startOfWeek.getDay()).toBe(1)
+      expect(startOfWeek.getUTCDay()).toBe(1)
       expect(startOfWeek.toISOString()).toBe('2026-04-27T00:00:00.000Z')
     })
 
