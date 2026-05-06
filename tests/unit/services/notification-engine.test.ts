@@ -118,8 +118,8 @@ describe('Notification Engine', () => {
     })
     mockSingle.mockResolvedValue({
       data: {
-        id: 'new-notif-123',
-        user_id: 'target-user-id',
+        id: '550e8400-e29b-41d4-a716-446655440001',
+        user_id: '550e8400-e29b-41d4-a716-446655440001',
         type: 'match',
         content: 'You have a 95% match with someone!',
       },
@@ -131,9 +131,9 @@ describe('Notification Engine', () => {
 
   describe('TC-086: Match notification', () => {
     it('creates a notification when a new match is generated', async () => {
-      // Arrange
-      const userId = 'target-user-id'
-      const matchedUserId = 'matched-user-456'
+      // Arrange - use valid UUIDs
+      const userId = '550e8400-e29b-41d4-a716-446655440001'
+      const matchedUserId = '550e8400-e29b-41d4-a716-446655440002'
       const matchPercentage = 95
 
       // Act
@@ -155,9 +155,9 @@ describe('Notification Engine', () => {
     })
 
     it('includes match percentage in notification content', async () => {
-      // Arrange
-      const userId = 'user-789'
-      const matchedUserId = 'matched-012'
+      // Arrange - use valid UUIDs
+      const userId = '550e8400-e29b-41d4-a716-446655440003'
+      const matchedUserId = '550e8400-e29b-41d4-a716-446655440004'
       const matchPercentage = 72
 
       // Act
@@ -169,8 +169,8 @@ describe('Notification Engine', () => {
     })
 
     it('sets resource_type to "match" for match notifications', async () => {
-      // Arrange & Act
-      await sendMatchNotification('user-a', 'user-b', 60)
+      // Arrange & Act - use valid UUIDs
+      await sendMatchNotification('550e8400-e29b-41d4-a716-446655440005', '550e8400-e29b-41d4-a716-446655440006', 60)
 
       // Assert
       const insertCall = mockInsert.mock.calls[0][0]
@@ -178,8 +178,8 @@ describe('Notification Engine', () => {
     })
 
     it('handles 0% match correctly', async () => {
-      // Arrange & Act
-      await sendMatchNotification('user-a', 'user-b', 0)
+      // Arrange & Act - use valid UUIDs
+      await sendMatchNotification('550e8400-e29b-41d4-a716-446655440007', '550e8400-e29b-41d4-a716-446655440008', 0)
 
       // Assert
       const insertCall = mockInsert.mock.calls[0][0]
@@ -299,10 +299,10 @@ describe('Notification Engine', () => {
     })
 
     it('sends individual comment notification when createNotification is called directly', async () => {
-      // Arrange
-      const postAuthorId = 'author-123'
-      const commenterId = 'commenter-456'
-      const postId = 'post-789'
+      // Arrange - use valid UUIDs
+      const postAuthorId = '550e8400-e29b-41d4-a716-446655440009'
+      const commenterId = '550e8400-e29b-41d4-a716-446655440010'
+      const postId = '550e8400-e29b-41d4-a716-446655440011'
 
       // Act
       const result = await sendCommentNotification(postAuthorId, commenterId, postId)
@@ -323,8 +323,8 @@ describe('Notification Engine', () => {
 
   describe('Edge cases', () => {
     it('creates notification with all required fields', async () => {
-      // Arrange & Act
-      await sendLikeNotification('recipient', 'liker', 'post-1')
+      // Arrange & Act - use valid UUIDs
+      await sendLikeNotification('550e8400-e29b-41d4-a716-446655440012', '550e8400-e29b-41d4-a716-446655440013', '550e8400-e29b-41d4-a716-446655440014')
 
       // Assert
       const insertCall = mockInsert.mock.calls[0][0]
