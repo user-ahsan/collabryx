@@ -106,7 +106,8 @@ function checkSpam(text: string): SpamResult {
     /[!$]{3,}/,
   ]
   const spamCount = spamIndicators.filter((pattern) => pattern.test(text)).length
-  return { score: Math.min(1.0, spamCount / 3) }
+  // Use denominator of 2 - promotional content with 2+ patterns is clearly spam
+  return { score: Math.min(1.0, spamCount / 2) }
 }
 
 function checkNsfw(text: string): NsfwResult {
@@ -124,14 +125,14 @@ function moderateContent(content: string, _contentType: string = 'post'): Modera
 
   // Calculate risk score (weighted)
   const riskScore =
-    toxicity.score * 0.4 +
+    toxicity.score * 0.5 +
     spam.score * 0.2 +
-    nsfw.score * 0.2 +
+    nsfw.score * 0.35 +
     (pii.detected ? 1.0 : 0.0) * 0.2
 
   // Determine action
   let action: ModerationResult['action'] = 'approved'
-  if (riskScore < 0.3) action = 'approved'
+  if (riskScore < 0.25) action = 'approved'
   else if (riskScore < 0.7) action = 'flag_for_review'
   else action = 'auto_reject'
 
