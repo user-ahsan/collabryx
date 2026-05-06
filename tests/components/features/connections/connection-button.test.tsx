@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ConnectionButton } from '@/components/features/connections/connection-button'
-import { mockSupabaseClient } from '@/../tests/setup/mocks'
+import { mockSupabaseClient } from '@/tests/setup/mocks'
 
 // Mock the hooks used by ConnectionButton
 vi.mock('@/hooks/use-connections', () => ({
