@@ -8,7 +8,10 @@ export const messageSchema = z.object({
   text: z
     .string()
     .min(1, "Message cannot be empty.")
-    .max(2000, "Message must be less than 2000 characters."),
+    .max(2000, "Message must be less than 2000 characters.")
+    .refine((val) => val.trim().length > 0, {
+      message: "Message cannot be empty or whitespace-only.",
+    }),
   attachment_url: z.string().url().optional().or(z.literal("")),
   attachment_type: z.enum(["image", "file"]).optional().or(z.null()),
 })

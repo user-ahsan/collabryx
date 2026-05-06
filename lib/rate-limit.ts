@@ -74,10 +74,11 @@ function cleanup() {
 
 setInterval(cleanup, 5 * 60 * 1000)
 
-function getFingerprint(request: NextRequest): string {
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0] || 
-             request.headers.get('x-real-ip') || 
+function getFingerprint(request: NextRequest, ipOnly = false): string {
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ||
+             request.headers.get('x-real-ip') ||
              'unknown'
+  if (ipOnly) return ip
   const userAgent = request.headers.get('user-agent') || ''
   return `${ip}:${userAgent}`
 }
@@ -153,7 +154,9 @@ export function rateLimit(
   retryAfter?: number
 } {
   const config = RATE_LIMITS[type]
-  const fingerprint = getFingerprint(request)
+  // Use IP-only fingerprint for auth to block bots rotating User-Agent
+  const useIpOnly = type === 'auth'
+  const fingerprint = getFingerprint(request, useIpOnly) + ':' + type
   const result = checkRateLimit(fingerprint, config)
 
   const headers = {
@@ -197,4 +200,9 @@ export function getRateLimitHeaders(remaining: number, resetAt: number, limit: n
     'X-RateLimit-Remaining': remaining.toString(),
     'X-RateLimit-Reset': resetAt.toString(),
   }
+}
+
+// Test-only: Clear the in-memory store (for testing purposes)
+export function __clearRateLimitStore() {
+  store.clear()
 }

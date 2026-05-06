@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import createGlobe, { COBEOptions } from "cobe"
 import { useMotionValue, useSpring } from "motion/react"
 
@@ -49,6 +49,7 @@ export function Globe({
   const pointerInteracting = useRef<number | null>(null)
   const pointerInteractionMovement = useRef(0)
   const isVisibleRef = useRef(true)
+  const [hasError, setHasError] = useState(false)
 
   const r = useMotionValue(0)
   const rs = useSpring(r, {
@@ -73,26 +74,36 @@ export function Globe({
   }
 
   useEffect(() => {
+    if (hasError) return
+
     const onResize = () => {
       if (canvasRef.current) {
         widthRef.current = canvasRef.current.offsetWidth || 600
       }
     }
 
-    window.addEventListener("resize", onResize)
-    onResize()
+    let globe: ReturnType<typeof createGlobe> | null = null
 
-    const globe = createGlobe(canvasRef.current!, {
-      ...config,
-      width: widthRef.current * 2,
-      height: widthRef.current * 2,
-      onRender: (state) => {
-        if (!pointerInteracting.current && isVisibleRef.current) phiRef.current += 0.005
-        state.phi = phiRef.current + rs.get()
-        state.width = widthRef.current * 2
-        state.height = widthRef.current * 2
-      },
-    })
+    try {
+      window.addEventListener("resize", onResize)
+      onResize()
+
+      globe = createGlobe(canvasRef.current!, {
+        ...config,
+        width: widthRef.current * 2,
+        height: widthRef.current * 2,
+        onRender: (state) => {
+          if (!pointerInteracting.current && isVisibleRef.current) phiRef.current += 0.005
+          state.phi = phiRef.current + rs.get()
+          state.width = widthRef.current * 2
+          state.height = widthRef.current * 2
+        },
+      })
+    } catch (err) {
+      console.error('Failed to create globe:', err)
+      setHasError(true)
+      return
+    }
 
     // Increased delay for Opera/slower browsers to ensure context is ready
     setTimeout(() => {
@@ -116,11 +127,11 @@ export function Globe({
     }
 
     return () => {
-      globe.destroy()
+      if (globe) globe.destroy()
       window.removeEventListener("resize", onResize)
       observer.disconnect()
     }
-  }, [rs, config])
+  }, [rs, config, hasError])
 
   return (
     <div

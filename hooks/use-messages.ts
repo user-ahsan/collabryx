@@ -33,7 +33,7 @@ async function fetchMessages(conversationId: string): Promise<Message[]> {
   return data || []
 }
 
-async function sendMessageMutation({ conversationId, text }: { conversationId: string; text: string }): Promise<Message> {
+export async function sendMessageMutation({ conversationId, text }: { conversationId: string; text: string }): Promise<Message> {
   const supabase = createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   
