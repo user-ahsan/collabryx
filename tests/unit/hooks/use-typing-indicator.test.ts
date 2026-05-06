@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act } from '@testing-library/react'
-import { mockSupabaseClient } from '@/../tests/setup/mocks'
+import { mockSupabaseClient } from '@/tests/setup/mocks'
+import { useTypingIndicator } from '@/hooks/use-typing-indicator'
 
 // Mock logger
 vi.mock('@/lib/logger', () => ({
@@ -37,7 +38,6 @@ describe('useTypingIndicator (TC-069)', () => {
   describe('TC-069: typing indicator hook', () => {
     it('starts with isTyping as false', () => {
       // Act
-      const { useTypingIndicator } = require('@/hooks/use-typing-indicator')
       const { result } = renderHook(() =>
         useTypingIndicator('conv-123', 'user-1')
       )
@@ -48,7 +48,7 @@ describe('useTypingIndicator (TC-069)', () => {
 
     it('sendTypingEvent broadcasts typing status via Supabase channel', () => {
       // Arrange
-      const { useTypingIndicator } = require('@/hooks/use-typing-indicator')
+      
       const { result } = renderHook(() =>
         useTypingIndicator('conv-123', 'user-1')
       )
@@ -72,7 +72,7 @@ describe('useTypingIndicator (TC-069)', () => {
 
     it('clearTypingStatus sends is_typing: false broadcast', () => {
       // Arrange
-      const { useTypingIndicator } = require('@/hooks/use-typing-indicator')
+      
       const { result } = renderHook(() =>
         useTypingIndicator('conv-123', 'user-1')
       )
@@ -94,7 +94,7 @@ describe('useTypingIndicator (TC-069)', () => {
 
     it('debounces typing events (does not re-send within 500ms)', () => {
       // Arrange
-      const { useTypingIndicator } = require('@/hooks/use-typing-indicator')
+      
       const { result } = renderHook(() =>
         useTypingIndicator('conv-123', 'user-1')
       )
@@ -118,7 +118,7 @@ describe('useTypingIndicator (TC-069)', () => {
 
     it('allows typing event after debounce period elapses', () => {
       // Arrange
-      const { useTypingIndicator } = require('@/hooks/use-typing-indicator')
+      
       const { result } = renderHook(() =>
         useTypingIndicator('conv-123', 'user-1')
       )
@@ -145,7 +145,7 @@ describe('useTypingIndicator (TC-069)', () => {
 
     it('subscribes to broadcast typing events from other users', () => {
       // Arrange
-      const { useTypingIndicator } = require('@/hooks/use-typing-indicator')
+      
 
       // Act
       renderHook(() => useTypingIndicator('conv-123', 'user-1'))
@@ -173,7 +173,7 @@ describe('useTypingIndicator (TC-069)', () => {
         return mockChannel
       })
 
-      const { useTypingIndicator } = require('@/hooks/use-typing-indicator')
+      
       const { result } = renderHook(() =>
         useTypingIndicator('conv-123', 'user-1')
       )
@@ -204,7 +204,7 @@ describe('useTypingIndicator (TC-069)', () => {
         return mockChannel
       })
 
-      const { useTypingIndicator } = require('@/hooks/use-typing-indicator')
+      
       const { result } = renderHook(() =>
         useTypingIndicator('conv-123', 'user-1')
       )
@@ -235,7 +235,7 @@ describe('useTypingIndicator (TC-069)', () => {
         return mockChannel
       })
 
-      const { useTypingIndicator } = require('@/hooks/use-typing-indicator')
+      
       const { result } = renderHook(() =>
         useTypingIndicator('conv-123', 'user-1')
       )
@@ -259,7 +259,7 @@ describe('useTypingIndicator (TC-069)', () => {
 
     it('does not crash when conversationId is undefined', () => {
       // Arrange
-      const { useTypingIndicator } = require('@/hooks/use-typing-indicator')
+      
 
       // Act
       const { result } = renderHook(() =>
@@ -274,7 +274,7 @@ describe('useTypingIndicator (TC-069)', () => {
 
     it('does not crash when userId is undefined', () => {
       // Arrange
-      const { useTypingIndicator } = require('@/hooks/use-typing-indicator')
+      
 
       // Act
       const { result } = renderHook(() =>
@@ -287,7 +287,7 @@ describe('useTypingIndicator (TC-069)', () => {
 
     it('cleanup on unmount: removes channel and clears timeouts', () => {
       // Arrange
-      const { useTypingIndicator } = require('@/hooks/use-typing-indicator')
+      
       const { unmount } = renderHook(() =>
         useTypingIndicator('conv-123', 'user-1')
       )
@@ -303,7 +303,7 @@ describe('useTypingIndicator (TC-069)', () => {
   describe('typing indicator edge cases', () => {
     it('resets debounce timer when new typing events come in rapid succession', () => {
       // Arrange
-      const { useTypingIndicator } = require('@/hooks/use-typing-indicator')
+      
       const { result } = renderHook(() =>
         useTypingIndicator('conv-123', 'user-1')
       )
@@ -348,7 +348,7 @@ describe('useTypingIndicator (TC-069)', () => {
         return mockChannel
       })
 
-      const { useTypingIndicator } = require('@/hooks/use-typing-indicator')
+      
       const { result } = renderHook(() =>
         useTypingIndicator('conv-123', 'user-1')
       )
