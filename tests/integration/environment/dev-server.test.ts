@@ -1,5 +1,7 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest'
 import { execSync } from 'child_process'
+import { readFileSync } from 'fs'
+import { resolve } from 'path'
 
 // =============================================================================
 // TC-004: Verify npm run dev starts Next.js on localhost:3000
@@ -17,14 +19,13 @@ vi.mock('child_process', () => ({
 
 const mockedExecSync = vi.mocked(execSync)
 
-// Lazy-load package.json once (works because cwd is project root)
-let _pkg: Record<string, unknown> | null = null
-function getPackageJson(): Record<string, unknown> {
+// Lazy-load package.json once
+let _pkg: { scripts?: Record<string, string> } | null = null
+function getPackageJson(): { scripts?: Record<string, string> } {
   if (!_pkg) {
-    // In vitest, cwd is the project root, so require('package.json') works
-    _pkg = require('../../../package.json')
+    _pkg = JSON.parse(readFileSync(resolve(__dirname, '../../../package.json'), 'utf-8')) as { scripts?: Record<string, string> }
   }
-  return _pkg as Record<string, unknown>
+  return _pkg!
 }
 
 describe('npm run dev - Dev Server Startup (TC-004)', () => {
@@ -41,7 +42,7 @@ describe('npm run dev - Dev Server Startup (TC-004)', () => {
     const pkg = getPackageJson()
 
     // Act
-    const devScript = pkg.scripts?.dev as string
+    const devScript = pkg.scripts?.dev
 
     // Assert
     expect(devScript).toBeDefined()
@@ -53,7 +54,7 @@ describe('npm run dev - Dev Server Startup (TC-004)', () => {
     const pkg = getPackageJson()
 
     // Act
-    const devScript = pkg.scripts?.dev as string
+    const devScript = pkg.scripts?.dev
 
     // Assert
     expect(devScript).toContain('next')
@@ -64,7 +65,7 @@ describe('npm run dev - Dev Server Startup (TC-004)', () => {
     const pkg = getPackageJson()
 
     // Act
-    const devScript = pkg.scripts?.dev as string
+    const devScript = pkg.scripts?.dev
 
     // Assert
     // The script should either directly reference check-docker.mjs or have a skip variant
@@ -76,7 +77,7 @@ describe('npm run dev - Dev Server Startup (TC-004)', () => {
     const pkg = getPackageJson()
 
     // Act
-    const skipScript = pkg.scripts?.['dev:skip-docker'] as string
+    const skipScript = pkg.scripts?.['dev:skip-docker']
 
     // Assert
     expect(skipScript).toBeDefined()
