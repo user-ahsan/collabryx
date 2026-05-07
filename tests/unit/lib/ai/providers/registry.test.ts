@@ -3,7 +3,7 @@ import { ProviderRegistry } from '@/lib/ai/providers/registry'
 import { AllProvidersFailedError } from '@/lib/ai/errors'
 import type { AIProvider, Message, AIProviderResponse } from '@/lib/ai/providers/base'
 
-const createMockProvider = (name: string, priority: number): AIProvider => {
+const createMockProvider = (name: string, _priority: number): AIProvider => {
   const provider = {
     config: {
       name,
