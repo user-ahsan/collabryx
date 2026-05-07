@@ -6,13 +6,12 @@
  * Also tests toast behavior in form submission contexts.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
 import { toast } from 'sonner'
 import type { NotificationWithActor } from '@/lib/services/notifications'
 
 // Mock hooks
 const mockMutateAsync = vi.fn().mockResolvedValue(undefined)
-const mockMutate = vi.fn()
+const _mockMutate = vi.fn()
 
 vi.mock('@/hooks/use-notifications', () => ({
   useMarkNotificationAsRead: () => ({ mutateAsync: mockMutateAsync }),
@@ -32,7 +31,7 @@ vi.mock('@/lib/logger', () => ({
 // ─── Tests ─────────────────────────────────────────────────────────────────
 
 describe('Toast Notifications (TC-088)', () => {
-  const mockNotification: NotificationWithActor = {
+  const _mockNotification: NotificationWithActor = {
     id: 'notif-123',
     user_id: 'user-1',
     type: 'like',
