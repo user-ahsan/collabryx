@@ -3,7 +3,7 @@
  * Verifies AI provider registry routes requests to correct provider,
  * handles failover gracefully, and uses provider-specific API keys/configs.
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { ProviderRegistry } from '@/lib/ai/providers/registry'
 import { AllProvidersFailedError, AIProviderError } from '@/lib/ai/errors'
 import type { AIProvider, AIProviderConfig, Message, AIProviderResponse } from '@/lib/ai/providers/base'
