@@ -196,15 +196,19 @@ describe('AI Mentor Chat Session Integration', () => {
 
     it('should handle users with no skills gracefully', () => {
       // Arrange
-      const minimalProfile = {
+      const minimalProfile: {
+        display_name: string
+        headline: string | null
+        looking_for: string[]
+        skills: { skill_name: string }[]
+        interests: { interest: string }[]
+      } = {
         display_name: 'New User',
         headline: null,
         looking_for: [],
         skills: [],
         interests: [],
       }
-
-      // Act
       const skillsText = minimalProfile.skills.length > 0
         ? minimalProfile.skills.map(s => s.skill_name).join(', ')
         : 'Not specified'
