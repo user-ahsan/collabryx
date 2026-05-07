@@ -29,7 +29,7 @@ const serviceRole: MockUser = { id: 'service-id', email: 'service@system', role:
  * Every auth call returns the given user's identity.
  */
 function createMockSupabaseForUser(user: MockUser | null) {
-  const jwt = user?.role === 'service_role'
+  const _jwt = user?.role === 'service_role'
     ? { role: 'service_role' }
     : { role: 'authenticated' }
 
