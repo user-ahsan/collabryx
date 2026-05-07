@@ -19,7 +19,7 @@ vi.mock('@/components/ui/avatar', () => ({
     <span data-testid="avatar-fallback" className={className}>{children}</span>
   ),
   AvatarImage: ({ src, alt }: any) => (
-    <img data-testid="avatar-image" src={src} alt={alt} />
+    <div data-testid="avatar-image" src={src} alt={alt} />
   ),
 }))
 

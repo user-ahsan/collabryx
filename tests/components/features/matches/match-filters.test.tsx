@@ -5,7 +5,7 @@
  * TC-056: Users can filter matches by availability status
  */
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MatchFilters } from '@/components/features/matches/match-filters'
 
@@ -124,12 +124,11 @@ describe('MatchFilters', () => {
     it('calls onViewModeChange with "list" when list button is clicked', async () => {
       // Arrange
       const onViewModeChange = vi.fn()
-      const user = userEvent.setup()
       render(<MatchFilters viewMode="grid" onViewModeChange={onViewModeChange} />)
 
       // Act — find the list button (second in toggle group) and click
       const buttons = screen.getAllByRole('button')
-      const listButton = buttons.find(
+      const _listButton = buttons.find(
         (btn) => btn.getAttribute('aria-label')?.includes('list') || btn.textContent?.includes('list')
       )
 

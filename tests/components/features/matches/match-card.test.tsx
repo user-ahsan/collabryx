@@ -5,7 +5,7 @@
  * and the WhyMatchModal shows detailed match breakdown.
  */
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { MatchCard } from '@/components/features/matches/match-card'
 import { WhyMatchModal } from '@/components/features/matches/why-match-modal'
 
@@ -55,7 +55,7 @@ vi.mock('@/components/ui/avatar', () => ({
   Avatar: ({ children, className }: { children: React.ReactNode; className?: string }) => (
     <div className={className} data-testid="avatar">{children}</div>
   ),
-  AvatarImage: ({ src, alt }: { src: string; alt: string }) => <img src={src} alt={alt} />,
+  AvatarImage: ({ src, alt }: { src: string; alt: string }) => <div data-testid="avatar-image" src={src} alt={alt} />,
   AvatarFallback: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
 }))
 
@@ -66,10 +66,9 @@ vi.mock('@/components/ui/badge', () => ({
 }))
 
 vi.mock('@/components/ui/button', () => ({
-  Button: ({ children, variant, size, className, onClick }: {
+  Button: ({ children, variant, className, onClick }: {
     children: React.ReactNode
     variant?: string
-    size?: string
     className?: string
     onClick?: (e: React.MouseEvent) => void
   }) => (
