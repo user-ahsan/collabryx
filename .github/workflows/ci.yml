@@ -24,6 +24,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Clean Next.js cache
+        run: rm -rf .next
+
       - name: Type check
         run: npm run typecheck
 
@@ -53,6 +56,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Clean Next.js cache
+        run: rm -rf .next
 
       - name: Build
         run: npm run build
