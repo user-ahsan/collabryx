@@ -75,7 +75,7 @@ describe('TC-049: Non-blocking embedding generation', () => {
     // Act - simulate the Next.js response pathway
     // The response returns immediately ("queued"), then the embedding runs in background
     const responsePromise = simulateApiResponse(5)
-    const embeddingPromise = simulateEmbeddingGeneration('test bio', 'user-002', 1000)
+    const _embeddingPromise = simulateEmbeddingGeneration('test bio', 'user-002', 1000)
 
     // Advance timers to complete the quick response
     vi.advanceTimersByTime(10)
@@ -94,9 +94,9 @@ describe('TC-049: Non-blocking embedding generation', () => {
     const users = ['user-a', 'user-b', 'user-c', 'user-d', 'user-e']
 
     // Act - fire multiple requests, each queuing work in background
-    const apiResponses = users.map((uid) => simulateApiResponse(10))
-    const embeddingPromises = users.map((uid) =>
-      simulateEmbeddingGeneration(`Bio for ${uid}`, uid, 500)
+    const apiResponses = users.map((_uid) => simulateApiResponse(10))
+    const _embeddingPromises = users.map((_uid) =>
+      simulateEmbeddingGeneration(`Bio for ${_uid}`, _uid, 500)
     )
 
     vi.advanceTimersByTime(15)
@@ -143,7 +143,7 @@ describe('TC-049: Non-blocking embedding generation', () => {
     // Arrange - Next.js API routes have a default timeout
     // The embedding generation can take longer than the route timeout
 
-    const ROUTE_TIMEOUT_MS = 5000 // typical Vercel function timeout
+    const _ROUTE_TIMEOUT_MS = 5000 // typical Vercel function timeout
     const embeddingDuration = 3000 // embedding takes 3s
 
     // Act - route handler returns immediately with queued status
