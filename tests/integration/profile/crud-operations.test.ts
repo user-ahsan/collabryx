@@ -79,7 +79,7 @@ describe('Profile CRUD Operations Integration (TC-022-025, TC-028)', () => {
         insert: vi.fn(),
       } as any)
 
-      const skills: string[] = []
+      const _skills: string[] = []
 
       // Act: Delete without inserting if empty
       await mockSupabaseClient.from('user_skills').delete().eq('user_id', USER_ID)
@@ -255,7 +255,7 @@ describe('Profile CRUD Operations Integration (TC-022-025, TC-028)', () => {
       } as any)
 
       // Act: Toggle to "available"
-      const result = await mockSupabaseClient
+      const _result = await mockSupabaseClient
         .from('profiles')
         .update({ collaboration_readiness: 'available', updated_at: expect.any(String) })
         .eq('id', USER_ID)
