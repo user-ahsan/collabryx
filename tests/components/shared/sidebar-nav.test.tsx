@@ -293,8 +293,10 @@ describe('SidebarNav (TC-036)', () => {
   // -----------------------------------------------------------------------
   it('should render without profile (null user/email)', () => {
     // Arrange – override mockUserState for this test only
-    mockUserState.user = null as any
-    mockUserState.profile = null
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(mockUserState as any).user = null
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(mockUserState as any).profile = null
     mockIsCollapsed.mockReturnValue(false)
 
     // Act
@@ -305,8 +307,10 @@ describe('SidebarNav (TC-036)', () => {
     expect(fallbackText).toBeDefined()
 
     // Restore
-    mockUserState.user = { id: 'test-user-123', email: 'test@collabryx.dev' } as any
-    mockUserState.profile = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(mockUserState as any).user = { id: 'test-user-123', email: 'test@collabryx.dev' }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(mockUserState as any).profile = {
       full_name: 'Test User',
       avatar_url: null,
       headline: 'Software Engineer',
