@@ -1,15 +1,7 @@
 import { createClient } from "@/lib/supabase/client"
 import {
   withDatabaseProtection,
-  executeProtectedQuery,
-  withRetry,
-  withTimeout,
-  withCircuitBreaker,
-  trackDatabaseOperation,
-  getConnectionHealth,
   type ProtectedQueryOptions,
-  type RetryOptions,
-  type TimeoutOptions,
 } from "@/lib/database-connection-manager"
 
 export interface QueryStats {
