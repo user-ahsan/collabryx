@@ -7,7 +7,7 @@
  * and shows fallback UI when WebGL context is unavailable.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, cleanup } from '@testing-library/react'
+import { render, cleanup } from '@testing-library/react'
 import React from 'react'
 
 // ---------------------------------------------------------------------------
@@ -32,18 +32,18 @@ vi.mock('cobe', () => {
 // ---------------------------------------------------------------------------
 const mockMotionValueGet = vi.fn(() => 0)
 const mockMotionValueSet = vi.fn()
-const mockMotionValue = vi.fn((initial: number) => ({
+const _mockMotionValue = vi.fn((_initial: number) => ({
   get: () => mockMotionValueGet(),
   set: (v: number) => mockMotionValueSet(v),
   onChange: vi.fn(),
   destroy: vi.fn(),
 }))
-const mockUseSpring = vi.fn((_value: unknown) => ({
+const _mockUseSpring = vi.fn((_value: unknown) => ({
   get: () => 0,
 }))
 
 vi.mock('motion/react', () => ({
-  useMotionValue: vi.fn((initial: number) => ({
+  useMotionValue: vi.fn((_initial: number) => ({
     get: () => 0,
     set: vi.fn(),
     onChange: vi.fn(),
