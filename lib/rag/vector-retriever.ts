@@ -1,6 +1,5 @@
 import OpenAI from 'openai'
 import { createClient } from '@/lib/supabase/server'
-import { cosineSimilarity } from '@/lib/utils/vector-math'
 import { BM25, BM25Document } from '@/lib/services/bm25'
 import type { RetrievedContext } from './types'
 

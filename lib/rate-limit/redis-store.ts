@@ -11,7 +11,7 @@ export class RedisRateLimitStore implements RateLimitStore {
 
   async incr(key: string, ttl: number): Promise<{ count: number; resetAt: number }> {
     const now = Date.now()
-    const windowKey = `ratelimit:${key}:${Math.floor(now / ttl) * ttl}`
+    const _windowKey = `ratelimit:${key}:${Math.floor(now / ttl) * ttl}`
     
     return { count: 1, resetAt: now + ttl }
   }
