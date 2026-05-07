@@ -455,12 +455,14 @@ describe('TC-099 — Analytics Aggregator: Weekly Digest', () => {
 
     test('should skip top post section when none available', () => {
       // Arrange
-      const topPost = null
+      const topPost: { reaction_count: number } | null = null
 
       // Act
-      const topPostLine = topPost
-        ? `\n\n🔥 Top post: ${topPost.reaction_count} reactions`
-        : ''
+      let topPostLine = ''
+      if (topPost !== null) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        topPostLine = `\n\n🔥 Top post: ${(topPost as any).reaction_count} reactions`
+      }
 
       // Assert
       expect(topPostLine).toBe('')
