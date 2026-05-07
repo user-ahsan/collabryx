@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { systemPrompt, warnings } = await assembleAndBuildPrompt(
+    const { systemPrompt } = await assembleAndBuildPrompt(
       userId,
       query || '',
       sessionId,
