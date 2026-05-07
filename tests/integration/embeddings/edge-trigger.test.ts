@@ -189,11 +189,11 @@ describe('TC-050: Deno Edge Function trigger', () => {
     }
 
     // Act
-    let errorOccurred = false
+    let _errorOccurred = false
     try {
       await simulateEdgeGenerateEmbedding(request)
     } catch {
-      errorOccurred = true
+      _errorOccurred = true
     }
 
     // Assert - the edge function should see the error
