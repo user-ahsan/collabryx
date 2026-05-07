@@ -1,5 +1,5 @@
 import type { AIProvider, Message, AIProviderResponse } from './base'
-import { AllProvidersFailedError, AIProviderError } from '@/lib/ai/errors'
+import { AllProvidersFailedError } from '@/lib/ai/errors'
 
 export interface ProviderConfig {
   name: string
