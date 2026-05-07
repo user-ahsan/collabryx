@@ -1,6 +1,7 @@
 // Mock for @testing-library/user-event
 // This provides a basic implementation that maps to fireEvent
 import { fireEvent } from '@testing-library/react'
+import { vi } from 'vitest'
 
 // Parse special key notation like {Enter} to just Enter
 const parseSpecialKey = (text: string): string => {
@@ -33,21 +34,24 @@ const userEvent = {
   setup: () => ({
     click: (element: Element, eventInit?: MouseEventInit) => {
       if ('pointermove' in element) {
-        fireEvent.pointerMove(element as HTMLElement, eventInit)
+        fireEvent.pointerMove(element as unknown as HTMLElement, eventInit)
       }
-      return fireEvent.click(element as HTMLElement, eventInit)
+      return fireEvent.click(element as unknown as HTMLElement, eventInit)
     },
     dblClick: (element: Element, eventInit?: MouseEventInit) => {
-      return fireEvent.dblClick(element as HTMLElement, eventInit)
+      return fireEvent.dblClick(element as unknown as HTMLElement, eventInit)
     },
     tripleClick: (element: Element) => {
-      return fireEvent.tripleClick(element as HTMLElement)
+      // fireEvent doesn't have tripleClick, so just click three times
+      fireEvent.click(element as unknown as HTMLElement)
+      fireEvent.click(element as unknown as HTMLElement)
+      fireEvent.click(element as unknown as HTMLElement)
     },
     hover: (element: Element) => {
-      fireEvent.pointerEnter(element as HTMLElement)
+      fireEvent.pointerEnter(element as unknown as HTMLElement)
     },
     unhover: (element: Element) => {
-      fireEvent.pointerLeave(element as HTMLElement)
+      fireEvent.pointerLeave(element as unknown as HTMLElement)
     },
     selectOptions: (element: HTMLElement, values: string | string[]) => {
       fireEvent.change(element, { target: { value: Array.isArray(values) ? values[0] : values } })
@@ -56,15 +60,15 @@ const userEvent = {
       fireEvent.change(element, { target: { value: '' } })
     },
     type: (element: Element, text: string, options?: { delay?: number }) => {
-      fireEvent.input(element as HTMLElement, { target: { value: text }, bubbles: true })
+      fireEvent.input(element as unknown as HTMLElement, { target: { value: text }, bubbles: true })
       return Promise.resolve()
     },
     paste: async (element: Element, text: string) => {
-      fireEvent.paste(element as HTMLElement, {
+      fireEvent.paste(element as unknown as HTMLElement, {
         clipboardData: {
           getData: () => text,
         },
-      } as ClipboardEvent)
+      } as unknown as ClipboardEvent)
     },
     keyboard: (text: string) => {
       const key = parseSpecialKey(text)
@@ -82,7 +86,7 @@ const userEvent = {
       }
     },
     clear: (element: Element) => {
-      fireEvent.change(element as HTMLInputElement, { target: { value: '' } })
+      fireEvent.change(element as unknown as HTMLInputElement, { target: { value: '' } })
     },
     copy: () => {
       document.execCommand = vi.fn()
@@ -90,40 +94,31 @@ const userEvent = {
     cut: () => {
       document.execCommand = vi.fn()
     },
-    paste: () => {
-      document.execCommand = vi.fn()
-    },
-    hover: (element: Element) => {
-      fireEvent.mouseEnter(element as HTMLElement)
-    },
-    unhover: (element: Element) => {
-      fireEvent.mouseLeave(element as HTMLElement)
-    },
   }),
   click: (element: Element, eventInit?: MouseEventInit) => {
-    return fireEvent.click(element as HTMLElement, eventInit)
+    return fireEvent.click(element as unknown as HTMLElement, eventInit)
   },
   dblClick: (element: Element, eventInit?: MouseEventInit) => {
-    return fireEvent.dblClick(element as HTMLElement, eventInit)
+    return fireEvent.dblClick(element as unknown as HTMLElement, eventInit)
   },
   hover: (element: Element) => {
-    fireEvent.mouseEnter(element as HTMLElement)
+    fireEvent.mouseEnter(element as unknown as HTMLElement)
   },
   unhover: (element: Element) => {
-    fireEvent.mouseLeave(element as HTMLElement)
+    fireEvent.mouseLeave(element as unknown as HTMLElement)
   },
   selectOptions: (element: HTMLElement, values: string | string[]) => {
     fireEvent.change(element, { target: { value: Array.isArray(values) ? values[0] : values } })
   },
   type: async (element: Element, text: string) => {
-    fireEvent.input(element as HTMLElement, { target: { value: text }, bubbles: true })
+    fireEvent.input(element as unknown as HTMLElement, { target: { value: text }, bubbles: true })
   },
   paste: async (element: Element, text: string) => {
-    fireEvent.paste(element as HTMLElement, {
+    fireEvent.paste(element as unknown as HTMLElement, {
       clipboardData: {
         getData: () => text,
       },
-    } as ClipboardEvent)
+    } as unknown as ClipboardEvent)
   },
   keyboard: (text: string) => {
     const key = parseSpecialKey(text)
@@ -141,7 +136,7 @@ const userEvent = {
     }
   },
   clear: (element: Element) => {
-    fireEvent.change(element as HTMLInputElement, { target: { value: '' } })
+    fireEvent.change(element as unknown as HTMLInputElement, { target: { value: '' } })
   },
 }
 
