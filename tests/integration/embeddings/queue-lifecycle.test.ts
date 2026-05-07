@@ -35,7 +35,7 @@ function createMockQueryBuilder(returnData: unknown[] = [], returnError: unknown
 }
 
 // Module-level builder instance so beforeEach can reset it
-let currentBuilder = createMockQueryBuilder()
+const currentBuilder = createMockQueryBuilder()
 let mockSupabaseBuilder = currentBuilder // alias for test refs
 
 // Create a simple builder object that can be returned by mockSupabase.from/table
@@ -121,7 +121,7 @@ function createPendingEntry(userId: string, status = 'pending' as const): Pendin
   }
 }
 
-function createProfileEmbedding(userId: string, status = 'pending' as const): ProfileEmbedding {
+function createProfileEmbedding(userId: string, status: 'pending' | 'processing' | 'completed' | 'failed' = 'pending'): ProfileEmbedding {
   return {
     id: `emb-${userId}`,
     user_id: userId,
@@ -137,8 +137,14 @@ describe('Embedding Queue Lifecycle', () => {
     simpleBuilder = createSimpleBuilder()
     // mockSupabase.from(table) delegates to simpleBuilder.from(table)
     // so assertions on simpleBuilder.from work correctly
-    mockSupabase.from = vi.fn((table: string) => simpleBuilder.from(table))
-    mockSupabase.table = vi.fn((table: string) => simpleBuilder.table(table))
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(mockSupabase.from as any).mockImplementation((_table: string) => simpleBuilder)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(mockSupabase.table as any).mockImplementation((_table: string) => simpleBuilder)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(mockSupabase.from as any).mockReturnValue(simpleBuilder)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ;(mockSupabase.table as any).mockReturnValue(simpleBuilder)
     // Alias for test convenience - point to simpleBuilder
     mockSupabaseBuilder = simpleBuilder
   })
@@ -158,8 +164,8 @@ describe('Embedding Queue Lifecycle', () => {
       mockSupabaseBuilder.execute.mockResolvedValue({ data: [pendingEntry], error: null })
 
       // Act - simulate inserting into pending queue
-      const result = await mockSupabase
-        .from('embedding_pending_queue')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await (mockSupabase.from as any)('embedding_pending_queue')
         .insert({
           user_id: newUserId,
           trigger_source: 'onboarding',
@@ -188,8 +194,8 @@ describe('Embedding Queue Lifecycle', () => {
       mockSupabaseBuilder.execute.mockResolvedValue({ data: [entry], error: null })
 
       // Act
-      const result = await mockSupabase
-        .from('embedding_pending_queue')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await (mockSupabase.from as any)('embedding_pending_queue')
         .insert({
           user_id: userId,
           trigger_source: 'onboarding',
@@ -211,8 +217,8 @@ describe('Embedding Queue Lifecycle', () => {
       })
 
       // Act
-      const result = await mockSupabase
-        .from('embedding_pending_queue')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await (mockSupabase.from as any)('embedding_pending_queue')
         .insert({
           user_id: 'existing-user',
           trigger_source: 'onboarding',
@@ -240,8 +246,8 @@ describe('Embedding Queue Lifecycle', () => {
       mockSupabaseBuilder.execute.mockResolvedValue({ data: pendingItems, error: null })
 
       // Act - worker polls for pending items ordered by creation time
-      const result = await mockSupabase
-        .from('embedding_pending_queue')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await (mockSupabase.from as any)('embedding_pending_queue')
         .select('*')
         .eq('status', 'pending')
         .order('created_at')
@@ -268,15 +274,15 @@ describe('Embedding Queue Lifecycle', () => {
         .mockResolvedValueOnce({ data: [{ ...entry, status: 'processing' }], error: null })
 
       // Act - worker claims the item atomically
-      const selectResult = await mockSupabase
-        .from('embedding_pending_queue')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const selectResult = await (mockSupabase.from as any)('embedding_pending_queue')
         .select('*')
         .eq('status', 'pending')
         .limit(20)
         .execute()
 
-      const claimResult = await mockSupabase
-        .from('embedding_pending_queue')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const claimResult = await (mockSupabase.from as any)('embedding_pending_queue')
         .update({ status: 'processing', first_attempt: new Date().toISOString() })
         .eq('id', entry.id)
         .eq('status', 'pending')
@@ -294,8 +300,8 @@ describe('Embedding Queue Lifecycle', () => {
       mockSupabaseBuilder.execute.mockResolvedValue({ data: [], error: null })
 
       // Act
-      const result = await mockSupabase
-        .from('embedding_pending_queue')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await (mockSupabase.from as any)('embedding_pending_queue')
         .select('*')
         .eq('status', 'pending')
         .limit(20)
@@ -322,8 +328,8 @@ describe('Embedding Queue Lifecycle', () => {
       mockSupabaseBuilder.execute.mockResolvedValue({ data: [embeddingEntry], error: null })
 
       // Act - simulate storing the generated vector
-      const result = await mockSupabase
-        .from('profile_embeddings')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await (mockSupabase.from as any)('profile_embeddings')
         .upsert(
           {
             user_id: userId,
@@ -351,8 +357,8 @@ describe('Embedding Queue Lifecycle', () => {
       })
 
       // Act
-      const result = await mockSupabase
-        .from('profile_embeddings')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await (mockSupabase.from as any)('profile_embeddings')
         .upsert({ user_id: userId, embedding: vector384, status: 'completed' })
         .execute()
 
@@ -368,8 +374,8 @@ describe('Embedding Queue Lifecycle', () => {
         .mockResolvedValueOnce({ data: [{ id: queueId, status: 'completed' }], error: null })
 
       // Act - mark the queue item as completed
-      const result = await mockSupabase
-        .from('embedding_pending_queue')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await (mockSupabase.from as any)('embedding_pending_queue')
         .update({
           status: 'completed',
           completed_at: new Date().toISOString(),
@@ -396,8 +402,8 @@ describe('Embedding Queue Lifecycle', () => {
       mockSupabaseBuilder.execute.mockResolvedValue({ data: pendingItems, error: null })
 
       // Act - query the queue as if checking it after failed worker contact
-      const result = await mockSupabase
-        .from('embedding_pending_queue')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await (mockSupabase.from as any)('embedding_pending_queue')
         .select('*')
         .eq('status', 'pending')
         .execute()
@@ -416,8 +422,8 @@ describe('Embedding Queue Lifecycle', () => {
       mockSupabaseBuilder.execute.mockResolvedValue({ data: pendingItems, error: null })
 
       // Act - poll the pending queue (would be done to check what needs processing)
-      const result = await mockSupabase
-        .from('embedding_pending_queue')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await (mockSupabase.from as any)('embedding_pending_queue')
         .select('*')
         .eq('status', 'pending')
         .execute()
@@ -435,8 +441,8 @@ describe('Embedding Queue Lifecycle', () => {
 
       // Act - simulate 3 polling attempts where worker is offline each time
       for (let attempt = 0; attempt < 3; attempt++) {
-        await mockSupabase
-          .from('embedding_pending_queue')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await (mockSupabase.from as any)('embedding_pending_queue')
           .select('*')
           .eq('status', 'pending')
           .execute()
@@ -444,8 +450,8 @@ describe('Embedding Queue Lifecycle', () => {
       }
 
       // Assert - final query still shows the pending entry
-      const final = await mockSupabase
-        .from('embedding_pending_queue')
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const final = await (mockSupabase.from as any)('embedding_pending_queue')
         .select('*')
         .eq('status', 'pending')
         .execute()
