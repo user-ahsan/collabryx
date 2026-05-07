@@ -101,7 +101,8 @@ export function Globe({
       })
     } catch (err) {
       console.error('Failed to create globe:', err)
-      setHasError(true)
+      // Defer setState to avoid cascading renders within effect body
+      queueMicrotask(() => setHasError(true))
       return
     }
 
