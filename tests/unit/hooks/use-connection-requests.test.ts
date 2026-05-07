@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
+import { z } from 'zod'
 import { useConnectionRequests } from '@/hooks/use-connection-requests'
 import { mockSupabaseClient } from '@/tests/setup/mocks'
 
@@ -89,8 +90,6 @@ describe('useConnectionRequests', () => {
 
     it('validateSendConnectionInput rejects empty receiver_id', () => {
       // This tests the Zod validation schema from the connections service
-      const { z } = require('zod')
-
       const SendConnectionRequestSchema = z.object({
         receiver_id: z.string().uuid('Invalid user ID format'),
         message: z.string().max(500, 'Message too long (max 500 characters)').optional(),
@@ -105,8 +104,6 @@ describe('useConnectionRequests', () => {
     })
 
     it('validateSendConnectionInput accepts valid request data', () => {
-      const { z } = require('zod')
-
       const SendConnectionRequestSchema = z.object({
         receiver_id: z.string().uuid('Invalid user ID format'),
         message: z.string().max(500, 'Message too long (max 500 characters)').optional(),
@@ -121,8 +118,6 @@ describe('useConnectionRequests', () => {
     })
 
     it('rejects message over 500 characters in connection request', () => {
-      const { z } = require('zod')
-
       const SendConnectionRequestSchema = z.object({
         receiver_id: z.string().uuid('Invalid user ID format'),
         message: z.string().max(500, 'Message too long (max 500 characters)').optional(),
@@ -138,8 +133,6 @@ describe('useConnectionRequests', () => {
     })
 
     it('allows connection request message at exactly 500 characters', () => {
-      const { z } = require('zod')
-
       const SendConnectionRequestSchema = z.object({
         receiver_id: z.string().uuid('Invalid user ID format'),
         message: z.string().max(500, 'Message too long (max 500 characters)').optional(),
