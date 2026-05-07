@@ -1,7 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { useEffect, useRef, useCallback } from "react"
+import { useEffect, useRef } from "react"
 
 export const MeshGradientBackground = ({ className }: { className?: string }) => {
     const containerRef = useRef<HTMLDivElement>(null)
