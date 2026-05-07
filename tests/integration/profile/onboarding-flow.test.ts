@@ -273,7 +273,7 @@ describe('Onboarding Flow Integration (TC-021)', () => {
       } as any)
 
       // Act
-      const profileUpsert = vi.mocked(mockSupabaseClient.from('profiles')).upsert
+      const _profileUpsert = vi.mocked(mockSupabaseClient.from('profiles')).upsert
       // Because of mock, the upsert will return an error
     })
   })
