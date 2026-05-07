@@ -16,8 +16,7 @@
  *   4. Framer Motion mocks render correctly (motion.div etc.)
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, cleanup } from '@testing-library/react'
-import React from 'react'
+import { cleanup } from '@testing-library/react'
 import { motion, AnimatePresence } from 'motion/react'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
