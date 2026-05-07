@@ -64,10 +64,10 @@ describe('useMessages — Send Messages & Offline Sync (TC-066, TC-068)', () => 
         created_at: new Date().toISOString(),
       }
 
-      let insertPayload: Record<string, unknown> | null = null
+      let _insertPayload: Record<string, unknown> | null = null
 
       const insertFn = vi.fn().mockImplementation((payload: Record<string, unknown>) => {
-        insertPayload = payload
+        _insertPayload = payload
         return {
           select: vi.fn().mockReturnThis(),
           single: vi.fn().mockResolvedValue({ data: mockInsertedMessage, error: null }),
@@ -116,10 +116,10 @@ describe('useMessages — Send Messages & Offline Sync (TC-066, TC-068)', () => 
 
     it('trims whitespace from message text before inserting', async () => {
       // Arrange
-      let insertPayload: Record<string, unknown> | null = null
+      let _insertPayload: Record<string, unknown> | null = null
 
       const insertFn = vi.fn().mockImplementation((payload: Record<string, unknown>) => {
-        insertPayload = payload
+        _insertPayload = payload
         return {
           select: vi.fn().mockReturnThis(),
           single: vi.fn().mockResolvedValue({
