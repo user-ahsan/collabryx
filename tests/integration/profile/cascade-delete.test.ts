@@ -226,7 +226,7 @@ describe('Cascading Delete (TC-030)', () => {
         match_scores: { error: false },
       }
 
-      let failures = 0
+      const _failures = 0
       vi.mocked(mockSupabaseClient.from).mockImplementation((table: string) => {
         const mock = deleteMocks[table]
         return {
