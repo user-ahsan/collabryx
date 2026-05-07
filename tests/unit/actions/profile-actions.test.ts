@@ -393,7 +393,7 @@ describe('Profile Actions', () => {
       } as any)
 
       // Act
-      const result = await mockSupabaseClient
+      const _result = await mockSupabaseClient
         .from('profiles')
         .update({ collaboration_readiness: 'available', updated_at: expect.any(String) })
         .eq('id', 'test-user-id')
