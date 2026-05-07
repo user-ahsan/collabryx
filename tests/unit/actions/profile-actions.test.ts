@@ -239,7 +239,7 @@ describe('Profile Actions', () => {
 
     it('should handle empty experience insert attempt gracefully', () => {
       // Arrange
-      const emptyExperiences: Array<{ user_id: string; title: string; company: string; is_current: boolean }> = []
+      const emptyExperiences: Array<{ user_id: string; title: string; company: string; is_current: boolean }> = ([] as Array<{ user_id: string; title: string; company: string; is_current: boolean }>)
         .filter(e => e.title || e.company)
 
       // Assert
@@ -343,7 +343,7 @@ describe('Profile Actions', () => {
 
     it('should set is_public default to true for new projects', () => {
       // Arrange
-      const projectDefaults = {
+      const projectDefaults: { user_id: string; title: string; is_public?: boolean } = {
         user_id: 'test-user-id',
         title: 'New Project',
       }
@@ -455,8 +455,8 @@ describe('Profile Actions', () => {
 
     it('should toggle from not-available to available', async () => {
       // Arrange
-      const currentState = 'not-available'
-      const newState = currentState === 'available' ? 'not-available' : 'available'
+      const currentState: string = 'not-available'
+      const newState = currentState === 'not-available' ? 'available' : 'not-available'
 
       // Assert: toggle logic
       expect(newState).toBe('available')
