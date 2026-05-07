@@ -11,33 +11,25 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 // Mock Supabase
 // ============================================================
 function createMockQueryBuilder(returnData: unknown[] = [], returnError: unknown = null) {
-  // Use actual functions to preserve 'this' context instead of mockReturnThis()
-  // NOTE: single/maybeSingle call execute() so test mocks on execute() apply
+  // Use mockReturnThis() to enable method chaining like real Supabase client
   const builder: Record<string, ReturnType<typeof vi.fn>> = {
-    from: vi.fn(function(this: unknown) { return builder }),
-    select: vi.fn(function(this: unknown) { return builder }),
-    insert: vi.fn(function(this: unknown) { return builder }),
-    update: vi.fn(function(this: unknown) { return builder }),
-    upsert: vi.fn(function(this: unknown) { return builder }),
-    delete: vi.fn(function(this: unknown) { return builder }),
-    eq: vi.fn(function(this: unknown) { return builder }),
-    neq: vi.fn(function(this: unknown) { return builder }),
-    lt: vi.fn(function(this: unknown) { return builder }),
-    lte: vi.fn(function(this: unknown) { return builder }),
-    gt: vi.fn(function(this: unknown) { return builder }),
-    gte: vi.fn(function(this: unknown) { return builder }),
-    order: vi.fn(function(this: unknown) { return builder }),
-    limit: vi.fn(function(this: unknown) { return builder }),
-    single: vi.fn(function(this: unknown) {
-      // single() calls execute() so test mocks on execute() apply
-      const execResult = builder.execute() as { data: unknown[]; error: unknown }
-      return { data: execResult.data && execResult.data.length > 0 ? execResult.data[0] : null, error: execResult.error }
-    }),
-    maybeSingle: vi.fn(function(this: unknown) {
-      const execResult = builder.execute() as { data: unknown[]; error: unknown }
-      return { data: execResult.data && execResult.data.length > 0 ? execResult.data[0] : null, error: execResult.error }
-    }),
-    execute: vi.fn(function(this: unknown) { return { data: [] as unknown[], error: null } }),
+    from: vi.fn().mockReturnThis(),
+    select: vi.fn().mockReturnThis(),
+    insert: vi.fn().mockReturnThis(),
+    update: vi.fn().mockReturnThis(),
+    upsert: vi.fn().mockReturnThis(),
+    delete: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
+    neq: vi.fn().mockReturnThis(),
+    lt: vi.fn().mockReturnThis(),
+    lte: vi.fn().mockReturnThis(),
+    gt: vi.fn().mockReturnThis(),
+    gte: vi.fn().mockReturnThis(),
+    order: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockReturnThis(),
+    single: vi.fn().mockResolvedValue({ data: returnData.length > 0 ? returnData[0] : null, error: returnError }),
+    maybeSingle: vi.fn().mockResolvedValue({ data: returnData.length > 0 ? returnData[0] : null, error: returnError }),
+    execute: vi.fn().mockResolvedValue({ data: returnData, error: returnError }),
   }
   return builder
 }
@@ -124,8 +116,8 @@ describe('Worker Failure & Recovery', () => {
     // Reset builder with fresh mocks
     currentBuilder = createMockQueryBuilder()
     // mockSupabase.from(table) delegates to currentBuilder.from(table)
-    mockSupabase.from = vi.fn((table: string) => currentBuilder.from(table))
-    mockSupabase.table = vi.fn((table: string) => currentBuilder.table(table))
+    ;(mockSupabase.from as ReturnType<typeof vi.fn>).mockReturnValue(currentBuilder)
+    ;(mockSupabase.table as ReturnType<typeof vi.fn>).mockReturnValue(currentBuilder)
     // Alias for test convenience
     mockBuilder = currentBuilder
   })
@@ -148,8 +140,7 @@ describe('Worker Failure & Recovery', () => {
       mockBuilder.execute.mockResolvedValue({ data: queuedItems, error: null })
 
       // Act
-      const result = await mockSupabase
-        .from('embedding_pending_queue')
+      const result = await (mockSupabase.from as any)('embedding_pending_queue')
         .select('*')
         .eq('status', 'pending')
         .execute()
@@ -174,8 +165,7 @@ describe('Worker Failure & Recovery', () => {
         .mockResolvedValueOnce({ data: [completedItem], error: null })
 
       // Act - worker polls
-      const pending = await mockSupabase
-        .from('embedding_pending_queue')
+      const pending = await (mockSupabase.from as any)('embedding_pending_queue')
         .select('*')
         .eq('status', 'pending')
         .execute()
@@ -201,8 +191,7 @@ describe('Worker Failure & Recovery', () => {
       mockBuilder.execute.mockResolvedValue({ data: [updatedEmbedding], error: null })
 
       // Act - update the profile_embeddings status to pending (trigger regeneration)
-      const result = await mockSupabase
-        .from('profile_embeddings')
+      const result = await (mockSupabase.from as any)('profile_embeddings')
         .update({
           status: 'pending',
           last_updated: new Date().toISOString(),
@@ -227,8 +216,7 @@ describe('Worker Failure & Recovery', () => {
       mockBuilder.execute.mockResolvedValueOnce({ data: [existingEntry], error: null }) // for upsert path
 
       // Act - query existing first
-      const existing = await mockSupabase
-        .from('embedding_pending_queue')
+      const existing = await (mockSupabase.from as any)('embedding_pending_queue')
         .select('*')
         .eq('user_id', 'existing-bio-user')
         .single()
@@ -246,8 +234,7 @@ describe('Worker Failure & Recovery', () => {
       mockBuilder.execute.mockResolvedValue({ data: [manualEntry], error: null })
 
       // Act
-      const result = await mockSupabase
-        .from('embedding_pending_queue')
+      const result = await (mockSupabase.from as any)('embedding_pending_queue')
         .upsert({
           user_id: userId,
           trigger_source: 'manual',
@@ -274,8 +261,7 @@ describe('Worker Failure & Recovery', () => {
       mockBuilder.execute.mockResolvedValue({ data: [dlqEntry], error: null })
 
       // Act - store failed attempt in DLQ
-      const result = await mockSupabase
-        .from('embedding_dead_letter_queue')
+      const result = await (mockSupabase.from as any)('embedding_dead_letter_queue')
         .insert({
           user_id: userId,
           semantic_text: 'Bio text that failed',
@@ -307,8 +293,7 @@ describe('Worker Failure & Recovery', () => {
 
       // Each retry updates retry_count
       for (let count = 0; count < 3; count++) {
-        await mockSupabase
-          .from('embedding_dead_letter_queue')
+        await (mockSupabase.from as any)('embedding_dead_letter_queue')
           .update({ retry_count: count + 1, status: 'pending' })
           .eq('id', `dlq-${userId}-${count}`)
           .execute()
@@ -328,8 +313,7 @@ describe('Worker Failure & Recovery', () => {
       mockBuilder.execute.mockResolvedValue({ data: [exhaustedEntry], error: null })
 
       // Act - mark as exhausted after reaching max_retries (3)
-      const result = await mockSupabase
-        .from('embedding_dead_letter_queue')
+      const result = await (mockSupabase.from as any)('embedding_dead_letter_queue')
         .update({ status: 'exhausted', retry_count: 3 })
         .eq('user_id', userId)
         .execute()
@@ -346,8 +330,7 @@ describe('Worker Failure & Recovery', () => {
       mockBuilder.execute.mockResolvedValue({ data: pendingItems, error: null })
 
       // Act - only pull pending items (lt means retry_count < 3)
-      const result = await mockSupabase
-        .from('embedding_dead_letter_queue')
+      const result = await (mockSupabase.from as any)('embedding_dead_letter_queue')
         .select('*')
         .eq('status', 'pending')
         .lt('retry_count', 3)
@@ -366,8 +349,7 @@ describe('Worker Failure & Recovery', () => {
       mockBuilder.execute.mockResolvedValue({ data: [dlqWithReason], error: null })
 
       // Act
-      const result = await mockSupabase
-        .from('embedding_dead_letter_queue')
+      const result = await (mockSupabase.from as any)('embedding_dead_letter_queue')
         .insert({
           user_id: 'failure-reason-user',
           semantic_text: 'test text',
@@ -398,8 +380,7 @@ describe('Worker Failure & Recovery', () => {
         })
 
       // Act - mark pending as failed
-      await mockSupabase
-        .from('embedding_pending_queue')
+      await (mockSupabase.from as any)('embedding_pending_queue')
         .update({
           status: 'failed',
           failure_reason: 'Generation error',
@@ -408,8 +389,7 @@ describe('Worker Failure & Recovery', () => {
         .execute()
 
       // Act - insert into DLQ
-      const dlqResult = await mockSupabase
-        .from('embedding_dead_letter_queue')
+      const dlqResult = await (mockSupabase.from as any)('embedding_dead_letter_queue')
         .insert({
           user_id: userId,
           semantic_text: 'constructed text',
