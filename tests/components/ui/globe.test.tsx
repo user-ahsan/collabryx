@@ -18,9 +18,13 @@ const mockCreateGlobe = vi.fn(() => ({
   destroy: mockGlobeDestroy,
 }))
 
-vi.mock('cobe', () => ({
-  default: (...args: unknown[]) => mockCreateGlobe(...args),
-}))
+vi.mock('cobe', () => {
+  return {
+    default: function cobeMock(..._args: unknown[]) {
+      return mockCreateGlobe()
+    },
+  }
+})
 
 // ---------------------------------------------------------------------------
 // Mock motion/react  (useMotionValue / useSpring)
@@ -38,14 +42,17 @@ const mockUseSpring = vi.fn((_value: unknown) => ({
   get: () => 0,
 }))
 
-vi.mock('motion/react', async () => {
-  const actual = await vi.importActual<typeof import('motion/react')>('motion/react')
-  return {
-    ...actual,
-    useMotionValue: (initial: number) => mockMotionValue(initial),
-    useSpring: (value: unknown, config: unknown) => mockUseSpring(value, config),
-  }
-})
+vi.mock('motion/react', () => ({
+  useMotionValue: vi.fn((initial: number) => ({
+    get: () => 0,
+    set: vi.fn(),
+    onChange: vi.fn(),
+    destroy: vi.fn(),
+  })),
+  useSpring: vi.fn(() => ({
+    get: () => 0,
+  })),
+}))
 
 // ---------------------------------------------------------------------------
 // Unit under test
@@ -82,7 +89,7 @@ describe('Globe (TC-031, TC-032)', () => {
 
     // Assert – createGlobe was called with a <canvas> element
     expect(mockCreateGlobe).toHaveBeenCalledTimes(1)
-    const callArgs = mockCreateGlobe.mock.calls[0]
+    const callArgs = mockCreateGlobe.mock.calls[0] as unknown as [HTMLCanvasElement, object]
     expect(callArgs[0]).toBeInstanceOf(HTMLCanvasElement)
     expect(callArgs[1]).toMatchObject({
       width: expect.any(Number),
@@ -168,9 +175,8 @@ describe('Globe (TC-031, TC-032)', () => {
 
   it('should handle missing canvas ref gracefully', () => {
     // Arrange – mock createGlobe to handle null canvas
-    mockCreateGlobe.mockImplementationOnce((canvas: HTMLCanvasElement | null) => {
-      if (!canvas) throw new Error('No canvas element')
-      return { destroy: vi.fn() }
+    mockCreateGlobe.mockImplementationOnce(() => {
+      throw new Error('No canvas element')
     })
 
     // Act
