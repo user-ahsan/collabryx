@@ -62,8 +62,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Store raw body text for error fallback (stream can only be consumed once)
+  let rawBodyText = ""
   try {
-    const body = await request.json().catch(() => ({}));
+    rawBodyText = await request.text()
+  } catch {
+    // Ignore — body may not be text
+  }
+
+  try {
+    const body = rawBodyText ? JSON.parse(rawBodyText) : {}
     
     const validationResult = ModerateRequestSchema.safeParse(body);
     if (!validationResult.success) {
@@ -111,7 +119,8 @@ export async function POST(request: NextRequest) {
     console.error("Moderation API error:", error);
     
     // Fallback to basic moderation on error
-    const fallbackResult = await fallbackModeration(request.body ? String(request.body) : "");
+    const fallbackContent = rawBodyText || ""
+    const fallbackResult = await fallbackModeration(fallbackContent);
     fallbackResult.error = "Using fallback moderation (service unavailable)";
     
     return NextResponse.json(fallbackResult);

@@ -140,8 +140,8 @@ export async function logAuditEvent(input: AuditLogInput): Promise<AuditLogResul
     }
     
     // Get request context
-    const ipAddress = getClientIp()
-    const userAgent = getUserAgent()
+    const ipAddress = await getClientIp()
+    const userAgent = await getUserAgent()
     
     // Insert audit log
     const { data, error } = await supabase

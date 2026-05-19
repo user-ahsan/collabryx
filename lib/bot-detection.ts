@@ -37,7 +37,6 @@ const SUSPICIOUS_PATHS = [
   '/.git',
   '/config',
   '/backup',
-  '/admin',
   '/phpmyadmin',
   '/.aws',
   '/.ssh',

@@ -57,8 +57,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Store raw body text for error fallback (stream can only be consumed once)
+  let rawBodyText = ""
   try {
-    const body = await request.json().catch(() => ({}));
+    rawBodyText = await request.text()
+  } catch {
+    // Ignore — body may not be text
+  }
+
+  try {
+    const body = rawBodyText ? JSON.parse(rawBodyText) : {}
     
     const validationResult = MentorMessageRequestSchema.safeParse(body);
     if (!validationResult.success) {
@@ -114,7 +122,7 @@ export async function POST(request: NextRequest) {
     console.error("AI Mentor API error:", error);
     
     // Fallback to predefined responses
-    const fallbackResult = fallbackMentorResponse(request.body ? String(request.body) : "");
+    const fallbackResult = fallbackMentorResponse(rawBodyText || "");
     fallbackResult.error = "Using fallback response (service unavailable)";
     
     return NextResponse.json(fallbackResult);

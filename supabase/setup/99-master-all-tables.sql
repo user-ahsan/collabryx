@@ -2126,12 +2126,45 @@ ALTER TABLE public.content_moderation_logs ENABLE ROW LEVEL SECURITY;
 -- --------------------------------------------
 -- PROFILES RLS
 -- --------------------------------------------
-CREATE POLICY "Users can view any profile" ON public.profiles FOR SELECT USING (true);
 
+-- Owners can see their own profile with all fields including email
+CREATE POLICY "Users can view own profile" ON public.profiles FOR SELECT USING ((SELECT auth.uid()) = id);
+
+-- Non-owners can view profiles but email is hidden via a security view
+-- First, create a view that masks email for non-owners
+CREATE OR REPLACE VIEW public.profiles_public AS
+SELECT
+    id,
+    CASE WHEN auth.uid() = id THEN email ELSE NULL END AS email,
+    display_name,
+    full_name,
+    headline,
+    bio,
+    avatar_url,
+    banner_url,
+    location,
+    website_url,
+    collaboration_readiness,
+    is_verified,
+    verification_type,
+    university,
+    profile_completion,
+    looking_for,
+    onboarding_completed,
+    created_at,
+    updated_at
+FROM public.profiles;
+
+-- Grant access to the public view instead of direct table access
+GRANT SELECT ON public.profiles_public TO anon, authenticated;
+
+-- Users can update own profile
 CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING ((SELECT auth.uid()) = id);
 
+-- Users can insert own profile
 CREATE POLICY "Users can insert own profile" ON public.profiles FOR INSERT WITH CHECK ((SELECT auth.uid()) = id);
 
+-- Users can delete own profile (GDPR)
 CREATE POLICY "Users can delete own profile (GDPR)" ON public.profiles FOR DELETE USING ((SELECT auth.uid()) = id);
 
 -- --------------------------------------------

@@ -1,5 +1,13 @@
 import { createClient } from "@/lib/supabase/server"
 
+/**
+ * @deprecated Use `lib/rate-limit.ts` instead.
+ * This file contains a duplicate rate-limiting implementation.
+ * The canonical implementation is in `lib/rate-limit.ts` with
+ * proper fingerprinting, multiple rate limit tiers, and
+ * standardized response headers.
+ */
+
 interface RateLimitConfig {
   key: string
   maxRequests: number

@@ -11,12 +11,8 @@ async function generateRandomBytes(length: number): Promise<Uint8Array> {
     crypto.getRandomValues(array)
     return array
   }
-  // Fallback for environments without Web Crypto
-  const array = new Uint8Array(length)
-  for (let i = 0; i < length; i++) {
-    array[i] = Math.floor(Math.random() * 256)
-  }
-  return array
+  // No secure fallback — throw error instead of using insecure Math.random()
+  throw new Error('Cryptographically secure random number generation is not available in this environment')
 }
 
 async function hashSHA256(message: string): Promise<string> {
@@ -131,4 +127,42 @@ export function validateCSRFTokenClient(token: string | null): boolean {
   
   const tokenPattern = /^[a-f0-9]{64}$/i
   return tokenPattern.test(token)
+}
+
+/**
+ * Helper wrapper for enforcing CSRF validation in API route handlers.
+ * Returns a 403 response if validation fails, or null if it passes.
+ * Usage:
+ *   const csrfError = await enforceCSRF(request)
+ *   if (csrfError) return csrfError
+ */
+export async function enforceCSRF(request: Request): Promise<Response | null> {
+  if (!requiresCSRF(request.method)) {
+    return null
+  }
+
+  const csrfToken = request.headers.get('x-csrf-token')
+  // Use next/headers cookies() for server context compatibility
+  const cookieStore = await cookies()
+  const cookieToken = cookieStore.get(CSRF_COOKIE_NAME)?.value ?? null
+
+  if (!cookieToken) {
+    if (!csrfToken || !validateCSRFToken(csrfToken)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid CSRF token' }),
+        { status: 403, headers: { 'Content-Type': 'application/json' } }
+      )
+    }
+    return null
+  }
+
+  const isValid = await validateCSRFRequest(csrfToken, cookieToken)
+  if (!isValid) {
+    return new Response(
+      JSON.stringify({ error: 'Invalid CSRF token' }),
+      { status: 403, headers: { 'Content-Type': 'application/json' } }
+    )
+  }
+
+  return null
 }

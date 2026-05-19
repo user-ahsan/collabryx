@@ -11,6 +11,7 @@ export default defineConfig({
     include: ['**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     exclude: [
       'node_modules/**',
+      '.opencode/**',
       'tests/e2e/**',
       'e2e/**',
     ],

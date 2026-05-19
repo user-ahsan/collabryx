@@ -32,7 +32,7 @@ vi.mock('@/lib/supabase/server', () => ({
 }))
 
 // Use regular function, not arrow function, so it can be used as constructor
-const MockOpenAIWrapper = vi.fn().mockImplementation(function(this: { embeddings: typeof mockEmbeddings }) {
+const _MockOpenAIWrapper = vi.fn().mockImplementation(function(this: { embeddings: typeof mockEmbeddings }) {
   return {
     embeddings: mockEmbeddings
   }

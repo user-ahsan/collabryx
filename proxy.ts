@@ -1,10 +1,20 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
+import { checkBot, shouldBlockBot } from "@/lib/bot-detection"
 
 export async function proxy(request: NextRequest) {
     // Skip if Supabase is not configured (during build or missing .env.local)
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
         return NextResponse.next()
+    }
+
+    // Bot detection for suspicious paths
+    const botResult = checkBot(request)
+    if (shouldBlockBot(botResult)) {
+        return NextResponse.json(
+            { error: 'Access denied' },
+            { status: 403, headers: { 'X-Bot-Score': botResult.score.toString() } }
+        )
     }
 
     // Limit request body size for API routes (max 10MB)

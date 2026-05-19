@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
     .eq("id", user.id)
     .single();
   
-  const isAdmin = userProfile?.role === "admin" || process.env.NODE_ENV === "development";
+  const isAdmin = userProfile?.role === "admin" || process.env.DEVELOPMENT_MODE === "true";
   
   if (!isAdmin) {
     return NextResponse.json(

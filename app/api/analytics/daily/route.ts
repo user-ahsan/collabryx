@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getBackendConfig } from "@/lib/config/backend";
+import { validateCSRFRequest, requiresCSRF } from "@/lib/csrf";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,25 @@ export interface AnalyticsDailyResponse {
 }
 
 export async function POST(request: NextRequest) {
+  // Validate CSRF token for security
+  const csrfToken = request.headers.get('x-csrf-token');
+  const cookieToken = request.cookies.get('csrf_token')?.value || null;
+  
+  if (requiresCSRF(request.method)) {
+    const isValid = await validateCSRFRequest(csrfToken, cookieToken);
+    if (!isValid) {
+      console.warn('⚠️ CSRF validation failed:', {
+        hasHeaderToken: !!csrfToken,
+        hasCookieToken: !!cookieToken,
+        path: request.url,
+      });
+      return NextResponse.json(
+        { error: "Invalid CSRF token" },
+        { status: 403 }
+      );
+    }
+  }
+
   const supabase = await createClient();
   
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -51,7 +71,7 @@ export async function POST(request: NextRequest) {
     .eq("id", user.id)
     .single();
   
-  const isAdmin = userProfile?.role === "admin" || process.env.NODE_ENV === "development";
+  const isAdmin = userProfile?.role === "admin" || process.env.DEVELOPMENT_MODE === "true";
   
   if (!isAdmin) {
     return NextResponse.json(
@@ -60,8 +80,16 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Store raw body text for error fallback (stream can only be consumed once)
+  let rawBodyText = ""
   try {
-    const body = await request.json().catch(() => ({}));
+    rawBodyText = await request.text()
+  } catch {
+    // Ignore — body may not be text
+  }
+
+  try {
+    const body = rawBodyText ? JSON.parse(rawBodyText) : {}
     
     const validationResult = AnalyticsDailyRequestSchema.safeParse(body);
     if (!validationResult.success) {
@@ -109,7 +137,8 @@ export async function POST(request: NextRequest) {
     console.error("Analytics API error:", error);
     
     // Fallback to basic analytics
-    const fallbackResult = await fallbackAnalytics(request.body ? String(request.body) : undefined);
+    const dateStr = rawBodyText ? (() => { try { return JSON.parse(rawBodyText).date } catch { return undefined } })() : undefined
+    const fallbackResult = await fallbackAnalytics(dateStr);
     fallbackResult.error = "Using fallback analytics (service unavailable)";
     
     return NextResponse.json(fallbackResult);
