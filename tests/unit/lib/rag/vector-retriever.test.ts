@@ -19,7 +19,7 @@ const { mockEmbeddings, MockOpenAI } = vi.hoisted(() => {
   const mockEmb = { create: vi.fn() }
   return {
     mockEmbeddings: mockEmb,
-    MockOpenAI: vi.fn().mockImplementation(function(this: { embeddings: typeof mockEmb }) {
+    MockOpenAI: vi.fn().mockImplementation(function() {
       return {
         embeddings: mockEmb,
       }
@@ -31,13 +31,6 @@ vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn(() => createMockSupabaseClient())
 }))
 
-// Use regular function, not arrow function, so it can be used as constructor
-const _MockOpenAIWrapper = vi.fn().mockImplementation(function(this: { embeddings: typeof mockEmbeddings }) {
-  return {
-    embeddings: mockEmbeddings
-  }
-})
-
 vi.mock('openai', () => ({
   __esModule: true,
   default: MockOpenAI,
@@ -48,8 +41,11 @@ describe('vector-retriever', () => {
   describe('retrieveContextFromVectorStore', () => {
     const mockEmbedding = Array(384).fill(0.5)
 
-    beforeEach(() => {
+    beforeEach(async () => {
+      vi.resetModules()
       vi.clearAllMocks()
+      // Reset mock implementations after clearAllMocks
+      mockEmbeddings.create.mockReset()
     })
 
     afterEach(() => {
@@ -61,7 +57,7 @@ describe('vector-retriever', () => {
 
       const mockSupabaseClient = createMockSupabaseClient()
       ;(createClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabaseClient)
-      ;(new MockOpenAI() as unknown as { embeddings: { create: ReturnType<typeof vi.fn> } }).embeddings.create.mockResolvedValue({
+      mockEmbeddings.create.mockResolvedValue({
         data: [{ embedding: mockEmbedding }]
       })
 
@@ -106,7 +102,7 @@ describe('vector-retriever', () => {
 
       const mockSupabaseClient = createMockSupabaseClient()
       ;(createClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabaseClient)
-      ;(new MockOpenAI() as unknown as { embeddings: { create: ReturnType<typeof vi.fn> } }).embeddings.create.mockResolvedValue({
+      mockEmbeddings.create.mockResolvedValue({
         data: [{ embedding: mockEmbedding }]
       })
 
@@ -134,7 +130,7 @@ describe('vector-retriever', () => {
 
       const mockSupabaseClient = createMockSupabaseClient()
       ;(createClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabaseClient)
-      ;(new MockOpenAI() as unknown as { embeddings: { create: ReturnType<typeof vi.fn> } }).embeddings.create.mockRejectedValue(
+      mockEmbeddings.create.mockRejectedValue(
         new Error('OpenAI API error')
       )
 
@@ -150,7 +146,7 @@ describe('vector-retriever', () => {
 
       const mockSupabaseClient = createMockSupabaseClient()
       ;(createClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabaseClient)
-      ;(new MockOpenAI() as unknown as { embeddings: { create: ReturnType<typeof vi.fn> } }).embeddings.create.mockResolvedValue({
+      mockEmbeddings.create.mockResolvedValue({
         data: [{ embedding: mockEmbedding }]
       })
 
@@ -173,7 +169,7 @@ describe('vector-retriever', () => {
 
       const mockSupabaseClient = createMockSupabaseClient()
       ;(createClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabaseClient)
-      ;(new MockOpenAI() as unknown as { embeddings: { create: ReturnType<typeof vi.fn> } }).embeddings.create.mockResolvedValue({
+      mockEmbeddings.create.mockResolvedValue({
         data: [{ embedding: mockEmbedding }]
       })
 
@@ -217,7 +213,7 @@ describe('vector-retriever', () => {
 
       const mockSupabaseClient = createMockSupabaseClient()
       ;(createClient as ReturnType<typeof vi.fn>).mockReturnValue(mockSupabaseClient)
-      ;(new MockOpenAI() as unknown as { embeddings: { create: ReturnType<typeof vi.fn> } }).embeddings.create.mockResolvedValue({
+      mockEmbeddings.create.mockResolvedValue({
         data: [{ embedding: mockEmbedding }]
       })
 

@@ -1,6 +1,6 @@
  
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 
 // Mock next/headers - must use factory function for vi.mock
 // cookies() is async in Next.js 16
@@ -15,17 +15,19 @@ vi.mock('next/headers', () => ({
   }),
 }))
 
-// Mock Supabase client
+// Mock Supabase client - will be configured per-test
+const mockSupabase = {
+  auth: {
+    getUser: vi.fn(),
+    getSession: vi.fn(),
+    refreshSession: vi.fn(),
+  },
+  from: vi.fn(),
+  rpc: vi.fn(),
+}
+
 vi.mock('@/lib/supabase/server', () => ({
-  createClient: vi.fn(() => Promise.resolve({
-    auth: {
-      getUser: vi.fn(),
-      getSession: vi.fn(),
-      refreshSession: vi.fn(),
-    },
-    from: vi.fn(),
-    rpc: vi.fn(),
-  })),
+  createClient: vi.fn(() => Promise.resolve(mockSupabase)),
 }))
 
 // Mock development service
@@ -35,20 +37,9 @@ vi.mock('@/lib/services/development', () => ({
 }))
 
 import { completeOnboarding } from '@/app/(auth)/onboarding/actions'
-import { createClient } from '@/lib/supabase/server'
 import { completeTestUserOnboarding, isDevelopmentMode } from '@/lib/services/development'
 
 describe('Onboarding Server Actions', () => {
-  const mockSupabase = {
-    auth: {
-      getUser: vi.fn(),
-      getSession: vi.fn(),
-      refreshSession: vi.fn(),
-    },
-    from: vi.fn(),
-    rpc: vi.fn(),
-  }
-
   const mockProfileQuery = {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
@@ -74,53 +65,54 @@ describe('Onboarding Server Actions', () => {
     upsert: vi.fn().mockReturnThis(),
   }
 
-  const mockRpcQuery = {
-    rpc: vi.fn(),
-  }
-
-  beforeEach(() => {
+  beforeEach(async () => {
+    vi.resetModules()
     vi.clearAllMocks()
-    vi.mocked(createClient).mockResolvedValue(mockSupabase as any)
+
+    // Re-import after resetModules
+    const { createClient: cc } = await import('@/lib/supabase/server')
+    const { completeTestUserOnboarding: ctuo, isDevelopmentMode: idm } = await import('@/lib/services/development')
+
+    vi.mocked(cc).mockResolvedValue(mockSupabase as any)
     vi.mocked(mockSupabase.from).mockReturnValue(mockProfileQuery as any)
-    vi.mocked(mockSupabase.rpc).mockReturnValue(mockRpcQuery as any)
-    
-    // Default mocks
-    vi.mocked(mockSupabase.auth.getUser).mockResolvedValue({
+
+    // Reset mock implementations after clearAllMocks
+    mockSupabase.auth.getUser.mockResolvedValue({
       data: { user: { id: 'test-user-123', email: 'test@example.com', user_metadata: { name: 'Test User' } } },
       error: null,
     })
-
-    vi.mocked(mockSupabase.auth.getSession).mockResolvedValue({
+    mockSupabase.auth.getSession.mockResolvedValue({
       data: { session: { user: { id: 'test-user-123', email: 'test@example.com', user_metadata: { name: 'Test User' } }, access_token: 'test-token', refresh_token: 'test-refresh' } },
       error: null,
     })
-
-    vi.mocked(mockSupabase.auth.refreshSession).mockResolvedValue({
+    mockSupabase.auth.refreshSession.mockResolvedValue({
       data: { session: null },
       error: null,
     })
-    
-    vi.mocked(mockProfileQuery.single).mockResolvedValue({
+    mockProfileQuery.select.mockReturnThis()
+    mockProfileQuery.eq.mockReturnThis()
+    mockProfileQuery.neq.mockReturnThis()
+    mockProfileQuery.single.mockResolvedValue({
       data: { onboarding_completed: false },
       error: null,
     })
-    
-    vi.mocked(mockUpsertQuery.upsert).mockResolvedValue({
-      data: null,
-      error: null,
-    })
-    
-    vi.mocked(mockInsertQuery.upsert).mockResolvedValue({
-      data: null,
-      error: null,
-    })
-    
-    vi.mocked(mockRpcQuery.rpc).mockResolvedValue({
+    mockProfileQuery.upsert.mockReturnThis()
+    mockUpsertQuery.select.mockReturnThis()
+    mockUpsertQuery.eq.mockReturnThis()
+    mockUpsertQuery.neq.mockReturnThis()
+    mockUpsertQuery.single.mockResolvedValue({ data: { onboarding_completed: false }, error: null })
+    mockUpsertQuery.upsert.mockReturnThis()
+    mockInsertQuery.select.mockReturnThis()
+    mockInsertQuery.eq.mockReturnThis()
+    mockInsertQuery.neq.mockReturnThis()
+    mockInsertQuery.single.mockResolvedValue({ data: { onboarding_completed: false }, error: null })
+    mockInsertQuery.upsert.mockReturnThis()
+    mockSupabase.rpc.mockResolvedValue({
       data: { queued: true },
       error: null,
     })
-    
-    vi.mocked(isDevelopmentMode).mockReturnValue(false)
+    vi.mocked(idm).mockReturnValue(false)
+    vi.mocked(ctuo).mockResolvedValue({ success: true, error: null })
   })
 
   afterEach(() => {
