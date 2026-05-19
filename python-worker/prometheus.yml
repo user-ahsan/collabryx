@@ -19,12 +19,13 @@ global:
     environment: 'production'
     team: 'platform'
 
-# Alertmanager configuration (optional - for future implementation)
-# alerting:
-#   alertmanagers:
-#     - static_configs:
-#         - targets:
-#           - alertmanager:9093
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+          - alertmanager:9093
+      timeout: 10s
 
 # Load rules once and periodically evaluate them according to the global 'evaluation_interval'
 rule_files:
@@ -37,21 +38,23 @@ scrape_configs:
   # =====================================================
   - job_name: 'embedding-service'
     
+    # App-level metrics: scrape more frequently
+    scrape_interval: 15s
+    scrape_timeout: 10s
+    
     # Static configuration for single instance
     static_configs:
       - targets: ['collabryx-worker:8000']
         labels:
           service: 'embedding-service'
           environment: 'production'
+          env: 'production'
     
     # Metrics endpoint path
     metrics_path: '/metrics'
     
     # Scheme (http or https)
     scheme: 'http'
-    
-    # Scrape timeout
-    scrape_timeout: 10s
     
     # Honor labels from the scraped metrics
     honor_labels: true
@@ -102,3 +105,31 @@ scrape_configs:
   #   
   #   metrics_path: '/metrics'
   #   scheme: 'http'
+
+  # =====================================================
+  # Next.js Application Metrics (if available)
+  # =====================================================
+  # Uncomment when Next.js app exposes /metrics endpoint
+  # - job_name: 'nextjs-app'
+  #   scrape_interval: 15s
+  #   scrape_timeout: 10s
+  #   static_configs:
+  #     - targets: ['nextjs-app:3000']
+  #       labels:
+  #         service: 'nextjs-app'
+  #         environment: 'production'
+  #   metrics_path: '/metrics'
+  #   scheme: 'http'
+
+  # =====================================================
+  # Alertmanager Self-Monitoring
+  # =====================================================
+  - job_name: 'alertmanager'
+    scrape_interval: 30s
+    static_configs:
+      - targets: ['alertmanager:9093']
+        labels:
+          service: 'alertmanager'
+          environment: 'production'
+    metrics_path: '/metrics'
+    scheme: 'http'

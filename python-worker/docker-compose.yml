@@ -52,6 +52,9 @@ services:
       start_period: 60s
     networks:
       - collabryx-network
+    profiles:
+      - dev
+      - production
 
   # Redis for Queue Management (Optional - for production scaling)
   redis:
@@ -93,6 +96,12 @@ services:
       - '--storage.tsdb.retention.time=15d'
       - '--web.enable-lifecycle'
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
     networks:
       - collabryx-network
     profiles:
@@ -117,6 +126,40 @@ services:
       - grafana-data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
+    networks:
+      - collabryx-network
+    profiles:
+      - monitoring
+    depends_on:
+      - prometheus
+
+  # Alertmanager for Alert Routing (Optional - for monitoring)
+  alertmanager:
+    image: prom/alertmanager:latest
+    container_name: collabryx-alertmanager
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.listen-address=:9093'
+      - '--log.level=info'
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
     networks:
       - collabryx-network
     profiles:
@@ -134,4 +177,6 @@ volumes:
   prometheus-data:
     driver: local
   grafana-data:
+    driver: local
+  alertmanager-data:
     driver: local

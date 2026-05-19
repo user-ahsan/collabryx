@@ -14,6 +14,7 @@ import asyncio
 import logging
 import psutil
 import shutil
+import signal
 from datetime import datetime, timedelta
 import httpx
 from contextlib import asynccontextmanager
@@ -102,6 +103,14 @@ processing_semaphore = asyncio.Semaphore(5)  # Max 5 concurrent generations
 
 # Graceful shutdown flag
 SHUTDOWN_FLAG = False
+
+
+def signal_handler(signum, frame):
+    """Handle SIGTERM and SIGINT for graceful shutdown."""
+    global SHUTDOWN_FLAG
+    sig_name = signal.Signals(signum).name
+    logger.info(f"Received {sig_name} signal — initiating graceful shutdown")
+    SHUTDOWN_FLAG = True
 
 # =====================================================
 # Prometheus Metrics
@@ -258,6 +267,13 @@ async def run_embedding_tests():
 async def lifespan(app: FastAPI):
     """Manage application lifecycle with graceful shutdown and signal handling"""
     global SHUTDOWN_FLAG
+
+    # Register signal handlers for graceful shutdown
+    loop = asyncio.get_event_loop()
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        loop.add_signal_handler(sig, signal_handler, sig, None)
+    logger.info("Signal handlers registered for SIGTERM and SIGINT")
+
     validate_env_vars()
     logger.info("=" * 60)
     logger.info("EMBEDDING SERVICE STARTING UP")
@@ -338,6 +354,18 @@ async def lifespan(app: FastAPI):
     logger.info("=" * 60)
     logger.info("EMBEDDING SERVICE SHUTDOWN COMPLETE")
     logger.info("=" * 60)
+
+    # Close Supabase connections gracefully
+    global supabase
+    if supabase:
+        try:
+            logger.info("Closing Supabase client connections...")
+            # Supabase Python client doesn't have explicit close,
+            # but we nullify the reference to allow GC
+            supabase = None
+            logger.info("✓ Supabase client released")
+        except Exception as e:
+            logger.error(f"Error releasing Supabase client: {e}")
 
 
 # Initialize FastAPI app with lifespan

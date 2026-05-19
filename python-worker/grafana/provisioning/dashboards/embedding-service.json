@@ -860,10 +860,45 @@
   "style": "dark",
   "tags": ["embedding-service", "collabryx", "python-worker"],
   "templating": {
-    "list": []
+    "list": [
+      {
+        "name": "environment",
+        "type": "custom",
+        "label": "Environment",
+        "description": "Select the deployment environment",
+        "current": {
+          "text": "production",
+          "value": "production"
+        },
+        "options": [
+          {"text": "production", "value": "production", "selected": true},
+          {"text": "staging", "value": "staging", "selected": false},
+          {"text": "development", "value": "development", "selected": false}
+        ],
+        "multi": false,
+        "includeAll": false
+      },
+      {
+        "name": "service",
+        "type": "query",
+        "label": "Service",
+        "description": "Select the service to monitor",
+        "datasource": "Prometheus",
+        "query": "label_values(up, service)",
+        "refresh": 2,
+        "sort": 1,
+        "current": {
+          "text": "embedding-service",
+          "value": "embedding-service"
+        },
+        "multi": false,
+        "includeAll": true,
+        "allValue": ".*"
+      }
+    ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {},

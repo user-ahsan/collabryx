@@ -90,6 +90,8 @@ services:
       start_period: 60s
     networks:
       - collabryx-network-dev
+    profiles:
+      - dev
 
   # Redis for Development (with authentication)
   # OPTIONAL: Only start if you need queue functionality
