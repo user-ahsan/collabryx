@@ -5,8 +5,6 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { SmoothScrollProvider } from "@/components/providers/smooth-scroll-provider";
 import { QueryProvider } from "@/components/providers/query-provider";
-import { PostHogProvider } from "@/components/providers/posthog-provider";
-import { VercelAnalytics } from "@/components/providers/vercel-analytics";
 import { validateEnv } from "@/lib/validate-env";
 
 const inter = Inter({
@@ -99,7 +97,6 @@ export default function RootLayout({
         className={`${inter.variable} ${spaceGrotesk.variable} antialiased`}
         suppressHydrationWarning
       >
-        <PostHogProvider>
           <SmoothScrollProvider>
             <QueryProvider>
               <ThemeProvider
@@ -116,11 +113,9 @@ export default function RootLayout({
                 </a>
                 {children}
                 <Toaster richColors position="top-right" />
-                <VercelAnalytics />
               </ThemeProvider>
             </QueryProvider>
           </SmoothScrollProvider>
-        </PostHogProvider>
       </body>
     </html>
   );

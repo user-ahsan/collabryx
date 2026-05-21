@@ -230,16 +230,7 @@ Track these metrics:
 - **CLS** (Cumulative Layout Shift): < 0.1
 - **FCP** (First Contentful Paint): < 1.8s
 
-### Vercel Analytics
-
-Enabled in production:
-- Real User Monitoring (RUM)
-- Web Vitals tracking
-- Page performance insights
-
 ### Lighthouse
-
-Run audits:
 
 ```bash
 # Chrome DevTools

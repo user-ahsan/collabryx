@@ -4,10 +4,10 @@
  * Includes circuit breaker for fault tolerance
  */
 
-export type BackendMode = 'auto' | 'docker' | 'render' | 'edge-only'
+export type BackendMode = 'auto' | 'docker' | 'render'
 
 export interface BackendConfig {
-  endpoint: string | null  // null = use Edge Function
+  endpoint: string | null  // null = no backend available
   mode: BackendMode
   isHealthy: boolean
   healthCheck?: () => Promise<boolean>
@@ -167,33 +167,22 @@ export function resetCircuitBreaker(): void {
  * Get backend configuration with circuit breaker protection
  * 
  * Resolution order:
- * 1. If BACKEND_MODE='edge-only' → return null (use Edge Function)
- * 2. If running on Vercel → use Render backend
- * 3. If BACKEND_MODE='docker' → use Docker backend
- * 4. If BACKEND_MODE='render' → use Render backend
- * 5. Auto-detect: try Docker health check, fallback to Edge Function
+ * 1. If running on Vercel → use Render backend
+ * 2. If BACKEND_MODE='docker' → use Docker backend
+ * 3. If BACKEND_MODE='render' → use Render backend
+ * 4. Auto-detect: try Docker health check
  */
 export async function getBackendConfig(): Promise<BackendConfig> {
   const mode = process.env.BACKEND_MODE as BackendMode || 'auto'
-  
-  // Case 1: Edge-only mode (no backend)
-  if (mode === 'edge-only') {
-    return {
-      endpoint: null,
-      mode: 'edge-only',
-      isHealthy: true,
-    }
-  }
   
   // Case 2: Running on Vercel (production)
   if (process.env.VERCEL) {
     const renderUrl = process.env.BACKEND_URL_RENDER
     if (!renderUrl) {
       console.warn('⚠️ Vercel deployment detected but BACKEND_URL_RENDER not set')
-      console.warn('⚠️ Falling back to Edge Function')
       return {
         endpoint: null,
-        mode: 'edge-only',
+        mode: 'render',
         isHealthy: false,
       }
     }
@@ -201,10 +190,10 @@ export async function getBackendConfig(): Promise<BackendConfig> {
     // Check circuit breaker state first
     const cbState = backendCircuitBreaker.getState()
     if (cbState === 'open') {
-      console.warn('⚠️ Circuit breaker OPEN for Render backend, using Edge Function')
+      console.warn('⚠️ Circuit breaker OPEN for Render backend')
       return {
         endpoint: null,
-        mode: 'edge-only',
+        mode: 'render',
         isHealthy: false,
       }
     }
@@ -223,7 +212,7 @@ export async function getBackendConfig(): Promise<BackendConfig> {
       // Circuit breaker opened or request failed
       return {
         endpoint: null,
-        mode: 'edge-only',
+        mode: 'render',
         isHealthy: false,
       }
     }
@@ -237,10 +226,9 @@ export async function getBackendConfig(): Promise<BackendConfig> {
     if (cbState === 'open') {
       console.error('❌ Circuit breaker OPEN for Docker backend')
       console.error('❌ Run: npm run docker:up')
-      console.error('❌ Falling back to Edge Function')
       return {
         endpoint: null,
-        mode: 'edge-only',
+        mode: 'docker',
         isHealthy: false,
       }
     }
@@ -257,7 +245,7 @@ export async function getBackendConfig(): Promise<BackendConfig> {
     } catch (_error) {
       return {
         endpoint: null,
-        mode: 'edge-only',
+        mode: 'docker',
         isHealthy: false,
       }
     }
@@ -275,7 +263,7 @@ export async function getBackendConfig(): Promise<BackendConfig> {
       console.warn('⚠️ Circuit breaker OPEN for Render backend')
       return {
         endpoint: null,
-        mode: 'edge-only',
+        mode: 'render',
         isHealthy: false,
       }
     }
@@ -292,24 +280,24 @@ export async function getBackendConfig(): Promise<BackendConfig> {
     } catch (_error) {
       return {
         endpoint: null,
-        mode: 'edge-only',
+        mode: 'render',
         isHealthy: false,
       }
     }
   }
   
-  // Case 5: Auto-detect (default)
-  // Try Docker first, fallback to Edge Function
+  // Case 4: Auto-detect (default)
+  // Try Docker first
   const dockerUrl = process.env.BACKEND_URL_DOCKER || 'http://localhost:8000'
   
   const cbState = backendCircuitBreaker.getState()
   if (cbState === 'open') {
-    console.log('⚠️ Circuit breaker OPEN, using Edge Function fallback')
+    console.log('⚠️ Circuit breaker OPEN')
     console.log('💡 Tip: Run "npm run docker:up" to start local backend')
     
     return {
       endpoint: null,
-      mode: 'edge-only',
+      mode: 'auto',
       isHealthy: false,
     }
   }
@@ -324,12 +312,12 @@ export async function getBackendConfig(): Promise<BackendConfig> {
       healthCheck: () => checkHealth(dockerUrl),
     }
   } catch (_error) {
-    console.log('⚠️ Docker backend not available, using Edge Function fallback')
+    console.log('⚠️ Docker backend not available')
     console.log('💡 Tip: Run "npm run docker:up" to start local backend')
     
     return {
       endpoint: null,
-      mode: 'edge-only',
+      mode: 'auto',
       isHealthy: false,
     }
   }
@@ -337,7 +325,7 @@ export async function getBackendConfig(): Promise<BackendConfig> {
 
 /**
  * Get backend URL for API calls
- * Returns null if Edge Function should be used
+ * Returns null if no backend is available
  */
 export async function getBackendUrl(): Promise<string | null> {
   const config = await getBackendConfig()

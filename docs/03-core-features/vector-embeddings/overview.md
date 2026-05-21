@@ -65,7 +65,7 @@ User Profile → Semantic Text → Embedding (384 dimensions) → Vector Storage
 | Component | Purpose | Technology |
 |-----------|---------|------------|
 | **Python Worker** | Embedding generation | FastAPI + Sentence Transformers |
-| **Edge Function** | Orchestration layer | Supabase Edge Functions (Deno) |
+
 | **Database** | Vector storage | PostgreSQL + pgvector |
 | **Frontend** | Progress UI | React + React Query |
 
@@ -253,18 +253,6 @@ This creates all tables, indexes, functions, and RLS policies.
 }
 ```
 
-### Edge Function Flow
-
-```typescript
-// supabase/functions/generate-embedding/index.ts
-import { serve } from 'https://deno.land/std@http/server.ts'
-
-serve(async (req) => {
-  const { profile } = await req.json()
-  
-  // 1. Construct profile text
-  const text = constructProfileText(profile)
-  
   // 2. Call Python worker
   const response = await fetch(PYTHON_WORKER_URL, {
     method: 'POST',

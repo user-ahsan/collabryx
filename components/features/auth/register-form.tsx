@@ -19,7 +19,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import { createClient } from "@/lib/supabase/client"
-import { devLog, logRedirectDecision, isDevelopmentMode } from "@/lib/services/development"
+import { devLog, logRedirectDecision, isDevelopmentMode, isEmailVerificationSkipped } from "@/lib/services/development"
 
 import { toast } from "sonner"
 import Link from "next/link"
@@ -140,14 +140,22 @@ export function RegisterForm() {
             // Success - log and redirect
             devLog("auth", "Signup successful - account created", {
                 email: data.email,
-                redirectingTo: "/verify-email",
+                emailVerificationSkipped: isEmailVerificationSkipped(),
             })
-            logRedirectDecision("/register", "/verify-email", "Account created, email verification required")
             
-            // Don't redirect - show success message and let user check email
-            toast.success("Account created! Please check your email to verify your account.")
-            // Redirect to a verification page or show verification UI
-            window.location.assign("/verify-email")
+            // Check if email verification should be skipped
+            if (isEmailVerificationSkipped()) {
+                devLog("auth", "Email verification skipped - redirecting to dashboard", {
+                    email: data.email,
+                })
+                logRedirectDecision("/register", "/dashboard", "Email verification skipped in development")
+                toast.success("Account created! Welcome to Collabryx.")
+                window.location.assign("/dashboard")
+            } else {
+                logRedirectDecision("/register", "/verify-email", "Account created, email verification required")
+                toast.success("Account created! Please check your email to verify your account.")
+                window.location.assign("/verify-email")
+            }
         } catch (error) {
             console.error('Signup error:', error)
             devLog("auth", "Signup failed - unexpected exception", {

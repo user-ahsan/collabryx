@@ -122,11 +122,6 @@ collabryx/
 │   └── models/           # 3D models
 │
 ├── supabase/                # Supabase backend
-│   ├── functions/         # Edge Functions (Deno)
-│   │   ├── generate-embedding/  # Embedding generation endpoint
-│   │   ├── get-matches/         # Semantic matching endpoint
-│   │   └── ai-assistant/        # AI chat endpoint
-│   │
 │   ├── migrations/        # Database migrations
 │   │   └── *.sql         # Migration files
 │   │
@@ -283,7 +278,7 @@ components/ui/
 - **Realtime** - WebSocket subscriptions for live data
 - **Auth** - Built-in authentication with multiple providers
 - **Storage** - File upload and management
-- **Edge Functions** - Serverless functions (Deno runtime)
+
 - **pgvector** - Vector similarity search for semantic matching
 
 ### Vector Embeddings System
@@ -329,7 +324,7 @@ LIMIT 10;
 #### Components
 
 - **Python Worker**: FastAPI service running Sentence Transformers
-- **Edge Function**: `generate-embedding` orchestrates the process
+
 - **Frontend**: Progress UI + automatic generation on onboarding
 - **Database**: `profile_embeddings` table with HNSW index
 

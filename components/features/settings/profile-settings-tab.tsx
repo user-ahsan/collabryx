@@ -19,9 +19,6 @@ export function ProfileSettingsTab({ userId }: { userId: string }) {
     const [isSaving, setIsSaving] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [successMsg, setSuccessMsg] = useState<string | null>(null)
-    const locationInputRef = useRef<HTMLInputElement>(null)
-    const [isPlacesApiLoaded, setIsPlacesApiLoaded] = useState(false)
-
     const [profile, setProfile] = useState({
         display_name: "",
         full_name: "",
@@ -75,44 +72,7 @@ export function ProfileSettingsTab({ userId }: { userId: string }) {
         fetchProfile()
     }, [userId, supabase])
 
-    useEffect(() => {
-        const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-        if (!apiKey) return
 
-        if (window.google?.maps?.places) {
-            setIsPlacesApiLoaded(true)
-            return
-        }
-
-        const scriptId = 'google-maps-script'
-        if (document.getElementById(scriptId)) {
-            setIsPlacesApiLoaded(true)
-            return
-        }
-
-        const script = document.createElement('script')
-        script.id = scriptId
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`
-        script.async = true
-        script.defer = true
-        script.onload = () => setIsPlacesApiLoaded(true)
-        document.body.appendChild(script)
-    }, [])
-
-    useEffect(() => {
-        if (!isPlacesApiLoaded || !locationInputRef.current || !window.google?.maps?.places) return
-
-        const autocomplete = new window.google.maps.places.Autocomplete(locationInputRef.current, {
-            types: ['(cities)'],
-        })
-
-        autocomplete.addListener('place_changed', () => {
-            const place = autocomplete.getPlace()
-            if (place && (place.formatted_address || place.name)) {
-                setProfile(prev => ({ ...prev, location: place.formatted_address || place.name || '' }))
-            }
-        })
-    }, [isPlacesApiLoaded])
 
     const updateField = (field: string, value: string) => {
         setProfile(prev => ({ ...prev, [field]: value }))
@@ -235,7 +195,6 @@ export function ProfileSettingsTab({ userId }: { userId: string }) {
                     <Label htmlFor="location">Location</Label>
                     <Input
                         id="location"
-                        ref={locationInputRef}
                         value={profile.location}
                         onChange={(e) => updateField("location", e.target.value)}
                         placeholder="e.g. San Francisco, CA"

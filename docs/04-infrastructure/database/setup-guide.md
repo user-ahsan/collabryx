@@ -107,6 +107,18 @@ curl http://localhost:8000/health
 }
 ```
 
+### Step 5: Skip Email Verification (Development Only)
+
+To speed up local testing, add this to your `.env.local`:
+
+```env
+SKIP_EMAIL_VERIFICATION=true
+```
+
+This bypasses email confirmation so new test accounts can access the dashboard immediately. See [Development Guide](../../01-getting-started/development.md#skipping-email-verification-development-only) for details.
+
+> ⚠️ **Never use this in production.**
+
 ---
 
 ## Verification Queries

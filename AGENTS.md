@@ -118,7 +118,7 @@ collabryx/
 │   │   ├── moderation/        # Content scanning & quarantine
 │   │   ├── analytics/         # Activity tracking, daily aggregation
 │   │   ├── ui/                # Responsive layout, keyboard nav, smooth scroll
-│   │   ├── edge-functions/    # Deno Edge function tests
+
 │   │   ├── environment/       # Dev server, Docker worker health
 │   │   └── seeder/            # DB seeder CLI tests
 │   ├── e2e/                   # E2E Playwright tests (6 specs)
@@ -180,21 +180,14 @@ collabryx/
 │   ├── FRONTEND-INTEGRATION-GUIDE.md
 │   ├── IMPLEMENTATION_PLAN.md
 │   └── SECURITY.md
-├── python-worker/             # Python multi-service backend (FastAPI)
-│   ├── services/              # Core services (9 services)
-│   │   ├── embedding_generator.py
-│   │   ├── match_generator.py
-│   │   ├── notification_engine.py
-│   │   ├── activity_tracker.py
-│   │   ├── feed_scorer.py
-│   │   ├── content_moderator.py
-│   │   ├── ai_mentor_processor.py
-│   │   ├── event_processor.py
-│   │   └── analytics_aggregator.py
+├── python-worker/             # Python embedding service (FastAPI)
+│   ├── embedding_generator.py # Sentence Transformers logic
+│   ├── rate_limiter.py        # Database-backed rate limiting
+│   ├── embedding_validator.py # Validation & dimension normalization
+│   └── main.py                # FastAPI entry point
 │   ├── main.py                # FastAPI entry point
 │   └── tests/                 # Service tests
-├── supabase/
-│   ├── functions/             # Edge Functions (Deno)
+
 │   └── setup/                 # Database schema (31 tables + RLS + triggers)
 ├── public/                    # Static assets
 ├── types/                     # TypeScript types

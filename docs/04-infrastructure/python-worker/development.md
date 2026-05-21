@@ -1,7 +1,7 @@
 # Python Worker Development Guide
 
 **For:** Local development and testing  
-**Last Updated:** 2026-03-12
+**Last Updated:** 2026-05-22
 
 ---
 
@@ -64,14 +64,10 @@ docker-compose logs -f
 **Expected Health Response:**
 ```json
 {
-  "status": "degraded",
-  "model_loaded": true,
-  "supabase_connected": false,
-  "queue_size": 0
+  "status": "healthy",
+  "model_loaded": true
 }
 ```
-
-> **Note:** `status: degraded` is normal in development if Supabase credentials aren't configured. The service still works.
 
 ---
 
@@ -112,36 +108,6 @@ docker-compose down -v
 
 ---
 
-## Testing
-
-### Run Tests in Container
-
-```bash
-# Build test image
-docker build -t collabryx-embedding-service-test .
-
-# Run tests
-docker run --rm collabryx-embedding-service-test pytest
-```
-
-### Run Tests with Coverage
-
-```bash
-docker run --rm collabryx-embedding-service-test pytest --cov=. --cov-report=html
-```
-
-### Access Test Coverage Report
-
-```bash
-# Copy coverage report to host
-docker cp $(docker-compose ps -q embedding-service):/app/htmlcov ./coverage
-
-# Open in browser
-start ./coverage/index.html
-```
-
----
-
 ## API Testing
 
 ### Health Check
@@ -156,22 +122,10 @@ curl http://localhost:8000/health
 curl http://localhost:8000/model-info
 ```
 
-### Get Queue Status
+### Service Info
 
 ```bash
-curl http://localhost:8000/queue/status
-```
-
-### Pause Queue
-
-```bash
-curl -X POST http://localhost:8000/queue/pause
-```
-
-### Resume Queue
-
-```bash
-curl -X POST http://localhost:8000/queue/resume
+curl http://localhost:8000/
 ```
 
 ### Generate Embedding (Test)
@@ -180,6 +134,23 @@ curl -X POST http://localhost:8000/queue/resume
 curl -X POST http://localhost:8000/generate-embedding \
   -H "Content-Type: application/json" \
   -d "{\"text\": \"Student React Developer passionate about Fintech\", \"user_id\": \"test-123\"}"
+```
+
+**Expected Response:**
+```json
+{
+  "user_id": "test-123",
+  "status": "queued",
+  "message": "Vector embedding queued for background processing"
+}
+```
+
+### Generate Embedding from Profile (Test)
+
+```bash
+curl -X POST http://localhost:8000/generate-embedding-from-profile \
+  -H "Content-Type: application/json" \
+  -d "{\"user_id\": \"test-123\", \"profile_data\": {\"skills\": [\"React\"], \"bio\": \"Developer\"}}"
 ```
 
 **Expected Response:**
@@ -325,5 +296,5 @@ docker system prune -a --volumes
 
 ## Next Steps
 
-- [Production Guide](./production.md) - Deploy to Render or Railway
-- [Main README](./README.md) - Overview and API reference
+- [Deployment Guide](./deployment.md) - Deploy to Render or Railway
+- [Overview](./overview.md) - Service overview and API reference

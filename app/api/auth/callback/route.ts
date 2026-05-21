@@ -79,19 +79,7 @@ export async function GET(request: NextRequest) {
                 })
             }
             
-            // Send to external monitoring if configured (Sentry, etc.)
-            if (process.env.SENTRY_DSN) {
-                // Example Sentry integration (uncomment when Sentry is configured)
-                // await import('@sentry/nextjs').then(Sentry => {
-                //     Sentry.captureException(error, {
-                //         tags: { type: 'auth_callback_error' },
-                //         extra: { url: request.url, next }
-                //     })
-                // })
-                if (isDebug) {
-                    devLog("auth", "📊 Error would be sent to Sentry (if configured)")
-                }
-            }
+
             
             // Redirect with error message for user
             return NextResponse.redirect(

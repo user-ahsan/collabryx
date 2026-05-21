@@ -26,7 +26,6 @@ export async function GET(request: Request) {
 
     // Parse query params with bounds checking
     const { searchParams } = new URL(request.url)
-    const DEFAULT_LIMIT = 20
     const MAX_LIMIT = 100
     const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "20", 10), 1), MAX_LIMIT)
     const offset = Math.max(parseInt(searchParams.get("offset") || "0", 10), 0)

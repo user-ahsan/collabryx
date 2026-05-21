@@ -348,7 +348,7 @@ Add to `.env.production` on Vercel:
 PYTHON_WORKER_URL=https://your-worker.railway.app
 
 # External APIs (optional)
-PERSPECTIVE_API_KEY=your-key
+
 GEMINI_API_KEY=your-key
 ```
 

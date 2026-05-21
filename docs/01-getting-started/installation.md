@@ -133,10 +133,6 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
 # Python Worker (Embeddings)
 PYTHON_WORKER_URL=http://localhost:8000
 
-# Optional: Analytics and Monitoring
-# NEXT_PUBLIC_GA_ID=your-google-analytics-id
-# NEXT_PUBLIC_SENTRY_DSN=your-sentry-dsn
-
 # Optional: Feature Flags
 # NEXT_PUBLIC_ENABLE_AI_FEATURES=true
 ```

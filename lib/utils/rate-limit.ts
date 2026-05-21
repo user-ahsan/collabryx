@@ -25,13 +25,13 @@ const rateLimitStore = new Map<string, { count: number; resetAt: number }>()
 
 /**
  * Check rate limit for a given key
- * Uses in-memory store for development, should use Redis/KV in production
+ * Uses in-memory store
  */
 export async function checkRateLimit(config: RateLimitConfig): Promise<RateLimitResult> {
   const now = Date.now()
   const storeKey = `ratelimit:${config.key}`
   
-  // In production, use Redis or Supabase KV
+  // In production, use Supabase KV
   if (process.env.NODE_ENV === "production" && process.env.KV_REST_API_URL) {
     return await checkRateLimitProduction(config, now)
   }

@@ -17,7 +17,7 @@
 7. [Task 4: Hybrid Search Implementation](#task-4-hybrid-search-implementation)
 8. [Task 5: Streaming UI](#task-5-streaming-ui)
 9. [Task 6: Session Summarization](#task-6-session-summarization)
-10. [Task 7: Redis Rate Limiting](#task-7-redis-rate-limiting)
+
 11. [Task 8: Cross-Encoder Re-Ranking](#task-8-cross-encoder-re-ranking)
 12. [File Structure](#file-structure)
 13. [Gitignore Rules](#gitignore-rules)
@@ -35,7 +35,7 @@ This document contains the complete implementation plan for enhancing Collabryx'
 - Hybrid search (vector + keyword)
 - Streaming UI for AI responses
 - Session summarization
-- Redis-backed rate limiting
+
 - Cross-encoder re-ranking
 
 ### Constraints
@@ -114,7 +114,7 @@ User Message
 | P1 (High) | Task 4: Hybrid Search | High | High | Medium |
 | P2 (Medium) | Task 5: Streaming UI | Medium | Medium | Low |
 | P2 (Medium) | Task 6: Session Summarization | Medium | Medium | Low |
-| P3 (Enhancement) | Task 7: Redis Rate Limiting | Low | Medium | Medium |
+
 | P3 (Enhancement) | Task 8: Cross-Encoder Re-Ranking | Medium | High | Medium |
 
 ---
@@ -676,67 +676,7 @@ describe('Summarizer', () => {
 
 ---
 
-## Task 7: Redis Rate Limiting
 
-**Priority:** P3 Enhancement
-**Estimated Time:** 2-3 days
-**Dependencies:** None
-
-### Problem
-Current in-memory rate limiting doesn't work across multiple serverless instances.
-
-### Files to Create
-
-| File Path | Purpose |
-|-----------|---------|
-| `lib/rate-limit/redis-store.ts` | Redis-backed rate limit store |
-| `lib/rate-limit/in-memory-store.ts` | Keep for dev/fallback |
-| `lib/rate-limit/rate-limiter.ts` | Factory/strategy pattern |
-
-### Files to Modify
-
-| File | Changes |
-|------|---------|
-| `lib/rate-limit.ts` | Replace in-memory with Redis |
-| `docker-compose.yml` | Add Redis if not present |
-
-### Sub-Tasks
-
-1. **Create `lib/rate-limit/redis-store.ts`**
-   - Implement `incr(key: string, ttl: number)`
-   - Sliding window algorithm for accuracy
-   - Lua script for atomic operations
-
-2. **Create `lib/rate-limit/rate-limiter.ts`**
-   - Factory pattern: Redis in production, in-memory in development
-   - Circuit breaker for Redis failures
-   - Fallback to in-memory on connection failure
-
-3. **Update `lib/rate-limit.ts`**
-   - Use new store interface
-   - Add connection pooling and reconnection
-
-4. **Update docker-compose.yml**
-   - Add Redis service
-
-### Testing Approach
-
-```typescript
-describe('RedisRateLimitStore', () => {
-  beforeEach(() => { redis.flushall() })
-  it('increments counter atomically', async () => {
-    const result = await store.incr('test-key', 60000)
-    expect(result.count).toBe(1)
-    const result2 = await store.incr('test-key', 60000)
-    expect(result2.count).toBe(2)
-  })
-  it('respects sliding window', async () => {
-    // Test time-based cleanup
-  })
-})
-```
-
----
 
 ## Task 8: Cross-Encoder Re-Ranking
 
@@ -777,7 +717,7 @@ Initial retrieval returns candidates by approximate similarity. Cross-encoder re
    ```
 
 3. **Add model loading**
-   - Use Hugging Face Transformers.js or Python worker
+   - Use Python worker
    - Handle model warm-up on first request
 
 4. **Configure re-ranking parameters**
@@ -836,10 +776,7 @@ lib/
 │   ├── retrieval-pipeline.ts             # NEW
 │   ├── match-generation.ts               # MODIFY
 │   └── match-scores.ts                   # MODIFY
-├── rate-limit/
-│   ├── redis-store.ts                    # NEW
-│   ├── in-memory-store.ts                # NEW
-│   └── rate-limiter.ts                   # NEW
+
 ├── utils/
 │   └── vector-math.ts                    # NEW
 ├── actions/
@@ -861,8 +798,6 @@ tests/
 │   │   └── cross-encoder.test.ts        # NEW
 │   ├── utils/
 │   │   └── vector-math.test.ts           # NEW
-│   └── rate-limit/
-│       └── redis-store.test.ts           # NEW
 └── integration/
     └── rag/
         └── full-rag-flow.test.ts         # NEW
@@ -999,8 +934,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
 
-# Redis
-REDIS_URL=redis://localhost:6379
+
 ```
 
 ---
@@ -1060,11 +994,8 @@ REDIS_URL=redis://localhost:6379
                                   │
           ┌───────────────────────┼───────────────────────┐
           ▼                       ▼                       ▼
-  ┌───────────────┐       ┌───────────────┐       ┌───────────────┐
-  │ Task 3: Cosine│       │ Task 2: MiniMax│       │ Task 5: Redis │
-  │ Similarity    │       │ Provider      │       │ Rate Limit   │
-  │               │       │               │       │ (parallel)    │
-  └───────┬───────┘       └───────────────┘       └───────────────┘
+  │ Task 3: Cosine│       │ Task 2: MiniMax│
+  │ Similarity    │       │ Provider      │
           │                       │                       │
           └───────────┬───────────┘                       │
                       ▼                                   │

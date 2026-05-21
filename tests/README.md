@@ -48,10 +48,6 @@ tests/
 │   │   │   └── vector-retriever.test.ts
 │   │   ├── prompt/
 │   │   │   └── ai-mentor-prompts.test.ts
-│   │   ├── rate-limit/                        # Rate limiting
-│   │   │   ├── rate-limiter.test.ts           # TC-018 — Rate limit core
-│   │   │   ├── in-memory-store.test.ts
-│   │   │   └── redis-store.test.ts
 │   │   ├── services/                          # Algorithm tests
 │   │   │   ├── bm25.test.ts
 │   │   │   └── keyword-extractor.test.ts
@@ -70,7 +66,7 @@ tests/
 │   │   ├── match-scores.test.ts               # TC-052 — Compatibility score (0-100%)
 │   │   ├── feed-scorer.test.ts                # TC-058,059 — Thompson Sampling, hybrid scoring
 │   │   ├── notification-engine.test.ts        # TC-086,087 — Match notification, priority batching
-│   │   └── content-moderator.test.ts          # TC-090,091 — Toxicity scanning, Perspective API
+│   │   └── content-moderator.test.ts          # TC-090,091 — Toxicity scanning
 │   ├── api/ (auth.test.ts, posts.test.ts)     # API endpoint tests
 │   ├── components/ (streaming-message.test.tsx)
 │   ├── sanitize.test.ts                       # TC-020 — XSS sanitization
@@ -132,7 +128,7 @@ tests/
 │   │   ├── queue-lifecycle.test.ts             # TC-041,042,044,045 — Queue lifecycle
 │   │   ├── worker-failure.test.ts              # TC-045,046,048 — Worker failure, DLQ
 │   │   ├── non-blocking.test.ts                # TC-049 — Async non-blocking verification
-│   │   └── edge-trigger.test.ts                # TC-050 — Deno Edge function trigger
+
 │   ├── ai-mentor/
 │   │   ├── response-validation.test.ts
 │   │   ├── chat-session.test.ts                # TC-077,078,081 — Query trigger, context, multi-turn
@@ -164,8 +160,7 @@ tests/
 │   │   ├── responsive-layout.test.ts           # TC-035 — Responsive layout
 │   │   ├── keyboard-navigation.test.ts         # TC-037 — Radix UI keyboard a11y
 │   │   └── smooth-scroll.test.ts               # TC-040 — Lenis smooth scroll
-│   ├── edge-functions/
-│   │   └── deno-edge.test.ts                   # TC-096,097,098 — Deno Edge functions
+
 │   ├── environment/
 │   │   ├── dev-server.test.ts                  # TC-004 — Dev server startup
 │   │   └── docker-worker.test.ts               # TC-006,007 — Docker worker health
@@ -200,7 +195,7 @@ tests/
 | 7 | Real-Time Networking & Communication | TC-061→075 | 13 | 80 |
 | 8 | AI Mentor & LLM Assistant | TC-076→085 | 8 | 136 |
 | 9 | Notifications & Content Moderation | TC-086→095 | 8 | 65 |
-| 10 | System Integration & Edge Services | TC-096→100 | 4 | 73 |
+| 10 | System Integration | TC-096→100 | 3 | 70 |
 | **Total** | — | **100** | **73+** | **750+** |
 
 ---

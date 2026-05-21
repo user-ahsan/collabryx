@@ -1,0 +1,38 @@
+refactor(architecture): streamline platform for local deployment and strip production dependencies
+
+This massive architectural overhaul focuses on completely streamlining the Collabryx platform, stripping away heavy production-grade infrastructure, edge services, and third-party observability tools to create a lean, core-focused local development environment centered entirely on the embedding service.
+
+BREAKING CHANGES:
+- The AI Mentor, Algorithmic Matchmaking, Activity Tracking, and Notification systems are completely disabled as their backend services have been excised.
+- The platform will immediately fail (503) if the Docker python worker is unavailable, as all Edge Function fallbacks have been removed.
+- Production rate-limiting across multiple instances will fail due to the removal of Redis.
+
+1. Python Worker Subsystem Gutted
+- Removed 8 out of 9 core background services: `ActivityTracker`, `AIMentorProcessor`, `AnalyticsAggregator`, `CircuitBreaker`, `ContentModerator`, `EventProcessor`, `FeedScorer`, `MatchGenerator`, and `NotificationEngine`.
+- The worker is now exclusively a "Core embedding service" for semantic matching.
+- Removed AI moderation integrations (Google Perspective API, Hugging Face API) in favor of a static rule-based fallback.
+- Removed the entire internal monitoring stack (Prometheus, Grafana, Alertmanager, Nginx).
+- Removed advanced tests and integration testing scripts for the deleted services.
+
+2. Supabase Edge Functions Completely Removed
+- Deleted all Deno-based Edge Functions: `generate-embedding`, `calculate-matches`, `send-notification`, `sync-profile-data`, and `cleanup-expired-data`.
+- Updated `app/api/embeddings/generate/route.ts` to remove the edge function fallback invocation. If the worker is unreachable, the system will throw a 503 instead of falling back.
+- Refactored `lib/config/backend.ts` to remove the `edge-only` configuration mode.
+
+3. Frontend Analytics & Observability Stripped
+- Removed `posthog-js`, `posthog-node`, `@vercel/analytics`, and `@vercel/speed-insights`.
+- Removed `PostHogProvider` and `VercelAnalytics` context wrappers from `app/layout.tsx`.
+- Removed Sentry error tracking entirely (deleted `sentry.*.config.ts`, removed `@sentry/nextjs` from `package.json`, and removed error reporting logic from authentication callbacks).
+- Cleaned up environment variables (`.env.example`) by removing telemetry, Sentry, and third-party AI keys.
+
+4. Distributed Rate Limiting Downgraded
+- Completely removed the Redis-backed rate limiter infrastructure (`redis-store.ts`, `rate-limiter.ts`).
+- Modified `lib/rate-limit.ts` and `lib/utils/rate-limit.ts` to rely exclusively on a simple in-memory Map implementation.
+
+5. Third-Party API Pruning
+- Removed Google Maps Places API autocomplete integration from the profile settings (`profile-settings-tab.tsx`), converting the location field to a standard text input.
+- Removed Perspective API and Hugging Face tokens from environment validations and docker configurations.
+
+6. Documentation Standardization
+- Updated `AGENTS.md`, `README.md`, `SECURITY.md`, and deployment playbooks to reflect the removal of Edge Functions, Sentry, Grafana, Prometheus, and the AI mentor architecture.
+- Re-aligned architecture diagrams and documentation to represent the new, single-purpose embedding architecture.

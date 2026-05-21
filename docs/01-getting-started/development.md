@@ -66,6 +66,22 @@ The service will be available at: http://localhost:8000
 
 📖 **Complete guide:** [Docker Scripts Documentation](./05-deployment/docker-scripts.md)
 
+### Skipping Email Verification (Development Only)
+
+During local development, waiting for email confirmation can slow down testing. Set `SKIP_EMAIL_VERIFICATION=true` in your `.env.local` to bypass email verification:
+
+```env
+# .env.local
+SKIP_EMAIL_VERIFICATION=true
+```
+
+**What this does:**
+- **Registration:** New users are redirected to `/dashboard` immediately instead of `/verify-email`
+- **Login:** The login API returns `email_verified: true` regardless of Supabase's `email_confirmed_at` status
+- **Startup:** A warning is logged to the console confirming the setting is active
+
+> ⚠️ **WARNING:** Never set `SKIP_EMAIL_VERIFICATION=true` in production. This bypasses email confirmation and allows unverified accounts to access the platform.
+
 ---
 
 ## Development Workflow

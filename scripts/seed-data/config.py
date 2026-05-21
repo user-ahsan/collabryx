@@ -276,7 +276,7 @@ class SeedConfig:
         "Netflix",
         "Uber",
         "Airbnb",
-        "Stripe",
+
         "Shopify",
         "Tesla",
         "SpaceX",

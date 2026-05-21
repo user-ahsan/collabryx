@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { rateLimit } from '@/lib/rate-limit'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logger'
+import { isEmailVerificationSkipped } from '@/lib/services/development'
 
-// In-memory store for failed login attempts (use Redis in production)
+// In-memory store for failed login attempts
 const failedAttempts = new Map<string, {
   count: number
   lastAttempt: number
@@ -233,12 +234,14 @@ export async function POST(request: NextRequest) {
     })
 
     // Return success with user data (excluding sensitive info)
+    const emailVerified = isEmailVerificationSkipped() ? true : data.user.email_confirmed_at !== null
+    
     return NextResponse.json({
       success: true,
       user: {
         id: data.user.id,
         email: data.user.email,
-        email_verified: data.user.email_confirmed_at !== null,
+        email_verified: emailVerified,
       },
       session: {
         expires_at: data.session?.expires_at,

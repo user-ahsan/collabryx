@@ -1,50 +1,32 @@
 """
 Collabryx Embedding Service
 FastAPI server for generating semantic embeddings using Sentence Transformers
+Core service only - match generation, notifications, activity tracking,
+content moderation, AI mentor, analytics, and feed scoring have been removed.
 """
 
-from fastapi import FastAPI, HTTPException, status, BackgroundTasks, Request
+from fastapi import FastAPI, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, validator
 from typing import Optional, List
 import os
 import time
 import asyncio
 import logging
-import psutil
 import shutil
 import signal
 from datetime import datetime, timedelta
-import httpx
 from contextlib import asynccontextmanager
 
-# Prometheus metrics
-from prometheus_client import (
-    Counter,
-    Histogram,
-    Gauge,
-    generate_latest,
-    CONTENT_TYPE_LATEST,
-)
+
 
 from dotenv import load_dotenv
 from supabase import create_client, Client
 
-# OpenTelemetry-style request tracing (manual instrumentation)
-import uuid
-
 from embedding_generator import get_generator, construct_semantic_text
 from rate_limiter import RateLimiter
 from embedding_validator import EmbeddingValidator
-from services.match_generator import MatchGenerator
-from services.notification_engine import NotificationEngine
-from services.activity_tracker import ActivityTracker
-from services.content_moderator import ContentModerator
-from services.ai_mentor_processor import AIMentorProcessor
-from services.analytics_aggregator import AnalyticsAggregator
-from services.feed_scorer import FeedScorer
-from services.event_processor import EventProcessor
 
 load_dotenv()
 
@@ -60,11 +42,6 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
 WORKER_API_KEY = os.getenv("WORKER_API_KEY")
-
-# External API keys (optional - services have fallbacks)
-PERSPECTIVE_API_KEY = os.getenv("PERSPECTIVE_API_KEY")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-HUGGING_FACE_TOKEN = os.getenv("HUGGING_FACE_TOKEN")
 
 
 # Validate required environment variables
@@ -87,15 +64,6 @@ if SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
 # Initialize Rate Limiter
 rate_limiter = RateLimiter(supabase) if supabase else None
 
-# Initialize singleton services (reused across requests)
-match_generator = MatchGenerator(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY) if supabase else None
-notification_engine = NotificationEngine(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY) if supabase else None
-activity_tracker = ActivityTracker(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY) if supabase else None
-content_moderator = ContentModerator(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, PERSPECTIVE_API_KEY) if supabase else None
-ai_mentor_processor = AIMentorProcessor(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GEMINI_API_KEY, supabase_client=supabase) if supabase else None
-analytics_aggregator = AnalyticsAggregator(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY) if supabase else None
-event_processor = EventProcessor(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY) if supabase else None
-
 # In-memory queue with bounded size
 MAX_QUEUE_SIZE = 100
 request_queue = asyncio.Queue(maxsize=MAX_QUEUE_SIZE)
@@ -112,71 +80,7 @@ def signal_handler(signum, frame):
     logger.info(f"Received {sig_name} signal — initiating graceful shutdown")
     SHUTDOWN_FLAG = True
 
-# =====================================================
-# Prometheus Metrics
-# =====================================================
 
-# Request counter - tracks total HTTP requests
-REQUEST_COUNTER = Counter(
-    name="embedding_service_requests_total",
-    documentation="Total number of HTTP requests",
-    labelnames=["method", "endpoint", "status_code"],
-)
-
-# Request duration histogram - tracks request latency
-REQUEST_DURATION = Histogram(
-    name="embedding_service_request_duration_seconds",
-    documentation="Request duration in seconds",
-    labelnames=["method", "endpoint"],
-    buckets=[0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0],
-)
-
-# Queue size gauge - current queue depth
-QUEUE_SIZE_GAUGE = Gauge(
-    name="embedding_service_queue_size",
-    documentation="Current number of items in the processing queue",
-)
-
-# Error counter - tracks failed requests
-ERROR_COUNTER = Counter(
-    name="embedding_service_errors_total",
-    documentation="Total number of errors",
-    labelnames=["error_type", "endpoint"],
-)
-
-# Processing speed gauge - embeddings generated per minute
-PROCESSING_SPEED_GAUGE = Gauge(
-    name="embedding_service_processing_speed",
-    documentation="Number of embeddings processed per minute",
-)
-
-# Memory usage gauge
-MEMORY_USAGE_GAUGE = Gauge(
-    name="embedding_service_memory_usage_bytes",
-    documentation="Current memory usage in bytes",
-    labelnames=["type"],  # "process_rss", "process_vms", "system_available"
-)
-
-# DLQ size gauge
-DLQ_SIZE_GAUGE = Gauge(
-    name="embedding_service_dlq_size",
-    documentation="Current number of items in dead letter queue",
-)
-
-# Supabase query duration histogram
-SUPABASE_QUERY_DURATION = Histogram(
-    name="embedding_service_supabase_query_duration_seconds",
-    documentation="Supabase query duration in seconds",
-    labelnames=["table", "operation"],
-    buckets=[0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0],
-)
-
-# Supabase error counter
-SUPABASE_ERROR_COUNTER = Counter(
-    name="embedding_service_supabase_errors_total",
-    documentation="Total number of Supabase query errors",
-    labelnames=["table", "operation", "error_type"],
-)
 
 
 async def run_embedding_tests():
@@ -289,15 +193,6 @@ async def lifespan(app: FastAPI):
     logger.info("Starting pending queue processor...")
     pending_queue_task = asyncio.create_task(process_pending_queue())
 
-    # Start event processing pipeline (Supabase Realtime)
-    if event_processor:
-        logger.info("Starting event processor (Supabase Realtime)...")
-        event_task = asyncio.create_task(event_processor.start_listening())
-        logger.info("✓ Event processor started")
-    else:
-        event_task = None
-        logger.warning("⚠️ Event processor not initialized (Supabase unavailable)")
-
     logger.info("✓ All background tasks started successfully")
     logger.info("=" * 60)
 
@@ -327,18 +222,11 @@ async def lifespan(app: FastAPI):
     # Cancel background tasks gracefully with individual timeouts
     logger.info("Cancelling background tasks...")
 
-    # Stop event processor first
-    if event_processor:
-        await event_processor.stop_listening()
-        logger.info("✓ Event processor stopped")
-
     tasks_with_names = [
         ("processor", processor_task),
         ("dlq", dlq_processor_task),
         ("pending", pending_queue_task),
     ]
-    if event_task:
-        tasks_with_names.append(("event", event_task))
 
     for task_name, task in tasks_with_names:
         if not task.done():
@@ -416,87 +304,7 @@ async def api_key_auth(request: Request, call_next):
     return await call_next(request)
 
 
-# =====================================================
-# Metrics Middleware
-# =====================================================
 
-
-@app.middleware("http")
-async def metrics_middleware(request: Request, call_next):
-    """Middleware to track request metrics with Prometheus and OpenTelemetry-style tracing"""
-    start_time = time.time()
-    trace_id = str(uuid.uuid4())
-
-    # Add trace ID to request state for downstream access
-    request.state.trace_id = trace_id
-
-    try:
-        response = await call_next(request)
-
-        # Add trace ID to response headers for distributed tracing
-        response.headers["X-Trace-Id"] = trace_id
-
-        # Record request counter
-        REQUEST_COUNTER.labels(
-            method=request.method,
-            endpoint=request.url.path,
-            status_code=response.status_code,
-        ).inc()
-
-        # Record request duration
-        duration = time.time() - start_time
-        REQUEST_DURATION.labels(
-            method=request.method,
-            endpoint=request.url.path,
-        ).observe(duration)
-
-        # Update queue size gauge
-        QUEUE_SIZE_GAUGE.set(request_queue.qsize())
-
-        # Update memory gauges
-        process = psutil.Process(os.getpid())
-        process_memory = process.memory_info()
-        MEMORY_USAGE_GAUGE.labels(type="process_rss").set(process_memory.rss)
-        MEMORY_USAGE_GAUGE.labels(type="process_vms").set(process_memory.vms)
-
-        # Log request with trace ID
-        logger.info(
-            f"{request.method} {request.url.path} {response.status_code} {duration:.3f}s",
-            extra={
-                "trace_id": trace_id,
-                "method": request.method,
-                "path": request.url.path,
-                "status_code": response.status_code,
-                "duration_ms": round(duration * 1000, 2),
-            },
-        )
-
-        return response
-
-    except Exception as e:
-        # Record error counter
-        ERROR_COUNTER.labels(
-            error_type=type(e).__name__,
-            endpoint=request.url.path,
-        ).inc()
-
-        # Update queue size gauge even on error
-        QUEUE_SIZE_GAUGE.set(request_queue.qsize())
-
-        # Log error with trace ID
-        logger.error(
-            f"{request.method} {request.url.path} ERROR {type(e).__name__}",
-            extra={
-                "trace_id": trace_id,
-                "method": request.method,
-                "path": request.url.path,
-                "error_type": type(e).__name__,
-                "error_message": str(e),
-            },
-            exc_info=True,
-        )
-
-        raise
 
 
 class EmbeddingRequest(BaseModel):
@@ -1116,11 +924,6 @@ async def health():
     except Exception as e:
         logger.error(f"Supabase health check failed: {e}")
 
-    # Get memory usage
-    memory_info = psutil.virtual_memory()
-    process = psutil.Process(os.getpid())
-    process_memory = process.memory_info()
-
     # Get disk usage
     disk_usage = shutil.disk_usage("/")
     disk_percent = (disk_usage.used / disk_usage.total) * 100
@@ -1129,9 +932,6 @@ async def health():
     status = "healthy"
     if not supabase_healthy:
         status = "degraded"
-    elif memory_info.percent > 90:
-        status = "warning"
-        logger.warning(f"High memory usage: {memory_info.percent:.1f}%")
     elif disk_percent > 85:
         status = "warning"
         logger.warning(f"High disk usage: {disk_percent:.1f}%")
@@ -1144,16 +944,6 @@ async def health():
         "queue_size": request_queue.qsize(),
         "queue_capacity": MAX_QUEUE_SIZE,
         "system": {
-            "memory": {
-                "percent": memory_info.percent,
-                "available_mb": round(memory_info.available / 1024 / 1024, 2),
-                "total_mb": round(memory_info.total / 1024 / 1024, 2),
-                "used_mb": round(memory_info.used / 1024 / 1024, 2),
-            },
-            "process_memory": {
-                "rss_mb": round(process_memory.rss / 1024 / 1024, 2),
-                "vms_mb": round(process_memory.vms / 1024 / 1024, 2),
-            },
             "disk": {
                 "percent": round(disk_percent, 2),
                 "free_gb": round(disk_usage.free / 1024 / 1024 / 1024, 2),
@@ -1164,31 +954,7 @@ async def health():
     }
 
 
-@app.get("/metrics")
-async def metrics():
-    """
-    Prometheus metrics endpoint.
-    Returns metrics in Prometheus exposition format for scraping.
-    """
-    # Update DLQ size gauge (query database)
-    if supabase:
-        try:
-            dlq_response = (
-                supabase.table("embedding_dead_letter_queue")
-                .select("id")
-                .eq("status", "pending")
-                .execute()
-            )
-            DLQ_SIZE_GAUGE.set(len(dlq_response.data or []))
-        except Exception as e:
-            logger.error(f"Failed to query DLQ size: {e}")
-            DLQ_SIZE_GAUGE.set(0)
 
-    # Generate Prometheus metrics
-    return Response(
-        content=generate_latest(),
-        media_type=CONTENT_TYPE_LATEST,
-    )
 
 
 @app.get("/model-info")
@@ -1296,566 +1062,6 @@ async def generate_embedding_from_profile(request: ProfileDataRequest):
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error preparing embedding generation: {str(e)}",
-        )
-
-
-# =====================================================
-# Match Generation Endpoints (Tasks 1.2.7-1.2.9)
-# =====================================================
-
-
-class MatchGenerateRequest(BaseModel):
-    """Request body for match generation"""
-
-    user_id: str = Field(..., description="User ID to generate matches for")
-    limit: int = Field(default=20, ge=1, le=50, description="Max matches to generate")
-
-
-class MatchBatchRequest(BaseModel):
-    """Request body for batch match generation"""
-
-    user_ids: Optional[List[str]] = Field(None, description="Specific users to process")
-    limit_per_user: int = Field(default=20, ge=1, le=50)
-
-
-class MatchResponse(BaseModel):
-    """Response body for match generation"""
-
-    suggestions_created: int
-    matches: List[dict]
-    error: Optional[str] = None
-
-
-@app.post("/api/matches/generate", response_model=MatchResponse)
-async def generate_matches(request: MatchGenerateRequest):
-    """
-    Generate match suggestions for a single user.
-    Task: 1.2.8
-    """
-    try:
-        if not match_generator:
-            raise HTTPException(
-                status_code=503, detail="Database connection not available"
-            )
-
-        result = await match_generator.generate_matches_for_user(
-            user_id=request.user_id, limit=request.limit
-        )
-
-        if result.get("error"):
-            raise HTTPException(status_code=400, detail=result["error"])
-
-        logger.info(
-            f"Generated {result['suggestions_created']} matches for user {request.user_id}"
-        )
-        return MatchResponse(
-            suggestions_created=result["suggestions_created"],
-            matches=result["matches"],
-            error=None,
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error generating matches: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail=f"Failed to generate matches: {str(e)}"
-        )
-
-
-@app.post("/api/matches/generate/batch")
-async def generate_matches_batch(
-    request: MatchBatchRequest, background_tasks: BackgroundTasks
-):
-    """
-    Generate matches for multiple users in background.
-    Task: 1.2.9
-    """
-    try:
-        if not match_generator:
-            raise HTTPException(
-                status_code=503, detail="Database connection not available"
-            )
-
-        # Get users to process
-        if request.user_ids:
-            users_to_process = request.user_ids
-        else:
-            # Get users without recent suggestions
-            response = await asyncio.to_thread(
-                supabase.rpc("get_users_needing_matches").execute
-            )
-            users_to_process = [u["id"] for u in (response.data or [])][:50]
-
-        if not users_to_process:
-            return {
-                "status": "no_users",
-                "message": "No users need match generation",
-                "processed_count": 0,
-            }
-
-        # Process in background
-        async def process_batch():
-            total_created = 0
-
-            for user_id in users_to_process:
-                try:
-                    result = await match_generator.generate_matches_for_user(
-                        user_id=user_id, limit=request.limit_per_user
-                    )
-                    total_created += result.get("suggestions_created", 0)
-                    await asyncio.sleep(0.5)  # Rate limiting
-                except Exception as e:
-                    logger.error(f"Error generating matches for {user_id}: {str(e)}")
-
-            logger.info(
-                f"Batch complete: {total_created} matches created for {len(users_to_process)} users"
-            )
-
-        background_tasks.add_task(process_batch)
-
-        return {
-            "status": "processing",
-            "message": f"Batch match generation started for {len(users_to_process)} users",
-            "users_count": len(users_to_process),
-            "limit_per_user": request.limit_per_user,
-        }
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error starting batch match generation: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Failed to start batch: {str(e)}")
-
-
-@app.get("/health/matches")
-async def matches_health():
-    """Health check for match generation service"""
-    try:
-        # Check if we can query match_suggestions
-        response = await asyncio.to_thread(
-            supabase.table("match_suggestions").select("id").limit(1).execute
-        )
-
-        return {
-            "status": "healthy",
-            "service": "match_generator",
-            "database_connected": True,
-            "timestamp": datetime.now().isoformat(),
-        }
-    except Exception as e:
-        return {
-            "status": "unhealthy",
-            "service": "match_generator",
-            "database_connected": False,
-            "error": str(e),
-            "timestamp": datetime.now().isoformat(),
-        }
-
-
-# =====================================================
-# Notification Endpoints (Tasks 1.3.6-1.3.7)
-# =====================================================
-
-
-class NotificationSendRequest(BaseModel):
-    """Request body for sending notification"""
-
-    user_id: str
-    type: str
-    actor_id: str
-    content: str
-    resource_type: Optional[str] = None
-    resource_id: Optional[str] = None
-    priority: Optional[str] = None
-
-
-class NotificationDigestRequest(BaseModel):
-    """Request body for daily digest"""
-
-    user_id: str
-
-
-class NotificationCleanupRequest(BaseModel):
-    """Request body for notification cleanup"""
-
-    days: int = Field(default=30, ge=1, le=365)
-
-
-@app.post("/api/notifications/send")
-async def send_notification(request: NotificationSendRequest):
-    """
-    Send a single notification.
-    Task: 1.3.6
-    """
-    try:
-        if not notification_engine:
-            raise HTTPException(
-                status_code=503, detail="Database connection not available"
-            )
-        result = await notification_engine.send_notification(
-            user_id=request.user_id,
-            type=request.type,
-            actor_id=request.actor_id,
-            content=request.content,
-            resource_type=request.resource_type,
-            resource_id=request.resource_id,
-            priority=request.priority,
-        )
-
-        if result["status"] == "failed":
-            raise HTTPException(
-                status_code=500, detail=result.get("error", "Failed to send")
-            )
-
-        return result
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error sending notification: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/api/notifications/digest/send")
-async def send_digest(request: NotificationDigestRequest):
-    """
-    Send daily digest to user.
-    Task: 1.3.6
-    """
-    try:
-        if not notification_engine:
-            raise HTTPException(
-                status_code=503, detail="Database connection not available"
-            )
-        result = await notification_engine.send_daily_digest(user_id=request.user_id)
-
-        if result["status"] == "failed":
-            raise HTTPException(
-                status_code=500, detail=result.get("error", "Failed to send digest")
-            )
-
-        return result
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error sending digest: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# =====================================================
-# Activity Tracker Endpoints (Tasks 1.4.5-1.4.7)
-# =====================================================
-
-
-class ActivityTrackViewRequest(BaseModel):
-    """Request body for tracking profile view"""
-
-    viewer_id: str
-    target_id: str
-
-
-class ActivityTrackMatchRequest(BaseModel):
-    """Request body for tracking match building"""
-
-    user_id: str
-    matched_user_id: str
-
-
-class ActivityFeedRequest(BaseModel):
-    """Request body for activity feed"""
-
-    user_id: str
-    limit: int = Field(default=20, ge=1, le=50)
-
-
-@app.post("/api/activity/track/view")
-async def track_profile_view(request: ActivityTrackViewRequest):
-    """
-    Track profile view.
-    Task: 1.4.5
-    """
-    try:
-        if not activity_tracker:
-            raise HTTPException(
-                status_code=503, detail="Database connection not available"
-            )
-        result = await activity_tracker.track_profile_view(
-            viewer_id=request.viewer_id, target_id=request.target_id
-        )
-
-        if result["status"] == "failed":
-            raise HTTPException(
-                status_code=500, detail=result.get("error", "Failed to track")
-            )
-
-        return result
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error tracking profile view: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/api/activity/track/build")
-async def track_match_building(request: ActivityTrackMatchRequest):
-    """
-    Track match building.
-    Task: 1.4.5
-    """
-    try:
-        if not activity_tracker:
-            raise HTTPException(
-                status_code=503, detail="Database connection not available"
-            )
-        result = await activity_tracker.track_match_building(
-            user_id=request.user_id, matched_user_id=request.matched_user_id
-        )
-
-        if result["status"] == "failed":
-            raise HTTPException(
-                status_code=500, detail=result.get("error", "Failed to track")
-            )
-
-        return result
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error tracking match building: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.get("/api/activity/feed")
-async def get_activity_feed(user_id: str, limit: int = 20):
-    """
-    Get activity feed for user.
-    Task: 1.4.5
-    """
-    try:
-        if not activity_tracker:
-            raise HTTPException(
-                status_code=503, detail="Database connection not available"
-            )
-        activities = await activity_tracker.get_activity_feed(user_id=user_id, limit=limit)
-
-        return {"activities": activities}
-
-    except Exception as e:
-        logger.error(f"Error getting activity feed: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@app.post("/api/notifications/cleanup")
-async def cleanup_notifications(request: NotificationCleanupRequest):
-    """
-    Cleanup old notifications (admin only).
-    Task: 1.3.6
-    """
-    try:
-        if not notification_engine:
-            raise HTTPException(
-                status_code=503, detail="Database connection not available"
-            )
-        result = await notification_engine.cleanup_old_notifications(days=request.days)
-
-        if result["status"] == "failed":
-            raise HTTPException(
-                status_code=500, detail=result.get("error", "Failed to cleanup")
-            )
-
-        return result
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error cleaning up notifications: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# ============================================================================
-# MISSING API ENDPOINTS - IMPLEMENTATION COMPLETE
-# ============================================================================
-
-
-# --------------------------------------------
-# Content Moderation Endpoint
-# --------------------------------------------
-class ModerateRequest(BaseModel):
-    content: str = Field(..., description="Content to moderate")
-    content_type: str = Field(
-        default="post", description="Type of content (post, comment, message)"
-    )
-
-
-class ModerateResponse(BaseModel):
-    approved: bool
-    flag_for_review: bool
-    auto_reject: bool
-    risk_score: float
-    action: str
-    details: dict
-    error: Optional[str] = None
-
-
-@app.post("/api/moderate", response_model=ModerateResponse)
-async def moderate_content_endpoint(request: ModerateRequest):
-    """
-    Moderate content for toxicity, spam, NSFW, and PII.
-    Uses Google Perspective API with fallback to keyword-based detection.
-    """
-    try:
-        if not content_moderator:
-            raise HTTPException(
-                status_code=503, detail="Database connection not available"
-            )
-        result = await content_moderator.moderate_content(
-            content=request.content, content_type=request.content_type
-        )
-
-        logger.info(
-            f"Content moderation: {result['action']} (risk: {result['risk_score']:.2f})"
-        )
-
-        return ModerateResponse(**result)
-
-    except Exception as e:
-        logger.error(f"Error moderating content: {str(e)}")
-        # Return safe fallback - reject on error
-        return ModerateResponse(
-            approved=False,
-            flag_for_review=False,
-            auto_reject=True,
-            risk_score=1.0,
-            action="auto_reject",
-            details={"error": str(e)},
-            error=str(e),
-        )
-
-
-# --------------------------------------------
-# AI Mentor Message Endpoint
-# --------------------------------------------
-class MentorMessageRequest(BaseModel):
-    user_id: str = Field(..., description="User ID")
-    message: str = Field(..., description="User message to AI mentor")
-    session_id: Optional[str] = Field(
-        None, description="Existing session ID (optional)"
-    )
-
-
-class MentorMessageResponse(BaseModel):
-    response: str
-    action_items: List[dict]
-    session_id: str
-    message_id: Optional[str]
-    suggested_next_steps: List[str]
-    error: Optional[str] = None
-
-
-@app.post("/api/ai-mentor/message", response_model=MentorMessageResponse)
-async def ai_mentor_message(request: MentorMessageRequest):
-    """
-    Send message to AI mentor and get response.
-    Uses Google Gemini API with fallback to predefined responses.
-    """
-    try:
-        if not ai_mentor_processor:
-            raise HTTPException(
-                status_code=503, detail="Database connection not available"
-            )
-        result = await ai_mentor_processor.generate_response(
-            user_id=request.user_id,
-            message=request.message,
-            session_id=request.session_id,
-        )
-
-        logger.info(f"AI mentor response generated for user {request.user_id}")
-
-        return MentorMessageResponse(**result)
-
-    except Exception as e:
-        logger.error(f"Error generating AI mentor response: {str(e)}")
-        # Return helpful fallback response
-        return MentorMessageResponse(
-            response="I apologize, but I'm experiencing technical difficulties at the moment. Please try again in a few minutes. In the meantime, consider reviewing your profile and exploring potential matches!",
-            action_items=[],
-            session_id=request.session_id or "",
-            message_id=None,
-            suggested_next_steps=[
-                "Review your profile completeness",
-                "Explore your match suggestions",
-                "Update your skills and interests",
-            ],
-            error=str(e),
-        )
-
-
-# --------------------------------------------
-# Analytics Daily Aggregation Endpoint
-# --------------------------------------------
-class AnalyticsDailyRequest(BaseModel):
-    date: Optional[str] = Field(
-        None, description="Date in ISO format (YYYY-MM-DD), defaults to today"
-    )
-
-
-class AnalyticsDailyResponse(BaseModel):
-    status: str
-    date: str
-    metrics: dict
-    error: Optional[str] = None
-
-
-@app.post("/api/analytics/daily", response_model=AnalyticsDailyResponse)
-async def aggregate_daily_analytics(request: AnalyticsDailyRequest):
-    """
-    Aggregate daily platform analytics.
-    Calculates DAU, MAU, WAU, and other platform metrics.
-    """
-    try:
-        if not analytics_aggregator:
-            raise HTTPException(
-                status_code=503, detail="Database connection not available"
-            )
-
-        aggregator = analytics_aggregator
-
-        # Parse date if provided
-        target_date = None
-        if request.date:
-            try:
-                target_date = datetime.fromisoformat(
-                    request.date.replace("Z", "+00:00")
-                )
-            except ValueError:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Invalid date format. Use ISO format (YYYY-MM-DD)",
-                )
-
-        result = await aggregator.aggregate_daily_stats(date=target_date)
-
-        if result.get("status") == "error":
-            raise HTTPException(
-                status_code=500, detail=result.get("error", "Aggregation failed")
-            )
-
-        logger.info(f"Daily analytics aggregated for {result.get('date')}")
-
-        return AnalyticsDailyResponse(**result)
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error aggregating daily analytics: {str(e)}")
-        return AnalyticsDailyResponse(
-            status="error",
-            date=request.date or datetime.now().isoformat(),
-            metrics={},
-            error=str(e),
         )
 
 

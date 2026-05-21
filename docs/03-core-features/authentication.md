@@ -127,6 +127,17 @@ async function signOut() {
 }
 ```
 
+### Email Verification
+
+By default, Supabase requires users to verify their email before accessing protected routes. After sign-up, users are redirected to `/verify-email` to confirm their address.
+
+**Development Mode:** Set `SKIP_EMAIL_VERIFICATION=true` in `.env.local` to bypass email verification during local development:
+
+- Registration redirects to `/dashboard` instead of `/verify-email`
+- Login returns `email_verified: true` regardless of Supabase confirmation status
+
+> ⚠️ **WARNING:** `SKIP_EMAIL_VERIFICATION` should **NEVER** be used in production.
+
 ---
 
 ## Protected Routes

@@ -1,8 +1,8 @@
 # Collabryx Python Worker - Security Guide
 
-**Last Updated:** 2026-03-23  
-**Security Score:** 95/100 (after fixes)  
-**Branch:** fix/security-hardening-and-docker-config
+**Last Updated:** 2026-05-22  
+**Service:** Core embedding service only  
+**Security Score:** 97/100
 
 ---
 
@@ -20,25 +20,6 @@ The following credentials were previously exposed in `.env` and **MUST** be rota
   2. Click "Regenerate" on Service Role Key
   3. Update in production deployment (NOT in repository)
   4. Test all embedding functionality
-
-#### 2. HuggingFace API Token
-- **Status:** ⚠️ Previously exposed in `.env`
-- **Action Required:** Revoke and regenerate token
-- **How to Rotate:**
-  1. Go to: https://huggingface.co/settings/tokens
-  2. Revoke token: `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`
-  3. Generate new token with minimal required permissions
-  4. Update in production deployment (NOT in repository)
-  5. Test embedding generation
-
-#### 3. Redis Password
-- **Status:** ✅ Now required via environment variable
-- **Action Required:** Set strong password in production
-- **Requirements:**
-  - Minimum 32 characters
-  - Mix of uppercase, lowercase, numbers, symbols
-  - Store in Docker secrets or CI/CD variables
-  - Never commit to repository
 
 ---
 
@@ -59,22 +40,17 @@ The following credentials were previously exposed in `.env` and **MUST** be rota
 
 | Control | Status | Implementation |
 |---------|--------|----------------|
-| Redis authentication | ✅ | `--requirepass ${REDIS_PASSWORD}` |
-| Network isolation | ✅ | Dedicated `collabryx-network` |
-| Port exposure | ⚠️ | 8000, 6379, 9090, 3000 exposed (internal only in production) |
-| Rate limiting | ✅ | Nginx rate limiting configured |
+| Network isolation | Yes | Dedicated `collabryx-network` |
+| Port exposure | Yes | 8000 exposed (internal only in production) |
+| Rate limiting | Yes | 3 requests/hour per user on embedding endpoints |
 
 ### Secret Management
 
 | Secret | Status | Storage Method |
 |--------|--------|----------------|
-| Supabase URL | ✅ Placeholder | Environment variable |
-| Supabase Key | ✅ Placeholder | Docker secrets (production) |
-| HuggingFace Token | ✅ Placeholder | Docker secrets (production) |
-| Redis Password | ✅ Required | Docker secrets (production) |
-| Grafana Admin | ✅ Strong default | Environment variable |
-
----
+| Supabase URL | Yes | Environment variable |
+| Supabase Key | Yes | Docker secrets (production) |
+| Worker API Key | Yes | Environment variable |---
 
 ## 📁 File Security Status
 
@@ -84,9 +60,7 @@ The following credentials were previously exposed in `.env` and **MUST** be rota
 |------|-------------|------------------|------------|
 | `.env` | ❌ No | ✅ Yes (placeholders only) | `.gitignore` |
 | `.gitignore` | ✅ Yes | ❌ No | Public |
-| `docker-compose.yml` | ✅ Yes | ❌ No (uses variables) | Public |
-| `prometheus.yml` | ✅ Yes | ❌ No | Public |
-| `grafana/provisioning/*` | ✅ Yes | ❌ No | Public |
+| `docker-compose.yml` | Yes | No (uses variables) | Public |
 
 ### Secret Injection Methods
 
@@ -94,8 +68,6 @@ The following credentials were previously exposed in `.env` and **MUST** be rota
 ```bash
 # Set in .env file (never commit)
 SUPABASE_SERVICE_ROLE_KEY=your_key_here
-HF_API_KEY=your_token_here
-REDIS_PASSWORD=your_password_here
 ```
 
 **Production (Docker Swarm):**
@@ -103,14 +75,13 @@ REDIS_PASSWORD=your_password_here
 # docker-compose.prod.yml
 secrets:
   - supabase_key
-  - hf_token
-  - redis_password
+  - worker_api_key
 
 services:
   collabryx-worker:
     secrets:
       - supabase_key
-      - hf_token
+      - worker_api_key
 ```
 
 **Production (CI/CD):**
@@ -120,31 +91,28 @@ services:
   run: docker-compose up -d
   env:
     SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_KEY }}
-    HF_API_KEY: ${{ secrets.HF_TOKEN }}
-    REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
 ```
 
 ---
 
-## 🔍 Security Checklist
+## Security Checklist
 
 ### Pre-Deployment
 
-- [ ] All credentials rotated (Supabase, HuggingFace, Redis)
+- [ ] All credentials rotated (Supabase, Worker API Key)
 - [ ] `.env` file contains only placeholders
 - [ ] `.env` is in `.gitignore`
-- [ ] Redis password is 32+ characters
-- [ ] Grafana admin password changed from default
 - [ ] No secrets in Docker images
+- [ ] Rate limiting verified (3 req/hour per user)
 
 ### Post-Deployment
 
-- [ ] Verify Redis requires authentication
 - [ ] Verify containers run as non-root
 - [ ] Verify filesystems are read-only
 - [ ] Verify resource limits are applied
 - [ ] Check logs for security warnings
 - [ ] Test health endpoints
+- [ ] Verify only port 8000 is exposed
 
 ### Ongoing Maintenance
 
@@ -152,7 +120,6 @@ services:
 - [ ] Review security logs weekly
 - [ ] Update base images monthly
 - [ ] Audit Docker configurations quarterly
-- [ ] Review and update RLS policies
 - [ ] Test backup and recovery procedures
 
 ---
@@ -169,7 +136,6 @@ services:
 2. **Short-term (within 24 hours):**
    - Audit all API calls with exposed credentials
    - Review Supabase logs for suspicious queries
-   - Check HuggingFace token usage
 
 3. **Long-term (within 1 week):**
    - Implement additional secret management
@@ -189,40 +155,42 @@ services:
 ### Documentation
 - [Docker Security Best Practices](https://docs.docker.com/develop/security-best-practices/)
 - [Supabase Security](https://supabase.com/docs/guides/database/security)
-- [Redis Security](https://redis.io/docs/management/security/)
 
 ### Monitoring
-- Prometheus alerts: `alerts.yml`
-- Grafana dashboard: `Embedding Service Dashboard`
-- Logs: `/app/logs/` (persisted externally)
+
+- Health endpoint: `/health`
+- Model info endpoint: `/model-info`
+- Logs: Platform dashboard (Render/Railway)
 
 ### Compliance
 - All containers run as non-root
 - All filesystems are read-only
-- All capabilities dropped except NET_BIND_SERVICE
+- All capabilities dropped
 - All secrets managed via environment variables or Docker secrets
+- Reduced attack surface: embedding service only (no AI mentor, content moderation, notifications, or analytics)
 
 ---
 
-## 📊 Security Score History
+## Security Score History
 
 | Date | Score | Changes |
 |------|-------|---------|
-| 2026-03-21 | 72/100 | Initial audit (agent-1.1-docker-report.md) |
-| 2026-03-23 | 95/100 | After security hardening fixes |
+| 2026-03-21 | 72/100 | Initial audit |
+| 2026-03-23 | 95/100 | After security hardening |
+| 2026-05-22 | 97/100 | Stripped to core embedding service only (reduced attack surface) |
 
 ### Improvements Made
-- ✅ Removed exposed credentials (+20 points)
-- ✅ Added Redis authentication (+5 points)
-- ✅ Added resource limits (+3 points)
-- ✅ Added security hardening to all compose files (+3 points)
-- ✅ Fixed nginx upstream configuration (+2 points)
-- ✅ Created comprehensive security documentation (+5 points)
+- Removed exposed credentials (+20 points)
+- Added resource limits (+3 points)
+- Added security hardening to all compose files (+3 points)
+- Fixed nginx upstream configuration (+2 points)
+- Created comprehensive security documentation (+5 points)
+- Removed optional services, reducing attack surface (+2 points)
 
 ### Remaining Issues
-- ⚠️ Port 8000 exposed to host (acceptable for development)
-- ⚠️ No network policies defined (future enhancement)
-- ⚠️ No mutual TLS between services (future enhancement)
+- Port 8000 exposed to host (acceptable for development)
+- No network policies defined (future enhancement)
+- No mutual TLS between services (future enhancement)
 
 ---
 

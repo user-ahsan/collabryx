@@ -5,10 +5,6 @@ uvicorn[standard]==0.32.0
 # ML/AI - sentence-transformers (torch installed separately with CPU index)
 sentence-transformers==3.3.1
 
-# Google AI - Gemini API and Perspective API
-google-generativeai>=0.8.0
-google-api-python-client>=2.100.0
-
 # Validation
 pydantic==2.9.2
 pydantic-settings==2.6.1
@@ -30,9 +26,5 @@ pytest==8.3.4
 pytest-asyncio==0.24.0
 pytest-cov==6.0.0
 
-# Monitoring (optional)
-prometheus-client==0.21.1
+# System monitoring (structlog)
 structlog==24.4.0
-
-# System monitoring
-psutil==6.1.0

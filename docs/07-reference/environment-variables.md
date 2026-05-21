@@ -52,25 +52,25 @@ These variables enable additional features or customization.
 |----------|-------------|---------|--------------|
 | `PYTHON_WORKER_URL` | Embedding service URL | `http://localhost:8000` | Semantic matching |
 
-### Analytics
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `NEXT_PUBLIC_GA_ID` | Google Analytics ID | `G-XXXXXXXXXX` |
-| `NEXT_PUBLIC_VERCEL_ANALYTICS_ID` | Vercel Analytics ID | `your-analytics-id` |
-
-### Error Tracking
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `NEXT_PUBLIC_SENTRY_DSN` | Sentry DSN for error tracking | `https://...@sentry.io/...` |
-
 ### Feature Flags
 
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `NEXT_PUBLIC_ENABLE_AI_FEATURES` | Enable AI features | `true` |
 | `NEXT_PUBLIC_MAINTENANCE_MODE` | Enable maintenance mode | `false` |
+
+### Development
+
+| Variable | Description | Type | Default |
+|----------|-------------|------|---------|
+| `SKIP_EMAIL_VERIFICATION` | Skips email verification requirement in development | `"true"` or `"false"` | `false` |
+
+> ⚠️ **WARNING:** `SKIP_EMAIL_VERIFICATION` should **NEVER** be used in production. It bypasses email confirmation, allowing unverified accounts to access the platform.
+
+**When `SKIP_EMAIL_VERIFICATION=true`:**
+- Registration redirects new users to `/dashboard` instead of `/verify-email`
+- Login API returns `email_verified: true` regardless of Supabase's `email_confirmed_at` status
+- A startup warning is logged to the console
 
 ---
 
@@ -93,6 +93,10 @@ NODE_ENV=development
 
 # Feature Flags
 NEXT_PUBLIC_ENABLE_AI_FEATURES=true
+
+# Development (optional - skip email verification locally)
+# SKIP_EMAIL_VERIFICATION=true
+
 ```
 
 ### Production (.env.production)
@@ -110,9 +114,13 @@ PYTHON_WORKER_URL=https://embedding-service.railway.app
 NEXT_PUBLIC_APP_URL=https://collabryx.com
 NODE_ENV=production
 
-# Analytics
-NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
-NEXT_PUBLIC_SENTRY_DSN=https://...@sentry.io/...
+# Feature Flags
+NEXT_PUBLIC_ENABLE_AI_FEATURES=true
+NEXT_PUBLIC_MAINTENANCE_MODE=false
+
+# Development (optional - skip email verification locally)
+# SKIP_EMAIL_VERIFICATION=true
+
 ```
 
 ---
@@ -288,13 +296,6 @@ export async function POST(request: NextRequest) {
 }
 ```
 
-### Edge Functions
-
-```typescript
-// Access via Deno.env
-const supabaseUrl = Deno.env.get('SUPABASE_URL')
-```
-
 ---
 
 ## Complete Example
@@ -322,9 +323,9 @@ NODE_ENV=development
 NEXT_PUBLIC_ENABLE_AI_FEATURES=true
 NEXT_PUBLIC_MAINTENANCE_MODE=false
 
-# Analytics (Optional)
-# NEXT_PUBLIC_GA_ID=G-XXXXXXXXXX
-# NEXT_PUBLIC_SENTRY_DSN=https://...@sentry.io/...
+# Development (optional - skip email verification locally)
+# SKIP_EMAIL_VERIFICATION=true
+
 ```
 
 ---

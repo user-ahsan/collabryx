@@ -1,11 +1,8 @@
 import type { NextConfig } from "next";
 import withBundleAnalyzer from '@next/bundle-analyzer'
-import { withSentryConfig } from '@sentry/nextjs'
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
-  // Sentry source maps upload (only when auth token is available)
-  productionBrowserSourceMaps: !!process.env.SENTRY_AUTH_TOKEN,
   // Turbopack config (Next.js 16 default)
   turbopack: {
     // Enable code splitting and optimization
@@ -102,11 +99,11 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://va.vercel-scripts.com https://*.posthog.com https://*.sentry.io",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https: *.supabase.co *.amazonaws.com",
-              "connect-src 'self' https://*.supabase.co https://*.posthog.com https://*.sentry.io https://vercel.live",
+              "connect-src 'self' https://*.supabase.co",
               "media-src 'self' blob:",
               "object-src 'none'",
               "frame-ancestors 'self'",
@@ -228,20 +225,6 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withSentryConfig(
-  withBundleAnalyzer({
-    enabled: process.env.ANALYZE === 'true',
-  })(nextConfig),
-  {
-    org: process.env.SENTRY_ORG || '',
-    project: process.env.SENTRY_PROJECT || '',
-    authToken: process.env.SENTRY_AUTH_TOKEN || '',
-    // Only upload source maps when auth token is set
-    silent: true,
-    widenClientFileUpload: true,
-    sourcemaps: {
-      deleteSourcemapsAfterUpload: true,
-    },
-    tunnelRoute: '/monitoring/sentry',
-  }
-)
+export default withBundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+})(nextConfig);

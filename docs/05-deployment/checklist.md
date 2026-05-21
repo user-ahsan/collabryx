@@ -103,21 +103,12 @@ Complete checklist for deploying Collabryx to production.
 
 #### Monitoring Setup
 
-- [ ] **Error Tracking**
-  - [ ] Sentry configured
-  - [ ] Error boundaries working
-  - [ ] Sourcemaps uploaded
+- [ ] **Error Handling**
 
-- [ ] **Analytics**
-  - [ ] PostHog configured
-  - [ ] Events tracking:
-    - User signup
-    - Post creation
-    - Connection requests
-    - Messages sent
+  - [ ] Error boundaries working
+  - [ ] Error logging configured
 
 - [ ] **Performance**
-  - [ ] Vercel Analytics enabled
   - [ ] Core Web Vitals monitoring
   - [ ] Uptime monitoring configured
 
@@ -265,8 +256,7 @@ Complete checklist for deploying Collabryx to production.
   - [ ] DNS propagation complete
 
 - [ ] **Monitoring**
-  - [ ] Error tracking active
-  - [ ] Analytics recording
+  - [ ] Error logging active
   - [ ] Alerts configured
   - [ ] On-call schedule set
 
@@ -350,7 +340,7 @@ If critical issues occur:
 - **Vercel:** https://vercel.com/dashboard
 - **Supabase:** https://supabase.com/dashboard
 - **Render:** https://render.com/dashboard
-- **Sentry:** https://sentry.io/organizations/
+
 
 ---
 

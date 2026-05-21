@@ -1,7 +1,7 @@
 # Python Worker Production Deployment Guide
 
 **For:** Production deployment on Render and Railway  
-**Last Updated:** 2026-03-12
+**Last Updated:** 2026-05-22
 
 ---
 
@@ -56,12 +56,13 @@ docker push yourusername/collabryx-embedding-service:latest
    ```
 
 5. **Environment Variables**:
-   ```
-   SUPABASE_URL=https://your-project.supabase.co
-   SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-   ALLOWED_ORIGINS=https://your-app.com
-   PYTHONUNBUFFERED=1
-   ```
+    ```
+    SUPABASE_URL=https://your-project.supabase.co
+    SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+    ALLOWED_ORIGINS=https://your-app.com
+    WORKER_API_KEY=your-api-key
+    PYTHONUNBUFFERED=1
+    ```
 
 6. **Resource Type**:
    ```
@@ -84,8 +85,7 @@ curl https://collabryx-embedding-service.onrender.com/health
 # Expected response
 {
   "status": "healthy",
-  "model_loaded": true,
-  "supabase_connected": true
+  "model_loaded": true
 }
 ```
 
@@ -152,12 +152,13 @@ railway up
    ```
 
 4. **Add Environment Variables**:
-   ```
-   SUPABASE_URL=https://your-project.supabase.co
-   SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-   ALLOWED_ORIGINS=https://your-app.com
-   PYTHONUNBUFFERED=1
-   ```
+    ```
+    SUPABASE_URL=https://your-project.supabase.co
+    SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+    ALLOWED_ORIGINS=https://your-app.com
+    WORKER_API_KEY=your-api-key
+    PYTHONUNBUFFERED=1
+    ```
 
 5. **Configure Build**:
    ```
@@ -279,7 +280,6 @@ curl https://your-service-url/health
 {
   "status": "healthy",
   "model_loaded": true,
-  "supabase_connected": true,
   "uptime_seconds": >0
 }
 ```
@@ -323,11 +323,11 @@ railway logs
 ### 4. Check Metrics
 
 ```bash
-# Queue status
-curl https://your-service-url/queue/status
-
 # Model info
 curl https://your-service-url/model-info
+
+# Service info
+curl https://your-service-url/
 ```
 
 ---
@@ -348,8 +348,7 @@ Set up monitoring for `/health` endpoint:
 |--------|-----------------|
 | Memory Usage | >80% |
 | CPU Usage | >70% |
-| Queue Size | >80 |
-| Failed Count | >10/hour |
+| Failed Requests | >10/hour |
 | Uptime | <99.9% |
 
 ### Log Aggregation
@@ -358,7 +357,7 @@ Set up monitoring for `/health` endpoint:
 - Papertrail (free tier available)
 - Logtail
 - Datadog
-- Grafana Loki
+- Better Stack
 
 ---
 
@@ -382,14 +381,13 @@ Increase resources in platform dashboard:
 - **Render:** Upgrade to Pro tier (4GB RAM)
 - **Railway:** Increase RAM/CPU allocation
 
-### Queue Optimization
+### Rate Limit Tuning
 
-For high load:
+The embedding endpoints are rate limited to 3 requests per hour per user. Adjust if needed:
 
 ```python
 # main.py
-MAX_QUEUE_SIZE = 500  # Increase from 100
-MAX_CONCURRENT_PROCESSING = 15  # Increase from 5
+RATE_LIMIT = "3/hour"  # Per user embedding generation limit
 ```
 
 ---
@@ -498,21 +496,18 @@ curl https://your-service-url/model-info
 # Limit concurrent processing
 # In main.py:
 MAX_CONCURRENT_PROCESSING = 3  # Reduce from 5
-
-# Reduce queue size
-MAX_QUEUE_SIZE = 50  # Reduce from 100
 ```
 
 ### Issue: Slow Response Times
 
 **Solution:**
 ```bash
-# Check queue status
-curl https://your-service-url/queue/status
+# Check model info
+curl https://your-service-url/model-info
 
-# If queue is full, scale up:
-# - Increase worker count
-# - Add more instances
+# If requests are being rate limited, check response for rate limit status
+# Scale horizontally if needed:
+# - Add more worker instances behind a load balancer
 ```
 
 ---
@@ -541,7 +536,7 @@ railway rollback <deployment-id>
 ## Next Steps
 
 - [Development Guide](./development.md) - Local development setup
-- [Main README](./README.md) - Overview and API reference
+- [Overview](./overview.md) - Service overview and API reference
 
 ---
 

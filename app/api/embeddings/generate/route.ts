@@ -242,7 +242,6 @@ export async function POST(request: NextRequest) {
     );
 
     // Try backend (Docker or Render) first
-    let usedFallback = false
     const backendConfig = await getBackendConfig()
     
     if (backendConfig.endpoint) {
@@ -300,57 +299,21 @@ export async function POST(request: NextRequest) {
         })
         
       } catch (workerError) {
-        console.log("Backend unavailable, using Edge Function fallback:", workerError)
-        usedFallback = true
+        console.error("Backend error during embedding generation:", workerError)
+        await updateEmbeddingStatus(supabase, userId, "failed");
+        return NextResponse.json(
+          { success: false, error: "Embedding generation failed: Backend unavailable" },
+          { status: 503 }
+        );
       }
     } else {
-      console.log("Using Edge Function (backend mode: edge-only)")
-      usedFallback = true
+      console.error("No backend configured for embedding generation")
+      await updateEmbeddingStatus(supabase, userId, "failed");
+      return NextResponse.json(
+        { success: false, error: "Embedding generation failed: No backend configured" },
+        { status: 503 }
+      );
     }
-
-    // Fallback: Call Supabase Edge Function
-    if (usedFallback) {
-      const edgeFunctionUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-embedding`;
-      
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      const edgeResponse = await fetch(edgeFunctionUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${session?.access_token || ''}`,
-          "apikey": process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
-        },
-        body: JSON.stringify({
-          user_id: userId,
-        }),
-      });
-
-      if (!edgeResponse.ok) {
-        const errorText = await edgeResponse.text();
-        await updateEmbeddingStatus(supabase, userId, "failed");
-        throw new Error(`Edge Function error: ${edgeResponse.status} - ${errorText}`);
-      }
-
-      const edgeData = await edgeResponse.json();
-      
-      return NextResponse.json({
-        success: true,
-        message: edgeData.message || "Embedding generated using fallback method",
-        data: {
-          user_id: userId,
-          status: "completed",
-          ...edgeData.data,
-        },
-      });
-    }
-
-    // Should not reach here
-    await updateEmbeddingStatus(supabase, userId, "failed");
-    return NextResponse.json(
-      { success: false, error: "Embedding generation failed" },
-      { status: 500 }
-    );
 
     } catch (error) {
         console.error("Error in embeddings generate:", error);

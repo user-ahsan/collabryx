@@ -1,6 +1,6 @@
 /**
  * TC-090: Content moderator scans newly created social posts
- * TC-091: Google Perspective API integration identifies toxic/inappropriate language
+ * TC-091: Toxicity detection identifies toxic/inappropriate language
  *
  * Tests a TypeScript mock implementation that mirrors the Python
  * ContentModerator service's moderation logic and thresholds.
@@ -56,10 +56,10 @@ interface ModerationResult {
   moderated_at: string
 }
 
-// ─── Mock Perspective API ────────────────────────────────────────────────
+// ─── Toxicity Check ────────────────────────────────────────────────
 
-function mockPerspectiveAnalyze(text: string): ToxicityResult {
-  // Simulate Perspective API response based on text content
+function checkToxicity(text: string): ToxicityResult {
+  // Simulate keyword-based toxicity check based on text content
   const toxicKeywords = ['hate', 'kill', 'stupid', 'idiot', 'die', 'worthless', 'garbage', 'trash', 'loser']
   const textLower = text.toLowerCase()
 
@@ -118,7 +118,7 @@ function checkNsfw(text: string): NsfwResult {
 }
 
 function moderateContent(content: string, _contentType: string = 'post'): ModerationResult {
-  const toxicity = mockPerspectiveAnalyze(content)
+  const toxicity = checkToxicity(content)
   const spam = checkSpam(content)
   const nsfw = checkNsfw(content)
   const pii = checkPii(content)
@@ -225,9 +225,9 @@ describe('Content Moderator', () => {
     })
   })
 
-  // ── TC-091: Perspective API toxicity detection ─────────────────────────
+  // ── TC-091: Toxicity detection ─────────────────────────
 
-  describe('TC-091: Perspective API toxicity detection', () => {
+  describe('TC-091: Toxicity detection', () => {
     it('identifies toxic content with hate speech keywords', () => {
       // Arrange - toxic content with hate speech
       const toxicContent = 'I hate you, you are stupid and worthless garbage'

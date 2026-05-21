@@ -36,14 +36,8 @@ export const config = {
         (inDocker ? 'http://host.docker.internal:8000' : 'http://localhost:8000')) + '/health',
   },
 
-  redis: {
-    url: process.env.REDIS_URL ||
-        (inDocker ? 'redis://host.docker.internal:6379' : 'localhost:6379'),
-    password: process.env.REDIS_PASSWORD || '',
-  },
 
   features: {
-    enableAI: Boolean(process.env.HF_API_KEY),
     enableRealtime: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
     enableWorker: Boolean(process.env.NEXT_PUBLIC_WORKER_API_URL || !isProduction),
   },

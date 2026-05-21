@@ -10,7 +10,6 @@ Step-by-step deployment procedures for Collabryx production and staging environm
 - [Deployment Steps](#deployment-steps)
   - [Frontend (Next.js on Vercel)](#frontend-nextjs-on-vercel)
   - [Python Worker (Docker)](#python-worker-docker)
-  - [Monitoring Stack](#monitoring-stack)
 - [Post-Deployment Verification](#post-deployment-verification)
 - [Rollback Procedure](#rollback-procedure)
 - [Environment Variable Checklist](#environment-variable-checklist)
@@ -31,7 +30,6 @@ Step-by-step deployment procedures for Collabryx production and staging environm
 ### Python Worker
 - [ ] Docker image builds successfully: `cd python-worker && docker compose build`
 - [ ] Health endpoint responds: `curl http://localhost:8000/health`
-- [ ] Metrics endpoint responds: `curl http://localhost:8000/metrics`
 - [ ] No dependency conflicts in `requirements.txt`
 
 ### Database
@@ -44,7 +42,7 @@ Step-by-step deployment procedures for Collabryx production and staging environm
 - [ ] Docker Compose services start cleanly: `docker compose up -d`
 - [ ] All health checks pass within 60s
 - [ ] Log rotation configured (max-size: 10m, max-file: 3)
-- [ ] Monitoring stack accessible (Prometheus :9090, Grafana :3000)
+- [ ] Collabryx Worker accessible (Local port 8000)
 
 ---
 
@@ -79,61 +77,25 @@ Step-by-step deployment procedures for Collabryx production and staging environm
    # Production (all services)
    docker compose --profile production up -d --build
 
-   # Or development only
-   docker compose --profile dev up -d --build
+    # Or development only
+    docker compose --profile dev up -d --build
+    ```
 
-   # Or monitoring only
-   docker compose --profile monitoring up -d --build
-   ```
-
-2. **Verify health**
+  2. **Verify health**
    ```bash
    # Wait for startup (60s start_period)
    sleep 60
 
-   # Check health
-   curl http://localhost:8000/health | jq .status
-   # Expected: "healthy" or "degraded"
+    # Check health
+    curl http://localhost:8000/health | jq .status
+    # Expected: "healthy" or "degraded"
+    ```
 
-   # Check metrics
-   curl http://localhost:8000/metrics | head -20
-   ```
-
-3. **Verify Docker health**
+  3. **Verify Docker health**
    ```bash
    docker compose ps
-   # All services should show "healthy"
-   ```
-
-### Monitoring Stack
-
-1. **Start monitoring services**
-   ```bash
-   cd python-worker
-   docker compose --profile monitoring up -d
-   ```
-
-2. **Verify services**
-   ```bash
-   # Prometheus
-   curl http://localhost:9090/-/healthy
-   # Expected: Prometheus Server is Healthy.
-
-   # Grafana
-   curl -I http://localhost:3000/login
-   # Expected: HTTP/1.1 200 OK
-
-   # Alertmanager
-   curl http://localhost:9093/-/healthy
-   # Expected: OK
-   ```
-
-3. **Verify data sources**
-   - Open Grafana: http://localhost:3000
-   - Login with credentials from `.env`
-   - Go to Configuration → Data Sources
-   - Verify Prometheus data source is connected
-   - Open "Embedding Service Dashboard"
+    # All services should show "healthy"
+    ```
 
 ---
 
@@ -151,13 +113,6 @@ Step-by-step deployment procedures for Collabryx production and staging environm
 - [ ] Page load < 3s (Lighthouse)
 - [ ] API response < 500ms
 - [ ] Python worker /health response < 2s
-- [ ] No memory leaks (check Grafana memory panel)
-
-### Monitoring Verification
-- [ ] Prometheus scraping worker metrics (check Targets page)
-- [ ] Grafana dashboard showing live data
-- [ ] Alertmanager routing rules loaded
-- [ ] No alerts firing (clean state)
 
 ### Log Verification
 ```bash
@@ -251,22 +206,14 @@ docker inspect collabryx-worker | grep -A5 LogPath
 |----------|-------------|---------|
 | `OPENAI_API_KEY` or `ANTHROPIC_API_KEY` | LLM provider key | `sk-...` |
 | `LLM_PROVIDER` | Provider name | `openai` or `anthropic` |
-| `HF_API_KEY` | Hugging Face token | `hf_...` |
+
 
 ### Staging-Specific
 | Variable | Description | Example |
 |----------|-------------|---------|
 | `STAGING` | Staging flag | `true` |
-| `NEXT_PUBLIC_SENTRY_DSN` | Sentry staging DSN | `https://...@sentry.io/...` |
-| `WORKER_API_KEY` | Worker auth key | `staging-key-...` |
-| `GRAFANA_ADMIN_PASSWORD` | Grafana admin password | `change-me` |
 
-### Monitoring
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `GRAFANA_ADMIN_USER` | Grafana admin user | `admin` |
-| `GRAFANA_ADMIN_PASSWORD` | Grafana admin password | `secure-password` |
-| `REDIS_PASSWORD` | Redis auth password | `secure-redis-pass` |
+| `WORKER_API_KEY` | Worker auth key | `staging-key-...` |
 
 ---
 
@@ -300,77 +247,6 @@ docker stats --no-stream collabryx-worker
 # Restart with more time
 docker compose down && docker compose --profile production up -d
 ```
-
-### Issue: Prometheus not scraping metrics
-
-**Symptoms:**
-- Prometheus Targets page shows "DOWN" for embedding-service
-- No metrics in Grafana
-
-**Diagnosis:**
-```bash
-# Check Prometheus config
-docker compose exec prometheus cat /etc/prometheus/prometheus.yml
-
-# Check Prometheus logs
-docker compose logs prometheus | tail -20
-
-# Test metrics endpoint directly
-curl http://localhost:8000/metrics
-```
-
-**Common causes:**
-1. **Network isolation**: Worker and Prometheus must be on same Docker network
-2. **Wrong target**: Check `prometheus.yml` target matches service name
-3. **Metrics path**: Verify `/metrics` endpoint is accessible
-
-**Fix:**
-```bash
-# Verify network
-docker network inspect python-worker_collabryx-network
-
-# Reload Prometheus config
-curl -X POST http://localhost:9090/-/reload
-```
-
-### Issue: Grafana dashboard shows no data
-
-**Symptoms:**
-- Dashboard panels show "No data"
-- Data source shows connected
-
-**Diagnosis:**
-1. Check time range (default: last 6 hours)
-2. Check environment filter (default: production)
-3. Verify Prometheus query returns data
-
-**Fix:**
-- Change time range to "Last 1 hour"
-- Set environment variable to match your deployment
-- Test query in Prometheus: `up{job="embedding-service"}`
-
-### Issue: Alertmanager not sending alerts
-
-**Symptoms:**
-- Alerts fire in Prometheus but no notifications received
-
-**Diagnosis:**
-```bash
-# Check Alertmanager config
-docker compose exec alertmanager cat /etc/alertmanager/alertmanager.yml
-
-# Check Alertmanager status
-curl http://localhost:9093/api/v2/status | jq .
-```
-
-**Common causes:**
-1. **Webhook not configured**: Alertmanager uses placeholder webhooks by default
-2. **Inhibition rules too aggressive**: Check `inhibit_rules` in config
-3. **Route mismatch**: Alert labels don't match route matchers
-
-**Fix:**
-- Configure actual webhook/Slack/PagerDuty receivers
-- Test with: `curl -X POST http://localhost:9093/api/v2/alerts -d '[{"labels":{"alertname":"test","severity":"warning"}}]'`
 
 ### Issue: High memory usage
 
@@ -418,9 +294,6 @@ ls -lh /var/lib/docker/containers/*/ *-json.log
 # Start all production services
 cd python-worker && docker compose --profile production up -d
 
-# Start monitoring only
-docker compose --profile monitoring up -d
-
 # Start dev worker only
 docker compose --profile dev up -d
 
@@ -441,18 +314,6 @@ docker compose down
 
 # Check health
 curl http://localhost:8000/health | jq .
-
-# Check metrics
-curl http://localhost:8000/metrics | head -30
-
-# Access Prometheus
-open http://localhost:9090
-
-# Access Grafana
-open http://localhost:3000
-
-# Access Alertmanager
-open http://localhost:9093
 ```
 
 ---

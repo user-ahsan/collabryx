@@ -45,7 +45,7 @@ export interface EmbeddingGenerationResult {
 
 /**
  * Generate embedding for a user profile
- * Triggers the API route to generate embedding using Python worker or Edge Function fallback
+ * Triggers the API route to generate embedding using Python worker or backend
  */
 export async function generateUserEmbedding(userId: string): Promise<EmbeddingGenerationResult> {
   const supabase = createClient();

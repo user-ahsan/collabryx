@@ -132,7 +132,7 @@ vi.mock('@/lib/csrf', () => ({
 
 // Mock backend config
 vi.mock('@/lib/config/backend', () => ({
-  getBackendConfig: vi.fn().mockResolvedValue({ endpoint: null, mode: 'edge-only' }),
+  getBackendConfig: vi.fn().mockResolvedValue({ endpoint: null, mode: 'auto' }),
   getCircuitBreakerStatus: vi.fn().mockReturnValue('closed'),
 }))
 
@@ -301,11 +301,7 @@ describe('API Integration Tests', () => {
       upsertBuilder.upsert.mockResolvedValueOnce({ data: null, error: null })
       mockSupabaseClient.from.mockReturnValueOnce(upsertBuilder)
 
-      // Mock auth session for edge function fallback
-      mockSupabaseClient.auth.getSession.mockResolvedValueOnce({
-        data: { session: { access_token: 'test-token' } },
-        error: null,
-      })
+
 
       const request = new NextRequest('http://localhost/api/embeddings/generate', {
         method: 'POST',
@@ -354,11 +350,7 @@ describe('API Integration Tests', () => {
       upsertBuilder2.upsert.mockResolvedValueOnce({ data: null, error: null })
       mockSupabaseClient.from.mockReturnValueOnce(upsertBuilder2)
 
-      // Mock auth session for edge function fallback
-      mockSupabaseClient.auth.getSession.mockResolvedValueOnce({
-        data: { session: { access_token: 'test-token' } },
-        error: null,
-      })
+
 
       const request = new NextRequest('http://localhost/api/embeddings/generate', {
         method: 'POST',

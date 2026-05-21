@@ -56,7 +56,7 @@ locked choices.
 > Level Security (RLS).
 >
 > 4\. **Supabase** **Edge** **Functions:** Serverless TypeScript
-> functions running on Deno. These handle privileged logic:
+
 >
 > ○ Generating Embeddings (requires OpenAI Key). ○ Semantic Matching
 > logic (Cosine Similarity).
@@ -184,7 +184,7 @@ RLS is **Mandatory**. No table shall be "Public" writable.
 > ○ **INSERT**: Triggered by System (via Database Trigger on auth.users
 > creation). 2. **profile_embeddings**:
 >
-> ○ **SELECT**: Service Role Only (Edge Functions). Users cannot read
+> ○ **SELECT**: Service Role Only. Users cannot read
 > vectors directly. ○ **UPDATE/INSERT**: Service Role Only.
 >
 > 3\. **messages**:
@@ -237,12 +237,11 @@ profile_embeddings.
 >
 > limit 10;
 
-**5.3** **AI** **Assistant** **(Edge** **Function:** **ai-assistant)**
+**5.3** **AI** **Assistant**
 
 > ● **Model:** gpt-4o-mini (Fast, cheap, capable).
 >
-> ● **Streaming:** The Edge Function must return a ReadableStream to
-> allow the text to type out on the frontend.
+> ● **Streaming:** The route must return a ReadableStream to allow the text to type out on the frontend.
 >
 > ● **System** **Prompt:**"You are Collabryx, a startup mentor. You help
 > students and founders refine ideas. Be concise, encouraging, and
@@ -325,7 +324,7 @@ clarity.
 **Sprint** **2:** **Profile** **&** **Onboarding**
 
 > ● **Task** **2.1:** Build (auth)/onboarding wizard (3 steps: Basic
-> Info, Skills, Goals). ● **Task** **2.2:** Create Edge Function
+> Info, Skills, Goals).
 > generate-embedding.
 >
 > ● **Task** **2.3:** Wire onboarding completion to trigger the Edge
@@ -333,7 +332,7 @@ clarity.
 
 **Sprint** **3:** **Matching** **Engine**
 
-> ● **Task** **3.1:** Create Edge Function get-matches. ● **Task**
+> ● **Task** **3.1:** Create API get-matches. ● **Task**
 > **3.2:** Build (auth)/matches UI.
 >
 > ● **Task** **3.3:** Implement "Connect" button (Insert into
@@ -351,7 +350,7 @@ clarity.
 
 > ● **Task** **5.1:** Build Chat Interface for AI.
 >
-> ● **Task** **5.2:** Create Edge Function ai-assistant with streaming
+> ● **Task** **5.2:** Create API ai-assistant with streaming
 > response.
 >
 > ● **Task** **5.3:** Inject User Context (Bio/Skills) into the System
@@ -394,7 +393,7 @@ These must be set in Vercel (Production) and .env.local (Development).
 NEXT_PUBLIC_SUPABASE_URL=\[https://xyz.supabase.co\](https://xyz.supabase.co)
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
 
-SUPABASE_SERVICE_ROLE_KEY=ey... \# ONLY for Edge Functions
+SUPABASE_SERVICE_ROLE_KEY=ey...
 
 \# OpenAI OPENAI_API_KEY=sk-...
 

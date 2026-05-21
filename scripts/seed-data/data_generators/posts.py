@@ -146,7 +146,7 @@ POST_TEMPLATES = {
         "partnerships": [
             "our partnership with Google Cloud",
             "our collaboration with Stanford",
-            "our integration with Stripe",
+            "our payment integration",
         ],
         "features": [
             "create custom dashboards",
@@ -214,7 +214,7 @@ INDUSTRY_CONTEXT = {
         "trends": ["LLMs", "generative AI", "computer vision"],
     },
     "Fintech": {
-        "tech": ["blockchain", "smart contracts", "Stripe API", "Plaid"],
+        "tech": ["blockchain", "smart contracts", "payments", "Plaid"],
         "trends": ["DeFi", "embedded finance", "open banking"],
     },
     "EdTech": {

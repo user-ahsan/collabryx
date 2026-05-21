@@ -1,6 +1,6 @@
 # Python Worker
 
-Self-hosted embedding generation service for semantic matching.
+Core embedding service only. Self-hosted embedding generation for semantic matching.
 
 ---
 
@@ -81,16 +81,13 @@ uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 # Health check
 curl http://localhost:8000/health
 
+# Model info
+curl http://localhost:8000/model-info
+
 # Generate embedding
-curl -X POST http://localhost:8000/embed \
+curl -X POST http://localhost:8000/generate-embedding \
   -H "Content-Type: application/json" \
-  -d '{"text": "Software engineer skilled in React"}'
-```
-
-### Run Tests
-
-```bash
-python test_embeddings.py
+  -d '{"text": "Software engineer skilled in React", "user_id": "test-123"}'
 ```
 
 ---
@@ -137,9 +134,22 @@ docker run -p 8000:8000 collabryx-embedding-worker
 
 ## API Reference
 
+### `GET /`
+
+Service info.
+
+**Response:**
+```json
+{
+  "service": "collabryx-embedding-worker",
+  "version": "3.0.0",
+  "description": "Core embedding service"
+}
+```
+
 ### `GET /health`
 
-Health check endpoint.
+Health check with system metrics.
 
 **Response:**
 ```json
@@ -152,48 +162,62 @@ Health check endpoint.
 }
 ```
 
-### `POST /embed`
+### `GET /model-info`
 
-Generate embedding for text.
-
-**Request:**
-```json
-{
-  "text": "Software Engineer with 5 years experience..."
-}
-```
+Model information.
 
 **Response:**
 ```json
 {
-  "embedding": [0.0234, -0.0156, ...],
+  "model_name": "all-MiniLM-L6-v2",
   "dimensions": 768,
-  "model": "all-MiniLM-L6-v2",
-  "processing_time_ms": 95
+  "device": "cpu"
 }
 ```
 
-### `POST /embed/batch`
+### `POST /generate-embedding`
 
-Generate embeddings for multiple texts.
+Queue embedding generation. Rate limited to 3 requests per hour per user.
 
 **Request:**
 ```json
 {
-  "texts": ["text 1", "text 2", "text 3"]
+  "text": "Software Engineer with 5 years experience...",
+  "user_id": "user-123"
 }
 ```
 
 **Response:**
 ```json
 {
-  "embeddings": [
-    [0.0234, -0.0156, ...],
-    [0.0891, 0.0123, ...],
-    [-0.0456, 0.0789, ...]
-  ],
-  "count": 3,
-  "total_time_ms": 250
+  "user_id": "user-123",
+  "status": "queued",
+  "message": "Vector embedding queued for background processing"
+}
+```
+
+### `POST /generate-embedding-from-profile`
+
+Queue embedding generation from profile data.
+
+**Request:**
+```json
+{
+  "user_id": "user-123",
+  "profile_data": {
+    "skills": ["React", "TypeScript"],
+    "bio": "Software engineer...",
+    "interests": ["Fintech", "AI"]
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "user_id": "user-123",
+  "status": "queued",
+  "message": "Vector embedding queued for background processing"
 }
 ```
 
@@ -236,7 +260,7 @@ Generate embeddings for multiple texts.
 
 ---
 
-**Last Updated**: 2026-03-14  
-**Version**: 2.0.0
+**Last Updated**: 2026-05-22  
+**Version**: 3.0.0
 
 [← Back to Docs](../../README.md) | [Vector Embeddings →](../vector-embeddings/overview.md)
