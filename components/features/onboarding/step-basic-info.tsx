@@ -18,6 +18,7 @@ type LocationField = keyof Pick<OnboardingFormValues, "location">
 
 export function StepBasicInfo({ userName, onNameExtracted }: StepBasicInfoProps) {
     const { register, setValue, formState: { errors }, watch } = useFormContext<OnboardingFormValues>()
+    const [locationFormatError, setLocationFormatError] = React.useState<string | null>(null)
     const locationInputRef = useRef<HTMLInputElement | null>(null)
     const fullNameValue = watch("fullName")
 
@@ -91,8 +92,8 @@ export function StepBasicInfo({ userName, onNameExtracted }: StepBasicInfoProps)
                                 message: "Name must be at least 2 characters"
                             },
                             pattern: {
-                                value: /^[A-Za-z\s]+$/,
-                                message: "Name can only contain letters and spaces"
+                                value: /^[a-zA-Z\s'-]+$/,
+                                message: "Name can only contain letters, spaces, hyphens, and apostrophes"
                             }
                         })}
                         className={cn(
@@ -120,7 +121,7 @@ export function StepBasicInfo({ userName, onNameExtracted }: StepBasicInfoProps)
                         placeholder="johndoe"
                         {...register("displayName", {
                             pattern: {
-                                value: /^[a-z0-9_]+$/,
+                                value: /^[a-z0-9_]*$/,
                                 message: "Display name can only contain lowercase letters, numbers, and underscores"
                             },
                             maxLength: {
@@ -159,13 +160,8 @@ export function StepBasicInfo({ userName, onNameExtracted }: StepBasicInfoProps)
                                 message: "Headline must be at least 5 characters"
                             },
                             maxLength: {
-                                value: 100,
-                                message: "Headline must be less than 100 characters"
-                            },
-                            validate: {
-                                noSpecialChars: (value) => 
-                                    /^[a-zA-Z0-9\s@.,&'()-]+$/.test(value) || 
-                                    "Headline can only contain letters, numbers, and basic punctuation"
+                                value: 200,
+                                message: "Headline must be less than 200 characters"
                             }
                         })}
                         className={cn(
@@ -205,13 +201,19 @@ export function StepBasicInfo({ userName, onNameExtracted }: StepBasicInfoProps)
                             if (value) {
                                 const validation = validateLocation(value)
                                 if (validation !== true) {
-                                    toast.error(validation)
-                                    setValue('location', '', { shouldValidate: true })
+                                    setLocationFormatError(typeof validation === "string" ? validation : null)
+                                } else {
+                                    setLocationFormatError(null)
                                 }
+                            } else {
+                                setLocationFormatError(null)
                             }
                         }}
                     />
                     <p id="location-hint" className="text-xs text-muted-foreground">Format: City, State or City, Country</p>
+                    {locationFormatError && (
+                        <p className="text-xs text-amber-500 font-medium mt-1">{locationFormatError}</p>
+                    )}
                 </div>
             </div>
         </div>
