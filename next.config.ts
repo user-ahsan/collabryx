@@ -3,12 +3,6 @@ import withBundleAnalyzer from '@next/bundle-analyzer'
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
-  // Turbopack config (Next.js 16 default)
-  turbopack: {
-    resolveAlias: {
-      'lucide-react': 'lucide-react/dist/esm/lucide-react',
-    },
-  },
   // Image optimization
   images: {
     remotePatterns: [
