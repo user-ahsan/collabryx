@@ -69,7 +69,13 @@ export function Stepper({ steps, currentStep }: StepperProps) {
             </div>
 
             {/* Connecting lines container - lower z-index */}
-            <div className="absolute left-[10%] right-[10%] top-6 -translate-y-1/2 z-10">
+            <div 
+              className="absolute top-6 -translate-y-1/2 z-10"
+              style={{ 
+                left: `${100 / (steps.length * 2)}%`, 
+                right: `${100 / (steps.length * 2)}%` 
+              }}
+            >
                 <div className={cn("w-full h-1 rounded-full", glass("divider"))} />
                 <div
                     className={cn(
