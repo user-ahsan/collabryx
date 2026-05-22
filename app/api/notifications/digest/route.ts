@@ -1,15 +1,16 @@
 /**
  * Notification Digest API Route
- * Proxies requests to Python worker for daily digest sending
+ * Calls notification-engine service directly for daily digest sending
  * Admin-only access
  */
 
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getBackendConfig, getCircuitBreakerStatus } from "@/lib/config/backend";
+import { generateDigest } from "@/lib/services/notification-engine";
 import { validateCSRFRequest, requiresCSRF } from "@/lib/csrf";
 import { rateLimit } from "@/lib/rate-limit";
+import { errorResponse } from '@/lib/utils/api-response';
 
 export const runtime = "edge";
 export const dynamic = "force-dynamic";
@@ -39,7 +40,6 @@ export interface NotificationDigestResponse {
     };
   };
   error?: string;
-  circuit_breaker_state?: string;
 }
 
 /**
@@ -86,10 +86,7 @@ export async function POST(request: NextRequest) {
         hasCookieToken: !!cookieToken,
         path: request.url,
       });
-      return NextResponse.json(
-        { success: false, error: "Invalid CSRF token" },
-        { status: 403 }
-      );
+      return errorResponse('INVALID_CSRF', 'Invalid CSRF token', 403)
     }
   }
   
@@ -98,10 +95,7 @@ export async function POST(request: NextRequest) {
   // Check admin access
   const adminCheck = await checkAdminAccess(supabase);
   if (!adminCheck.isAdmin) {
-    return NextResponse.json(
-      { success: false, error: adminCheck.error || "Admin access required" },
-      { status: 403 }
-    );
+    return errorResponse('FORBIDDEN', adminCheck.error || 'Admin access required', 403)
   }
 
   // Apply stricter rate limiting for admin endpoints (5 requests per 15min)
@@ -115,37 +109,11 @@ export async function POST(request: NextRequest) {
     
     const validationResult = NotificationDigestRequestSchema.safeParse(body);
     if (!validationResult.success) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: "Invalid request body",
-          details: String(validationResult.error) 
-        },
-        { status: 400 }
-      );
+      return errorResponse('INVALID_REQUEST', 'Invalid request body', 400)
     }
     
     const { date, batch_size, dry_run } = validationResult.data;
     
-    // Get backend configuration with circuit breaker
-    const backendConfig = await getBackendConfig();
-    const circuitBreakerState = getCircuitBreakerStatus();
-    
-    // If backend is unavailable, return error with circuit breaker info
-    if (!backendConfig.endpoint) {
-      return NextResponse.json({
-        success: false,
-        error: "Digest service unavailable",
-        message: "Please try again later or contact support",
-        circuit_breaker_state: circuitBreakerState,
-      }, {
-        status: 503,
-        headers: {
-          'X-Circuit-Breaker-State': circuitBreakerState,
-        }
-      });
-    }
-
     // Prepare schedule metadata
     const scheduleMetadata = {
       triggered_at: new Date().toISOString(),
@@ -156,89 +124,29 @@ export async function POST(request: NextRequest) {
       } : undefined,
     };
 
-    // Call Python worker digest endpoint
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout for batch operations
-    
-    try {
-      const workerResponse = await fetch(`${backendConfig.endpoint}/api/notifications/digest/send`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          date,
-          batch_size,
-          dry_run,
-          schedule_metadata: scheduleMetadata,
-          request_id: crypto.randomUUID(),
-        }),
-        signal: controller.signal,
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (!workerResponse.ok) {
-        if (workerResponse.status === 429) {
-          const rateLimitData = await workerResponse.json();
-          return NextResponse.json(
-            {
-              success: false,
-              error: "Rate limit exceeded",
-              message: rateLimitData.detail?.message || "Maximum digest requests exceeded",
-              retry_after: rateLimitData.detail?.retry_after,
-            },
-            {
-              status: 429,
-              headers: {
-                'Retry-After': rateLimitData.detail?.retry_after?.toString() || '3600',
-              }
-            }
-          );
-        }
-        throw new Error(`Backend error: ${workerResponse.status}`);
-      }
-      
-      const data: NotificationDigestResponse = await workerResponse.json();
-      
-      // Return response with backend mode info
-      return NextResponse.json({
-        ...data,
-        circuit_breaker_state: circuitBreakerState,
-      }, {
-        headers: {
-          'X-Circuit-Breaker-State': circuitBreakerState,
-          'X-Backend-Mode': backendConfig.mode,
-        }
-      });
-      
-    } catch (workerError) {
-      console.error("Python worker digest send error:", workerError);
-      
-      return NextResponse.json({
-        success: false,
-        error: "Digest delivery failed",
-        message: "Unable to connect to digest service",
-        circuit_breaker_state: getCircuitBreakerStatus(),
-      }, {
-        status: 503,
-        headers: {
-          'X-Circuit-Breaker-State': getCircuitBreakerStatus(),
-        }
-      });
-    }
+    const result = await generateDigest({
+      date,
+      batchSize: batch_size,
+      dryRun: dry_run,
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        digests_queued: result.digestsQueued,
+        digests_sent: result.digestsSent,
+        digests_failed: result.digestsFailed,
+        status: result.digestsFailed === 0 ? 'completed' : 'partial',
+        backend_mode: 'native',
+        schedule_metadata: scheduleMetadata,
+      },
+      error: result.errors.length > 0 ? result.errors.join(', ') : undefined,
+    });
 
   } catch (error) {
     console.error("Error in notification digest:", error);
 
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: "Internal server error",
-        circuit_breaker_state: getCircuitBreakerStatus(),
-      },
-      { status: 500 }
-    );
+    return errorResponse('INTERNAL_ERROR', 'Internal server error', 500)
   }
 }
 
