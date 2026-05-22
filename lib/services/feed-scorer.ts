@@ -228,7 +228,7 @@ export function scoreFeedForUser(
     postId: string;
     params: FeedScorerInput;
   }>,
-  userSeed: number = 42
+  _userSeed: number = 42
 ): ScoredPost[] {
   if (posts.length === 0) return [];
 
