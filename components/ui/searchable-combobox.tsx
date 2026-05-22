@@ -41,6 +41,7 @@ interface SearchableComboboxProps {
   onAddCustom?: (value: string) => void
   showCategories?: boolean
   className?: string
+  getSelectedLabel?: (id: string) => string
 }
 
 export function SearchableCombobox({
@@ -55,6 +56,7 @@ export function SearchableCombobox({
   onAddCustom,
   showCategories = true,
   className,
+  getSelectedLabel,
 }: SearchableComboboxProps) {
   const [open, setOpen] = React.useState(false)
   const [search, setSearch] = React.useState("")
@@ -128,14 +130,27 @@ export function SearchableCombobox({
     }
   }
 
-  // Get selected option details
-  const selectedOptions = options.filter(opt => selected.includes(opt.id))
+  // Get selected option details, including custom entries not in options
+  const selectedOptions = React.useMemo(() => {
+    const known = options.filter(opt => selected.includes(opt.id))
+    const customIds = selected.filter(id => !options.some(opt => opt.id === id))
+    const custom = customIds.map(id => ({
+      id,
+      label: getSelectedLabel ? getSelectedLabel(id) : id,
+      description: undefined,
+      category: undefined,
+      keywords: undefined,
+    }))
+    return [...known, ...custom]
+  }, [options, selected, getSelectedLabel])
 
   return (
     <div className={cn("w-full space-y-2", className)}>
       {/* Selected items - Fixed minimum height to prevent layout shift */}
-      {selected.length > 0 && (
-        <div className="flex flex-wrap gap-2 min-h-[48px] p-2 rounded-md border border-border bg-background">
+        <div className={cn(
+          "flex flex-wrap gap-2 min-h-[48px] p-2 rounded-md border border-border bg-background",
+          selected.length === 0 && "invisible"
+        )}>
           {selectedOptions.map(option => (
             <Badge
               key={option.id}
@@ -153,8 +168,7 @@ export function SearchableCombobox({
               </button>
             </Badge>
           ))}
-        </div>
-      )}
+      </div>
 
       {/* Combobox trigger - Fixed height */}
       <Popover open={open} onOpenChange={setOpen}>

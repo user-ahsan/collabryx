@@ -36,6 +36,7 @@ interface InlineSearchableComboboxProps {
   onAddCustom?: (value: string) => void
   showCategories?: boolean
   className?: string
+  getSelectedLabel?: (id: string) => string
 }
 
 export function InlineSearchableCombobox({
@@ -50,7 +51,11 @@ export function InlineSearchableCombobox({
   onAddCustom,
   showCategories = true,
   className,
+  getSelectedLabel,
 }: InlineSearchableComboboxProps) {
+  const instanceId = React.useId()
+  const dropdownId = `${instanceId}-dropdown`
+  const labelId = `${instanceId}-label`
   const [search, setSearch] = React.useState("")
   const inputRef = React.useRef<HTMLInputElement>(null)
 
@@ -115,6 +120,12 @@ export function InlineSearchableCombobox({
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") {
+      e.preventDefault()
+      setSearch("")
+      inputRef.current?.blur()
+      return
+    }
     if (e.key === "Enter") {
       e.preventDefault()
       if (search.trim() && allowCustom && onAddCustom) {
@@ -123,22 +134,33 @@ export function InlineSearchableCombobox({
     }
   }
 
-  // Get selected option details
-  const selectedOptions = options.filter(opt => selected.includes(opt.id))
+  // Get selected option details, including custom entries not in options
+  const selectedOptions = React.useMemo(() => {
+    const known = options.filter(opt => selected.includes(opt.id))
+    const customIds = selected.filter(id => !options.some(opt => opt.id === id))
+    const custom = customIds.map(id => ({
+      id,
+      label: getSelectedLabel ? getSelectedLabel(id) : id,
+      description: undefined,
+      category: undefined,
+      keywords: undefined,
+    }))
+    return [...known, ...custom]
+  }, [options, selected, getSelectedLabel])
 
   return (
     <div className={cn("w-full space-y-3", className)} role="group" aria-labelledby="combobox-label">
       {/* Selected items - Fixed minimum height to prevent layout shift */}
-      {selected.length > 0 && (
-        <div 
-          className={cn(
-            "flex flex-wrap gap-2 min-h-[48px] p-2 rounded-lg",
-            glass("subtle")
-          )}
-          role="list"
-          aria-label="Selected options"
-        >
-          {selectedOptions.map(option => (
+      <div 
+        className={cn(
+          "flex flex-wrap gap-2 min-h-[48px] p-2 rounded-lg",
+          glass("subtle"),
+          selected.length === 0 && "invisible"
+        )}
+        role="list"
+        aria-label="Selected options"
+      >
+        {selectedOptions.map(option => (
             <Badge
               key={option.id}
               variant="secondary"
@@ -156,8 +178,7 @@ export function InlineSearchableCombobox({
               </button>
             </Badge>
           ))}
-        </div>
-      )}
+      </div>
 
       {/* Search Input - Fixed height container */}
       <div className="relative min-h-[48px]">
@@ -172,7 +193,7 @@ export function InlineSearchableCombobox({
             glass("input")
           )}
           aria-autocomplete="list"
-          aria-controls="combobox-dropdown"
+          aria-controls={dropdownId}
           aria-expanded={!!search}
           aria-haspopup="listbox"
         />
