@@ -27,6 +27,7 @@ import { GlassCard } from "@/components/shared/glass-card"
 import { createClient } from "@/lib/supabase/client"
 import { completeOnboarding } from "./actions"
 import { useDebounce } from "@/hooks/use-debounce"
+import { isEmailVerificationSkipped } from "@/lib/services/development"
 
 // Schemas for each step - aligned with component validation
 const basicInfoSchema = z.object({
@@ -169,7 +170,8 @@ export default function OnboardingPage() {
                 setUserName(name)
                 
                 // Check email verification status
-                const emailIsVerified = !!user?.email_confirmed_at
+                // Respect SKIP_EMAIL_VERIFICATION env var — if set, treat as verified
+                const emailIsVerified = isEmailVerificationSkipped() ? true : !!user?.email_confirmed_at
                 setIsEmailVerified(emailIsVerified)
                 
                 if (!emailIsVerified) {
