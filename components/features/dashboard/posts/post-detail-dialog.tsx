@@ -1,8 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
-import { motion } from "framer-motion"
-import { useReducedMotion } from "@/hooks/use-reduced-motion"
+import { useState, useEffect, useRef } from "react"
 import Image from "next/image"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -63,9 +61,7 @@ export function PostDetailDialog({
         }
     }, [post?.id])
 
-    const prefersReduced = useReducedMotion()
-
-    if (!post) return null
+        if (!post) return null
 
     const postTypeBadge = getPostTypeBadge(post.post_type)
     const hasMedia = post.media_urls && post.media_urls.length > 0
@@ -104,7 +100,7 @@ export function PostDetailDialog({
                 <DialogTitle className="sr-only">Viewing Post by {post.author}</DialogTitle>
 
                 {hasMedia ? (
-                    // ─── Dual-Column Layout (Media Posts) ───
+                    // â”€â”€â”€ Dual-Column Layout (Media Posts) â”€â”€â”€
                     <GlassCard className="w-full h-full" innerClassName="flex flex-col md:flex-row w-full h-full">
                         <div className={cn(
                             "w-full min-h-[40vh] md:h-full md:w-[65%] lg:w-[70%] xl:w-[72%] flex flex-col justify-center relative border-b md:border-b-0 md:border-r group/media overflow-hidden",
@@ -241,7 +237,7 @@ export function PostDetailDialog({
                         </div>
                     </GlassCard>
                 ) : (
-                    // ─── Single-Column Layout (Text/Link Posts) ───
+                    // â”€â”€â”€ Single-Column Layout (Text/Link Posts) â”€â”€â”€
                     <GlassCard className="w-full h-full" innerClassName="flex flex-col w-full h-full relative min-h-0">
                         <div className="p-4 sm:p-6 md:p-8 pb-0 space-y-6 shrink-0">
                             {/* Header */}
