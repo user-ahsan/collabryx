@@ -1,84 +1,27 @@
-feat(feed-scorer): implement native TypeScript feed scoring engine with request-time personalization, and restore match-generator + notification-engine service exports
+fix(onboarding): 19 UX robustness fixes for onboarding screens
 
-This commit completes the transition from Python-worker-backed services to fully
-native TypeScript implementations for feed curation, match generation, and
-notifications. No Docker, cron jobs, or external services required.
+Comprehensive frontend fixes across 8 files covering positioning,
+accessibility, validation, performance, and edge cases:
 
-## What was built
-
-### 1. Feed Scorer Engine (lib/services/feed-scorer.ts) — NEW
-- seededThompsonSample() — Deterministic Thompson Sampling using Beta distribution
-  approximation (LCG PRNG + Box-Muller transform, mirrors removed Python FeedScorer)
-- calculateHybridScore() — Weighted scoring: semantic (35%) + engagement via
-  Thompson Sampling (30%) + recency (20%), with connection (1.5x), shared
-  interests (1.2x), and intent match (1.1x) boosts, capped at 1.0
-- calculateRecencyScore() — Exponential decay with 24h half-life
-- scorePostForUser() / scoreFeedForUser() — Batch scoring with factor breakdown
-- persistFeedScores() / cleanupExpiredFeedScores() — Optional Supabase persistence
-- 23 unit tests all passing
-
-### 2. Request-Time Feed Personalization (lib/services/posts.ts) — REWRITTEN
-fetchPersonalizedFeed() was previously querying the feed_scores table which was
-always empty (no pipeline to populate it), so it silently fell back to chronological
-ordering. Now it computes scores at request-time from live database data:
-
-1. Checks viewer's profile_embeddings — falls back to chronological if none
-2. Batches 5 Supabase queries: viewer embedding, viewer interests/looking_for,
-   recent posts (50), author embeddings, author interests, connection status
-3. For each post computes: cosine similarity (viewer vs author embeddings),
-   connection check (connections table), shared interests overlap, intent match
-   (looking_for vs post.intent), recency decay
-4. Feeds all factors into calculateHybridScore(), returns top N sorted by score
-
-### 3. API Route (app/api/feed/score/route.ts) — NEW
-POST endpoint with CSRF protection and rate limiting. Accepts post scoring
-inputs, returns scored + ranked results, optionally persists to feed_scores table.
-
-### 4. React Query Hook (hooks/use-feed.ts) — NEW
-fetchFeed() and useScoreFeed() mutation for client-side scoring.
-
-### 5. Service Exports (lib/services/index.ts) — MODIFIED
-Added exports for feed-scorer, match-generator, and notification-engine so
-all three native TS services are importable from the barrel file.
-
-### 6. Feed Component (components/features/dashboard/feed.tsx) — MODIFIED
-- Initial fetch uses fetchPersonalizedFeed() when embeddings ready,
-  chronological fallback otherwise
-- Load more handler similarly uses personalized feed when available
-- Fixed syntax errors (dangling }) introduced during edit
-
-### 7. Match Generation & Notification Restoration
-match-generator.ts, notification-engine.ts, and their tests already existed as
-untracked files. Added them to the barrel export. All 3 service test suites pass:
-- feed-scorer: 23/23
-- match-generator: 50/50
-- notification-engine: 38/38
-Total: 111/111 tests passing
-
-### 8. Documentation Updates (9 files)
-- docs/03-core-features/matching-system.md — Updated code examples from old
-  Edge Function calls to native match-generator imports; fixed 768 to 384 dimension
-- docs/04-infrastructure/python-worker/overview.md — Fixed model dimensions from
-  768 to 384 (all-MiniLM-L6-v2 outputs 384-dim)
-- docs/03-core-features/vector-embeddings/overview.md — Fixed 768 to 384 dimension
-  references in architecture diagram and API responses
-- docs/03-core-features/ai-assistant/overview.md — Replaced stale Edge Function
-  references with native TypeScript services
-- docs/07-reference/commands.md — Updated stale test references
-- docs/IMPLEMENTATION_PLAN.md — Updated match-generation.ts to match-generator.ts
-  references, replaced Gemini/Python-worker mentions
-- docs/FRONTEND-INTEGRATION-GUIDE.md — Python Worker Endpoints to Native TS
-  Endpoints, removed GEMINI_API_KEY reference
-- docs/05-deployment/checklist.md — LLM_PROVIDER to AI_PROVIDER_N_* format
-- docs/05-deployment/runbook.md — LLM_PROVIDER to AI_PROVIDER_N_* format
-
-## Architectural notes
-- Feed scores are computed at page-request time — no cron or Docker needed
-- The feed_scores, post_impressions, and feed_thompson_params tables exist
-  in the schema for future background persistence if desired
-- The /api/feed/score route and persistFeedScores() are available for optional
-  pre-caching but not required for the feature to work
-- All existing pre-authored files (match-generator.ts, notification-engine.ts)
-  are left as-is; only index.ts exports were added
+- InlineSearchableCombobox: add position:relative to parent containers,
+  use React.useId() for unique aria-controls/aria-labelledby IDs,
+  add Escape key handler to close dropdown, prevent CLS with invisible
+  badge container, support getSelectedLabel for custom value display
+- SearchableCombobox: same CLS fix and getSelectedLabel support
+- Schemas: align fullName regex with server (allow hyphens/apostrophes),
+  remove restrictive headline regex, extend headline max to 200
+- DisplayName: fix regex from + to * to allow empty optional field
+- Location: show inline format error instead of clearing user input
+- Company field: remove required validation, match Zod optional
+- Stepper: dynamic connecting line positioning via step count
+- SessionStorage: debounce form persistence with useDebounce(800ms)
+- Skip & Complete: only show on steps 3+ where data exists
+- Completion: calculate percentage from actual form data entered
+- Email: fix verification check to use !!(truthy) pattern
+- DisplayName auto-extraction: pass onNameExtracted callback from page
+- FullName: guard against async fetchUser overwriting user input
+- Role suggestions: detect from headline text instead of dead role field
+- Drag target: add ring indicator for drop target position
+- Double-click: add isTransitioning guard to prevent step skipping
 
 Co-authored-by: CommandCodeBot <noreply@commandcode.ai>

@@ -333,7 +333,7 @@ export function StepSkills() {
                     <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-amber-500" />
                     <span>
                       {detectedRole 
-                        ? `Based on your detectedRole (${detectedRole}), consider adding:`
+                        ? `Based on your role (${detectedRole}), consider adding:`
                         : "Popular skills to consider:"
                       }
                     </span>
