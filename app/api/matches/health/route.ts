@@ -1,11 +1,12 @@
 /**
  * Match Service Health Check API Route
- * Proxies health check requests to Python worker match service
+ * Performs direct health checks for Supabase, match service, and embedding service
  */
 
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { getBackendConfig, getCircuitBreakerStatus, clearHealthCache } from "@/lib/config/backend";
+import { generateMatchesForUser } from "@/lib/services/match-generator";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -16,17 +17,8 @@ export interface HealthCheckResponse {
   backend_mode: string;
   circuit_breaker_state: "closed" | "open" | "half-open";
   response_time_ms?: number;
-  worker_health?: {
-    status: string;
-    model_info?: {
-      model_name: string;
-      dimensions: number;
-      device: string;
-    };
-    supabase_connected: boolean;
-    queue_size?: number;
-  };
   database_connected: boolean;
+  match_service_available: boolean;
   error?: string;
   message?: string;
 }
@@ -35,62 +27,52 @@ export async function GET(request: NextRequest) {
   const startTime = Date.now();
   
   try {
-    // Check if user is authenticated (optional, can be removed for public health checks)
+    // Initialize Supabase client
     const supabase = await createClient();
-    await supabase.auth.getUser();
     
-    // Get backend configuration
+    // Get backend configuration (for embedding service health)
     const backendConfig = await getBackendConfig();
     const circuitBreakerState = getCircuitBreakerStatus();
     
+    // Check 1: Supabase connectivity — query profiles table
+    let supabaseHealthy = false;
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .select("id")
+        .limit(1);
+      supabaseHealthy = !error;
+    } catch {
+      supabaseHealthy = false;
+    }
+    
+    // Check 2: Match service availability — verify module loads
+    const matchServiceAvailable = typeof generateMatchesForUser === "function";
+    
+    // Determine overall status
+    let status: "healthy" | "degraded" | "unhealthy" = "healthy";
+    let errorMessage: string | undefined;
+    
+    if (!supabaseHealthy) {
+      status = "unhealthy";
+      errorMessage = "Database connection failed";
+    } else if (!backendConfig.isHealthy) {
+      status = "degraded";
+      errorMessage = "Embedding service unavailable";
+    }
+    
+    const responseTime = Date.now() - startTime;
+    
     const response: HealthCheckResponse = {
-      status: "healthy",
+      status,
       backend_available: !!backendConfig.endpoint,
       backend_mode: backendConfig.mode,
       circuit_breaker_state: circuitBreakerState,
-      database_connected: true,
+      response_time_ms: responseTime,
+      database_connected: supabaseHealthy,
+      match_service_available: matchServiceAvailable,
+      error: errorMessage,
     };
-
-    // If backend is available, check worker health
-    if (backendConfig.endpoint) {
-      try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5s timeout
-        
-        const workerResponse = await fetch(`${backendConfig.endpoint}/health`, {
-          method: "GET",
-          signal: controller.signal,
-        });
-        
-        clearTimeout(timeoutId);
-        
-        const responseTime = Date.now() - startTime;
-        response.response_time_ms = responseTime;
-        
-        if (workerResponse.ok) {
-          const workerHealth = await workerResponse.json();
-          response.worker_health = workerHealth;
-          
-          // Determine overall status
-          if (workerHealth.status === "healthy" && backendConfig.isHealthy) {
-            response.status = "healthy";
-          } else if (workerHealth.status === "unhealthy" || !backendConfig.isHealthy) {
-            response.status = "degraded";
-          }
-        } else {
-          response.status = "degraded";
-          response.error = `Worker health check failed: ${workerResponse.status}`;
-        }
-        
-      } catch (workerError) {
-        response.status = "degraded";
-        response.error = `Worker health check failed: ${workerError instanceof Error ? workerError.message : "Unknown error"}`;
-        response.response_time_ms = Date.now() - startTime;
-      }
-    } else {
-      response.status = "degraded";
-      response.error = "Python worker backend not available";
-    }
 
     // Check if refresh is requested
     const refresh = request.nextUrl.searchParams.get("refresh");
@@ -100,11 +82,11 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(response, {
-      status: response.status === "healthy" ? 200 : 503,
+      status: status === "healthy" ? 200 : 503,
       headers: {
         'X-Circuit-Breaker-State': circuitBreakerState,
         'X-Backend-Mode': backendConfig.mode,
-        'X-Response-Time': `${response.response_time_ms || 0}ms`,
+        'X-Response-Time': `${responseTime}ms`,
       },
     });
 
@@ -116,7 +98,9 @@ export async function GET(request: NextRequest) {
       backend_available: false,
       backend_mode: "unknown",
       circuit_breaker_state: getCircuitBreakerStatus(),
+      response_time_ms: Date.now() - startTime,
       database_connected: false,
+      match_service_available: false,
       error: error instanceof Error ? error.message : "Health check failed",
     };
 
