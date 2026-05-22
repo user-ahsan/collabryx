@@ -1,4 +1,4 @@
-'use server'
+﻿'use server'
 
 import { createClient } from '@/lib/supabase/server'
 import OpenAI from 'openai'
@@ -298,12 +298,7 @@ export async function sendMessage(sessionId: string, content: string) {
   }))
 
   // Assemble RAG context and build enhanced prompt
-  const { context, systemPrompt, warnings } = await assembleAndBuildPrompt(
-    user.id,
-    content,
-    sessionId,
-    ragMessages
-  )
+  const { context, systemPrompt, warnings } = await assembleAndBuildPrompt({ userId: user.id, query: content, sessionId, messages: ragMessages })
 
   // Prepare messages for LLM with RAG-enhanced system prompt
   const llmMessages = [
@@ -479,3 +474,4 @@ export async function getAICircuitBreakerStatus() {
     activeProvider: getProvider(),
   }
 }
+
