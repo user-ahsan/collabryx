@@ -1,4 +1,4 @@
-# Collabryx AI Mentor Implementation Plan
+﻿# Collabryx AI Mentor Implementation Plan
 
 **Generated:** 2026-04-30
 **Version:** 1.0
@@ -41,7 +41,7 @@ This document contains the complete implementation plan for enhancing Collabryx'
 ### Constraints
 - Project uses Next.js 16, React 19, TypeScript, Supabase with pgvector (384 dimensions)
 - HNSW vector indexing via `find_similar_users()` function
-- Multi-provider AI: OpenAI, Anthropic, Qwen/DashScope, Gemini (in Python worker)
+- Multi-provider AI: OpenAI, Anthropic, Qwen/DashScope, Gemini (in native TS provider registry)
 - MiniMax API endpoint: `https://api.minimaxi.com/v1` (OpenAI-compatible)
 
 ---
@@ -376,7 +376,7 @@ The codebase uses placeholder values (e.g., `0.85` defaults, `0.8` threshold) in
 
 | File | Changes |
 |------|---------|
-| `lib/services/match-generation.ts` | Use actual cosine similarity |
+| `lib/services/match-generator.ts (native, migrated)` | Use actual cosine similarity |
 | `lib/services/match-scores.ts` | Replace `0.85` placeholders with real calculations |
 
 ### Sub-Tasks
@@ -409,7 +409,7 @@ The codebase uses placeholder values (e.g., `0.85` defaults, `0.8` threshold) in
    }
    ```
 
-2. **Update `lib/services/match-generation.ts`**
+2. **Update `lib/services/match-generator.ts (native, migrated)`**
    - Import vector-math utilities
    - Calculate actual cosine similarity from stored embeddings
    - Pass actual scores to match scoring
@@ -463,7 +463,7 @@ Current retrieval uses only vector similarity. Need to combine with keyword/BM25
 
 | File | Changes |
 |------|---------|
-| `lib/services/match-generation.ts` | Add hybrid scoring logic |
+| `lib/services/match-generator.ts (native, migrated)` | Add hybrid scoring logic |
 | `lib/services/embeddings.ts` | Add keyword extraction |
 
 ### Sub-Tasks
@@ -699,7 +699,7 @@ Initial retrieval returns candidates by approximate similarity. Cross-encoder re
 
 | File | Changes |
 |------|---------|
-| `lib/services/match-generation.ts` | Integrate re-ranker |
+| `lib/services/match-generator.ts (native, migrated)` | Integrate re-ranker |
 
 ### Sub-Tasks
 

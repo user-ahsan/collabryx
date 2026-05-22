@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils"
 import { getInitials } from "@/lib/utils/format-initials"
 import { getCache, setCache, CACHE_KEYS } from "@/lib/dashboard-cache"
 import { sortPostsByPriority, getPostTypeBadge } from "@/lib/utils/post-helpers"
-import { fetchPosts } from "@/lib/services/posts"
+import { fetchPosts, fetchPersonalizedFeed } from "@/lib/services/posts"
 import type { PostWithAuthor } from "@/types/database.types"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
@@ -71,10 +71,10 @@ export function Feed() {
     const fetchInitialPosts = useCallback(async () => {
         setIsInitialLoading(true)
         try {
-            const result = await fetchPosts({ 
-                limit: 20,
-                random: hasEmbedding === false
-            })
+            const result = hasEmbedding
+                ? await fetchPersonalizedFeed({ limit: 20 })
+                : await fetchPosts({ limit: 20, random: false })
+
             
             if (result.error) throw result.error
             
@@ -168,11 +168,11 @@ export function Feed() {
         const newOffset = offset + 20
         
         try {
-            const { data, error } = await fetchPosts({ 
-                limit: 20,
-                offset: newOffset,
-                random: hasEmbedding === false
-            })
+            const { data, error } = hasEmbedding
+                ? await fetchPersonalizedFeed({ limit: 20, offset: newOffset })
+                : await fetchPosts({ limit: 20, offset: newOffset, random: false })
+
+
             
             if (error) throw error
             

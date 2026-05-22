@@ -1,4 +1,4 @@
-**Collabryx** **Phase** **1:** **Comprehensive** **Technical**
+﻿**Collabryx** **Phase** **1:** **Comprehensive** **Technical**
 **Specification** **&** **Implementation** **Guide**
 
 **1.** **Executive** **Summary** **&** **Technology** **Stack**
@@ -58,10 +58,10 @@ locked choices.
 > 4\. **Supabase** **Edge** **Functions:** Serverless TypeScript
 
 >
-> ○ Generating Embeddings (requires OpenAI Key). ○ Semantic Matching
+> ○ Embedding generation via Python worker (Sentence Transformers). ○ Semantic Matching
 > logic (Cosine Similarity).
 >
-> ○ AI Assistant processing.
+> ○ AI processing via universal provider registry (OpenAI, Anthropic, etc.).
 >
 > 5\. **Database:** Postgres with pgvector extension enabled.
 
@@ -239,13 +239,58 @@ profile_embeddings.
 
 **5.3** **AI** **Assistant**
 
-> ● **Model:** gpt-4o-mini (Fast, cheap, capable).
+> ● **Model:** Configurable via provider registry (default: gpt-4o-mini).
 >
 > ● **Streaming:** The route must return a ReadableStream to allow the text to type out on the frontend.
 >
 > ● **System** **Prompt:**"You are Collabryx, a startup mentor. You help
 > students and founders refine ideas. Be concise, encouraging, and
 > practical. Always suggest one concrete 'Next Step'."
+
+**5.4** **Universal** **AI** **Provider** **System**
+
+The AI backend uses a **multi-provider registry** with automatic failover, replacing the previous single hardcoded provider approach.
+
+> ● **Provider Registry:** `ProviderRegistry` class manages all registered AI providers with priority-based ordering.
+>
+> ● **Automatic Failover:** If the primary provider fails, the system automatically tries the next available provider by priority (lower number = higher priority).
+>
+> ● **OpenAI-Compatible:** `OpenAICompatibleProvider` supports ANY OpenAI-compatible API (OpenAI, Groq, Together, Ollama, local models, etc.).
+>
+> ● **Native Anthropic:** `AnthropicNativeProvider` provides direct Anthropic API integration.
+>
+> ● **Environment Configuration:** Providers are auto-registered from `AI_PROVIDER_N_*` environment variables (see [Environment Variables](../07-reference/environment-variables.md)).
+>
+> ● **Backward Compatibility:** Legacy `OPENAI_API_KEY` and `ANTHROPIC_API_KEY` variables still work.
+>
+> ● **Interface:** All providers implement the `AIProvider` interface:
+>   - `chat(messages, systemPrompt?)` - Non-streaming response
+>   - `stream?(messages, systemPrompt?)` - Streaming response (async generator)
+>   - `supportsStreaming()` - Whether streaming is supported
+>
+> ● **Error Handling:** Typed error classes for specific failure modes:
+>   - `ProviderConfigError` - Invalid provider configuration
+>   - `StreamingError` - Streaming-specific failures
+>   - `RateLimitError` - Provider rate limiting (includes `retryAfterMs`)
+>   - `ProviderTimeoutError` - Request timeout (includes `timeoutMs`)
+>   - `AllProvidersFailedError` - All providers exhausted
+
+**5.5** **Enhanced** **RAG** **Pipeline**
+
+The RAG (Retrieval-Augmented Generation) pipeline now supports **multi-user context** and **startup planning** scenarios.
+
+> ● **Extended Context:** `ExtendedRAGContext` includes startup data and multi-user collaboration data alongside standard profile context.
+>
+> ● **Startup Planning:** `StartupContext` captures the user's startup idea, stage, industry, target users, and needs — enabling the AI mentor to provide tailored startup guidance.
+>
+> ● **Collaboration Advice:** `MultiUserContext` allows the AI to consider multiple users' profiles when giving collaboration or partnership advice.
+>
+> ● **New Functions:**
+>   - `fetchMultipleUserContexts()` - Fetches profile data for multiple users
+>   - `generateStartupSystemPrompt()` - Creates system prompts for startup mentoring
+>   - `generateCollaborationSystemPrompt()` - Creates system prompts for collaboration advice
+>
+> ● **Context Assembler:** Now accepts `AssemblerOptions` with optional `otherUserIds` and `startupContext` parameters.
 
 **6.** **Frontend** **Architecture** **&** **Directory** **Structure**
 

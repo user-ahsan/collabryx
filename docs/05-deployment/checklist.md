@@ -1,4 +1,4 @@
-# Deployment Checklist
+﻿# Deployment Checklist
 
 Complete checklist for deploying Collabryx to production.
 
@@ -24,8 +24,8 @@ Complete checklist for deploying Collabryx to production.
   NEXT_PUBLIC_APP_URL=https://collabryx.com
   
   # AI Features
-  OPENAI_API_KEY=xxx (or ANTHROPIC_API_KEY)
-  LLM_PROVIDER=openai (or anthropic)
+  # AI provider keys (set via AI_PROVIDER_N_* vars)
+  # See environment-variables.md for AI provider config
   
   # Optional
   NODE_ENV=production

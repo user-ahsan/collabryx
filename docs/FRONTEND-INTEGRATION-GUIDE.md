@@ -1,4 +1,4 @@
-# Frontend Integration Guide - New Python Worker Endpoints
+﻿# Frontend Integration Guide - New Native TS Endpoints
 
 **Date:** 2026-03-19  
 **Branch:** `feature/missing-api-endpoints`
@@ -136,7 +136,7 @@ function AdminDashboard() {
 
 **Access Control:**
 - Requires admin role (checked in API route)
-- Falls back to basic metrics if Python worker unavailable
+- Falls back to basic metrics if service unavailable
 
 ---
 
@@ -349,7 +349,7 @@ PYTHON_WORKER_URL=https://your-worker.railway.app
 
 # External APIs (optional)
 
-GEMINI_API_KEY=your-key
+# AI providers are configured via AI_PROVIDER_N_* env vars
 ```
 
 ### Feature Flags

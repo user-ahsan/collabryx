@@ -1,4 +1,4 @@
-# Python Worker
+﻿# Python Worker
 
 Core embedding service only. Self-hosted embedding generation for semantic matching.
 
@@ -21,7 +21,7 @@ The Python Worker is a FastAPI service that generates vector embeddings using Se
 
 ### Key Features
 
-- **Model**: `all-MiniLM-L6-v2` (768 dimensions)
+- **Model**: `all-MiniLM-L6-v2` (384 dimensions)
 - **Framework**: FastAPI
 - **Performance**: ~100ms per embedding
 - **Scalability**: Stateless, horizontally scalable

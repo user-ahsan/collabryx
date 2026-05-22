@@ -1,4 +1,4 @@
-# Matching System
+﻿# Matching System
 
 User matching algorithms and implementation in Collabryx.
 
@@ -82,7 +82,7 @@ export async function getMatchSuggestions(userId: string, limit = 10) {
 ```sql
 -- SQL function for match calculation
 CREATE OR REPLACE FUNCTION get_matches(
-  query_embedding vector(768),
+  query_embedding vector(384),
   match_limit int
 )
 RETURNS TABLE (

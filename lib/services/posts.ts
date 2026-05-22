@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/client"
 import { logger } from "@/lib/logger"
+import { cosineSimilarity } from "@/lib/services/match-generator"
+import { calculateHybridScore } from "@/lib/services/feed-scorer"
 import type { Post, PostWithAuthor, PostAttachment, PostReaction, PostUpdateInput } from "@/types/database.types"
 
 // ===========================================
@@ -73,7 +75,7 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
 }> {
   const queryStartTime = Date.now()
   let queryCount = 0
-  
+
   try {
     const supabase = createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -106,7 +108,7 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
     if (options.random) {
       // Use ORDER BY created_at for pagination support
       query = query.order("created_at", { ascending: false })
-      
+
       // Support pagination for random posts
       if (options.offset) {
         query = query.range(options.offset, options.offset + (options.limit || 20) - 1)
@@ -143,7 +145,7 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
 
     queryCount++
     const queryDuration = Date.now() - queryStartTime
-    
+
     logger.api.debug("Posts fetched successfully", { count: data?.length || 0, duration: queryDuration })
 
     const mappedPosts: PostWithAuthor[] = (data as RawPost[] || []).map((post) => ({
@@ -176,8 +178,9 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
 }
 
 /**
- * Fetch personalized feed using feed_scores table
- * Falls back to chronological feed if no scores available
+ * Fetch personalized feed by computing hybrid scores at request-time.
+ * Uses real DB data: embeddings, connections, interests, post freshness.
+ * No cron job or Docker worker needed — scores are computed live.
  */
 export async function fetchPersonalizedFeed(options: PostsQueryOptions = {}): Promise<{
   data: PostWithAuthor[]
@@ -187,67 +190,200 @@ export async function fetchPersonalizedFeed(options: PostsQueryOptions = {}): Pr
 }> {
   const queryStartTime = Date.now()
   let queryCount = 0
-  
+
   try {
     const supabase = createClient()
     const { data: { user }, error: authError } = await supabase.auth.getUser()
-
     if (authError || !user) {
       logger.api.error("Auth error fetching personalized feed", authError)
       return { data: [], error: new Error("Authentication failed"), queryCount: 0 }
     }
 
-    logger.api.debug("Fetching personalized feed", { userId: user.id, options })
-
-    // Query feed_scores with JOIN to posts
-    const { data: feedData, error } = await supabase
-      .from("feed_scores")
-      .select(`
-        score,
-        post:posts (
-          *,
-          author:profiles (
-            full_name,
-            display_name,
-            avatar_url
-          )
-        )
-      `, { count: 'exact' })
+    // 1. Check viewer has embedding — otherwise fall back to chronological
+    const { data: viewerEmbedding } = await supabase
+      .from("profile_embeddings")
+      .select("embedding")
       .eq("user_id", user.id)
-      .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`)
-      .order("score", { ascending: false })
-      .limit(options.limit || 20)
-
-    if (error) throw error
+      .eq("status", "completed")
+      .single()
 
     queryCount++
 
-    // Fallback to chronological if no scores
-    if (!feedData || feedData.length === 0) {
-      logger.api.debug("No feed scores found, falling back to chronological")
+    if (!viewerEmbedding?.embedding) {
+      logger.api.debug("No viewer embedding — falling back to chronological feed")
       return fetchPosts(options)
     }
 
-    const queryDuration = Date.now() - queryStartTime
-    logger.api.debug("Personalized feed fetched", { count: feedData.length, duration: queryDuration })
+    // 2. Get viewer's interests and looking_for
+    const { data: viewerInterestsRows } = await supabase
+      .from("user_interests")
+      .select("interest")
+      .eq("user_id", user.id)
 
-    const mappedPosts: PostWithAuthor[] = feedData.map((item) => {
-      const feedItem = item as unknown as { score: number; post: PostWithAuthor & { author?: { display_name?: string; full_name?: string; avatar_url?: string } } }
-      return {
-        ...feedItem.post,
-        author_name: feedItem.post.author?.display_name || feedItem.post.author?.full_name || "Unknown",
-        author_role: "Member",
-        author_avatar: feedItem.post.author?.avatar_url || "",
-        time_ago: formatTimeAgo(feedItem.post.created_at),
-        feed_score: feedItem.score,
-      }
+    const { data: viewerProfile } = await supabase
+      .from("profiles")
+      .select("looking_for")
+      .eq("id", user.id)
+      .single()
+
+    queryCount += 2
+
+    const viewerInterests = new Set(viewerInterestsRows?.map(r => r.interest) ?? [])
+    const viewerLookingFor: string[] = viewerProfile?.looking_for ?? []
+
+    // 3. Fetch recent posts with authors
+    const limit = options.limit || 20
+    const { data: posts, error: postsError } = await supabase
+      .from("posts")
+      .select(`
+        id, author_id, content, post_type, intent, link_url,
+        is_pinned, is_archived, reaction_count, comment_count, share_count,
+        created_at, updated_at, version,
+        author:profiles (id, full_name, display_name, avatar_url)
+      `)
+      .eq("is_archived", false)
+      .order("created_at", { ascending: false })
+      .limit(50) // Fetch enough to score and rank
+
+    queryCount++
+
+    if (postsError) throw postsError
+    if (!posts || posts.length === 0) {
+      return { data: [], error: null, queryCount, duration: Date.now() - queryStartTime }
+    }
+
+    const rawPosts = (posts as unknown) as Array<{
+      id: string; author_id: string; content: string;
+      post_type: string; intent?: string; link_url?: string;
+      is_pinned: boolean; is_archived: boolean;
+      reaction_count: number; comment_count: number; share_count: number;
+      created_at: string; updated_at: string; version: number;
+      author?: { id: string; full_name?: string; display_name?: string; avatar_url?: string }
+    }>
+
+    // 4. Collect unique author IDs to batch-fetch embeddings + interests + connection status
+    const authorIds = [...new Set(rawPosts.map(p => p.author_id))]
+
+    // Batch: author embeddings
+    const { data: authorEmbeddingRows } = await supabase
+      .from("profile_embeddings")
+      .select("user_id, embedding")
+      .in("user_id", authorIds)
+      .eq("status", "completed")
+
+    queryCount++
+
+    const authorEmbeddings = new Map<string, number[]>()
+    for (const row of authorEmbeddingRows ?? []) {
+      if (row.embedding) authorEmbeddings.set(row.user_id, row.embedding as unknown as number[])
+    }
+
+    // Batch: author interests
+    const { data: authorInterestRows } = await supabase
+      .from("user_interests")
+      .select("user_id, interest")
+      .in("user_id", authorIds)
+
+    queryCount++
+
+    const authorInterests = new Map<string, Set<string>>()
+    for (const row of authorInterestRows ?? []) {
+      if (!authorInterests.has(row.user_id)) authorInterests.set(row.user_id, new Set())
+      authorInterests.get(row.user_id)!.add(row.interest)
+    }
+
+    // Batch: connections between viewer and all author IDs
+    // Two clean queries avoiding complex or()+in() filter syntax
+    const { data: connAsRequester } = await supabase
+      .from("connections")
+      .select("receiver_id")
+      .eq("requester_id", user.id)
+      .in("receiver_id", authorIds)
+      .eq("status", "accepted")
+
+    const { data: connAsReceiver } = await supabase
+      .from("connections")
+      .select("requester_id")
+      .eq("receiver_id", user.id)
+      .in("requester_id", authorIds)
+      .eq("status", "accepted")
+
+    queryCount += 2
+
+    const connectedUserIds = new Set<string>()
+    for (const row of connAsRequester ?? []) connectedUserIds.add(row.receiver_id)
+    for (const row of connAsReceiver ?? []) connectedUserIds.add(row.requester_id)
+
+    // 5. Score each post
+    const viewerEmbeddingArr = viewerEmbedding.embedding as unknown as number[]
+    const now = Date.now()
+
+    const scored = rawPosts.map((post): { post: typeof post; score: number } => {
+      const authorEmbedding = authorEmbeddings.get(post.author_id)
+      const semantic = authorEmbedding
+        ? cosineSimilarity(viewerEmbeddingArr, authorEmbedding)
+        : 0.5 // neutral if no embedding
+
+      const isConnected = connectedUserIds.has(post.author_id)
+
+      const authorInts = authorInterests.get(post.author_id)
+      const hasSharedInterests = authorInts && authorInts.size > 0 && viewerInterests.size > 0
+        ? [...authorInts].some(i => viewerInterests.has(i))
+        : false
+
+      const intentMatch = viewerLookingFor.length > 0 && post.intent
+        ? viewerLookingFor.some(lf => lf.toLowerCase() === post.intent!.toLowerCase())
+        : false
+
+      const hoursOld = (now - new Date(post.created_at).getTime()) / 3600000
+
+      const score = calculateHybridScore({
+        semantic: Math.max(0, Math.min(1, semantic)),
+        engagementSuccesses: post.reaction_count + post.comment_count,
+        engagementFailures: 0, // no impression tracking available at request-time
+        hoursOld,
+        isConnected,
+        hasSharedInterests,
+        intentMatch,
+      })
+
+      return { post, score }
     })
 
-    return { data: mappedPosts, error: null, queryCount, duration: queryDuration }
+    // 6. Sort by score descending, take top N
+    scored.sort((a, b) => b.score - a.score)
+    const topPosts = scored.slice(0, limit)
+
+    // 7. Map to PostWithAuthor
+    const mappedPosts: PostWithAuthor[] = topPosts.map(({ post: raw }) => ({
+      id: raw.id,
+      author_id: raw.author_id,
+      content: raw.content,
+      post_type: raw.post_type as Post["post_type"],
+      intent: raw.intent as Post["intent"],
+      link_url: raw.link_url,
+      is_pinned: raw.is_pinned,
+      is_archived: raw.is_archived,
+      reaction_count: raw.reaction_count,
+      comment_count: raw.comment_count,
+      share_count: raw.share_count,
+      version: raw.version,
+      created_at: raw.created_at,
+      updated_at: raw.updated_at,
+      author_name: raw.author?.display_name || raw.author?.full_name || "Unknown",
+      author_role: "Member",
+      author_avatar: raw.author?.avatar_url || "",
+      time_ago: formatTimeAgo(raw.created_at),
+    }))
+
+    const duration = Date.now() - queryStartTime
+    logger.api.debug("Personalized feed computed", { count: mappedPosts.length, duration })
+    return { data: mappedPosts, error: null, queryCount, duration }
   } catch (error) {
     const queryDuration = Date.now() - queryStartTime
     logger.api.error("Error fetching personalized feed", error, { queryCount, duration: queryDuration })
-    return { data: [], error: error instanceof Error ? error : new Error("Unknown error"), queryCount, duration: queryDuration }
+    // Fall back to chronological on any error
+    return fetchPosts(options)
   }
 }
 
@@ -403,7 +539,7 @@ export async function updatePostWithLock(
   conflict?: boolean
 }> {
   const { maxRetries = 3, onRetry } = options
-  
+
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const supabase = createClient()
@@ -438,7 +574,7 @@ export async function updatePostWithLock(
               .select("version")
               .eq("id", postId)
               .single()
-            
+
             if (currentPost.data) {
               updates.version = currentPost.data.version
               onRetry?.(attempt, new Error(`Version conflict, retrying with version ${updates.version}`))
@@ -489,7 +625,7 @@ export async function incrementPostCounter(
           .from("posts")
           .update({ [field]: supabase.rpc("get_counter_with_lock", { post_id: postId, field }) })
           .eq("id", postId)
-        
+
         if (fallbackError) throw fallbackError
       } else {
         throw error
@@ -538,7 +674,7 @@ export async function updatePostCounterWithLock(
             .select()
             .eq("id", postId)
             .single()
-          
+
           if (currentPost.data) {
             expectedVersion = (currentPost.data as Post).version
             onRetry?.(attempt, new Error(`Version conflict on counter update`))
@@ -705,5 +841,3 @@ function formatTimeAgo(dateString: string): string {
 
   return date.toLocaleDateString()
 }
-
-

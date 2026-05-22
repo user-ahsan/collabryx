@@ -1,4 +1,4 @@
-# Commands Reference
+﻿# Commands Reference
 
 Complete reference for all npm scripts and commands in Collabryx.
 
@@ -151,7 +151,7 @@ npm run test -- --run tests/components/ui/ tests/components/shared/ tests/integr
 npm run test -- --run tests/unit/lib/embedding-* tests/integration/embeddings/
 
 # Module 6: Semantic Matching (TC-051→060)
-npm run test -- --run tests/unit/services/match-* tests/unit/services/feed-scorer.test.ts tests/components/features/matches/ tests/integration/matches/
+npm run test -- --run tests/unit/services/match-* tests/unit/services/feed-scorer.ts (native TS scoring) tests/components/features/matches/ tests/integration/matches/
 
 # Module 7: Real-Time Networking (TC-061→075)
 npm run test -- --run tests/unit/hooks/use-connection* tests/unit/hooks/use-messages* tests/unit/hooks/use-conversations* tests/unit/hooks/use-typing* tests/components/features/connections/ tests/components/features/messages/ tests/integration/realtime/ tests/integration/messaging/
@@ -160,7 +160,7 @@ npm run test -- --run tests/unit/hooks/use-connection* tests/unit/hooks/use-mess
 npm run test -- --run tests/unit/lib/prompt-injection.test.ts tests/unit/lib/ai/ tests/components/features/ai-mentor/ tests/integration/ai-mentor/
 
 # Module 9: Notifications & Moderation (TC-086→095)
-npm run test -- --run tests/unit/services/notification-engine* tests/unit/services/content-moderator* tests/components/shared/notification-item* tests/components/features/dashboard/posts/ tests/integration/notifications/ tests/integration/moderation/ tests/integration/analytics/
+npm run test -- --run tests/unit/services/notification-engine (native TS) tests/unit/services/content-moderator* tests/components/shared/notification-item* tests/components/features/dashboard/posts/ tests/integration/notifications/ tests/integration/moderation/ tests/integration/analytics/
 
 # Module 10: System Integration (TC-096→100)
 npm run test -- --run tests/integration/edge-functions/ tests/integration/analytics/aggregator.test.ts && npm run test:e2e
