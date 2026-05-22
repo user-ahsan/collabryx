@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
-import { toast } from "sonner"
 import type { OnboardingFormValues } from "@/app/(auth)/onboarding/page"
 
 interface StepBasicInfoProps {
@@ -70,7 +69,7 @@ export function StepBasicInfo({ userName, onNameExtracted }: StepBasicInfoProps)
         <div className="space-y-6">
             <div className="space-y-2 text-center md:text-left">
                 <h2 id="step-heading" className="text-3xl font-bold tracking-tight text-foreground">
-                    Hey{userName ? ` ${userName}` : ''}! 👋
+                    Hey{userName ? ` ${userName}` : ''}! ðŸ‘‹
                 </h2>
                 <p className="text-base text-muted-foreground">Kindly fill in the following to complete your profile.</p>
             </div>
