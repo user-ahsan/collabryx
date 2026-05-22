@@ -55,7 +55,6 @@ export function InlineSearchableCombobox({
 }: InlineSearchableComboboxProps) {
   const instanceId = React.useId()
   const dropdownId = `${instanceId}-dropdown`
-  const labelId = `${instanceId}-label`
   const [search, setSearch] = React.useState("")
   const inputRef = React.useRef<HTMLInputElement>(null)
 
