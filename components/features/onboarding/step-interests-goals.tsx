@@ -51,7 +51,7 @@ export function StepInterestsAndGoals() {
           const currentGoals = field.value || []
 
           return (
-            <div className="space-y-4" aria-labelledby="step-heading">
+            <div className="space-y-4 relative" aria-labelledby="step-heading">
               <div className="space-y-1.5">
                 <Label htmlFor="goals-combobox" className="text-sm font-semibold text-foreground">Collaboration Goals <span className="text-muted-foreground font-normal">(Optional)</span></Label>
                 <p id="goals-hint" className="text-sm text-muted-foreground">Select all that apply from our comprehensive list.</p>
