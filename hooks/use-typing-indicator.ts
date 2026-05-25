@@ -91,17 +91,25 @@ export function useTypingIndicator(conversationId?: string, userId?: string): Us
         }
         lastTypingSentRef.current = now
 
-        if (channelRef.current) {
-            channelRef.current.send({
-                type: "broadcast",
-                event: "typing",
-                payload: {
-                    conversation_id: convId,
-                    user_id: userId,
-                    is_typing: true
-                }
-            })
-        }
+        const supabase = createClient()
+        const channel = supabase.channel(`typing:${convId}`)
+        channel.subscribe((status) => {
+            if (status === "subscribed") {
+                channel.send({
+                    type: "broadcast",
+                    event: "typing",
+                    payload: {
+                        conversation_id: convId,
+                        user_id: userId,
+                        is_typing: true
+                    }
+                })
+                // Cleanup channel after send completes
+                setTimeout(() => {
+                    supabase.removeChannel(channel)
+                }, 100)
+            }
+        })
     }, [userId])
 
     // Clear typing status (when user stops typing)

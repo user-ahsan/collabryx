@@ -23,14 +23,7 @@ async function hashSHA256(message: string): Promise<string> {
     const hashArray = Array.from(new Uint8Array(hashBuffer))
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
   }
-  // Simple fallback hash (not cryptographically secure, but works for validation)
-  let hash = 0
-  for (let i = 0; i < message.length; i++) {
-    const char = message.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
-    hash = hash & hash
-  }
-  return Math.abs(hash).toString(16).padStart(64, '0')
+  throw new Error('SHA-256 hashing is not available in this environment')
 }
 
 export async function generateCSRFToken(): Promise<string> {
@@ -64,11 +57,10 @@ export async function setCSRFToken(): Promise<string> {
   const token = await generateCSRFToken()
   const cookieStore = await cookies()
 
-  // httpOnly: true prevents XSS attacks from stealing the CSRF token
-  // The browser still sends this cookie automatically with cross-site requests
-  // For CSRF protection, we validate that the cookie matches a header value
+  // httpOnly: true prevents XSS from reading the token — SameSite:strict alone is insufficient
+  // The token must be read from a meta tag or API response and set as a request header
   cookieStore.set(CSRF_COOKIE_NAME, token, {
-    httpOnly: false,
+    httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'strict',
     maxAge: TOKEN_EXPIRY / 1000,
