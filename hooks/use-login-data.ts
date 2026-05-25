@@ -7,7 +7,7 @@
  * - User profile
  */
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { fetchPosts } from '@/lib/services/posts'
@@ -58,7 +58,7 @@ async function retry<T>(
 
 export function useLoginData() {
   const [isReady, setIsReady] = useState(false)
-  const [retryCount, setRetryCount] = useState(0)
+  const retryCountRef = useRef(0)
 
   // Fetch posts
   const postsQuery = useQuery({
@@ -167,20 +167,20 @@ export function useLoginData() {
           notificationsQuery.refetch(),
         ])
         setIsReady(true)
-        setRetryCount(0)
+        retryCountRef.current = 0
       } catch (error) {
         console.error('Error fetching login data:', error)
         // Retry once after 2 seconds
-        if (retryCount < 1) {
+        if (retryCountRef.current < 1) {
           setTimeout(() => {
-            setRetryCount(prev => prev + 1)
+            retryCountRef.current += 1
           }, 2000)
         }
       }
     }
 
     fetchAllData()
-  }, [postsQuery, matchesQuery, profileQuery, notificationsQuery, retryCount])
+  }, [postsQuery, matchesQuery, profileQuery, notificationsQuery])
 
   return {
     isReady,

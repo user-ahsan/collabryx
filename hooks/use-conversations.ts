@@ -51,6 +51,7 @@ async function fetchConversations(): Promise<Conversation[]> {
         .order("last_message_at", { ascending: false, nullsFirst: false })
 
     if (conversationsError) {
+        console.error("Failed to fetch conversations:", conversationsError)
         throw conversationsError
     }
 
