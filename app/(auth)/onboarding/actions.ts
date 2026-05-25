@@ -175,7 +175,7 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
         if (count && count > 0) {
             return { 
                 success: false, 
-                error: "Display name is already taken. Please choose another one or add numbers to make it unique." 
+                error: "display_name: This display name is already taken. Please choose another one." 
             }
         }
     }
