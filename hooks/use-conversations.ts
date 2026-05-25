@@ -24,7 +24,7 @@ async function fetchConversations(): Promise<Conversation[]> {
         return []
     }
 
-    const { data: conversations, error: _conversationsError } = await supabase
+    const { data: conversations, error: conversationsError } = await supabase
         .from("conversations")
         .select(`
             id,
@@ -49,6 +49,10 @@ async function fetchConversations(): Promise<Conversation[]> {
         `)
         .or(`participant_1.eq.${user.id},participant_2.eq.${user.id}`)
         .order("last_message_at", { ascending: false, nullsFirst: false })
+
+    if (conversationsError) {
+        throw conversationsError
+    }
 
     const conversationsPromises = (conversations || []).map(async (conv) => {
         const isParticipant1 = conv.participant_1 === user.id

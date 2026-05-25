@@ -61,7 +61,7 @@ export const MeshGradientBackground = ({ className }: { className?: string }) =>
             <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] opacity-30 dark:opacity-100" />
 
             {/* Noise Overlay for texture */}
-            <div className="absolute inset-0 opacity-[0.02] dark:opacity-[0.03] mix-blend-overlay pointer-events-none bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+            <div className="absolute inset-0 opacity-[0.02] dark:opacity-[0.03] mix-blend-overlay pointer-events-none bg-[url('/noise.svg')]" />
         </div>
     )
 }

@@ -83,9 +83,26 @@ export function useUpdateProfile() {
       if (error) throw error
       return data
     },
+    onMutate: async (variables) => {
+      await queryClient.cancelQueries({ queryKey: PROFILE_QUERY_KEYS.all })
+      const previousSnapshot = queryClient.getQueryData(PROFILE_QUERY_KEYS.all)
+      queryClient.setQueryData(PROFILE_QUERY_KEYS.all, (old: unknown) => {
+        if (!old || !Array.isArray(old)) return old
+        return old.map((item: Record<string, unknown>) =>
+          item && typeof item === 'object' && 'id' in item && 'id' in variables && item.id === variables.id
+            ? { ...item, ...variables }
+            : item,
+        )
+      })
+      return { previousSnapshot }
+    },
+    onError: (error, _variables, context) => {
+      if (context?.previousSnapshot) {
+        queryClient.setQueryData(PROFILE_QUERY_KEYS.all, context.previousSnapshot)
+      }
+      toast.error('Failed to update profile')
+    },
     onSuccess: async (data) => {
-      queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEYS.current() })
-      
       // Trigger embedding generation after successful profile update
       if (data && 'id' in data) {
         try {
@@ -114,6 +131,9 @@ export function useUpdateProfile() {
           console.error('Failed to trigger embedding after profile update:', error)
         }
       }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: PROFILE_QUERY_KEYS.all })
     },
   })
 }

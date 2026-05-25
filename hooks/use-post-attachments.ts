@@ -87,7 +87,7 @@ export function usePostAttachmentUpload(options: UsePostAttachmentUploadOptions 
       
       // Remove from uploaded files
       setUploadedFiles(prev => prev.filter(
-        item => item.attachment?.id !== uploadMutation.variables
+        item => item.attachment?.id !== deleteMutation.variables
       ))
       
       // Invalidate attachments query
