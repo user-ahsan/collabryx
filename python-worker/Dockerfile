@@ -47,7 +47,6 @@ COPY main.py .
 COPY embedding_generator.py .
 COPY embedding_validator.py .
 COPY rate_limiter.py .
-COPY services/ ./services/
 COPY tests/ ./tests/
 
 # Create non-root user for security
