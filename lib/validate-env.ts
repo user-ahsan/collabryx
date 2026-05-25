@@ -3,7 +3,7 @@ import { z } from 'zod'
 const EnvSchema = z.object({
   NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(20).optional(),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(20).optional(),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(20),
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),
   PYTHON_WORKER_URL: z.string().url().optional(),
   BACKEND_MODE: z.enum(['auto', 'docker', 'render', 'edge-only']).optional(),
@@ -76,11 +76,9 @@ export function validateEnv() {
   return env
 }
 
-// Runtime validation helper for production
+// Runtime validation helper for all environments
 export async function validateEnvRuntime() {
-  if (process.env.NODE_ENV === 'production') {
-    validateEnv()
-  }
+  validateEnv()
 }
 
 // Server-side only - environment validation should only run on server

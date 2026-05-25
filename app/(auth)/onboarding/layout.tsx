@@ -7,6 +7,7 @@ import { SettingsDialog } from "@/components/features/settings/settings-dialog"
 import { cn } from "@/lib/utils"
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { redirect } from "next/navigation"
 
 function OnboardingLayoutContent({ children, isNewUser }: { children: React.ReactNode, isNewUser: boolean }) {
     const { isCollapsed } = useSidebar()
@@ -69,6 +70,9 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
                     .single()
 
                 // New user if profile doesn't exist or onboarding not completed
+                if (user && !profile?.onboarding_completed) {
+                    redirect('/onboarding')
+                }
                 if (mounted) setIsNewUser(!profile || profile.onboarding_completed !== true)
             } catch (error) {
                 console.error("Error checking onboarding status:", error)
@@ -85,7 +89,14 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
 
     // Show nothing until we determine user status
     if (isNewUser === null) {
-        return null
+        return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
+                <div className="text-center">
+                    <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+                    <p className="text-muted-foreground">Loading your profile...</p>
+                </div>
+            </div>
+        )
     }
 
     return (
