@@ -79,6 +79,23 @@ function cleanup() {
 
 setInterval(cleanup, 5 * 60 * 1000)
 
+/**
+ * SECURITY NOTE: IP-based Rate Limiting Limitations
+ *
+ * This rate limiter uses x-forwarded-for and x-real-ip headers for client identification.
+ * These headers CAN be spoofed by the client (e.g., setting X-Forwarded-For: 1.2.3.4).
+ *
+ * Limitations:
+ * - x-forwarded-for is trivially spoofable unless stripped by a trusted reverse proxy
+ * - x-real-ip is set by some proxies (nginx) but can be forged if client hits the app directly
+ * - User-Agent rotation can bypass the ip:userAgent fingerprint
+ *
+ * Recommended mitigations for production:
+ * - Combine IP with authenticated userId and session token for auth-related rate limits
+ * - Trust x-forwarded-for only when behind a reverse proxy that strips incoming values
+ * - For auth endpoints, use email-based rate limiting (see login/route.ts)
+ * - Use database-backed rate limiting for multi-instance deployments
+ */
 function getFingerprint(request: NextRequest, ipOnly = false): string {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ||
              request.headers.get('x-real-ip') ||
