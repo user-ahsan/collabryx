@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/client"
+import { createClient } from "@/lib/supabase/server"
 import { logger } from "@/lib/logger"
 import type { Profile, UserSkill, UserInterest, UserExperience, UserProject } from "@/types/database.types"
 
@@ -31,11 +31,11 @@ export async function fetchCurrentProfile(): Promise<{
     const { data, error } = await supabase
       .from("profiles")
       .select(`
-        *,
-        skills:user_skills(*),
-        interests:user_interests(*),
-        experiences:user_experiences(*),
-        projects:user_projects(*)
+        id, email, full_name, display_name, headline, bio, location, avatar_url, banner_url, website_url, collaboration_readiness, is_verified, verification_type, university, profile_completion, looking_for, onboarding_completed, created_at, updated_at,
+        skills:user_skills(id, user_id, skill_name, proficiency, is_primary, created_at),
+        interests:user_interests(id, user_id, interest, created_at),
+        experiences:user_experiences(id, user_id, title, company, description, start_date, end_date, is_current, order_index, created_at),
+        projects:user_projects(id, user_id, title, description, url, image_url, tech_stack, is_public, order_index, created_at)
       `)
       .eq("id", user.id)
       .single()
@@ -70,11 +70,11 @@ export async function fetchProfileById(userId: string): Promise<{
     const { data, error } = await supabase
       .from("profiles")
       .select(`
-        *,
-        skills:user_skills(*),
-        interests:user_interests(*),
-        experiences:user_experiences(*),
-        projects:user_projects(*)
+        id, email, full_name, display_name, headline, bio, location, avatar_url, banner_url, website_url, collaboration_readiness, is_verified, verification_type, university, profile_completion, looking_for, onboarding_completed, created_at, updated_at,
+        skills:user_skills(id, user_id, skill_name, proficiency, is_primary, created_at),
+        interests:user_interests(id, user_id, interest, created_at),
+        experiences:user_experiences(id, user_id, title, company, description, start_date, end_date, is_current, order_index, created_at),
+        projects:user_projects(id, user_id, title, description, url, image_url, tech_stack, is_public, order_index, created_at)
       `)
       .eq("id", userId)
       .single()
@@ -139,7 +139,7 @@ export async function fetchUserSkills(userId: string): Promise<{
 
     const { data, error } = await supabase
       .from("user_skills")
-      .select("*")
+      .select("id, user_id, skill_name, proficiency, is_primary, created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
 
@@ -220,7 +220,7 @@ export async function fetchUserInterests(userId: string): Promise<{
 
     const { data, error } = await supabase
       .from("user_interests")
-      .select("*")
+      .select("id, user_id, interest, created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
 
@@ -301,7 +301,7 @@ export async function fetchUserExperiences(userId: string): Promise<{
 
     const { data, error } = await supabase
       .from("user_experiences")
-      .select("*")
+      .select("id, user_id, title, company, description, start_date, end_date, is_current, order_index, created_at")
       .eq("user_id", userId)
       .order("order_index", { ascending: true })
 
@@ -386,7 +386,7 @@ export async function fetchUserProjects(userId: string): Promise<{
 
     const { data, error } = await supabase
       .from("user_projects")
-      .select("*")
+      .select("id, user_id, title, description, url, image_url, tech_stack, is_public, order_index, created_at")
       .eq("user_id", userId)
       .eq("is_public", true)
       .order("order_index", { ascending: true })
