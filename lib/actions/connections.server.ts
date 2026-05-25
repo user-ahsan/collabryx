@@ -209,7 +209,7 @@ export async function cancelConnectionRequest(requestId: string) {
     .from('connections')
     .delete()
     .eq('id', requestId)
-    .eq('user_id', user.id)
+    .eq('requester_id', user.id)
 
   if (error) {
     return { error: 'Failed to cancel request' }

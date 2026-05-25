@@ -189,12 +189,10 @@ function NotificationList({
   })
 
   const handleAccept = useCallback((id: string) => {
-    console.log("Accept connection:", id)
     toast.success("Connection accepted")
   }, [])
 
   const handleIgnore = useCallback((id: string) => {
-    console.log("Ignore connection:", id)
     toast.success("Connection request ignored")
   }, [])
 

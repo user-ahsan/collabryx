@@ -121,7 +121,6 @@ export function MatchFilters({
                 open={semanticSearchOpen}
                 onOpenChange={setSemanticSearchOpen}
                 onSearch={(project, bio) => {
-                    console.log("Searching with:", { project, bio })
                 }}
             />
         </>
