@@ -116,3 +116,13 @@
 .public-cursor-wrapper select {
     cursor: text !important;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-gradient-shift,
+  .animate-float,
+  .animate-float-delayed,
+  .animate-float-slow {
+    animation: none !important;
+    transition: none !important;
+  }
+}
