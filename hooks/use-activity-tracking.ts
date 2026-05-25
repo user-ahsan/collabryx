@@ -8,6 +8,7 @@
 "use client"
 
 import { useMutation, useQuery } from '@tanstack/react-query'
+import { toast } from 'sonner'
 
 // ===========================================
 // TYPES
@@ -253,7 +254,8 @@ export function useTrackProfileView() {
       // Silent tracking - no toast on success
       if (result.error) {
         // Only show error toast if it's not a rate limit or expected error
-        console.warn('Profile view tracking failed:', result.error.message)
+        console.error('Profile view tracking failed:', result.error.message)
+        toast.error('Failed to track profile view. Some features may not work correctly.')
       }
     },
   })
@@ -276,7 +278,8 @@ export function useTrackMatchBuild() {
     onSuccess: (result) => {
       // Silent tracking - no toast on success
       if (result.error) {
-        console.warn('Match build tracking failed:', result.error.message)
+        console.error('Match build tracking failed:', result.error.message)
+        toast.error('Failed to track match action. Some features may not work correctly.')
       }
     },
   })
