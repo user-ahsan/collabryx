@@ -27,7 +27,7 @@ async function fetchMessages(conversationId: string): Promise<Message[]> {
     .select("*")
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: true })
-    .limit(50)
+    .limit(100)
 
   if (error) throw error
   return data || []
@@ -99,8 +99,10 @@ async function markAsReadMutation(conversationId: string): Promise<void> {
 
   if (markError) throw markError
 
-  // Broadcast read receipt
-  supabase.channel(`read:${conversationId}`).send({
+  // Broadcast read receipt on the same channel that postgres_changes uses
+  const channel = supabase.channel(`messages:${conversationId}`)
+  channel.subscribe()
+  channel.send({
     type: "broadcast",
     event: "read_receipt",
     payload: {
