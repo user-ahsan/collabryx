@@ -1,7 +1,7 @@
 "use client"
 
 import { motion, useReducedMotion } from "motion/react"
-import { useState, useEffect, useRef } from "react"
+import { useEffect, useRef } from "react"
 
 interface Node {
     id: number
@@ -35,7 +35,7 @@ export const NetworkVisualization = () => {
         return () => observer.disconnect()
     }, [])
 
-    const [nodes] = useState<Node[]>([
+    const nodes: Node[] = [
         { id: 1, x: 20, y: 20, size: 12 },
         { id: 2, x: 80, y: 15, size: 10 },
         { id: 3, x: 60, y: 50, size: 14 },
@@ -43,9 +43,9 @@ export const NetworkVisualization = () => {
         { id: 5, x: 85, y: 75, size: 10 },
         { id: 6, x: 40, y: 35, size: 6 },
         { id: 7, x: 50, y: 80, size: 8 },
-    ])
+    ]
 
-    const [connections] = useState<Connection[]>([
+    const connections: Connection[] = [
         { from: 1, to: 3 },
         { from: 1, to: 6 },
         { from: 2, to: 3 },
@@ -55,7 +55,7 @@ export const NetworkVisualization = () => {
         { from: 4, to: 7 },
         { from: 5, to: 3 },
         { from: 5, to: 7 },
-    ])
+    ]
 
     const getNodePosition = (nodeId: number) => {
         const node = nodes.find(n => n.id === nodeId)

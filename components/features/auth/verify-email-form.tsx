@@ -38,7 +38,7 @@ export function VerifyEmailForm() {
 
     React.useEffect(() => {
         const checkEmailVerification = async () => {
-            const stopTimer = performance.now()
+            const startTime = performance.now()
             devLog("auth", "=== EMAIL VERIFICATION CHECK STARTED ===", {
                 isDevelopmentMode: isDevelopmentMode(),
                 debugEnabled: isDebugEnabled(),
@@ -118,7 +118,7 @@ export function VerifyEmailForm() {
                 }
                 
                 // Log performance
-                const duration = performance.now() - stopTimer
+                const duration = performance.now() - startTime
                 if (isDebugEnabled()) {
                     devLog("perf", "⏱️ Email verification check completed", { durationMs: duration.toFixed(2) })
                 }

@@ -69,17 +69,14 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  // Validate environment in development and production
+let envValidated = false
+
+function validateEnvOnce() {
+  if (envValidated) return
+  envValidated = true
   if (process.env.NODE_ENV === 'development') {
     validateEnv()
   }
-  
-  // In production, validate critical env vars at runtime
   if (process.env.NODE_ENV === 'production') {
     try {
       validateEnv()
@@ -88,6 +85,14 @@ export default function RootLayout({
       // Don't throw in production - let app continue with degraded functionality
     }
   }
+}
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  validateEnvOnce()
   
   return (
     <html lang="en" suppressHydrationWarning>

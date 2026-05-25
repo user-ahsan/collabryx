@@ -103,10 +103,15 @@ export async function sendNotification(
 
   // Broadcast for real-time delivery (best-effort)
   try {
-    supabase.channel(`notifications:user:${input.userId}`).send({
-      type: 'broadcast',
-      event: 'new_notification',
-      payload: { id: data.id },
+    const channel = supabase.channel(`notifications:user:${input.userId}`);
+    channel.subscribe((status) => {
+      if (status === 'subscribed') {
+        channel.send({
+          type: 'broadcast',
+          event: 'new_notification',
+          payload: { id: data.id },
+        });
+      }
     });
   } catch {
     // Best-effort broadcast - notification already persisted to DB
