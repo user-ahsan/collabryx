@@ -266,10 +266,16 @@ export function StepExperience({}: StepExperienceProps) {
                       <Input
                         id={`links.${index}.url`}
                         placeholder={`https://${platform.id}.com/username`}
-                        {...register(`links.${index}.url`)}
+                        {...register(`links.${index}.url`, {
+                          pattern: {
+                            value: /^(https?:\/\/)?([\w-]+\.)+[\w-]+(\/[\w-./?%&=]*)?$/,
+                            message: "Please enter a valid URL"
+                          }
+                        })}
                         className={cn(
                           "h-11 text-sm pl-11",
-                          glass("input")
+                          glass("input"),
+                          currentError && "border-destructive focus:border-destructive"
                         )}
                       />
                     </div>
