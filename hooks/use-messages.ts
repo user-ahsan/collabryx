@@ -226,6 +226,7 @@ export function useMessages(conversationId?: string, currentUserId?: string): Us
     return () => {
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current)
+        channelRef.current = null
       }
     }
   }, [conversationId, queryClient, currentUserId])
