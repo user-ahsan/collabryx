@@ -5,8 +5,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { 
-  fetchConnectionRequests, 
-  fetchConnections,
+  fetchConnectionRequests,
   acceptConnectionRequest,
   declineConnectionRequest,
   cancelConnectionRequest,
@@ -43,23 +42,22 @@ export function useConnectionRequests(): UseConnectionRequestsReturn {
         throw receivedError
       }
       
-      // Fetch outgoing (sent) requests - fetch accepted connections and filter for pending sent
-      const { data: allConnections, error: connectionsError } = await fetchConnections({ limit: 100 })
-      
-      if (connectionsError) {
-        throw connectionsError
-      }
-      
-      // Get current user to determine which requests are sent vs received
+      // Fetch outgoing (sent) requests - query pending connections where current user is requester
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       
       if (user) {
-        // Filter for pending requests where current user is the requester
-        const sent = (allConnections || []).filter(
-          conn => conn.requester_id === user.id && conn.status === "pending"
-        )
-        setSentRequests(sent)
+        const { data: sentRequestsData, error: sentError } = await supabase
+          .from('connections')
+          .select('*')
+          .eq('requester_id', user.id)
+          .eq('status', 'pending')
+        
+        if (sentError) {
+          throw sentError
+        }
+        
+        setSentRequests(sentRequestsData || [])
       }
       
       setReceivedRequests(received || [])
