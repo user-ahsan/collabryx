@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+// NOTE: This route is deprecated — auth uses supabase.auth.signInWithPassword() directly. Keep for backward compatibility.
 import { rateLimit } from '@/lib/rate-limit'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logger'

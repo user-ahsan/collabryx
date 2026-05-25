@@ -114,7 +114,7 @@ export async function updateProfile(
       .from("profiles")
       .update(updates)
       .eq("id", user.id)
-      .select()
+      .select("id, email, full_name, display_name, headline, bio, avatar_url, banner_url, location, website_url, collaboration_readiness, is_verified, verification_type, university, profile_completion, looking_for, onboarding_completed, created_at, updated_at")
       .single()
 
     if (error) throw error
@@ -171,7 +171,7 @@ export async function addSkill(
         proficiency: skill.proficiency,
         is_primary: skill.is_primary || false,
       })
-      .select()
+      .select("id, user_id, skill_name, proficiency, is_primary, created_at")
       .single()
 
     if (error) throw error
@@ -250,7 +250,7 @@ export async function addInterest(
         user_id: user.id,
         interest,
       }, { onConflict: "user_id,interest" })
-      .select()
+      .select("id, user_id, interest, created_at")
       .single()
 
     if (error) throw error
@@ -337,7 +337,7 @@ export async function addExperience(
         is_current: experience.is_current,
         order_index: experience.order_index,
       })
-      .select()
+      .select("id, user_id, title, company, description, start_date, end_date, is_current, order_index, created_at")
       .single()
 
     if (error) throw error
@@ -423,7 +423,7 @@ export async function addProject(
         is_public: project.is_public,
         order_index: project.order_index,
       })
-      .select()
+      .select("id, user_id, title, description, url, image_url, tech_stack, is_public, order_index, created_at")
       .single()
 
     if (error) throw error
