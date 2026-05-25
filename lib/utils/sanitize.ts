@@ -40,12 +40,8 @@ const ALLOWED_PROTOCOLS = ["http://", "https://", "mailto:"]
 export function stripHtml(html: string): string {
   if (!html) return ""
   
-  // Create DOM parser
-  const parser = new DOMParser()
-  const doc = parser.parseFromString(html, "text/html")
-  
-  // Return text content only
-  return doc.body.textContent || ""
+  // Use regex-based stripping (safe server-side, unlike DOMParser)
+  return html.replace(/<[^>]*>/g, "")
 }
 
 /**
@@ -53,6 +49,11 @@ export function stripHtml(html: string): string {
  */
 export function sanitizeHtml(html: string): string {
   if (!html) return ""
+  
+  // Server-side fallback: DOMParser is browser-only
+  if (typeof DOMParser === "undefined") {
+    return html.replace(/<[^>]*>/g, "")
+  }
   
   const parser = new DOMParser()
   const doc = parser.parseFromString(html, "text/html")
