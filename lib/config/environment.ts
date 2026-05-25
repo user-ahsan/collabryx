@@ -25,8 +25,14 @@ export const config = {
   isDevelopment: !isProduction,
 
   supabase: {
-    url: process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    url: process.env.NEXT_PUBLIC_SUPABASE_URL ?? (() => {
+      console.warn('⚠️ NEXT_PUBLIC_SUPABASE_URL is not set — using empty string')
+      return ''
+    })(),
+    anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? (() => {
+      console.warn('⚠️ NEXT_PUBLIC_SUPABASE_ANON_KEY is not set — using empty string')
+      return ''
+    })(),
   },
 
   worker: {
