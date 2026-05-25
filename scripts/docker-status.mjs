@@ -55,7 +55,7 @@ function exec(command, options = {}) {
 
 function getContainerStatus() {
   try {
-    const status = exec(`cd "${CONFIG.workerDir}" && docker-compose ps`);
+    const status = exec(`cd "${CONFIG.workerDir}" && docker compose ps`);
     return status.trim();
   } catch (_error) {
     return '';
@@ -82,7 +82,7 @@ function getContainerStats() {
 
 function _getNetworkInfo() {
   try {
-    const networks = exec(`cd "${CONFIG.workerDir}" && docker-compose ps --format json`);
+    const networks = exec(`cd "${CONFIG.workerDir}" && docker compose ps --format json`);
     return networks.trim();
   } catch (_error) {
     return null;
@@ -117,108 +117,7 @@ function checkPort() {
   });
 }
 
-async function _displayStatus() {
-  log('\n' + '='.repeat(60), 'cyan');
-  log('📊 Docker Status - Python Worker Embedding Service', 'cyan');
-  log('='.repeat(60) + '\n', 'cyan');
-  
-  // Container Status
-  log('📦 Container Status:', 'blue');
-  const containerStatus = getContainerStatus();
-  if (containerStatus) {
-    log(`   ${containerStatus}`, containerStatus.includes('running') ? 'green' : 'yellow');
-  } else {
-    log('   No containers found', 'red');
-  }
-  
-  // Image Info
-  log('\n🖼️  Image Info:', 'blue');
-  const imageInfo = getImageInfo();
-  if (imageInfo) {
-    log(`   ${imageInfo}`, 'cyan');
-  } else {
-    log('   Image not found', 'red');
-  }
-  
-  // Resource Usage
-  log('\n💾 Resource Usage:', 'blue');
-  const stats = getContainerStats();
-  if (stats) {
-    log(`   ${stats}`, 'cyan');
-  } else {
-    log('   Container not running', 'yellow');
-  }
-  
-  // Port Check
-  log('\n🔌 Port Check:', 'blue');
-  const portOpen = await checkPort();
-  if (portOpen) {
-    log('   Port 8000: ✅ OPEN', 'green');
-  } else {
-    log('   Port 8000: ❌ CLOSED', 'red');
-  }
-  
-  // Network Info
-  log('\n🌐 Network:', 'blue');
-  try {
-    const networks = exec('docker network ls --format "{{.Name}}"');
-    const collabryxNetwork = networks.trim().split('\n').find(n => n.includes('collabryx'));
-    if (collabryxNetwork) {
-      log(`   ${collabryxNetwork}`, 'green');
-    } else {
-      log('   No collabryx network found', 'yellow');
-    }
-  } catch (_error) {
-    log('❌ Failed to get container status', 'red');
-  }
-  
-  // Volumes
-  log('\n📁 Volumes:', 'blue');
-  const volumes = getVolumeInfo();
-  if (volumes.length > 0) {
-    volumes.forEach(v => log(`   ${v}`, 'cyan'));
-  } else {
-    log('   No volumes found', 'yellow');
-  }
-  
-  // Health Check
-  log('\n🏥 Health Endpoint:', 'blue');
-  try {
-    const response = await new Promise((resolve, reject) => {
-      http.get(CONFIG.healthEndpoint, { timeout: 2000 }, (res) => {
-        let data = '';
-        res.on('data', (chunk) => data += chunk);
-        res.on('end', () => {
-          try {
-            const jsonData = JSON.parse(data);
-            resolve({
-              statusCode: res.statusCode,
-              data: jsonData
-            });
-          } catch (_error) {
-            resolve({
-              statusCode: res.statusCode,
-              data: data
-            });
-          }
-        });
-      }).on('error', (err) => reject(err));
-    });
-    
-    if (response.statusCode === 200 && response.data.status === 'healthy') {
-      log('✅ Worker is healthy', 'green');
-      log(JSON.stringify(response.data, null, 2), 'dim');
-    } else {
-      log('⚠️  Worker responded but may not be healthy', 'yellow');
-      log(JSON.stringify(response, null, 2), 'dim');
-    }
-  } catch (_error) {
-    log('❌ Health check failed', 'red');
-  }
-  
-  log(''); // Empty line
-  log('='.repeat(60), 'cyan');
-}
+
 
 function main() {
   log('\n' + '='.repeat(60), 'cyan');
