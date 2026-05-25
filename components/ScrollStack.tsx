@@ -76,10 +76,13 @@ const ScrollStack: React.FC<ScrollStackProps> = ({
       };
     } else {
       const scroller = scrollerRef.current;
+      if (!scroller) {
+        return { scrollTop: 0, containerHeight: 0, scrollContainer: document.documentElement };
+      }
       return {
-        scrollTop: scroller!.scrollTop,
-        containerHeight: scroller!.clientHeight,
-        scrollContainer: scroller!
+        scrollTop: scroller.scrollTop,
+        containerHeight: scroller.clientHeight,
+        scrollContainer: scroller
       };
     }
   }, [useWindowScroll]);
