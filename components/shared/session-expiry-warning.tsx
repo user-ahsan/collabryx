@@ -12,7 +12,6 @@ import { createClient } from '@/lib/supabase/client'
 import { 
   formatSessionExpiryMessage, 
   refreshSessionIfNeeded,
-  SESSION_CHECK_INTERVAL_MS,
   SESSION_WARNING_THRESHOLD_SECONDS,
 } from '@/lib/config/session'
 import { cn } from '@/lib/utils'
@@ -60,14 +59,18 @@ export function SessionExpiryWarning({ className }: SessionExpiryWarningProps) {
       }
     }
 
-    // Check immediately, then check periodically
-    const checkInterval = setInterval(checkSession, SESSION_CHECK_INTERVAL_MS)
+    // Subscribe to auth state changes for real-time session updates
+    // This is more efficient than polling because it only fires when auth state actually changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      checkSession()
+    })
+
+    // Check immediately on mount
+    checkSession()
 
     return () => {
       mounted = false
-      if (checkInterval) {
-        clearInterval(checkInterval)
-      }
+      subscription.unsubscribe()
     }
   }, [supabase.auth])
 
