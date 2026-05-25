@@ -67,7 +67,7 @@ function isRunning() {
 
 function start() {
   log('\n🚀 Starting Collabryx Worker...', 'cyan');
-  execVerbose(`cd "${CONFIG.workerDir}" && docker-compose up -d`);
+  execVerbose(`cd "${CONFIG.workerDir}" && docker compose up -d`);
 }
 
 async function waitForHealth() {

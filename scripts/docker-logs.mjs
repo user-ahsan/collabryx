@@ -91,7 +91,7 @@ function streamLogs() {
     args.push(options.service);
   }
   
-  const dockerProcess = spawn('docker-compose', args, {
+  const dockerProcess = spawn('docker', ['compose', ...args], {
     cwd: CONFIG.workerDir,
     stdio: 'inherit'
   });
