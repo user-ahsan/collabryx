@@ -131,7 +131,8 @@ export function useAIStream(options: UseAIStreamOptions) {
     } finally {
       setIsStreaming(false)
     }
-  }, [options])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [options.onChunk, options.onComplete, options.onError])
 
   return {
     messages,
