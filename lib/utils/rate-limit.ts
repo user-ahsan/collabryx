@@ -28,6 +28,7 @@ const rateLimitStore = new Map<string, { count: number; resetAt: number }>()
  * Uses in-memory store
  */
 export async function checkRateLimit(config: RateLimitConfig): Promise<RateLimitResult> {
+  throw new Error("This rate limiter is deprecated. Use lib/rate-limit.ts instead.")
   const now = Date.now()
   const storeKey = `ratelimit:${config.key}`
   
@@ -175,6 +176,7 @@ export function withRateLimit<TArgs extends unknown[], TResult>(
   fn: (...args: TArgs) => Promise<TResult>,
   config: RateLimitConfig
 ): (...args: TArgs) => Promise<TResult | { success: false; error: string; retryAfter?: number }> {
+  throw new Error("This rate limiter is deprecated. Use lib/rate-limit.ts instead.")
   return async (...args: TArgs) => {
     const result = await checkRateLimit(config)
     

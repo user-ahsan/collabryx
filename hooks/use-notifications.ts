@@ -166,14 +166,14 @@ export function useRealtimeNotifications() {
   const queryClient = useQueryClient()
 
   useEffect(() => {
+    let isMounted = true
     const supabase = createClient()
     let channel: ReturnType<typeof supabase.channel> | null = null
 
-    // Get user and set up channel
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return
+    const setup = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!isMounted || !user) return
 
-      // Subscribe to postgres_changes on notifications table
       channel = supabase
         .channel('notifications_realtime')
         .on(
@@ -185,15 +185,17 @@ export function useRealtimeNotifications() {
             filter: `user_id=eq.${user.id}`,
           },
           () => {
-            // Invalidate queries to refetch
             queryClient.invalidateQueries({ queryKey: NOTIFICATION_QUERY_KEYS.all })
             queryClient.invalidateQueries({ queryKey: NOTIFICATION_QUERY_KEYS.unread() })
           }
         )
         .subscribe()
-    })
+    }
+
+    setup()
 
     return () => {
+      isMounted = false
       if (channel) {
         supabase.removeChannel(channel)
       }
