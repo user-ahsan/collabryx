@@ -212,7 +212,7 @@ export async function fetchActivityFeed(
 
     const result: ActivityFeedResponse = await response.json()
 
-    if (!response.ok || !result.success) {
+    if (!response.ok || !result || result.error) {
       return {
         data: null,
         error: new Error(result.error || result.message || 'Failed to fetch activity feed'),
