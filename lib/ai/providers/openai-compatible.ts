@@ -55,10 +55,14 @@ export class OpenAICompatibleProvider implements AIProvider {
   }
 
   async chat(messages: Message[], systemPrompt?: string): Promise<AIProviderResponse> {
+    // Build the message array once and cache it so retries only re-send the
+    // network call, not re-construct the payload (which for OpenAI means re-
+    // counting tokens and potentially triggering double billing on retries).
     const allMessages = this.buildMessages(messages, systemPrompt)
+    const body = this.buildRequestBody(allMessages, false)
 
     const response = await this.withRetry(async () => {
-      return this.makeRequest(allMessages, false)
+      return this.makeRequestWithBody(body, false)
     })
 
     return this.parseChatResponse(response)
@@ -140,18 +144,32 @@ export class OpenAICompatibleProvider implements AIProvider {
     return headers
   }
 
-  private async makeRequest(
-    messages: Message[],
+  /**
+   * Build the request body once so retries re-send the same serialized payload.
+   * This avoids re-counting tokens on every retry, preventing double billing.
+   */
+  private buildRequestBody(messages: Message[], streaming: boolean): string {
+    return JSON.stringify({
+      model: this.config.model,
+      messages,
+      max_tokens: this.config.maxTokens,
+      temperature: this.config.temperature,
+      stream: streaming,
+    })
+  }
+
+  private async makeRequestWithBody(
+    body: string,
     streaming: false
   ): Promise<Record<string, unknown>>
 
-  private async makeRequest(
-    messages: Message[],
+  private async makeRequestWithBody(
+    body: string,
     streaming: true
   ): Promise<Response>
 
-  private async makeRequest(
-    messages: Message[],
+  private async makeRequestWithBody(
+    body: string,
     streaming: boolean
   ): Promise<Record<string, unknown> | Response> {
     const controller = new AbortController()
@@ -161,13 +179,7 @@ export class OpenAICompatibleProvider implements AIProvider {
       const response = await fetch(`${this.baseURL}/chat/completions`, {
         method: 'POST',
         headers: this.buildHeaders(),
-        body: JSON.stringify({
-          model: this.config.model,
-          messages,
-          max_tokens: this.config.maxTokens,
-          temperature: this.config.temperature,
-          stream: streaming,
-        }),
+        body,
         signal: controller.signal,
       })
 
@@ -290,7 +302,9 @@ export class OpenAICompatibleProvider implements AIProvider {
     return new AIProviderError(message, this.config.name, status)
   }
 
-  // NOTE: Retry resends the full prompt — API billing occurs per attempt. Consider idempotency keys for production.
+  // NOTE: The request body is now built once in chat() and reused across retries via
+  // buildRequestBody / makeRequestWithBody, so token counting only happens once.
+  // API billing still occurs per HTTP attempt — consider idempotency keys for production.
   private async withRetry<T>(
     fn: () => Promise<T>,
     maxRetries = 3
