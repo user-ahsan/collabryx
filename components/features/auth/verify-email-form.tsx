@@ -33,7 +33,7 @@ export function VerifyEmailForm() {
     const [isResending, setIsResending] = React.useState(false)
     const [message, setMessage] = React.useState<string>("")
     const [userEmail, setUserEmail] = React.useState<string>("")
-    const supabase = createClient()
+    const [supabase] = React.useState(() => createClient())
     const router = useRouter()
 
     React.useEffect(() => {

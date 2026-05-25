@@ -130,7 +130,7 @@ const howItWorksSteps = [
 export default function LandingPage() {
     const [activeStep, setActiveStep] = React.useState(0)
     return (
-        <div className="min-h-screen overflow-x-hidden bg-background relative">
+        <div className="landing-wrapper min-h-screen overflow-x-hidden bg-background relative">
             <MeshGradientBackground />
             <LandingHeader />
 
