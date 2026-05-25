@@ -13,6 +13,11 @@ const failedAttempts = new Map<string, {
   backoffUntil: number
 }>()
 
+// Email-based lockout tracker — tracks total failed attempts per email across ALL IPs
+// Threshold is 5 (lower than the IP-specific threshold of 10) to prevent IP spoofing bypass
+// This works independently of the per-IP tracking below for defense in depth
+const emailLockoutTracker = new Map<string, { count: number; lockedUntil: number }>()
+
 // Cleanup old entries every 5 minutes
 setInterval(() => {
   const now = Date.now()
@@ -20,6 +25,11 @@ setInterval(() => {
     // Remove entries older than 24 hours
     if (now - data.lastAttempt > 24 * 60 * 60 * 1000) {
       failedAttempts.delete(key)
+    }
+  }
+  for (const [key, data] of emailLockoutTracker.entries()) {
+    if (now - data.lockedUntil > 24 * 60 * 60 * 1000) {
+      emailLockoutTracker.delete(key)
     }
   }
 }, 5 * 60 * 1000)
@@ -131,6 +141,33 @@ export async function POST(request: NextRequest) {
       )
     }
     
+    // Cross-IP email lockout check (threshold: 5 attempts, regardless of IP)
+    const emailTracker = emailLockoutTracker.get(email.toLowerCase())
+    if (emailTracker && emailTracker.lockedUntil > now) {
+      const remainingLockTime = Math.ceil((emailTracker.lockedUntil - now) / 1000 / 60)
+      logger.auth.warn('Login attempt on cross-IP locked account', {
+        email: email.toLowerCase(),
+        ip,
+        remainingLockTime,
+      })
+
+      return NextResponse.json(
+        {
+          error: 'Account temporarily locked',
+          message: `Too many failed attempts from multiple sources. Please try again in ${remainingLockTime} minutes.`,
+          locked: true,
+          retryAfter: remainingLockTime * 60,
+        },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': (remainingLockTime * 60).toString(),
+            'X-Account-Locked': 'true',
+          },
+        }
+      )
+    }
+
     // Check for account lockout
     const lockoutData = failedAttempts.get(rateLimitKey)
     if (lockoutData && lockoutData.lockedUntil > now) {
@@ -208,6 +245,27 @@ export async function POST(request: NextRequest) {
 
       const newCount = currentData.count + 1
       
+      // Track cross-IP email attempts (independent of IP)
+      const currentEmailTracker = emailLockoutTracker.get(email.toLowerCase()) || { count: 0, lockedUntil: 0 }
+      const newEmailCount = currentEmailTracker.count + 1
+      // Lock email across all IPs after 5 total failed attempts from any source
+      if (newEmailCount >= 5) {
+        emailLockoutTracker.set(email.toLowerCase(), {
+          count: newEmailCount,
+          lockedUntil: now + 30 * 60 * 1000,
+        })
+        logger.auth.error('Cross-IP email lockout triggered', {
+          email: email.toLowerCase(),
+          ip,
+          totalFailedAttempts: newEmailCount,
+        })
+      } else {
+        emailLockoutTracker.set(email.toLowerCase(), {
+          count: newEmailCount,
+          lockedUntil: 0,
+        })
+      }
+
       // Account lockout after 10 failed attempts
       if (newCount >= 10) {
         const lockoutDuration = 30 * 60 * 1000 // 30 minutes
@@ -290,9 +348,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Successful login - clear failed attempts (IP-based and email-only)
+    // Successful login - clear failed attempts (IP-based, email-only, and cross-IP tracker)
     failedAttempts.delete(rateLimitKey)
     failedAttempts.delete(emailOnlyKey)
+    emailLockoutTracker.delete(email.toLowerCase())
 
     logger.auth.info('Successful login', {
       userId: data.user.id,
