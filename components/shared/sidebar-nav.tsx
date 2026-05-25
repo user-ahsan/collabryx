@@ -37,6 +37,9 @@ import {
 } from "lucide-react"
 import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
 import { useUser } from "@/hooks/use-user"
+import { useUnreadCount } from "@/hooks/use-notifications"
+import { useConnectionRequests } from "@/hooks/use-connection-requests"
+import { useMatches } from "@/hooks/use-matches-query"
 
 interface SidebarNavProps extends React.HTMLAttributes<HTMLDivElement> {
     isMobile?: boolean
@@ -48,6 +51,10 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
     const sidebarContext = useSidebar()
     const isCollapsed = isMobile ? false : sidebarContext.isCollapsed
     const toggleSidebar = sidebarContext.toggleSidebar
+
+    const { data: matchesData } = useMatches()
+    const { receivedRequests } = useConnectionRequests()
+    const requestCount = receivedRequests.length
 
     const [showTooltips, setShowTooltips] = React.useState(false)
 
@@ -76,7 +83,7 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
                     title: "Smart Matches",
                     href: "/matches",
                     icon: Sparkles,
-                    badge: 8, // AI-powered match count
+                    badge: matchesData?.length || 0,
                 },
             ]
         },
@@ -92,7 +99,7 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
                     title: "Requests",
                     href: "/requests",
                     icon: TrendingUp,
-                    badge: 2,
+                    badge: requestCount,
                 },
             ]
         },
