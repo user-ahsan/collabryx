@@ -3,7 +3,8 @@ import OpenAI from 'openai'
 import type { ChatCompletionCreateParamsNonStreaming } from 'openai/resources/chat/completions/completions'
 
 const MAX_HISTORY_MESSAGES = 10
-const SUMMARY_TRIGGER_MESSAGES = 8
+const SUMMARY_TRIGGER_MESSAGES = 8  // Minimum messages before summarisation runs (avoids unnecessary LLM calls)
+const MIN_MESSAGES_FOR_SUMMARY = 4  // Hard lower bound — summarization skipped below this threshold
 const MAX_SUMMARY_TOKENS = 300
 
 export interface SummarizerResult {
@@ -54,6 +55,11 @@ export async function summarizeSessionIfNeeded(
   sessionId: string,
   client?: LLMClient
 ): Promise<SummarizerResult> {
+  // Enforce a hard minimum to avoid unnecessary LLM calls for near-empty sessions
+  if (messages.length < MIN_MESSAGES_FOR_SUMMARY) {
+    return { summary: null, warnings: [] }
+  }
+
   if (messages.length < SUMMARY_TRIGGER_MESSAGES) {
     return { summary: null, warnings: [] }
   }
@@ -64,7 +70,8 @@ export async function summarizeSessionIfNeeded(
 
   try {
     const response = await llm.chatCompletionsCreate({
-      model: 'gpt-3.5-turbo',
+      // Model is configurable via env var to control cost; defaults to gpt-3.5-turbo
+      model: process.env.SUMMARIZER_MODEL || 'gpt-3.5-turbo',
       messages: [
         {
           role: 'user',
