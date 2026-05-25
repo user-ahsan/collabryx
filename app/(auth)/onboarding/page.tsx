@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from "react"
+import React, { useState, useEffect, useCallback, useRef } from "react"
 import { useForm, FormProvider } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
@@ -56,6 +56,7 @@ export default function OnboardingPage() {
     const [isTransitioning, setIsTransitioning] = useState(false)
     const router = useRouter()
     const shouldReduceMotion = useReducedMotion()
+    const recoveryShownRef = useRef(false)
 
     const methods = useForm<OnboardingData>({
         resolver: zodResolver(combinedSchema),
@@ -168,8 +169,12 @@ export default function OnboardingPage() {
                 const isRecent = Date.now() - timestamp < 24 * 60 * 60 * 1000
                 if (isRecent && step > 0) {
                     methods.reset(values)
+                    setHasUnsavedChanges(true)
                     setCurrentStep(step)
-                    toast.info("Draft recovered from previous session")
+                    if (!recoveryShownRef.current) {
+                        recoveryShownRef.current = true
+                        toast.info("Draft recovered from previous session")
+                    }
                 } else {
                     sessionStorage.removeItem("onboarding_draft")
                 }
@@ -231,6 +236,7 @@ export default function OnboardingPage() {
     }, [userName, methods])
 
     const handleBack = () => {
+        if (isTransitioning || isSubmitting) return
         setCurrentStep(prev => Math.max(prev - 1, 0))
     }
 
@@ -401,6 +407,7 @@ export default function OnboardingPage() {
                 
                 if (result.alreadyCompleted) {
                     // Profile was already completed, just redirect
+                    setIsSubmitting(false)
                     router.push("/dashboard");
                 } else {
                     // Show success toast with embedding status
@@ -417,6 +424,7 @@ export default function OnboardingPage() {
                     } else {
                         toast.success("Profile setup complete!");
                     }
+                    setIsSubmitting(false)
                     router.push("/dashboard");
                 }
             } else {
@@ -434,6 +442,7 @@ export default function OnboardingPage() {
                 // Authentication/session errors
                 if (errorMessage.includes("authentication") || errorMessage.includes("session") || errorMessage.includes("unauthorized")) {
                     toast.error("Your session has expired. Please log in again.")
+                    setIsSubmitting(false)
                     router.push("/login")
                     return
                 }
