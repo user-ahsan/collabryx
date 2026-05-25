@@ -52,12 +52,18 @@ async function checkAdminAccess(supabase: Awaited<ReturnType<typeof createClient
     return { isAdmin: false, error: "Unauthorized" };
   }
 
-  // Check for admin role in user metadata or app_metadata
-  const userMetadata = user.user_metadata as { role?: string; user_role?: string } | null;
-  const userRole = userMetadata?.role || userMetadata?.user_role;
-  
-  // Allow service_role or admin role
-  if (userRole === 'service_role' || userRole === 'admin') {
+  // Check admin role from profiles table (database-backed, not user-controlled metadata)
+  const { data: profile, error: profileError } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single();
+
+  if (profileError || !profile) {
+    return { isAdmin: false, error: "Admin access required" };
+  }
+
+  if (profile.role === 'admin') {
     return { isAdmin: true, userId: user.id };
   }
 
