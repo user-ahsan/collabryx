@@ -49,6 +49,7 @@ export function AuthSyncClient({ destination, needsEmbeddingWait = false }: Auth
 
         // Always redirect after a delay, but show embedding status if needed
         const redirectTimer = setTimeout(() => {
+            if (isUnmounted) return
             try {
                 router.push(destination)
             } catch (error) {

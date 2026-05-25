@@ -54,7 +54,8 @@ export default async function AuthSyncPage() {
                 destination = "/onboarding"
             }
         }
-    } catch (_error) {
+    } catch (error) {
+        console.error('Auth sync failed:', error)
         return redirect("/login?error=unknown")
     }
 

@@ -49,8 +49,9 @@ const ScrollReveal: React.FC<ScrollRevealProps> = ({
     if (!el) return;
 
     const scroller = scrollContainerRef && scrollContainerRef.current ? scrollContainerRef.current : window;
+    const createdTriggers: ScrollTrigger[] = [];
 
-    gsap.fromTo(
+    const rotationTween = gsap.fromTo(
       el,
       { transformOrigin: '0% 50%', rotate: baseRotation },
       {
@@ -65,10 +66,11 @@ const ScrollReveal: React.FC<ScrollRevealProps> = ({
         }
       }
     );
+    if (rotationTween.scrollTrigger) createdTriggers.push(rotationTween.scrollTrigger);
 
     const wordElements = el.querySelectorAll<HTMLElement>('.word');
 
-    gsap.fromTo(
+    const opacityTween = gsap.fromTo(
       wordElements,
       { opacity: baseOpacity, willChange: 'opacity' },
       {
@@ -84,9 +86,10 @@ const ScrollReveal: React.FC<ScrollRevealProps> = ({
         }
       }
     );
+    if (opacityTween.scrollTrigger) createdTriggers.push(opacityTween.scrollTrigger);
 
     if (enableBlur) {
-      gsap.fromTo(
+      const blurTween = gsap.fromTo(
         wordElements,
         { filter: `blur(${blurStrength}px)` },
         {
@@ -102,10 +105,11 @@ const ScrollReveal: React.FC<ScrollRevealProps> = ({
           }
         }
       );
+      if (blurTween.scrollTrigger) createdTriggers.push(blurTween.scrollTrigger);
     }
 
     return () => {
-      ScrollTrigger.getAll().forEach(trigger => trigger.kill());
+      createdTriggers.forEach(trigger => trigger.kill());
     };
   }, [scrollContainerRef, enableBlur, baseRotation, baseOpacity, rotationEnd, wordAnimationEnd, blurStrength]);
 
