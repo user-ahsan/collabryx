@@ -289,6 +289,7 @@ export class OpenAICompatibleProvider implements AIProvider {
     return new AIProviderError(message, this.config.name, status)
   }
 
+  // NOTE: Retry resends the full prompt — API billing occurs per attempt. Consider idempotency keys for production.
   private async withRetry<T>(
     fn: () => Promise<T>,
     maxRetries = 3
