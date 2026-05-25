@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { AlertCircle } from "lucide-react"
 import { GlassCard } from "@/components/shared/glass-card"
@@ -12,9 +13,24 @@ export default function Error({
 	error: Error & { digest?: string }
 	reset: () => void
 }) {
+	const router = useRouter()
+
 	useEffect(() => {
 		console.error("Onboarding error:", error)
 	}, [error])
+
+	const handleTryAgain = () => {
+		try {
+			const saved = sessionStorage.getItem("onboarding_draft")
+			if (saved) {
+				router.push("/onboarding?restore=true")
+				return
+			}
+		} catch {
+			// sessionStorage unavailable — fall through to reset
+		}
+		reset()
+	}
 
 	return (
 		<div className="flex min-h-[400px] w-full items-center justify-center p-6">
@@ -28,7 +44,7 @@ export default function Error({
 						</p>
 					</div>
 					<div className="flex gap-2">
-						<Button onClick={() => reset()}>Try Again</Button>
+						<Button onClick={handleTryAgain}>Try Again</Button>
 						<Button
 							variant="outline"
 							onClick={() => window.history.back()}
