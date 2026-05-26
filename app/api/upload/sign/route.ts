@@ -1,3 +1,7 @@
+/**
+ * @deprecated This route is orphaned/unused since the main upload route was consolidated.
+ * Will be removed in a future version. Use POST /api/upload instead.
+ */
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { 
@@ -87,7 +91,7 @@ export async function POST(request: NextRequest) {
     
     // Generate unique filename
     const sanitized = sanitizeFileName(fileName)
-    const secureName = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}.${sanitized.split('.').pop()}`
+    const secureName = `${Date.now()}_${crypto.randomUUID()}.${sanitized.split('.').pop()}`
     const path = `${user.id}/${secureName}`
 
     // Create signed upload URL (expires in 60 seconds)
