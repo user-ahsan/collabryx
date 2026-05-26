@@ -306,11 +306,12 @@ export async function logFailedLogin(
   email: string,
   reason: string
 ): Promise<AuditLogResult> {
+  const maskedEmail = email.replace(/(.{3})(.*)(@.*)/, '$1***$3')
   return logAuditEvent({
     action: 'auth_login_failed',
     resource_type: 'authentication',
     details: {
-      email,
+      email: maskedEmail,
       reason,
       failed_at: new Date().toISOString(),
     },
