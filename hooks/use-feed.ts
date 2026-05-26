@@ -5,7 +5,7 @@
 
 "use client"
 
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { fetchPersonalizedFeed, type PostsQueryOptions } from '@/lib/services/posts'
 import type { PostWithAuthor } from '@/types/database.types'
 
@@ -96,8 +96,14 @@ export async function fetchFeed(options: PostsQueryOptions = {}): Promise<{
  * Mutation hook for scoring feed posts
  */
 export function useScoreFeed() {
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: ({ posts, persist }: { posts: FeedScoreInput[]; persist?: boolean }) =>
       scorePosts(posts, persist),
+    onSuccess: (result) => {
+      if (!result.error) {
+        queryClient.invalidateQueries({ queryKey: FEED_QUERY_KEYS.all })
+      }
+    },
   })
 }
