@@ -35,6 +35,8 @@ export async function fetchUserProfileContext(
     }
   }
 
+  // TODO: Include non-primary skills in AI context with lower weight. Currently only
+  // fetches is_primary:true skills, which misses relevant secondary skills. (#159)
   let skills: { skill_name: string; proficiency?: string }[] = []
   const { data: skillsData, error: skillsError } = await supabase
     .from('user_skills')
@@ -155,6 +157,7 @@ export async function fetchMultipleUserContexts(
   }
 
   // Fetch skills for all users
+  // TODO: Include non-primary skills in AI context with lower weight. (#159)
   const { data: allSkills } = await supabase
     .from('user_skills')
     .select('user_id, skill_name, proficiency')
