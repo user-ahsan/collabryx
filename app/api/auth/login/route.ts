@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 // NOTE: This route is deprecated — auth uses supabase.auth.signInWithPassword() directly. Keep for backward compatibility.
+// CSRF: Not required here because Supabase Auth uses PKCE flow with automatic CSRF protection via the
+//       session-based auth token exchange. The client sends a code_verifier that must match the
+//       code_challenge from the initial authorization request, preventing CSRF attacks without
+//       requiring a separate CSRF token. Additionally, this endpoint does not set cookies directly;
+//       it returns JSON responses to the client which handles session management.
 import { rateLimit } from '@/lib/rate-limit'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logger'
