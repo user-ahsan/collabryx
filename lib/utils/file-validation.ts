@@ -40,6 +40,9 @@ export const ALLOWED_FILE_TYPES = [
   "text/plain"
 ] as const
 
+// TODO: Implement strict extension allowlist that maps extensions to MIME types
+// and rejects any file whose extension does not match its declared MIME type
+
 export const FILE_SIZE_LIMITS = {
   IMAGE: 5 * 1024 * 1024, // 5MB
   FILE: 10 * 1024 * 1024, // 10MB
@@ -137,7 +140,7 @@ export function sanitizeFileName(fileName: string): string {
 export function generateSecureFileName(originalName: string): string {
   const extension = originalName.split(".").pop() || ""
   const timestamp = Date.now()
-  const random = Math.random().toString(36).substring(2, 15)
+  const random = crypto.randomUUID().replace(/-/g, "").substring(0, 13)
   
   return `${timestamp}_${random}.${extension}`
 }
@@ -154,6 +157,8 @@ export function validateImage(
 
   // Validate magic bytes FIRST - before any other processing
   // Only validate when buffer is provided (for direct uploads)
+  // TODO: Make magic byte validation mandatory even when buffer is not provided
+  // by always reading the first few bytes of the uploaded file
   if (buffer && !validateMagicBytes(buffer, file.type)) {
     return {
       valid: false,
