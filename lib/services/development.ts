@@ -37,8 +37,9 @@ const TEST_USER_PASSWORD = "test123"
 /**
  * Log development mode configuration on module load
  * This helps developers understand the current environment setup
+ * NOTE: Guarded to prevent module-level side effects on import (#138)
  */
-if (DEVELOPMENT_MODE || DEBUG_ENABLED) {
+if (typeof window !== 'undefined' && (DEVELOPMENT_MODE || DEBUG_ENABLED)) {
   console.log(`
 ╔════════════════════════════════════════════════════════╗
 ║           DEVELOPMENT MODE CONFIGURATION               ║
@@ -98,7 +99,8 @@ function validateEnvironment(): void {
 }
 
 // Run validation on module load if in dev mode
-if (DEVELOPMENT_MODE) {
+// NOTE: Guarded to prevent module-level side effects on import (#138)
+if (typeof window !== 'undefined' && DEVELOPMENT_MODE) {
   validateEnvironment()
 }
 
