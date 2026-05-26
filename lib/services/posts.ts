@@ -64,6 +64,7 @@ type RawPost = {
     full_name?: string
     display_name?: string
     avatar_url?: string
+    role?: string
   }
 }
 
@@ -99,7 +100,8 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
         author:profiles (
           full_name,
           display_name,
-          avatar_url
+          avatar_url,
+          role
         )
       `, { count: 'exact' })
       .eq("is_archived", false)
@@ -164,7 +166,7 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
       created_at: post.created_at,
       updated_at: post.updated_at,
       author_name: post.author?.display_name || post.author?.full_name || "Unknown",
-      author_role: "Member",
+      author_role: post.author?.role || "Member",
       author_avatar: post.author?.avatar_url || "",
       time_ago: formatTimeAgo(post.created_at),
     }))
@@ -239,7 +241,7 @@ export async function fetchPersonalizedFeed(options: PostsQueryOptions = {}): Pr
         id, author_id, content, post_type, intent, link_url,
         is_pinned, is_archived, reaction_count, comment_count, share_count,
         created_at, updated_at, version,
-        author:profiles (id, full_name, display_name, avatar_url)
+        author:profiles (id, full_name, display_name, avatar_url, role)
       `)
       .eq("is_archived", false)
       .order("created_at", { ascending: false })
@@ -258,7 +260,7 @@ export async function fetchPersonalizedFeed(options: PostsQueryOptions = {}): Pr
       is_pinned: boolean; is_archived: boolean;
       reaction_count: number; comment_count: number; share_count: number;
       created_at: string; updated_at: string; version: number;
-      author?: { id: string; full_name?: string; display_name?: string; avatar_url?: string }
+      author?: { id: string; full_name?: string; display_name?: string; avatar_url?: string; role?: string }
     }>
 
     // 4. Collect unique author IDs to batch-fetch embeddings + interests + connection status
@@ -378,7 +380,7 @@ export async function fetchPersonalizedFeed(options: PostsQueryOptions = {}): Pr
       created_at: raw.created_at,
       updated_at: raw.updated_at,
       author_name: raw.author?.display_name || raw.author?.full_name || "Unknown",
-      author_role: "Member",
+      author_role: raw.author?.role || "Member",
       author_avatar: raw.author?.avatar_url || "",
       time_ago: formatTimeAgo(raw.created_at),
     }))
@@ -421,7 +423,8 @@ export async function fetchPostById(postId: string): Promise<{
         author:profiles (
           full_name,
           display_name,
-          avatar_url
+          avatar_url,
+          role
         )
       `)
       .eq("id", postId)
@@ -446,7 +449,7 @@ export async function fetchPostById(postId: string): Promise<{
       created_at: data.created_at,
       updated_at: data.updated_at,
       author_name: data.author?.display_name || data.author?.full_name || "Unknown",
-      author_role: "Member",
+      author_role: data.author?.role || "Member",
       author_avatar: data.author?.avatar_url || "",
       time_ago: formatTimeAgo(data.created_at),
     }
