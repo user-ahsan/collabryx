@@ -21,7 +21,7 @@ export async function fetchCurrentProfile(): Promise<{
   error: Error | null
 }> {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
@@ -65,7 +65,7 @@ export async function fetchProfileById(userId: string): Promise<{
   error: Error | null
 }> {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
 
     const { data, error } = await supabase
       .from("profiles")
@@ -103,7 +103,7 @@ export async function updateProfile(
   updates: Partial<Profile>
 ): Promise<{ data: Profile | null; error: Error | null }> {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
@@ -135,7 +135,7 @@ export async function fetchUserSkills(userId: string): Promise<{
   error: Error | null
 }> {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
 
     const { data, error } = await supabase
       .from("user_skills")
@@ -156,7 +156,7 @@ export async function addSkill(
   skill: Pick<UserSkill, "skill_name" | "proficiency" | "is_primary">
 ): Promise<{ data: UserSkill | null; error: Error | null }> {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
@@ -185,7 +185,7 @@ export async function addSkill(
 
 export async function removeSkill(skillId: string): Promise<{ error: Error | null }> {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
@@ -216,7 +216,7 @@ export async function fetchUserInterests(userId: string): Promise<{
   error: Error | null
 }> {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
 
     const { data, error } = await supabase
       .from("user_interests")
@@ -237,7 +237,7 @@ export async function addInterest(
   interest: string
 ): Promise<{ data: UserInterest | null; error: Error | null }> {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
@@ -266,7 +266,7 @@ export async function removeInterest(
   interest: string
 ): Promise<{ error: Error | null }> {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
@@ -297,7 +297,7 @@ export async function fetchUserExperiences(userId: string): Promise<{
   error: Error | null
 }> {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
 
     const { data, error } = await supabase
       .from("user_experiences")
@@ -318,7 +318,7 @@ export async function addExperience(
   experience: Omit<UserExperience, "id" | "user_id" | "created_at">
 ): Promise<{ data: UserExperience | null; error: Error | null }> {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
@@ -351,7 +351,7 @@ export async function addExperience(
 
 export async function removeExperience(experienceId: string): Promise<{ error: Error | null }> {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
@@ -382,7 +382,7 @@ export async function fetchUserProjects(userId: string): Promise<{
   error: Error | null
 }> {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
 
     const { data, error } = await supabase
       .from("user_projects")
@@ -404,7 +404,7 @@ export async function addProject(
   project: Omit<UserProject, "id" | "user_id" | "created_at">
 ): Promise<{ data: UserProject | null; error: Error | null }> {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
@@ -437,7 +437,7 @@ export async function addProject(
 
 export async function removeProject(projectId: string): Promise<{ error: Error | null }> {
   try {
-    const supabase = createClient()
+    const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
