@@ -43,11 +43,16 @@ export async function GET() {
     pythonWorkerError = error instanceof Error ? error.message : 'Unknown error'
   }
   
+  // Log internal error details server-side, never leak to client
+  if (dbError) {
+    console.error('Health check — database connection failed:', dbError.message)
+  }
+
   // Determine overall health status
   const isHealthy = !dbError && pythonWorkerHealthy
   const status = isHealthy ? 'healthy' : dbError ? 'degraded' : 'unhealthy'
   const statusCode = isHealthy ? 200 : dbError ? 200 : 503
-  
+
   return NextResponse.json({
     status,
     timestamp: new Date().toISOString(),
@@ -56,7 +61,7 @@ export async function GET() {
     checks: {
       database: {
         status: dbError ? 'failed' : 'ok',
-        error: dbError ? dbError.message : null,
+        error: dbError ? 'database connection failed' : null,
       },
       pythonWorker: {
         status: pythonWorkerHealthy ? 'ok' : 'failed',
