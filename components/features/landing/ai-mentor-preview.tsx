@@ -147,7 +147,7 @@ function InstantMessages({ messages }: { messages: Message[] }) {
         <>
             {messages.map((message, idx) => (
                 <motion.div
-                    key={idx}
+                    key={message.role + '-' + message.content.slice(0, 20).toLowerCase().replace(/\s+/g, '-') || idx}
                     initial={{ opacity: 0, scale: 0.9, y: 10 }}
                     whileInView={{ opacity: 1, scale: 1, y: 0 }}
                     viewport={{ once: true }}
@@ -192,7 +192,7 @@ function TypewriterMessages({ messages }: { messages: Message[] }) {
             <AnimatePresence>
                 {displayedMessages.map((message, idx) => (
                     <motion.div
-                        key={idx}
+                        key={message.role + '-' + message.content.slice(0, 20).toLowerCase().replace(/\s+/g, '-') || idx}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5 }}

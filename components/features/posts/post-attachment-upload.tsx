@@ -210,7 +210,7 @@ export function PostAttachmentUpload({
             
             return (
               <div
-                key={index}
+                key={file.name + '-' + file.size || index}
                 className={cn(
                   "relative group aspect-square rounded-xl overflow-hidden border",
                   "transition-all duration-200",
@@ -303,7 +303,7 @@ export function PostAttachmentUpload({
             </p>
             <ul className="text-xs text-destructive/80 space-y-0.5">
               {prePostUpload.errors.slice(0, 3).map((error, i) => (
-                <li key={i}>• {error}</li>
+                <li key={error + '-' + i}>• {error}</li>
               ))}
               {prePostUpload.errors.length > 3 && (
                 <li>• And {prePostUpload.errors.length - 3} more...</li>

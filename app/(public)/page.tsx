@@ -220,7 +220,7 @@ export default function LandingPage() {
                     <Marquee pauseOnHover className="[--duration:60s]">
                         {testimonials.map((testimonial, idx) => (
                             <div
-                                key={idx}
+                                key={testimonial.name?.toLowerCase().replace(/\s+/g, '-') || idx}
                                 className="mx-4 w-[300px] sm:w-[350px] liquid-glass liquid-glass-interactive p-6"
                             >
                                 <div className="mb-4 flex items-center gap-3">
@@ -285,7 +285,7 @@ export default function LandingPage() {
                         const Icon = feature.icon
                         return (
                             <div
-                                key={idx}
+                                key={feature.title?.toLowerCase().replace(/\s+/g, '-') || idx}
                                 className="group relative mx-4 w-[320px] sm:w-[380px] h-[280px] liquid-glass liquid-glass-interactive p-8 overflow-hidden flex flex-col whitespace-normal"
                             >
                                 {/* BorderBeam on hover */}
@@ -421,9 +421,9 @@ export default function LandingPage() {
 
                         {/* Step Indicator Dots - NOW AT BOTTOM */}
                         <div className="flex justify-center gap-3 mt-8">
-                            {howItWorksSteps.map((_, idx) => (
+                            {howItWorksSteps.map((step, idx) => (
                                 <button
-                                    key={idx}
+                                    key={step.step}
                                     onClick={() => setActiveStep(idx)}
                                     className={`h-2 rounded-full transition-all duration-300 ${activeStep === idx ? 'w-12 bg-primary' : 'w-2 bg-border hover:bg-primary/50'
                                         }`}

@@ -37,7 +37,7 @@ export function ProblemStatement() {
                 <div className="grid md:grid-cols-3 gap-8 mb-16">
                     {painPoints.map((point, idx) => (
                         <motion.div
-                            key={idx}
+                            key={point.title?.toLowerCase().replace(/\s+/g, '-') || idx}
                             initial={{ opacity: 0, y: 40 }}
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true }}

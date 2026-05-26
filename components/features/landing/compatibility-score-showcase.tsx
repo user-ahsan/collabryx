@@ -111,7 +111,7 @@ function MatchBreakdown() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {matchReasons.map((reason, idx) => (
                     <motion.div
-                        key={idx}
+                        key={reason.label?.toLowerCase().replace(/\s+/g, '-') || idx}
                         initial={{ opacity: 0, y: 20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true }}

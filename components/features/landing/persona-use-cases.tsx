@@ -192,7 +192,7 @@ function PersonaContent({ persona }: { persona: typeof personas[0] }) {
                     <ul className="space-y-3">
                         {persona.benefits.map((benefit, idx) => (
                             <motion.li
-                                key={idx}
+                                key={benefit?.toLowerCase().replace(/\s+/g, '-') || idx}
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ duration: 0.4, delay: idx * 0.1 }}

@@ -263,6 +263,7 @@ export function validateImageForCompression(
 
 /**
  * Check if compressed size is within limits
+ * @deprecated Not currently used in onboarding flow — kept for future avatar/banner upload integration
  */
 export function validateCompressedSize(
   result: CompressionResult,

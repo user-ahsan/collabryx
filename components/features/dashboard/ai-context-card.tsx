@@ -33,7 +33,7 @@ export function AIContextCard({
             <div className="flex items-center gap-1.5 flex-wrap">
                 {contexts.map((context, index) => (
                     <Badge
-                        key={index}
+                        key={context?.toLowerCase().replace(/\s+/g, '-') || index}
                         variant="secondary"
                         className={cn(
                             "px-2.5 py-1.5 text-xs font-medium rounded-full",

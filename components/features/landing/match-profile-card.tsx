@@ -66,7 +66,7 @@ export function MatchProfileCard({ person }: MatchProfileCardProps) {
             <div className="flex flex-wrap gap-2 justify-center">
                 {profile.skills.map((skill, idx) => (
                     <Badge
-                        key={idx}
+                        key={skill?.toLowerCase().replace(/\s+/g, '-') || idx}
                         variant="secondary"
                         className="text-xs font-medium bg-card border border-border/50 group-hover:border-primary/30 transition-colors"
                     >

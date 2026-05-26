@@ -58,7 +58,7 @@ export function MatchReasonBadgeGroup({ reasons, className, maxDisplay = 3 }: Ma
         <div className={cn("flex flex-wrap gap-1.5", className)}>
             {displayedReasons.map((reason, index) => (
                 <MatchReasonBadge
-                    key={index}
+                    key={reason.type + '-' + reason.label?.toLowerCase().replace(/\s+/g, '-') || index}
                     type={reason.type}
                     label={reason.label}
                 />

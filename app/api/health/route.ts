@@ -3,6 +3,15 @@ import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
+// Reuse supabase client across health check invocations (#44)
+let supabaseClient: ReturnType<typeof createClient> | null = null
+async function getSupabaseClient() {
+  if (!supabaseClient) {
+    supabaseClient = await createClient()
+  }
+  return supabaseClient
+}
+
 /**
  * Health check endpoint for monitoring and uptime checks
  * 
@@ -14,7 +23,7 @@ export const dynamic = 'force-dynamic'
  * @returns Health status JSON
  */
 export async function GET() {
-  const supabase = await createClient()
+  const supabase = await getSupabaseClient()
   
   // Check database connection
   const { error: dbError } = await supabase

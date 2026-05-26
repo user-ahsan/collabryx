@@ -238,7 +238,7 @@ export function SuggestionsSidebar({ className }: MatchIntelligencePanelProps) {
                                     <div className="flex flex-wrap gap-1.5">
                                         {match.reasons.map((reason, index) => (
                                             <MatchReasonBadge
-                                                key={index}
+                                                key={reason.type + '-' + reason.label?.toLowerCase().replace(/\s+/g, '-') || index}
                                                 type={reason.type}
                                                 label={reason.label}
                                             />
