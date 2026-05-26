@@ -57,15 +57,24 @@ export async function generateMatches(
   error: Error | null
 }> {
   try {
+    const csrfToken = (() => {
+      try {
+        return document.cookie.split('; ').find(row => row.startsWith('csrf_token='))?.split('=')[1] || ''
+      } catch { return '' }
+    })()
+
+    if (!csrfToken) {
+      return {
+        data: null,
+        error: new Error('Missing CSRF token - authentication may be required'),
+      }
+    }
+
     const response = await fetch('/api/matches/generate', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRF-Token': (() => {
-          try {
-            return document.cookie.split('; ').find(row => row.startsWith('csrf_token='))?.split('=')[1] || ''
-          } catch { return '' }
-        })(),
+        'X-CSRF-Token': csrfToken,
       },
       body: JSON.stringify({
         limit: data.limit ?? 20,
@@ -117,7 +126,7 @@ export async function generateMatches(
 export function useGenerateMatches() {
   const queryClient = useQueryClient()
 
-  return useMutation({
+  return useMutation<{ data: MatchGenerationResponse | null; error: Error | null }, Error, MatchGenerationRequest>({
     mutationFn: generateMatches,
     onSuccess: (result) => {
       if (result.error) {
