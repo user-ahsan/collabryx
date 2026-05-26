@@ -48,7 +48,7 @@ export function Stepper({ steps, currentStep }: StepperProps) {
                                             glass("subtle") + " text-muted-foreground"
                                 )}
                                 aria-current={isCurrent ? "step" : undefined}
-                                aria-label={`${step.title} ${isCompleted ? "(completed)" : isCurrent ? "(current step)" : ""}`}
+                                aria-label={`${step.title} ${isCompleted ? "(completed)" : ""}`}
                             >
                                 {isCompleted && <Check className="w-5 h-5 md:w-6 md:h-6" aria-hidden="true" />}
                                 {!isCompleted && Icon && <Icon className="w-4 h-4 md:w-5 md:h-5" aria-hidden="true" />}
