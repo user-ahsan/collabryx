@@ -154,19 +154,20 @@ export async function POST(request: NextRequest) {
     authenticatedUserId = user.id;
   }
 
-  // Declare userId at function scope so it's accessible in catch block
+  // Declare userId at function scope
   let userId: string = authenticatedUserId;
 
-  try {
+  
     const body = await request.json().catch(() => ({}));
     
     const validationResult = EmbeddingRequestSchema.safeParse(body);
     if (!validationResult.success) {
+      // Log validation details server-side only (#41)
+      console.error("Embedding validation error:", validationResult.error.format());
       return NextResponse.json(
         { 
           success: false, 
-          error: "Invalid request body",
-          details: String(validationResult.error) 
+          error: "Invalid request body" 
         },
         { status: 400 }
       );
@@ -314,23 +315,8 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       );
     }
-
-    } catch (error) {
-        console.error("Error in embeddings generate:", error);
-        
-        // Mark as failed
-        try {
-            await updateEmbeddingStatus(supabase, userId, "failed");
-        } catch (_error) {
-            // Ignore
-        }
-
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 }
-    );
   }
-}
+
 
 // Handle CORS preflight
 export async function OPTIONS() {

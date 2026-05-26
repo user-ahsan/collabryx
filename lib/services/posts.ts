@@ -610,7 +610,8 @@ export async function updatePostWithLock(
 
 /**
  * Atomically increment post counter fields (reaction_count, comment_count, share_count)
- * Uses Supabase atomic increment to avoid race conditions
+ * Uses Supabase RPC atomic increment, falling back to optimistic locking with version
+ * retry when the RPC function is unavailable.
  */
 export async function incrementPostCounter(
   postId: string,
@@ -628,23 +629,33 @@ export async function incrementPostCounter(
 
     if (error) {
       if (error.code === "42883") {
-        const { data: currentPost, error: fetchError } = await supabase
+        // RPC function doesn't exist — fall back to optimistic locking with retry
+        const postIdStr = postId
+        const fieldStr = field
+        const { data: currentPost } = await supabase
           .from("posts")
-          .select(field)
-          .eq("id", postId)
+          .select([fieldStr, "version"] as const)
+          .eq("id", postIdStr)
           .single()
 
-        if (fetchError || !currentPost) {
-          throw fetchError || new Error("Post not found")
+        if (!currentPost) {
+          throw new Error("Post not found")
         }
 
-        const currentValue = (currentPost[field as keyof typeof currentPost] as number) || 0
-        const { error: fallbackError } = await supabase
-          .from("posts")
-          .update({ [field]: currentValue + delta })
-          .eq("id", postId)
+        const currentValue = (currentPost[fieldStr as keyof typeof currentPost] as number) || 0
+        const currentVersion = (currentPost as unknown as { version: number }).version
+        const { success, conflict, error: lockError } = await updatePostCounterWithLock(
+          postIdStr,
+          fieldStr,
+          currentValue + delta,
+          currentVersion,
+          { maxRetries: 3 }
+        )
 
-        if (fallbackError) throw fallbackError
+        if (!success && conflict) {
+          logger.api.warn("Counter update conflict after retries — skipping", { postId, field })
+        }
+        if (lockError) throw lockError
       } else {
         throw error
       }
