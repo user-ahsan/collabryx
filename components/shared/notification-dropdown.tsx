@@ -158,7 +158,7 @@ export function NotificationDropdown({ onOpenChange }: NotificationDropdownProps
         <Button
           variant="outline"
           size="sm"
-          onClick={() => window.location.reload()}
+          onClick={() => router.refresh()}
         >
           Retry
         </Button>
