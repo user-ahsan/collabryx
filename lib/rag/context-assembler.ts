@@ -61,6 +61,10 @@ export async function assembleRAGContext(options: AssemblerOptions): Promise<Ext
     multiUser,
     retrieved_contexts: vectorResult.contexts,
     session_summary: summaryResult.summary,
+    // TODO: Implement token-aware truncation instead of message-count truncation.
+    // The current messages.slice(-10) can overflow the context window when messages
+    // contain long code blocks or file contents. Count actual tokens and truncate
+    // to a safe budget (e.g. 4000 tokens) instead of a fixed message count. (#158)
     conversation_history: messages.slice(-10),
     assembled_at: new Date().toISOString(),
   }
