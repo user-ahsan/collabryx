@@ -130,34 +130,49 @@ export async function fetchConnections(
       return { data: [], error: new Error("Not authenticated") }
     }
 
-    let query = supabase
-      .from("connections")
-      .select(`
-        *,
-        requester:profiles (
-          display_name,
-          full_name,
-          avatar_url,
-          headline
-        ),
-        receiver:profiles (
-          display_name,
-          full_name,
-          avatar_url,
-          headline
-        )
-      `)
-      .eq("status", "accepted")
-      .or(`requester_id.eq.${user.id},receiver_id.eq.${user.id}`)
-      .order("updated_at", { ascending: false })
+    // Use separate queries instead of template-literal .or() to avoid injection (#137)
+    const queryBase = `
+      *,
+      requester:profiles (
+        display_name,
+        full_name,
+        avatar_url,
+        headline
+      ),
+      receiver:profiles (
+        display_name,
+        full_name,
+        avatar_url,
+        headline
+      )
+    `
+
+    const [asRequester, asReceiver] = await Promise.all([
+      supabase
+        .from("connections")
+        .select(queryBase)
+        .eq("status", "accepted")
+        .eq("requester_id", user.id)
+        .order("updated_at", { ascending: false })
+        .limit(options?.limit ?? 100),
+      supabase
+        .from("connections")
+        .select(queryBase)
+        .eq("status", "accepted")
+        .eq("receiver_id", user.id)
+        .order("updated_at", { ascending: false })
+        .limit(options?.limit ?? 100),
+    ])
+
+    if (asRequester.error) throw asRequester.error
+    if (asReceiver.error) throw asReceiver.error
+
+    const connections = [...(asRequester.data || []), ...(asReceiver.data || [])]
+    connections.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime())
 
     if (options?.limit) {
-      query = query.limit(options.limit)
+      connections.splice(options.limit)
     }
-
-    const { data: connections, error } = await query
-
-    if (error) throw error
 
     const mappedConnections: ConnectionWithUser[] = (connections || []).map((conn) => {
       const isRequester = conn.requester_id === user.id
@@ -224,14 +239,16 @@ export async function sendConnectionRequest(
     }
 
     // Check if already connected or request exists
-    const { data: existing } = await supabase
+    // Use parameterized .in() pattern instead of template-literal .or() to avoid injection
+    const { data: existingRows, error: existingError } = await supabase
       .from("connections")
       .select("id, status")
-      .or(`
-        and(requester_id.eq.${user.id},receiver_id.eq.${input.receiver_id}),
-        and(requester_id.eq.${input.receiver_id},receiver_id.eq.${user.id})
-      `)
-      .single()
+      .in("requester_id", [user.id, input.receiver_id])
+      .in("receiver_id", [user.id, input.receiver_id])
+
+    if (existingError) throw existingError
+
+    const existing = existingRows?.[0] ?? null
 
     if (existing) {
       if (existing.status === "accepted") {
@@ -243,18 +260,24 @@ export async function sendConnectionRequest(
     }
 
     // Create connection request
-    const { data, error } = await supabase
-      .from("connections")
-      .insert({
-        requester_id: user.id,
-        receiver_id: input.receiver_id,
-        status: "pending",
-        message: input.message?.trim(),
-      })
-      .select()
-      .single()
-
-    if (error) throw error
+    // Wrap .single() to handle unexpected multiple-row results (#135)
+    let data: Connection | null = null
+    try {
+      const { data: inserted, error: insertError } = await supabase
+        .from("connections")
+        .insert({
+          requester_id: user.id,
+          receiver_id: input.receiver_id,
+          status: "pending",
+          message: input.message?.trim(),
+        })
+        .select()
+        .single()
+      if (insertError) throw insertError
+      data = inserted
+    } catch (insertErr) {
+      throw insertErr
+    }
 
     toast.success("Connection request sent")
     return { data, error: null }
@@ -293,14 +316,24 @@ export async function acceptConnectionRequest(
     }
 
     // Verify user is the receiver
-    const { data: existing } = await supabase
-      .from("connections")
-      .select("receiver_id, status")
-      .eq("id", connectionId)
-      .single()
-
-    if (!existing) {
-      return { data: null, error: new Error("Connection request not found") }
+    // Wrap .single() in try/catch to handle PGRST116 (no rows) and multiple-row errors (#135)
+    let existing: { receiver_id: string; status: string } | null = null
+    try {
+      const { data } = await supabase
+        .from("connections")
+        .select("receiver_id, status")
+        .eq("id", connectionId)
+        .single()
+      existing = data
+    } catch (singleErr) {
+      const err = singleErr as { code?: string; message?: string }
+      if (err.code === "PGRST116") {
+        return { data: null, error: new Error("Connection request not found") }
+      }
+      return {
+        data: null,
+        error: new Error(`Unexpected database state for connection ${connectionId}: ${err.message}`),
+      }
     }
 
     if (existing.receiver_id !== user.id) {
@@ -312,24 +345,45 @@ export async function acceptConnectionRequest(
     }
 
     // Get requester_id for conversation creation
-    const { data: connData } = await supabase
-      .from("connections")
-      .select("requester_id, receiver_id")
-      .eq("id", connectionId)
-      .single()
+    // Wrap .single() in try/catch for specific error handling (#135)
+    let connData: { requester_id: string; receiver_id: string } | null = null
+    try {
+      const { data } = await supabase
+        .from("connections")
+        .select("requester_id, receiver_id")
+        .eq("id", connectionId)
+        .single()
+      connData = data
+    } catch (singleErr) {
+      const err = singleErr as { code?: string; message?: string }
+      return {
+        data: null,
+        error: new Error(`Unexpected database state for connection ${connectionId}: ${err.message}`),
+      }
+    }
 
     // Accept the request
-    const { data, error } = await supabase
-      .from("connections")
-      .update({
-        status: "accepted",
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", connectionId)
-      .select()
-      .single()
-
-    if (error) throw error
+    // Wrap .single() to handle unexpected multiple-row results (#135)
+    let acceptResult: Connection | null = null
+    try {
+      const { data: updated, error: updateError } = await supabase
+        .from("connections")
+        .update({
+          status: "accepted",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", connectionId)
+        .select()
+        .single()
+      if (updateError) throw updateError
+      acceptResult = updated
+    } catch (updateErr) {
+      const err = updateErr as { code?: string; message?: string }
+      return {
+        data: null,
+        error: new Error(`Failed to accept connection ${connectionId}: ${err.message}`),
+      }
+    }
 
     // Create conversation for messaging
     if (connData) {
@@ -355,7 +409,7 @@ export async function acceptConnectionRequest(
     }
 
     toast.success("Connection accepted")
-    return { data, error: null }
+    return { data: acceptResult, error: null }
   } catch (error) {
     log.error("Error accepting connection request:", error)
     toast.error("Failed to accept connection")
@@ -388,14 +442,21 @@ export async function declineConnectionRequest(
     }
 
     // Verify user is the receiver
-    const { data: existing } = await supabase
-      .from("connections")
-      .select("receiver_id")
-      .eq("id", connectionId)
-      .single()
-
-    if (!existing) {
-      return { error: new Error("Connection request not found") }
+    // Wrap .single() in try/catch to handle multiple-row errors (#135)
+    let existing: { receiver_id: string } | null = null
+    try {
+      const { data } = await supabase
+        .from("connections")
+        .select("receiver_id")
+        .eq("id", connectionId)
+        .single()
+      existing = data
+    } catch (singleErr) {
+      const err = singleErr as { code?: string; message?: string }
+      if (err.code === "PGRST116") {
+        return { error: new Error("Connection request not found") }
+      }
+      return { error: new Error(`Unexpected database state: ${err.message}`) }
     }
 
     if (existing.receiver_id !== user.id) {
@@ -441,14 +502,21 @@ export async function cancelConnectionRequest(
     }
 
     // Verify user is the requester
-    const { data: existing } = await supabase
-      .from("connections")
-      .select("requester_id, status")
-      .eq("id", connectionId)
-      .single()
-
-    if (!existing) {
-      return { error: new Error("Connection request not found") }
+    // Wrap .single() in try/catch to handle multiple-row errors (#135)
+    let existing: { requester_id: string; status: string } | null = null
+    try {
+      const { data } = await supabase
+        .from("connections")
+        .select("requester_id, status")
+        .eq("id", connectionId)
+        .single()
+      existing = data
+    } catch (singleErr) {
+      const err = singleErr as { code?: string; message?: string }
+      if (err.code === "PGRST116") {
+        return { error: new Error("Connection request not found") }
+      }
+      return { error: new Error(`Unexpected database state: ${err.message}`) }
     }
 
     if (existing.requester_id !== user.id) {
@@ -496,14 +564,21 @@ export async function removeConnection(
     }
 
     // Verify user is part of the connection
-    const { data: existing } = await supabase
-      .from("connections")
-      .select("requester_id, receiver_id, status")
-      .eq("id", connectionId)
-      .single()
-
-    if (!existing) {
-      return { error: new Error("Connection not found") }
+    // Wrap .single() in try/catch to handle multiple-row errors (#135)
+    let existing: { requester_id: string; receiver_id: string; status: string } | null = null
+    try {
+      const { data } = await supabase
+        .from("connections")
+        .select("requester_id, receiver_id, status")
+        .eq("id", connectionId)
+        .single()
+      existing = data
+    } catch (singleErr) {
+      const err = singleErr as { code?: string; message?: string }
+      if (err.code === "PGRST116") {
+        return { error: new Error("Connection not found") }
+      }
+      return { error: new Error(`Unexpected database state: ${err.message}`) }
     }
 
     if (existing.requester_id !== user.id && existing.receiver_id !== user.id) {
@@ -555,14 +630,15 @@ export async function blockUser(
     }
 
     // Check if connection exists
-    const { data: existing } = await supabase
+    // Use parameterized .in() pattern instead of template-literal .or() to avoid injection (#137)
+    const { data: existingRows } = await supabase
       .from("connections")
       .select("id, status")
-      .or(`
-        and(requester_id.eq.${user.id},receiver_id.eq.${userId}),
-        and(requester_id.eq.${userId},receiver_id.eq.${user.id})
-      `)
-      .single()
+      .in("requester_id", [user.id, userId])
+      .in("receiver_id", [user.id, userId])
+      .limit(1)
+
+    const existing = existingRows?.[0] ?? null
 
     if (existing) {
       // Update existing connection to blocked
@@ -623,24 +699,23 @@ export async function checkConnectionStatus(
       return { status: "not_connected", error: null }
     }
 
-    const { data, error } = await supabase
+    // Use parameterized .in() pattern instead of template-literal .or() to avoid injection (#137)
+    const { data: existingRows, error } = await supabase
       .from("connections")
       .select("status")
-      .or(`
-        and(requester_id.eq.${user.id},receiver_id.eq.${userId}),
-        and(requester_id.eq.${userId},receiver_id.eq.${user.id})
-      `)
-      .single()
+      .in("requester_id", [user.id, userId])
+      .in("receiver_id", [user.id, userId])
+      .limit(1)
 
-    if (error) {
-      if (error.code === "PGRST116") {
-        // No rows returned - not connected
-        return { status: "not_connected", error: null }
-      }
-      throw error
+    if (error) throw error
+
+    const data = existingRows?.[0] ?? null
+
+    if (!data) {
+      return { status: "not_connected", error: null }
     }
 
-    return { status: data?.status || "not_connected", error: null }
+    return { status: data.status, error: null }
   } catch (error) {
     log.error("Error checking connection status:", error)
     return { 
