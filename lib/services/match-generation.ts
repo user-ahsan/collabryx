@@ -5,10 +5,17 @@
 
 import { logger } from "@/lib/logger"
 
+// TODO(#142): Remove NEXT_PUBLIC prefix in production — it exposes the internal
+// Python worker URL to the client bundle. Use a server-only env var (e.g.
+// PYTHON_WORKER_URL) and proxy through an API route instead.
 const PYTHON_WORKER_URL = process.env.NEXT_PUBLIC_PYTHON_WORKER_URL || "http://localhost:8000"
 
 export interface MatchGenerationResult {
   suggestions_created: number
+  // TODO(#143): Add error handling for partial upsert failures. If the Python
+  // worker creates some matches but fails on others (e.g. DB constraint error),
+  // suggestions_created may be less than matches.length. Downstream code should
+  // check for a mismatch and retry/alert as appropriate.
   matches: Array<{
     id: string
     user_id: string
