@@ -249,6 +249,23 @@ export function scoreFeedForUser(
  * Save scored feed results to the feed_scores table.
  * Upserts per (user_id, post_id) to allow incremental updates.
  */
+/**
+ * Process an array of items in parallel batches with a concurrency limit.
+ */
+async function processBatch<T, R>(
+  items: T[],
+  batchSize: number,
+  fn: (item: T) => Promise<R>
+): Promise<R[]> {
+  const results: R[] = [];
+  for (let i = 0; i < items.length; i += batchSize) {
+    const batch = items.slice(i, i + batchSize);
+    const batchResults = await Promise.all(batch.map(fn));
+    results.push(...batchResults);
+  }
+  return results;
+}
+
 export async function persistFeedScores(
   supabase: SupabaseAdmin,
   userId: string,
@@ -258,11 +275,12 @@ export async function persistFeedScores(
   failed: number;
   errors: string[];
 }> {
+  const CONCURRENCY = 10;
   let saved = 0;
   let failed = 0;
   const errors: string[] = [];
 
-  for (const sp of scoredPosts) {
+  const upsertPost = async (sp: ScoredPost): Promise<void> => {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24);
 
@@ -288,7 +306,9 @@ export async function persistFeedScores(
     } else {
       saved++;
     }
-  }
+  };
+
+  await processBatch(scoredPosts, CONCURRENCY, upsertPost);
 
   return { saved, failed, errors };
 }
