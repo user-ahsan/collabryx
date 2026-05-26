@@ -45,6 +45,13 @@ export interface CleanupResult {
   errors: string[];
 }
 
+/**
+ * SECURITY: Service role client bypasses RLS policies.
+ * All database operations through this client run with admin privileges.
+ * Ensure callers validate authorization before calling these functions,
+ * and never expose this client to the browser.
+ * TODO: Add explicit authorization checks before each database operation.
+ */
 function getServiceClient() {
   const serviceRoleKey =
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
