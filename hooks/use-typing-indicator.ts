@@ -93,17 +93,17 @@ export function useTypingIndicator(conversationId?: string, userId?: string): Us
 
         const supabase = createClient()
         const channel = supabase.channel(`typing:${convId}`)
-        channel.subscribe((status) => {
-            if (status === "subscribed") {
-                channel.send({
-                    type: "broadcast",
-                    event: "typing",
-                    payload: {
-                        conversation_id: convId,
-                        user_id: userId,
-                        is_typing: true
-                    }
-                })
+        channel.subscribe((_status: string) => {
+            channel.send({
+                type: "broadcast",
+                event: "typing",
+                payload: {
+                    conversation_id: convId,
+                    user_id: userId,
+                    is_typing: true
+                }
+            })
+        })
                 // Cleanup channel after send completes
                 setTimeout(() => {
                     supabase.removeChannel(channel)
