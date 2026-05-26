@@ -2439,6 +2439,8 @@ CREATE POLICY "Service role can manage platform analytics" ON public.platform_an
 -- --------------------------------------------
 CREATE POLICY "Service role can manage moderation logs" ON public.content_moderation_logs FOR ALL USING ((SELECT auth.jwt() ->> 'role') = 'service_role');
 
+CREATE POLICY "Admin users can view moderation logs" ON public.content_moderation_logs FOR SELECT USING ((SELECT auth.jwt() ->> 'role') IN ('service_role', 'admin'));
+
 -- ============================================================================
 -- SECTION 7: REALTIME
 -- ============================================================================
