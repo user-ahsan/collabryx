@@ -139,14 +139,14 @@ export function useGenerateBatchMatches() {
   })
 }
 
-export function useCheckMatchGenerationStatus() {
+export function useCheckMatchGenerationStatus(processId?: string) {
   return useQuery({
-    queryKey: ['match-generation-status'],
+    queryKey: ['match-generation-status', processId],
     queryFn: async () => {
-      const { data, error } = await checkMatchGenerationStatus('')
+      const { data, error } = await checkMatchGenerationStatus(processId || '')
       if (error) throw error
       return data
     },
-    enabled: false, // Manual trigger only
+    enabled: !!processId, // Enable when a processId is provided
   })
 }
