@@ -6,6 +6,12 @@
  */
 
 import { z } from "zod"
+import {
+  loginSchema as authLoginSchema,
+  registerSchema as authRegisterSchema,
+  forgotPasswordSchema as authForgotPasswordSchema,
+  resetPasswordSchema as authResetPasswordSchema,
+} from '@/lib/validations/auth'
 
 // ===========================================
 // COMMON VALIDATION SCHEMAS
@@ -51,25 +57,15 @@ export const userUpdateSchema = z.object({
   website: z.string().url("Invalid URL").optional(),
 })
 
-export const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-})
+export const loginSchema = authLoginSchema
 
-export const registerSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters").max(128),
+export const registerSchema = authRegisterSchema.extend({
   name: z.string().min(1, "Name is required").max(100, "Name too long"),
 })
 
-export const forgotPasswordSchema = z.object({
-  email: z.string().email("Invalid email address"),
-})
+export const forgotPasswordSchema = authForgotPasswordSchema
 
-export const resetPasswordSchema = z.object({
-  token: z.string(),
-  password: z.string().min(8, "Password must be at least 8 characters").max(128),
-})
+export const resetPasswordSchema = authResetPasswordSchema
 
 // ===========================================
 // POST & CONTENT SCHEMAS
