@@ -2062,7 +2062,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Grant permissions for new functions
-GRANT EXECUTE ON FUNCTION public.find_similar_users(VECTOR, INTEGER, UUID) TO service_role;
+GRANT EXECUTE ON FUNCTION public.find_similar_users(VECTOR, INTEGER, UUID, TEXT, TEXT, TEXT[]) TO service_role;
 GRANT EXECUTE ON FUNCTION public.get_user_skills(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.get_user_interests(UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.calculate_skills_overlap(UUID, UUID) TO service_role;
