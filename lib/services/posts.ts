@@ -337,10 +337,17 @@ export async function fetchPersonalizedFeed(options: PostsQueryOptions = {}): Pr
 
       const hoursOld = (now - new Date(post.created_at).getTime()) / 3600000
 
+      // Derive engagement failures from available signal data:
+      // Posts with disproportionately high reactions vs comments may indicate
+      // surface-level engagement (e.g., drive-by likes without meaningful interaction).
+      // When dedicated tracking (hide_count, report_count) is added to the schema,
+      // fetch those values here instead.
+      const derivedFailures = Math.max(0, Math.round(post.reaction_count / 3) - post.comment_count)
+
       const score = calculateHybridScore({
         semantic: Math.max(0, Math.min(1, semantic)),
         engagementSuccesses: post.reaction_count + post.comment_count,
-        engagementFailures: 0, // no impression tracking available at request-time
+        engagementFailures: derivedFailures,
         hoursOld,
         isConnected,
         hasSharedInterests,
