@@ -38,37 +38,17 @@ interface ProfileTabsProps {
 
 export function ProfileTabs({
     isOwnProfile = false,
-    bio = "I'm a passionate Full Stack Developer with 5 years of experience building scalable web applications. My expertise lies in the React ecosystem (Next.js), Node.js, and cloud architecture. Currently, I'm exploring the intersection of Web3 and AI, looking for opportunities to collaborate on innovative projects. I love solving complex problems and mentoring junior developers.",
-    lookingFor = ["Technical Co-founder", "Open Source", "Startup"],
-    skills = [
-        { skillName: "React", proficiency: "expert", isPrimary: true },
-        { skillName: "TypeScript", proficiency: "advanced", isPrimary: true },
-        { skillName: "Node.js", proficiency: "advanced", isPrimary: true },
-        { skillName: "System Architecture", proficiency: "advanced", isPrimary: false },
-        { skillName: "AWS", proficiency: "intermediate", isPrimary: false },
-        { skillName: "Next.js", proficiency: "expert", isPrimary: false }
-    ],
-    experiences = [
-        {
-            id: "1",
-            title: "Senior Developer",
-            company: "TechStart Inc.",
-            startDate: "2022",
-            isCurrent: true,
-            description: "Leading the frontend team, migrating legacy codebase to Next.js, and improving performance by 40%.",
-        },
-        {
-            id: "2",
-            title: "Software Engineer",
-            company: "Creative Solutions",
-            startDate: "2019",
-            endDate: "2022",
-            isCurrent: false,
-            description: "Developed full-stack features for e-commerce clients using MERN stack.",
-        }
-    ]
+    bio,
+    lookingFor,
+    skills,
+    experiences,
 }: ProfileTabsProps) {
     const [bioExpanded, setBioExpanded] = useState(false)
+
+    // Normalize optional props with safe defaults for rendering
+    const safeLookingFor = lookingFor ?? []
+    const safeSkills = skills ?? []
+    const safeExperiences = experiences ?? []
 
     // Calculate dynamic preview for bio
     const bioSentences = bio ? bio.split(". ") : []
@@ -132,13 +112,13 @@ export function ProfileTabs({
                                 <h3 className="text-lg sm:text-xl font-bold tracking-tight">Technical Arsenal</h3>
                             </div>
 
-                            {skills.length > 0 ? (
+                            {safeSkills.length > 0 ? (
                                 <div className="space-y-4">
                                     {/* Primary Skills */}
                                     <div>
                                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Primary Expertise</p>
                                         <div className="flex flex-wrap gap-2">
-                                            {skills.filter(s => s.isPrimary).map((skill) => (
+                                            {safeSkills.filter(s => s.isPrimary).map((skill) => (
                                                 <Badge key={skill.skillName} variant="secondary" className="bg-primary/10 text-primary border-primary/20 px-2.5 py-1 text-sm font-semibold">
                                                     {skill.skillName}
                                                 </Badge>
@@ -146,11 +126,11 @@ export function ProfileTabs({
                                         </div>
                                     </div>
                                     {/* Secondary Skills */}
-                                    {skills.filter(s => !s.isPrimary).length > 0 && (
+                                    {safeSkills.filter(s => !s.isPrimary).length > 0 && (
                                         <div>
                                             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 mt-4">Other Skills</p>
                                             <div className="flex flex-wrap gap-2">
-                                                {skills.filter(s => !s.isPrimary).map((skill) => (
+                                                {safeSkills.filter(s => !s.isPrimary).map((skill) => (
                                                     <Badge key={skill.skillName} variant="secondary" className="px-2.5 py-1 text-xs border border-border/50 font-medium bg-muted/50">
                                                         {skill.skillName}
                                                     </Badge>
@@ -171,9 +151,9 @@ export function ProfileTabs({
                                 <h3 className="text-lg sm:text-xl font-bold tracking-tight">Looking For</h3>
                             </div>
 
-                            {lookingFor.length > 0 ? (
+                            {safeLookingFor.length > 0 ? (
                                 <div className="flex flex-wrap gap-2.5">
-                                    {lookingFor.map((intentLabel) => {
+                                    {safeLookingFor.map((intentLabel) => {
                                         // Lookup predefined formatting or fallback
                                         const mapping = intentIcons[intentLabel as keyof typeof intentIcons] || {
                                             icon: Brain,
@@ -213,8 +193,8 @@ export function ProfileTabs({
                         </div>
 
                         <div className="space-y-6 md:space-y-8 pl-2">
-                            {experiences.length > 0 ? (
-                                experiences.map((exp, index) => (
+                            {safeExperiences.length > 0 ? (
+                                safeExperiences.map((exp, index) => (
                                     <div key={exp.id} className="relative border-l-2 border-muted/70 pl-6 sm:pl-8 pb-2">
                                         {/* Timeline Dot */}
                                         <div className={`absolute -left-[9px] top-1 h-4 w-4 rounded-full border-2 border-background shadow-sm ${exp.isCurrent ? 'bg-primary' : 'bg-muted-foreground/60'}`} />
