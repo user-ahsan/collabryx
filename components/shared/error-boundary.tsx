@@ -1,12 +1,14 @@
 'use client'
 
 import { Component, ReactNode } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { AlertCircle } from 'lucide-react'
 
 interface Props {
   children: ReactNode
   fallback?: ReactNode
+  router?: ReturnType<typeof useRouter>
 }
 
 interface State {
@@ -14,7 +16,7 @@ interface State {
   error?: Error
 }
 
-export class ErrorBoundary extends Component<Props, State> {
+class ErrorBoundaryClass extends Component<Props, State> {
   public state: State = {
     hasError: false,
     error: undefined,
@@ -45,7 +47,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <Button
               onClick={() => {
                 this.setState({ hasError: false, error: undefined })
-                window.location.reload()
+                this.props.router?.refresh()
               }}
             >
               Try Again
@@ -63,4 +65,13 @@ export class ErrorBoundary extends Component<Props, State> {
 
     return this.props.children
   }
+}
+
+export function ErrorBoundary({ children, fallback }: Props) {
+  const router = useRouter()
+  return (
+    <ErrorBoundaryClass router={router} fallback={fallback}>
+      {children}
+    </ErrorBoundaryClass>
+  )
 }
