@@ -125,6 +125,12 @@ export function autoRegisterProviders(registry: ProviderRegistry): void {
     const timeout = parseInt(process.env[`AI_PROVIDER_${index}_TIMEOUT`] || '60000', 10)
     const priority = parseInt(process.env[`AI_PROVIDER_${index}_PRIORITY`] || String(index), 10)
 
+    if (!apiKey) {
+      console.warn(`⚠️ AI_PROVIDER_${index}_API_KEY not set, skipping provider ${name}`)
+      index++
+      continue
+    }
+
     if (!baseURL) {
       console.warn(`⚠️ AI_PROVIDER_${index}_BASE_URL not set, skipping provider ${name}`)
       index++
