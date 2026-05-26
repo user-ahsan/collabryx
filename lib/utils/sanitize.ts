@@ -92,12 +92,18 @@ export function sanitizeHtml(html: string): string {
             return
           }
           
+          // Reject data: protocol in src attributes (prevents XSS vectors)
+          if (attrName === "src" && value.startsWith("data:")) {
+            element.removeAttribute(attrName)
+            return
+          }
+          
           // Check protocol
           const hasAllowedProtocol = ALLOWED_PROTOCOLS.some(protocol => 
             value.startsWith(protocol)
           )
           
-          if (!hasAllowedProtocol && !value.startsWith("data:image/")) {
+          if (!hasAllowedProtocol) {
             element.removeAttribute(attrName)
           }
         }
@@ -116,6 +122,8 @@ export function sanitizeHtml(html: string): string {
 
   Array.from(doc.body.childNodes).forEach(processNode)
   
+  // TODO: Use safe DOM methods (e.g. textContent, setAttribute) instead of innerHTML
+  // to avoid potential XSS via serialized content
   return doc.body.innerHTML
 }
 
@@ -233,6 +241,8 @@ export function sanitizeFilename(filename: string): string {
 
 /**
  * Validate and sanitize markdown content
+ * TODO: Use proper parser-based markdown sanitization (e.g. DOMPurify or similar)
+ * instead of regex-based approach which can be bypassed
  */
 export function sanitizeMarkdown(markdown: string): string {
   if (!markdown) return ""
