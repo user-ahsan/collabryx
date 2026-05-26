@@ -29,10 +29,34 @@ class Logger {
     return levels.indexOf(level) >= levels.indexOf(this.minLevel)
   }
 
+  /** Known sensitive field keys whose values should be redacted from logs */
+  private readonly SENSITIVE_KEYS = new Set([
+    'password', 'password_confirmation', 'token', 'secret', 'apiKey',
+    'api_key', 'api-key', 'authorization', 'Authorization', 'cookie',
+    'Cookie', 'session', 'ssn', 'phone', 'email', 'address',
+    'credit_card', 'creditCard', 'cvv', 'pin', 'accessToken',
+    'refreshToken', 'refresh_token', 'privateKey', 'private_key',
+  ])
+
+  /**
+   * JSON.stringify replacer that redacts sensitive fields to prevent PII leakage
+   * in log output. Returns '[REDACTED]' for known sensitive key names,
+   * and truncates strings longer than 500 characters.
+   */
+  private redactReplacer(_key: string, value: unknown): unknown {
+    if (this.SENSITIVE_KEYS.has(_key)) {
+      return '[REDACTED]'
+    }
+    if (typeof value === 'string' && value.length > 500) {
+      return value.slice(0, 500) + '... [TRUNCATED]'
+    }
+    return value
+  }
+
   private formatMessage(level: LogLevel, message: string, context?: LogContext): string {
     const timestamp = new Date().toISOString()
     const prefix = this.prefix ? `[${this.prefix}] ` : ''
-    const contextStr = context ? ` ${JSON.stringify(context)}` : ''
+    const contextStr = context ? ` ${JSON.stringify(context, this.redactReplacer.bind(this))}` : ''
     return `[${timestamp}] ${prefix}[${level.toUpperCase()}] ${message}${contextStr}`
   }
 
