@@ -164,7 +164,14 @@ export default function OnboardingPage() {
         try {
             const saved = sessionStorage.getItem("onboarding_draft")
             if (saved) {
-                const { values, step, timestamp } = JSON.parse(saved)
+                const parsed = JSON.parse(saved)
+                const { values: rawValues, step, timestamp } = parsed
+                const validated = onboardingDataSchema.partial().safeParse(rawValues)
+                if (!validated.success) {
+                    sessionStorage.removeItem('onboarding_draft')
+                    return
+                }
+                const values = validated.data
                 // Only restore if saved within last 24 hours
                 const isRecent = Date.now() - timestamp < 24 * 60 * 60 * 1000
                 if (isRecent && step > 0) {
