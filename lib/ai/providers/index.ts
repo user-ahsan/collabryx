@@ -7,7 +7,14 @@
  * 1. Environment-based providers (AI_PROVIDER_N_*) via autoRegisterProviders
  * 2. Legacy hardcoded providers (for backward compatibility)
  *
- * Priority determines failover order (lower = higher priority).
+ * Priority ordering rationale:
+ * Lower priority number = HIGHER priority (tried first during fallback).
+ * - minimax (10): Tried first — fastest/cheapest model, suitable for simple tasks
+ * - openai   (20): Default fallback — balanced capability and cost
+ * - anthropic (30): Last resort — most capable/powerful model for complex tasks
+ *
+ * This inverted scheme (lower=higher) allows inserting new providers at any
+ * priority level without renumbering existing entries.
  */
 
 import { ProviderRegistry, autoRegisterProviders } from './registry'
