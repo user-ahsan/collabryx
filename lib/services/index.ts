@@ -1,7 +1,8 @@
 // ===========================================
 // COLLABRYX API SERVICES INDEX
 // ===========================================
-// Export all API service modules for easy importing
+// Export all API service modules for easy importing.
+// Every file below exists as of May 2026 — verify when adding/removing services.
 
 export * from "./posts"
 export * from "./matches"
