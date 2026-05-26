@@ -161,6 +161,13 @@ export function useMessages(conversationId?: string, currentUserId?: string): Us
     if (!conversationId) return
 
     const supabase = createClient()
+
+    // Clean up previous channel before creating a new one
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current)
+      channelRef.current = null
+    }
+
     channelRef.current = supabase
       .channel(`messages:${conversationId}`)
       .on(
@@ -200,13 +207,9 @@ export function useMessages(conversationId?: string, currentUserId?: string): Us
         }
       )
       // Read receipt broadcast listener
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .on('broadcast' as any,
-        {
-          event: 'read_receipt',
-          channel: `read:${conversationId}`,
-        },
-        (payload) => {
+      .on('broadcast',
+        { event: 'read_receipt' },
+        (payload: { payload: { user_id: string; read_at: string } }) => {
           const { user_id, read_at } = payload.payload
           if (user_id !== currentUserId) {
             queryClient.setQueryData(
@@ -238,6 +241,7 @@ export function useMessages(conversationId?: string, currentUserId?: string): Us
         await sendMessageMutationHook.mutateAsync({ conversationId: convId, text })
         return true
       } catch (_error) {
+        toast.error('Failed to send message')
         return false
       }
     },
