@@ -1119,6 +1119,9 @@ DROP TRIGGER IF EXISTS retry_failed_embedding_trigger ON public.profiles;
 CREATE TRIGGER retry_failed_embedding_trigger
     AFTER UPDATE ON public.profiles
     FOR EACH ROW
+    WHEN (OLD.full_name IS DISTINCT FROM NEW.full_name OR 
+          OLD.headline IS DISTINCT FROM NEW.headline OR 
+          OLD.bio IS DISTINCT FROM NEW.bio)
     EXECUTE FUNCTION public.retry_failed_embedding();
 
 -- --------------------------------------------
