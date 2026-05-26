@@ -21,13 +21,18 @@ export function useAuth(): UseAuthReturn {
     const supabase = createClient()
     const queryClient = useQueryClient()
 
+    // Extract stable method references to avoid re-renders from object identity changes
+    const getSession = supabase.auth.getSession
+    const onAuthStateChange = supabase.auth.onAuthStateChange
+    const authSignOut = supabase.auth.signOut
+
     useEffect(() => {
         // Get initial session
-        const getSession = async () => {
+        const getInitialSession = async () => {
             try {
                 const {
                     data: { session: currentSession },
-                } = await supabase.auth.getSession()
+                } = await getSession()
                 setSession(currentSession)
                 setUser(currentSession?.user ?? null)
             } catch (error) {
@@ -39,12 +44,12 @@ export function useAuth(): UseAuthReturn {
             }
         }
 
-        getSession()
+        getInitialSession()
 
         // Listen for auth state changes
         const {
             data: { subscription },
-        } = supabase.auth.onAuthStateChange((_event, newSession) => {
+        } = onAuthStateChange((_event, newSession) => {
             setSession(newSession)
             setUser(newSession?.user ?? null)
             setIsLoading(false)
@@ -53,11 +58,11 @@ export function useAuth(): UseAuthReturn {
         return () => {
             subscription.unsubscribe()
         }
-    }, [supabase.auth])
+    }, [getSession, onAuthStateChange])
 
     const signOut = useCallback(async () => {
         try {
-            await supabase.auth.signOut()
+            await authSignOut()
             
             // CRITICAL: Clear React Query cache to prevent data leakage between users
             queryClient.clear()
@@ -70,7 +75,7 @@ export function useAuth(): UseAuthReturn {
             queryClient.clear()
             router.push("/login")
         }
-    }, [supabase.auth, router, queryClient])
+    }, [authSignOut, router, queryClient])
 
     return { user, session, isLoading, signOut }
 }
