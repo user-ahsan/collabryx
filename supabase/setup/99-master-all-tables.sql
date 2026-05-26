@@ -2922,7 +2922,7 @@ BEGIN
       target_type_val := 'post';
       metadata_val := jsonb_build_object('post_id', NEW.post_id);
     WHEN 'connections' THEN
-      target_id_val := CASE WHEN NEW.requester_id = auth.uid() THEN NEW.receiver_id ELSE NEW.requester_id END;
+      target_id_val := NEW.receiver_id;
       target_type_val := 'profile';
       metadata_val := jsonb_build_object('status', NEW.status);
     WHEN 'messages' THEN
