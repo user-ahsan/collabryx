@@ -23,12 +23,13 @@ export async function sendConnectionRequest(targetUserId: string) {
     return { error: 'Cannot send request to yourself' }
   }
 
-  // Check if already connected or request exists
+  // Check if already connected or request exists (parameterized via .in() to avoid SQL injection)
   const { data: existing } = await supabase
     .from('connections')
     .select('id, status')
-    .or(`and(requester_id.eq.${user.id},receiver_id.eq.${targetUserId}),and(requester_id.eq.${targetUserId},receiver_id.eq.${user.id})`)
-    .single()
+    .in('requester_id', [user.id, targetUserId])
+    .in('receiver_id', [user.id, targetUserId])
+    .maybeSingle()
 
   if (existing) {
     return { error: 'Connection already exists or request pending' }
@@ -179,10 +180,12 @@ export async function removeConnection(userId: string) {
     return { error: 'Unauthorized' }
   }
 
+  // Delete any connection between these two users in either direction (parameterized via .in())
   const { error } = await supabase
     .from('connections')
     .delete()
-    .or(`and(requester_id.eq.${user.id},receiver_id.eq.${userId}),and(requester_id.eq.${userId},receiver_id.eq.${user.id})`)
+    .in('requester_id', [user.id, userId])
+    .in('receiver_id', [user.id, userId])
 
   if (error) {
     return { error: 'Failed to remove connection' }
