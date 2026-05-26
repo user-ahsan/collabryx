@@ -35,6 +35,9 @@ interface UseChatReturn {
 
 async function fetchChatConversations(): Promise<Conversation[]> {
     const supabase = createClient()
+    // SAFE: user.id comes directly from supabase.auth.getUser() which verifies the
+    // JWT server-side, so it is not user-controllable input. Safe to interpolate
+    // into the `.or()` filter below.
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
         throw new Error("Not authenticated")
@@ -55,10 +58,7 @@ async function fetchChatConversations(): Promise<Conversation[]> {
 
     if (error) throw error
 
-    return (data || []).map((conv) => ({
-        ...conv,
-        other_user: conv.other_user,
-    }))
+    return data || []
 }
 
 export function useChat(): UseChatReturn {
