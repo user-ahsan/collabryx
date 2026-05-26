@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 export const dynamic = 'force-dynamic'
 
 // Reuse supabase client across health check invocations (#44)
-let supabaseClient: ReturnType<typeof createClient> | null = null
+let supabaseClient: SupabaseClient | null = null
 async function getSupabaseClient() {
   if (!supabaseClient) {
     supabaseClient = await createClient()
@@ -24,6 +25,9 @@ async function getSupabaseClient() {
  */
 export async function GET() {
   const supabase = await getSupabaseClient()
+  if (!supabase) {
+    return NextResponse.json({ status: 'error', database: false }, { status: 503 })
+  }
   
   // Check database connection
   const { error: dbError } = await supabase
