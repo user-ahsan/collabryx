@@ -98,6 +98,8 @@ export async function POST(request: NextRequest) {
     const path = `${userId}/${secureName}`
 
     // Upload to Supabase Storage
+    // Note: file.type has already passed magic-byte validation above, so it is
+    // the verified MIME type (not a spoofed browser header).
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from(bucket)
       .upload(path, buffer, {
