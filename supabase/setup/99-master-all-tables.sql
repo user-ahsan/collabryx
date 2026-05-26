@@ -1801,7 +1801,7 @@ BEGIN
     FROM profiles p
     INNER JOIN profile_embeddings pe ON p.id = pe.user_id
     LEFT JOIN user_analytics ua ON p.id = ua.user_id
-    WHERE p.id != COALESCE(exclude_user_id, p.id)
+    WHERE (exclude_user_id IS NULL OR p.id != exclude_user_id)
         AND p.onboarding_completed = true
         AND (filter_location IS NULL OR p.location = filter_location)
         AND (filter_availability IS NULL OR p.collaboration_readiness = filter_availability)
