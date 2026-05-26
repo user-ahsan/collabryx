@@ -963,6 +963,11 @@ CREATE TRIGGER update_theme_preferences_updated_at
     BEFORE UPDATE ON public.theme_preferences
     FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_platform_analytics_updated_at ON public.platform_analytics;
+CREATE TRIGGER update_platform_analytics_updated_at
+    BEFORE UPDATE ON public.platform_analytics
+    FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
 -- --------------------------------------------
 -- FUNCTION: update_embedding_timestamp
 -- --------------------------------------------
