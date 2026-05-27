@@ -64,9 +64,8 @@ export default async function BookmarksPage() {
     .eq("emoji", "🔖")
     .order("created_at", { ascending: false })
 
-  const bookmarks: BookmarkedPost[] = (bookmarkedPosts ?? [])
-    .map((item: { post_id: string; posts: BookmarkedPost | null }) => item.posts)
-    .filter((post: BookmarkedPost | null): post is BookmarkedPost => post !== null)
+  const bookmarks: BookmarkedPost[] = ((bookmarkedPosts ?? []) as unknown as Array<{ posts: BookmarkedPost[] }>)
+    .flatMap((item) => item.posts ?? [])
 
   return (
     <div className="container max-w-4xl mx-auto py-8 px-4 md:px-6">

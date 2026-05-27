@@ -416,7 +416,7 @@ export function AttachmentGallery({ attachments, className }: AttachmentGalleryP
           </div>
           
           {/* Remaining items */}
-          {validAttachments.slice(1, 5).map((attachment) => (
+          {validAttachments.slice(1, 5).map((attachment, index) => (
             <div key={attachment.file_url} className="relative rounded-xl overflow-hidden border aspect-square">
               {attachment.file_type === "video" ? (
                 <video

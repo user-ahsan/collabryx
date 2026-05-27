@@ -210,7 +210,7 @@ export function ProfileTabs({
                                         )}
 
                                         {/* Subtle dividing line if not last */}
-                                        {index !== experiences.length - 1 && (
+                                        {index !== safeExperiences.length - 1 && (
                                             <div className="absolute -bottom-4 sm:-bottom-5 left-6 right-0 h-px bg-border/40" />
                                         )}
                                     </div>

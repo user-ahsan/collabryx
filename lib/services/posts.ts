@@ -637,7 +637,7 @@ export async function incrementPostCounter(
         const fieldStr = field
         const { data: currentPost } = await supabase
           .from("posts")
-          .select([fieldStr, "version"] as const)
+          .select([fieldStr, "version"].join(","))
           .eq("id", postIdStr)
           .single()
 

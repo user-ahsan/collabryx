@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
-import type { OnboardingFormValues } from "@/app/(auth)/onboarding/page"
+import type { OnboardingData as OnboardingFormValues } from "@/lib/validations/onboarding"
 
 interface StepBasicInfoProps {
     userName?: string

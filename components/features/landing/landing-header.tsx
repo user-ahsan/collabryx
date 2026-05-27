@@ -6,15 +6,6 @@ import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
-// Global declaration for lenis smooth scroll library
-declare global {
-  interface Window {
-    lenis?: {
-      scrollTo: (target: HTMLElement, options?: { duration?: number }) => void
-    }
-  }
-}
-
 // Utility function to sanitize content for safe DOM usage
 const sanitizeForDom = (content: string): string => {
     // Remove any potentially dangerous characters while preserving basic alphanumeric and safe punctuation
