@@ -126,7 +126,11 @@ export function calculateRecencyScore(hoursOld: number, halfLife: number = RECEN
  * Combines semantic similarity, engagement likelihood (via Thompson Sampling),
  * recency, and social graph boosts.
  *
- * score = (semantic * 0.35 + engagement * 0.30 + recency * 0.20) * connectionBoost * interestsBoost * intentBoost
+ * Boosts are additive to avoid nonlinear compounding:
+ * score = (semantic * 0.35 + engagement * 0.30 + recency * 0.20)
+ *       + baseScore * (connectionBoost - 1) if connected
+ *       + baseScore * (interestsBoost - 1) if shared interests
+ *       + baseScore * (intentBoost - 1) if intent match
  */
 export function calculateHybridScore(params: FeedScorerInput): number {
   const semanticScore = params.semantic;

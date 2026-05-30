@@ -103,12 +103,10 @@ export function useTypingIndicator(conversationId?: string, userId?: string): Us
                     is_typing: true
                 }
             })
-        })
-                // Cleanup channel after send completes
-                setTimeout(() => {
-                    supabase.removeChannel(channel)
-                }, 100)
-            }
+            // Cleanup channel after send completes
+            setTimeout(() => {
+                supabase.removeChannel(channel)
+            }, 100)
         })
     }, [userId])
 

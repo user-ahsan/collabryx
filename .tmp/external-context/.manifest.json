@@ -1,0 +1,28 @@
+{
+  "version": "1.0",
+  "last_updated": "2026-05-30T00:00:00Z",
+  "libraries": {
+    "cve-fixes": {
+      "files": [
+        {
+          "filename": "protobufjs-cve-fixes.md",
+          "topic": "CVE fix versions for protobufjs",
+          "fetched": "2026-05-30T00:00:00Z",
+          "source": "GitHub Advisory Database + NVD"
+        },
+        {
+          "filename": "ws-cve-fix.md",
+          "topic": "CVE fix version for ws",
+          "fetched": "2026-05-30T00:00:00Z",
+          "source": "GitHub Advisory Database + NVD"
+        },
+        {
+          "filename": "brace-expansion-cve-fix.md",
+          "topic": "CVE fix version for brace-expansion",
+          "fetched": "2026-05-30T00:00:00Z",
+          "source": "GitHub Advisory Database + Snyk"
+        }
+      ]
+    }
+  }
+}

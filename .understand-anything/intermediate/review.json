@@ -1,0 +1,45 @@
+{
+  "approved": true,
+  "issues": [],
+  "warnings": [
+    "847 nodes with type/ID-prefix mismatch (file-analyzer convention using file: prefix for function/call nodes)",
+    "1366 nodes with generic summary 'File in the Collabryx codebase.'",
+    "533 orphan nodes with zero edges",
+    "Document/pipeline/service/table nodes missing expected edge types",
+    "Tour has 18 steps (recommended max 15)"
+  ],
+  "stats": {
+    "totalNodes": 1746,
+    "totalEdges": 1886,
+    "totalLayers": 17,
+    "tourSteps": 18,
+    "nodeTypes": {
+      "file": 625,
+      "function": 809,
+      "module": 227,
+      "class": 11,
+      "document": 31,
+      "endpoint": 22,
+      "config": 12,
+      "service": 7,
+      "pipeline": 2
+    },
+    "edgeTypes": {
+      "imports": 764,
+      "calls": 386,
+      "contains": 268,
+      "exports": 201,
+      "related": 113,
+      "documents": 57,
+      "depends_on": 35,
+      "tested_by": 22,
+      "similar_to": 21,
+      "inherits": 8,
+      "configures": 7,
+      "deploys": 1,
+      "writes_to": 1,
+      "reads_from": 1,
+      "validates": 1
+    }
+  }
+}
