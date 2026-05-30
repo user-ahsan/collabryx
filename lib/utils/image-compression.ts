@@ -1,9 +1,8 @@
 /**
  * Image Compression Utilities
  * 
- * Compresses images before upload using sharp library
- * Converts to WebP for optimal web performance
- * Implements size limits and quality optimization
+ * Client-side image compression using Canvas API (no external dependencies).
+ * Compresses images before upload to reduce payload size.
  */
 
 // ===========================================
@@ -11,27 +10,25 @@
 // ===========================================
 
 export const IMAGE_CONFIG = {
-  // Quality settings (0-100)
-  QUALITY_WEBP: 80,
-  QUALITY_JPEG: 85,
-  QUALITY_PNG: 85,
-  
+  // Quality settings (0.0–1.0)
+  QUALITY_WEBP: 0.8,
+  QUALITY_JPEG: 0.85,
+
   // Size limits in bytes
   MAX_ORIGINAL_SIZE: 10 * 1024 * 1024, // 10MB
   MAX_COMPRESSED_SIZE: 2 * 1024 * 1024, // 2MB
   MAX_AVATAR_SIZE: 512 * 1024, // 512KB
   MAX_BANNER_SIZE: 1024 * 1024, // 1MB
-  
+
   // Dimensions
   MAX_WIDTH: 2560,
   MAX_HEIGHT: 2560,
   AVATAR_SIZE: 400,
-  BANNER_WIDTH: 1920,
-  BANNER_HEIGHT: 480,
+  BANNER_WIDTH: 1200,
+  BANNER_HEIGHT: 400,
   THUMBNAIL_SIZE: 300,
-  
+
   // Formats
-  PREFERRED_FORMAT: 'webp' as const,
   SUPPORTED_FORMATS: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'] as const,
 } as const
 
@@ -43,18 +40,7 @@ export interface CompressionOptions {
   maxWidth?: number
   maxHeight?: number
   quality?: number
-  format?: 'webp' | 'jpeg' | 'png'
-  maintainAspectRatio?: boolean
-}
-
-export interface CompressionResult {
-  buffer: Buffer
-  originalSize: number
-  compressedSize: number
-  compressionRatio: number
-  width: number
-  height: number
-  format: string
+  format?: 'webp' | 'jpeg'
 }
 
 export interface ImageMetadata {
@@ -66,161 +52,81 @@ export interface ImageMetadata {
 }
 
 // ===========================================
-// COMPRESSION FUNCTIONS
+// CLIENT-SIDE COMPRESSION (Canvas API)
 // ===========================================
 
 /**
- * Compress image buffer using sharp
- * 
- * Note: This function requires the 'sharp' package to be installed
- * If sharp is not available, returns original buffer
+ * Compress an image File in the browser using Canvas API.
+ * Falls back to the original file if compression fails.
+ *
+ * @param file - The original image File to compress
+ * @param options - Compression dimensions, quality, and output format
+ * @returns A Blob (WebP or JPEG) ready for upload
  */
 export async function compressImage(
-  buffer: Buffer,
+  file: File,
   options: CompressionOptions = {}
-): Promise<CompressionResult> {
+): Promise<Blob> {
   const {
-    maxWidth = IMAGE_CONFIG.MAX_WIDTH,
-    maxHeight = IMAGE_CONFIG.MAX_HEIGHT,
+    maxWidth = IMAGE_CONFIG.AVATAR_SIZE,
+    maxHeight = IMAGE_CONFIG.AVATAR_SIZE,
     quality = IMAGE_CONFIG.QUALITY_WEBP,
-    format = IMAGE_CONFIG.PREFERRED_FORMAT,
-    maintainAspectRatio = true,
+    format = 'webp',
   } = options
-  
-  const originalSize = buffer.length
-  
+
   try {
-    // Try to use sharp if available
-    const sharp = await import('sharp').catch(() => null)
-    
-    if (!sharp) {
-      console.warn('Sharp not available, returning original image')
-      return {
-        buffer,
-        originalSize,
-        compressedSize: originalSize,
-        compressionRatio: 1,
-        width: 0,
-        height: 0,
-        format: 'unknown',
-      }
+    // Decode the image using createImageBitmap (GPU-accelerated)
+    const bitmap = await createImageBitmap(file)
+    const { width, height } = bitmap
+
+    // Calculate dimensions that fit within the bounding box
+    let newWidth = width
+    let newHeight = height
+    if (newWidth > maxWidth) {
+      newHeight = Math.round(newHeight * (maxWidth / newWidth))
+      newWidth = maxWidth
     }
-    
-    // Get image metadata
-    const metadata = await sharp.default(buffer).metadata()
-    const originalWidth = metadata.width || 0
-    const originalHeight = metadata.height || 0
-    
-    // Calculate new dimensions
-    let newWidth = originalWidth
-    let newHeight = originalHeight
-    
-    if (originalWidth > maxWidth || originalHeight > maxHeight) {
-      const ratio = Math.min(maxWidth / originalWidth, maxHeight / originalHeight)
-      newWidth = Math.floor(originalWidth * ratio)
-      newHeight = Math.floor(originalHeight * ratio)
+    if (newHeight > maxHeight) {
+      newWidth = Math.round(newWidth * (maxHeight / newHeight))
+      newHeight = maxHeight
     }
-    
-    // Compress image
-    const pipeline = sharp.default(buffer)
-      .resize(newWidth, newHeight, {
-        fit: maintainAspectRatio ? 'inside' : 'fill',
-        withoutEnlargement: true,
-      })
-    
-    // Apply format-specific compression
-    let compressedPipeline
-    switch (format) {
-      case 'webp':
-        compressedPipeline = pipeline.webp({ quality, effort: 6 })
-        break
-      case 'jpeg':
-        compressedPipeline = pipeline.jpeg({ quality, progressive: true })
-        break
-      case 'png':
-        compressedPipeline = pipeline.png({ quality, compressionLevel: 8 })
-        break
-      default:
-        compressedPipeline = pipeline
+
+    // Render at reduced size onto an offscreen canvas
+    const canvas = document.createElement('canvas')
+    canvas.width = newWidth
+    canvas.height = newHeight
+
+    const ctx = canvas.getContext('2d')
+    if (!ctx) {
+      bitmap.close()
+      throw new Error('Failed to get 2D canvas context')
     }
-    
-    const compressedBuffer = await compressedPipeline.toBuffer()
-    const compressedSize = compressedBuffer.length
-    
-    return {
-      buffer: compressedBuffer,
-      originalSize,
-      compressedSize,
-      compressionRatio: originalSize > 0 ? compressedSize / originalSize : 1,
-      width: newWidth,
-      height: newHeight,
-      format,
-    }
-  } catch (error) {
-    console.error('Image compression failed:', error)
-    // Return original buffer on error
-    return {
-      buffer,
-      originalSize,
-      compressedSize: originalSize,
-      compressionRatio: 1,
-      width: 0,
-      height: 0,
-      format: 'unknown',
-    }
+
+    ctx.drawImage(bitmap, 0, 0, newWidth, newHeight)
+    bitmap.close()
+
+    // Export as compressed blob
+    const mimeType = format === 'jpeg' ? 'image/jpeg' : 'image/webp'
+    const blob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob(
+        (result) => {
+          if (result && result.size > 0) {
+            resolve(result)
+          } else {
+            reject(new Error('Canvas toBlob returned empty result'))
+          }
+        },
+        mimeType,
+        quality
+      )
+    })
+
+    return blob
+  } catch (err) {
+    console.warn('Client-side image compression failed, using original file:', err)
+    // Fallback: return the original File as-is
+    return file
   }
-}
-
-/**
- * Compress avatar image
- */
-export async function compressAvatar(buffer: Buffer): Promise<CompressionResult> {
-  return compressImage(buffer, {
-    maxWidth: IMAGE_CONFIG.AVATAR_SIZE,
-    maxHeight: IMAGE_CONFIG.AVATAR_SIZE,
-    quality: IMAGE_CONFIG.QUALITY_WEBP,
-    format: 'webp',
-    maintainAspectRatio: true,
-  })
-}
-
-/**
- * Compress banner image
- */
-export async function compressBanner(buffer: Buffer): Promise<CompressionResult> {
-  return compressImage(buffer, {
-    maxWidth: IMAGE_CONFIG.BANNER_WIDTH,
-    maxHeight: IMAGE_CONFIG.BANNER_HEIGHT,
-    quality: IMAGE_CONFIG.QUALITY_WEBP,
-    format: 'webp',
-    maintainAspectRatio: false,
-  })
-}
-
-/**
- * Compress post image
- */
-export async function compressPostImage(buffer: Buffer): Promise<CompressionResult> {
-  return compressImage(buffer, {
-    maxWidth: IMAGE_CONFIG.MAX_WIDTH,
-    maxHeight: IMAGE_CONFIG.MAX_HEIGHT,
-    quality: IMAGE_CONFIG.QUALITY_WEBP,
-    format: 'webp',
-    maintainAspectRatio: true,
-  })
-}
-
-/**
- * Generate thumbnail
- */
-export async function generateThumbnail(buffer: Buffer, size: number = IMAGE_CONFIG.THUMBNAIL_SIZE): Promise<CompressionResult> {
-  return compressImage(buffer, {
-    maxWidth: size,
-    maxHeight: size,
-    quality: 70,
-    format: 'webp',
-    maintainAspectRatio: true,
-  })
 }
 
 // ===========================================
@@ -240,7 +146,7 @@ export function validateImageForCompression(
       error: `Unsupported image type: ${file.type}. Supported: ${IMAGE_CONFIG.SUPPORTED_FORMATS.join(', ')}`,
     }
   }
-  
+
   // Check file size
   if (file.size > IMAGE_CONFIG.MAX_ORIGINAL_SIZE) {
     const maxMB = (IMAGE_CONFIG.MAX_ORIGINAL_SIZE / 1024 / 1024).toFixed(1)
@@ -249,82 +155,32 @@ export function validateImageForCompression(
       error: `Image too large. Maximum size is ${maxMB}MB`,
     }
   }
-  
-  // Check file name
+
+  // Check file name extension
   if (!file.name.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
     return {
       valid: false,
       error: 'Invalid image file extension',
     }
   }
-  
+
   return { valid: true }
 }
 
 /**
- * Check if compressed size is within limits
- * @deprecated Not currently used in onboarding flow — kept for future avatar/banner upload integration
+ * Get image metadata from a File (uses createImageBitmap, no external packages)
  */
-export function validateCompressedSize(
-  result: CompressionResult,
-  type: 'avatar' | 'banner' | 'post'
-): { valid: true } | { valid: false; error: string } {
-  let maxSize: number
-  
-  switch (type) {
-    case 'avatar':
-      maxSize = IMAGE_CONFIG.MAX_AVATAR_SIZE
-      break
-    case 'banner':
-      maxSize = IMAGE_CONFIG.MAX_BANNER_SIZE
-      break
-    case 'post':
-    default:
-      maxSize = IMAGE_CONFIG.MAX_COMPRESSED_SIZE
-      break
-  }
-  
-  if (result.compressedSize > maxSize) {
-    return {
-      valid: false,
-      error: `Compressed image still too large (${(result.compressedSize / 1024).toFixed(1)}KB, max: ${(maxSize / 1024).toFixed(1)}KB)`,
-    }
-  }
-  
-  return { valid: true }
-}
-
-// ===========================================
-// UTILITY FUNCTIONS
-// ===========================================
-
-/**
- * Get image metadata
- */
-export async function getImageMetadata(buffer: Buffer): Promise<ImageMetadata> {
+export async function getImageMetadata(file: File): Promise<ImageMetadata> {
   try {
-    const sharp = await import('sharp').catch(() => null)
-    
-    if (!sharp) {
-      return {
-        width: 0,
-        height: 0,
-        format: 'unknown',
-        size: buffer.length,
-        aspectRatio: 0,
-      }
-    }
-    
-    const metadata = await sharp.default(buffer).metadata()
-    const width = metadata.width || 0
-    const height = metadata.height || 0
-    
-    
+    const bitmap = await createImageBitmap(file)
+    const { width, height } = bitmap
+    bitmap.close()
+
     return {
       width,
       height,
-      format: (metadata.format as string) || 'unknown',
-      size: buffer.length,
+      format: file.type || 'unknown',
+      size: file.size,
       aspectRatio: width / height,
     }
   } catch (error) {
@@ -333,7 +189,7 @@ export async function getImageMetadata(buffer: Buffer): Promise<ImageMetadata> {
       width: 0,
       height: 0,
       format: 'unknown',
-      size: buffer.length,
+      size: file.size,
       aspectRatio: 0,
     }
   }

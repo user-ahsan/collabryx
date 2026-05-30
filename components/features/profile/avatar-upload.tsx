@@ -4,25 +4,27 @@ import * as React from 'react'
 import { useState, useRef, useEffect } from 'react'
 import { Upload, X, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { useUpdateProfile } from '@/hooks/use-profile'
-import { createClient } from '@/lib/supabase/client'
+import { compressImage } from '@/lib/utils/image-compression'
 import { cn } from '@/lib/utils'
 import { logger } from '@/lib/logger'
 import { toast } from 'sonner'
 import {
   validateAvatar,
-  FILE_SIZE_LIMITS,
-  ALLOWED_IMAGE_TYPES
+  FILE_SIZE_LIMITS
 } from '@/lib/utils/file-validation'
 
 interface AvatarUploadProps {
   currentAvatarUrl?: string | null
-  userId: string
   className?: string
+}
+
+function getCsrfToken(): string | null {
+  const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/)
+  return match ? match[1] : null
 }
 
 export function AvatarUpload({
   currentAvatarUrl,
-  userId: _userId,
   className
 }: AvatarUploadProps) {
   const [isUploading, setIsUploading] = useState(false)
@@ -31,7 +33,6 @@ export function AvatarUpload({
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const updateProfile = useUpdateProfile()
-  const supabase = createClient()
 
   // Update preview when currentAvatarUrl changes
   useEffect(() => {
@@ -52,34 +53,34 @@ export function AvatarUpload({
     return null
   }
 
-  const uploadToSupabase = async (file: File): Promise<string> => {
-    const userId = (await supabase.auth.getUser()).data.user?.id
-    if (!userId) {
-      throw new Error('Not authenticated')
+  const uploadViaApi = async (file: File): Promise<string> => {
+    // Compress image before upload (max 400x400, WebP, quality 0.8)
+    const compressed = await compressImage(file, {
+      maxWidth: 400,
+      maxHeight: 400,
+      quality: 0.8,
+      format: 'webp'
+    })
+
+    const formData = new FormData()
+    formData.append('file', compressed, file.name)
+    formData.append('type', 'avatar')
+
+    const csrfToken = getCsrfToken()
+
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
+      body: formData,
+    })
+
+    const result = await response.json()
+
+    if (!result.success) {
+      throw new Error(result.error?.message || 'Upload failed')
     }
 
-    const extension = file.name.split('.').pop() || 'jpg'
-    const fileName = `${userId}/avatar-${Date.now()}.${extension}`
-
-    const arrayBuffer = await file.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
-
-    const { data: _data, error } = await supabase.storage
-      .from('profile-media')
-      .upload(fileName, buffer, {
-        contentType: file.type,
-        upsert: true
-      })
-
-    if (error) {
-      throw error
-    }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('profile-media')
-      .getPublicUrl(fileName)
-
-    return publicUrl
+    return result.data.url as string
   }
 
   const handleUpload = async (file: File) => {
@@ -103,8 +104,8 @@ export function AvatarUpload({
       }
       reader.readAsDataURL(file)
 
-      // Upload to Supabase
-      const publicUrl = await uploadToSupabase(file)
+      // Upload via server API route
+      const publicUrl = await uploadViaApi(file)
 
       // Update profile
       await updateProfile.mutateAsync({
@@ -172,7 +173,6 @@ export function AvatarUpload({
   }
 
   const maxSizeMB = (FILE_SIZE_LIMITS.AVATAR / 1024 / 1024).toFixed(1)
-  const _allowedTypes = ALLOWED_IMAGE_TYPES.map(t => t.split('/')[1]).join(', ')
 
   return (
     <div className={cn('w-full', className)}>

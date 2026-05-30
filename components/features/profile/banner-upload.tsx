@@ -4,7 +4,7 @@ import * as React from 'react'
 import { useState, useRef, useEffect } from 'react'
 import { Upload, X, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { useUpdateProfile } from '@/hooks/use-profile'
-import { createClient } from '@/lib/supabase/client'
+import { compressImage } from '@/lib/utils/image-compression'
 import { cn } from '@/lib/utils'
 import { logger } from '@/lib/logger'
 import { toast } from 'sonner'
@@ -15,13 +15,16 @@ import {
 
 interface BannerUploadProps {
   currentBannerUrl?: string | null
-  userId: string
   className?: string
+}
+
+function getCsrfToken(): string | null {
+  const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]*)/)
+  return match ? match[1] : null
 }
 
 export function BannerUpload({
   currentBannerUrl,
-  userId: _userId,
   className
 }: BannerUploadProps) {
   const [isUploading, setIsUploading] = useState(false)
@@ -30,7 +33,6 @@ export function BannerUpload({
   const [error, setError] = useState<string | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const updateProfile = useUpdateProfile()
-  const supabase = createClient()
   const imageRef = useRef<HTMLImageElement>(null)
 
   // Update preview when currentBannerUrl changes
@@ -64,34 +66,34 @@ export function BannerUpload({
     return null
   }
 
-  const uploadToSupabase = async (file: File): Promise<string> => {
-    const userId = (await supabase.auth.getUser()).data.user?.id
-    if (!userId) {
-      throw new Error('Not authenticated')
+  const uploadViaApi = async (file: File): Promise<string> => {
+    // Compress image before upload (max 1200x400, WebP, quality 0.85)
+    const compressed = await compressImage(file, {
+      maxWidth: 1200,
+      maxHeight: 400,
+      quality: 0.85,
+      format: 'webp'
+    })
+
+    const formData = new FormData()
+    formData.append('file', compressed, file.name)
+    formData.append('type', 'banner')
+
+    const csrfToken = getCsrfToken()
+
+    const response = await fetch('/api/upload', {
+      method: 'POST',
+      headers: csrfToken ? { 'x-csrf-token': csrfToken } : {},
+      body: formData,
+    })
+
+    const result = await response.json()
+
+    if (!result.success) {
+      throw new Error(result.error?.message || 'Upload failed')
     }
 
-    const extension = file.name.split('.').pop() || 'jpg'
-    const fileName = `${userId}/banner-${Date.now()}.${extension}`
-
-    const arrayBuffer = await file.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
-
-    const { data: _data, error } = await supabase.storage
-      .from('profile-media')
-      .upload(fileName, buffer, {
-        contentType: file.type,
-        upsert: true
-      })
-
-    if (error) {
-      throw error
-    }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('profile-media')
-      .getPublicUrl(fileName)
-
-    return publicUrl
+    return result.data.url as string
   }
 
   const handleUpload = async (file: File) => {
@@ -131,8 +133,8 @@ export function BannerUpload({
         reader.readAsDataURL(file)
       })
 
-      // Upload to Supabase
-      const publicUrl = await uploadToSupabase(file)
+      // Upload via server API route
+      const publicUrl = await uploadViaApi(file)
 
       // Update profile
       await updateProfile.mutateAsync({
