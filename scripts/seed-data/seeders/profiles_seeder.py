@@ -189,6 +189,8 @@ class ProfilesSeeder:
                 "display_name": profile_data["display_name"],
                 "full_name": profile_data["full_name"],
                 "headline": profile_data["headline"],
+                "avatar_url": profile_data.get("avatar_url"),
+                "banner_url": profile_data.get("banner_url"),
                 "bio": profile_data["bio"],
                 "location": profile_data["location"],
                 "website_url": profile_data.get("website_url"),

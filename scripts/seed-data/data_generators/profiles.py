@@ -6,6 +6,7 @@ Generates complete profile data for all 20 industries
 import random
 import json
 import os
+import urllib.parse
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 
@@ -604,6 +605,8 @@ def generate_complete_profile(
         "full_name": full_name,
         "display_name": full_name,
         "headline": headline,
+        "avatar_url": f"https://api.dicebear.com/7.x/avataaars/svg?seed={urllib.parse.quote(full_name)}",
+        "banner_url": f"https://placehold.co/1200x400/1a1a2e/ffffff?text={urllib.parse.quote(headline[:30] if headline else 'Collabryx')}",
         "bio": generate_bio(
             industry, years_experience, is_founder=random.random() < 0.2
         ),
