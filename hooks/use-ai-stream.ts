@@ -18,7 +18,7 @@ export function useAIStream(options: UseAIStreamOptions) {
   const currentMessageRef = useRef<string>('')
   const abortControllerRef = useRef<AbortController | null>(null)
   const messagesRef = useRef<AIMessage[]>([])
-  const [sessionId] = useState(() => crypto.randomUUID())
+  const [sessionId, setSessionId] = useState(() => options.sessionId || crypto.randomUUID())
 
   // Keep ref in sync with state
   useEffect(() => {
@@ -95,6 +95,10 @@ export function useAIStream(options: UseAIStreamOptions) {
               const parsed = JSON.parse(data)
               if (parsed.error) {
                 throw new Error(parsed.error)
+              }
+              // Sync sessionId from server when provided
+              if (parsed.session_id) {
+                setSessionId(parsed.session_id)
               }
               if (parsed.content) {
                 currentMessageRef.current += parsed.content

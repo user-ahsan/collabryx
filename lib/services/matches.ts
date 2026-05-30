@@ -294,7 +294,14 @@ export async function fetchMatchActivity(
     let query = supabase
       .from("match_activity")
       .select(`
-        *,
+        id,
+        actor_user_id,
+        target_user_id,
+        type,
+        activity,
+        match_percentage,
+        is_read,
+        created_at,
         actor_profile:profiles!match_activity_actor_user_id_fkey (
           id,
           full_name,
@@ -360,10 +367,10 @@ export async function fetchMatchActivity(
 export async function markActivityRead(activityId: string): Promise<{ error: Error | null }> {
   try {
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-    if (!user) {
-      return { error: new Error("Not authenticated") }
+    if (authError || !user) {
+      return { error: new Error(authError?.message || "Not authenticated") }
     }
 
     const { error } = await supabase
@@ -399,7 +406,7 @@ export async function fetchMatchPreferences(): Promise<{
 
     const { data, error } = await supabase
       .from("match_preferences")
-      .select("*")
+      .select("id, user_id, min_match_percentage, interested_in_types, availability_match, created_at, updated_at")
       .eq("user_id", user.id)
       .single()
 
@@ -431,7 +438,7 @@ export async function updateMatchPreferences(
         interested_in_types: preferences.interested_in_types,
         availability_match: preferences.availability_match,
       }, { onConflict: "user_id" })
-      .select()
+      .select('id, user_id, min_match_percentage, interested_in_types, availability_match, created_at, updated_at')
       .single()
 
     if (error) throw error

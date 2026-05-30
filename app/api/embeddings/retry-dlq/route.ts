@@ -1,6 +1,12 @@
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { validateCSRFRequest, requiresCSRF } from "@/lib/csrf";
+
+const DLQRetrySchema = z.object({
+  id: z.string().uuid("Invalid DLQ item ID"),
+  user_id: z.string().uuid("Invalid user ID"),
+});
 
 export async function POST(request: NextRequest) {
   // Validate CSRF token for security
@@ -36,19 +42,21 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json().catch(() => ({}));
-    const { id, user_id } = body;
     
-    if (!id || !user_id) {
+    const validation = DLQRetrySchema.safeParse(body);
+    if (!validation.success) {
       return NextResponse.json(
-        { success: false, error: "Missing required fields: id, user_id" },
+        { success: false, error: "Invalid request body", details: validation.error.errors },
         { status: 400 }
       );
     }
 
+    const { id, user_id } = validation.data;
+
     // Get DLQ item to verify it exists and get semantic text
     const { data: item, error: fetchError } = await supabase
       .from("embedding_dead_letter_queue")
-      .select("*")
+      .select("id, user_id, status, semantic_text")
       .eq("id", id)
       .eq("user_id", user_id)
       .single();

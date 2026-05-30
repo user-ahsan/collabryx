@@ -214,7 +214,7 @@ export function useToggleLikeComment(postId: string) {
           if (comment.id === commentId) {
             return {
               ...comment,
-              user_has_liked: isLiked,
+              user_has_liked: !isLiked,
               like_count: isLiked ? (comment.like_count || 0) - 1 : (comment.like_count || 0) + 1,
             }
           }

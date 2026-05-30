@@ -3,6 +3,14 @@
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { withAudit } from './audit.server'
+import { z } from 'zod'
+
+// ===========================================
+// VALIDATION SCHEMAS
+// ===========================================
+
+const UserIdSchema = z.string().uuid('Invalid user ID')
+const RequestIdSchema = z.string().uuid('Invalid request ID')
 
 // ===========================================
 // CONNECTIONS SERVER ACTIONS
@@ -14,6 +22,12 @@ import { withAudit } from './audit.server'
 export async function sendConnectionRequest(targetUserId: string) {
   const supabase = await createClient()
   
+  // Zod validation
+  const idValidation = UserIdSchema.safeParse(targetUserId)
+  if (!idValidation.success) {
+    return { error: 'Invalid target user ID' }
+  }
+
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
     return { error: 'Unauthorized' }
@@ -24,12 +38,16 @@ export async function sendConnectionRequest(targetUserId: string) {
   }
 
   // Check if already connected or request exists (parameterized via .in() to avoid SQL injection)
-  const { data: existing } = await supabase
+  const { data: existing, error: existingError } = await supabase
     .from('connections')
     .select('id, status')
     .in('requester_id', [user.id, targetUserId])
     .in('receiver_id', [user.id, targetUserId])
     .maybeSingle()
+
+  if (existingError) {
+    return { error: 'Failed to check existing connection' }
+  }
 
   if (existing) {
     return { error: 'Connection already exists or request pending' }
@@ -45,7 +63,7 @@ export async function sendConnectionRequest(targetUserId: string) {
           receiver_id: targetUserId,
           status: 'pending',
         })
-        .select()
+        .select('id, requester_id, receiver_id, status, created_at')
         .single()
 
       if (insertError) throw insertError
@@ -89,6 +107,12 @@ export async function sendConnectionRequest(targetUserId: string) {
 export async function acceptConnectionRequest(requestId: string) {
   const supabase = await createClient()
   
+  // Zod validation
+  const idValidation = RequestIdSchema.safeParse(requestId)
+  if (!idValidation.success) {
+    return { error: 'Invalid request ID' }
+  }
+
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
     return { error: 'Unauthorized' }
@@ -149,6 +173,12 @@ export async function acceptConnectionRequest(requestId: string) {
 export async function declineConnectionRequest(requestId: string) {
   const supabase = await createClient()
   
+  // Zod validation
+  const idValidation = RequestIdSchema.safeParse(requestId)
+  if (!idValidation.success) {
+    return { error: 'Invalid request ID' }
+  }
+
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
     return { error: 'Unauthorized' }
@@ -175,6 +205,12 @@ export async function declineConnectionRequest(requestId: string) {
 export async function removeConnection(userId: string) {
   const supabase = await createClient()
   
+  // Zod validation
+  const idValidation = UserIdSchema.safeParse(userId)
+  if (!idValidation.success) {
+    return { error: 'Invalid user ID' }
+  }
+
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
     return { error: 'Unauthorized' }
@@ -203,6 +239,12 @@ export async function removeConnection(userId: string) {
 export async function cancelConnectionRequest(requestId: string) {
   const supabase = await createClient()
   
+  // Zod validation
+  const idValidation = RequestIdSchema.safeParse(requestId)
+  if (!idValidation.success) {
+    return { error: 'Invalid request ID' }
+  }
+
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
     return { error: 'Unauthorized' }

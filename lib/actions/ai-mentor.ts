@@ -1,10 +1,33 @@
 ﻿'use server'
 
+import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import OpenAI from 'openai'
 import Anthropic from '@anthropic-ai/sdk'
 import { revalidatePath } from 'next/cache'
 import { assembleAndBuildPrompt } from '@/lib/rag/context-assembler'
+
+// ===========================================
+// ZOD VALIDATION SCHEMAS
+// ===========================================
+
+const CreateSessionSchema = z.object({
+  title: z.string().max(200).optional(),
+})
+
+const SendMessageSchema = z.object({
+  sessionId: z.string().uuid('Invalid session ID'),
+  content: z.string().min(1, 'Message cannot be empty').max(2000, 'Message too long'),
+})
+
+const SessionIdSchema = z.object({
+  sessionId: z.string().uuid('Invalid session ID'),
+})
+
+const SaveMessageToProfileSchema = z.object({
+  messageId: z.string().uuid('Invalid message ID'),
+  insight: z.string().min(1, 'Insight cannot be empty').max(500, 'Insight too long'),
+})
 
 // Lazy-initialize AI clients to avoid build-time errors
 let openai: OpenAI | null = null
@@ -195,6 +218,11 @@ async function callAI(messages: Array<{ role: string; content: string }>, system
  * Create new AI mentor session
  */
 export async function createSession(title?: string) {
+  const validation = CreateSessionSchema.safeParse({ title })
+  if (!validation.success) {
+    return { error: new Error('Invalid title') }
+  }
+
   const supabase = await createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
@@ -213,7 +241,7 @@ export async function createSession(title?: string) {
       title: generatedTitle,
       status: 'active',
     })
-    .select()
+    .select('id, user_id, title, status, created_at, updated_at')
     .single()
 
   if (sessionError) {
@@ -256,6 +284,11 @@ export async function getOrCreateActiveSession() {
  * Send message to AI mentor and get response
  */
 export async function sendMessage(sessionId: string, content: string) {
+  const validation = SendMessageSchema.safeParse({ sessionId, content })
+  if (!validation.success) {
+    return { error: new Error(validation.error.errors[0]?.message || 'Invalid input') }
+  }
+
   const supabase = await createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
@@ -330,7 +363,7 @@ export async function sendMessage(sessionId: string, content: string) {
       role: 'assistant',
       content: aiResponse,
     })
-    .select()
+    .select('id, session_id, role, content, is_saved_to_profile, created_at')
     .single()
 
   if (aiMsgError) {
@@ -354,6 +387,11 @@ export async function sendMessage(sessionId: string, content: string) {
  * Get session history
  */
 export async function getSessionHistory(sessionId: string) {
+  const validation = SessionIdSchema.safeParse({ sessionId })
+  if (!validation.success) {
+    return { error: new Error('Invalid session ID') }
+  }
+
   const supabase = await createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
@@ -416,6 +454,11 @@ export async function getUserSessions() {
  * Archive session
  */
 export async function archiveSession(sessionId: string) {
+  const validation = SessionIdSchema.safeParse({ sessionId })
+  if (!validation.success) {
+    return { error: new Error('Invalid session ID') }
+  }
+
   const supabase = await createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 
@@ -442,6 +485,11 @@ export async function archiveSession(sessionId: string) {
  * Save message to profile (user insights)
  */
 export async function saveMessageToProfile(messageId: string, insight: string) {
+  const validation = SaveMessageToProfileSchema.safeParse({ messageId, insight })
+  if (!validation.success) {
+    return { error: new Error(validation.error.errors[0]?.message || 'Invalid input') }
+  }
+
   const supabase = await createClient()
   const { data: { user }, error: authError } = await supabase.auth.getUser()
 

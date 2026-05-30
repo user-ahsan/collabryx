@@ -67,7 +67,7 @@ export async function createPost(formData: FormData) {
           author_id: user.id,
           ...validated.data,
         })
-        .select()
+        .select('id, author_id, content, post_type, intent, link_url, is_pinned, is_archived, reaction_count, comment_count, share_count, version, created_at, updated_at')
         .single()
     },
     'post_create',
@@ -98,13 +98,13 @@ export async function updatePost(postId: string, formData: FormData) {
   }
 
   // Get current post with version
-  const { data: existingPost, error: _fetchError } = await supabase
+  const { data: existingPost, error: fetchError } = await supabase
     .from('posts')
     .select('author_id, version')
     .eq('id', postId)
     .single()
 
-  if (!existingPost || existingPost.author_id !== user.id) {
+  if (fetchError || !existingPost || existingPost.author_id !== user.id) {
     return { error: 'Post not found or unauthorized' }
   }
 
@@ -154,6 +154,12 @@ export async function updatePost(postId: string, formData: FormData) {
 // ===========================================
 export async function deletePost(postId: string) {
   const supabase = await createClient()
+
+  // Validate input
+  const inputValidated = z.string().uuid('Invalid post ID').safeParse(postId)
+  if (!inputValidated.success) {
+    return { error: 'Invalid input', details: inputValidated.error.issues }
+  }
   
   // Get current user
   const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -162,20 +168,20 @@ export async function deletePost(postId: string) {
   }
 
   // Get current version
-  const { data: existingPost } = await supabase
+  const { data: existingPost, error: fetchError } = await supabase
     .from('posts')
     .select('author_id, version')
-    .eq('id', postId)
+    .eq('id', inputValidated.data)
     .single()
 
-  if (!existingPost || existingPost.author_id !== user.id) {
+  if (fetchError || !existingPost || existingPost.author_id !== user.id) {
     return { error: 'Post not found or unauthorized' }
   }
 
   // Soft delete with optimistic locking and audit logging
   const { error, conflict } = await withAudit(
     async () => {
-      const result = await updatePostWithLock(postId, {
+      const result = await updatePostWithLock(inputValidated.data, {
         is_archived: true,
         version: existingPost.version,
       })
@@ -208,6 +214,18 @@ export async function deletePost(postId: string) {
 // ===========================================
 export async function reactToPost(postId: string, reactionType: string) {
   const supabase = await createClient()
+
+  // Validate input
+  const ReactToPostSchema = z.object({
+    postId: z.string().uuid('Invalid post ID'),
+    reactionType: z.enum(['like', 'love', 'celebrate', 'insightful', 'curious']),
+  })
+  const inputValidated = ReactToPostSchema.safeParse({ postId, reactionType })
+  if (!inputValidated.success) {
+    return { error: 'Invalid input', details: inputValidated.error.issues }
+  }
+
+  const { postId: validPostId, reactionType: validReaction } = inputValidated.data
   
   // Get current user
   const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -215,23 +233,21 @@ export async function reactToPost(postId: string, reactionType: string) {
     return { error: 'Unauthorized' }
   }
 
-  // Valid reaction types
-  const validReactions = ['like', 'love', 'celebrate', 'insightful', 'curious']
-  if (!validReactions.includes(reactionType)) {
-    return { error: 'Invalid reaction type' }
-  }
-
   // Check if user already reacted
-  const { data: existingReaction } = await supabase
+  const { data: existingReaction, error: reactionFetchError } = await supabase
     .from('post_reactions')
     .select('id, emoji')
-    .eq('post_id', postId)
+    .eq('post_id', validPostId)
     .eq('user_id', user.id)
     .single()
 
+  if (reactionFetchError && reactionFetchError.code !== 'PGRST116') {
+    return { error: 'Failed to check existing reaction' }
+  }
+
   if (existingReaction) {
     // Toggle off if same reaction
-    if ((existingReaction as { emoji: PostReactionType }).emoji === reactionType) {
+    if ((existingReaction as { emoji: PostReactionType }).emoji === validReaction) {
       const { error } = await supabase
         .from('post_reactions')
         .delete()
@@ -244,7 +260,7 @@ export async function reactToPost(postId: string, reactionType: string) {
       // Update to new reaction
       const { error } = await supabase
         .from('post_reactions')
-        .update({ emoji: reactionType })
+        .update({ emoji: validReaction })
         .eq('id', existingReaction.id)
 
       if (error) {
@@ -256,9 +272,9 @@ export async function reactToPost(postId: string, reactionType: string) {
     const { error } = await supabase
       .from('post_reactions')
       .insert({
-        post_id: postId,
+        post_id: validPostId,
         user_id: user.id,
-        emoji: reactionType,
+        emoji: validReaction,
       })
 
     if (error) {
@@ -269,11 +285,11 @@ export async function reactToPost(postId: string, reactionType: string) {
   // Get updated count for response (non-critical if fails)
   const { count } = await supabase
     .from('post_reactions')
-    .select('*', { count: 'exact', head: true })
-    .eq('post_id', postId)
+    .select('id', { count: 'exact', head: true })
+    .eq('post_id', validPostId)
 
   revalidatePath('/dashboard')
-  revalidatePath(`/post/${postId}`)
+  revalidatePath(`/post/${validPostId}`)
   
   return { success: true, count: count || 0 }
 }
@@ -282,8 +298,14 @@ export async function reactToPost(postId: string, reactionType: string) {
 // SHARE POST (atomic increment)
 // ===========================================
 export async function sharePost(postId: string) {
+  // Validate input
+  const inputValidated = z.string().uuid('Invalid post ID').safeParse(postId)
+  if (!inputValidated.success) {
+    return { error: 'Invalid input', details: inputValidated.error.issues }
+  }
+
   // Use atomic increment to prevent race conditions
-  const { error } = await incrementPostCounter(postId, 'share_count', 1)
+  const { error } = await incrementPostCounter(inputValidated.data, 'share_count', 1)
 
   if (error) {
     logger.db.error('Failed to share post:', error)
@@ -291,7 +313,7 @@ export async function sharePost(postId: string) {
   }
 
   revalidatePath('/dashboard')
-  revalidatePath(`/post/${postId}`)
+  revalidatePath(`/post/${inputValidated.data}`)
   
   return { success: true }
 }
@@ -301,6 +323,18 @@ export async function sharePost(postId: string) {
 // ===========================================
 export async function pinPost(postId: string, pinned: boolean) {
   const supabase = await createClient()
+
+  // Validate input
+  const PinPostSchema = z.object({
+    postId: z.string().uuid('Invalid post ID'),
+    pinned: z.boolean(),
+  })
+  const inputValidated = PinPostSchema.safeParse({ postId, pinned })
+  if (!inputValidated.success) {
+    return { error: 'Invalid input', details: inputValidated.error.issues }
+  }
+
+  const { postId: validPostId, pinned: validPinned } = inputValidated.data
   
   // Get current user
   const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -309,19 +343,19 @@ export async function pinPost(postId: string, pinned: boolean) {
   }
 
   // Get current version
-  const { data: existingPost } = await supabase
+  const { data: existingPost, error: fetchError } = await supabase
     .from('posts')
     .select('author_id, version')
-    .eq('id', postId)
+    .eq('id', validPostId)
     .single()
 
-  if (!existingPost || existingPost.author_id !== user.id) {
+  if (fetchError || !existingPost || existingPost.author_id !== user.id) {
     return { error: 'Post not found or unauthorized' }
   }
 
   // Update with optimistic locking
-  const { error, conflict } = await updatePostWithLock(postId, {
-    is_pinned: pinned,
+  const { error, conflict } = await updatePostWithLock(validPostId, {
+    is_pinned: validPinned,
     version: existingPost.version,
   })
 
@@ -343,6 +377,18 @@ export async function pinPost(postId: string, pinned: boolean) {
 // ===========================================
 export async function archivePost(postId: string, archived: boolean) {
   const supabase = await createClient()
+
+  // Validate input
+  const ArchivePostSchema = z.object({
+    postId: z.string().uuid('Invalid post ID'),
+    archived: z.boolean(),
+  })
+  const inputValidated = ArchivePostSchema.safeParse({ postId, archived })
+  if (!inputValidated.success) {
+    return { error: 'Invalid input', details: inputValidated.error.issues }
+  }
+
+  const { postId: validPostId, archived: validArchived } = inputValidated.data
   
   // Get current user
   const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -351,19 +397,19 @@ export async function archivePost(postId: string, archived: boolean) {
   }
 
   // Get current version
-  const { data: existingPost } = await supabase
+  const { data: existingPost, error: fetchError } = await supabase
     .from('posts')
     .select('author_id, version')
-    .eq('id', postId)
+    .eq('id', validPostId)
     .single()
 
-  if (!existingPost || existingPost.author_id !== user.id) {
+  if (fetchError || !existingPost || existingPost.author_id !== user.id) {
     return { error: 'Post not found or unauthorized' }
   }
 
   // Update with optimistic locking
-  const { error, conflict } = await updatePostWithLock(postId, {
-    is_archived: archived,
+  const { error, conflict } = await updatePostWithLock(validPostId, {
+    is_archived: validArchived,
     version: existingPost.version,
   })
 

@@ -225,13 +225,21 @@ export async function generateMatchesForUser(
   const excludeList = [userId, ...excludeUserIds];
 
   // Fetch blocked users (both directions) to exclude
-  const { data: blockedUsers } = await supabase
-    .from("blocked_users")
-    .select("blocker_id, blocked_id")
-    .or(`blocker_id.eq.${userId},blocked_id.eq.${userId}`);
-  const blockedIds = blockedUsers?.map((b) =>
-    b.blocker_id === userId ? b.blocked_id : b.blocker_id,
-  ) ?? [];
+  // Use separate parameterized queries to avoid SQL injection in .or() (#137)
+  const [{ data: blockedByUser }, { data: blockingUser }] = await Promise.all([
+    supabase
+      .from("blocked_users")
+      .select("blocked_id")
+      .eq("blocker_id", userId),
+    supabase
+      .from("blocked_users")
+      .select("blocker_id")
+      .eq("blocked_id", userId),
+  ]);
+  const blockedIds = [
+    ...(blockedByUser?.map((b) => b.blocked_id) ?? []),
+    ...(blockingUser?.map((b) => b.blocker_id) ?? []),
+  ];
   excludeList.push(...blockedIds);
 
   let query = supabase

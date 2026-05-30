@@ -48,15 +48,15 @@ export async function createComment(formData: FormData) {
           content: validated.data.content,
           parent_id: validated.data.parent_id,
         })
-        .select()
+        .select('id, post_id, author_id, content, parent_id, like_count, created_at, updated_at')
         .single()
-      
+       
       if (commentError) throw commentError
       
       // Update comment count on post within same transaction context
       const { count, error: countError } = await supabase
         .from('comments')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('post_id', validated.data.post_id)
 
       if (countError) throw countError
@@ -89,31 +89,36 @@ export async function createComment(formData: FormData) {
 // ===========================================
 export async function updateComment(commentId: string, content: string) {
   const supabase = await createClient()
+
+  // Validate input
+  const UpdateCommentSchema = z.object({
+    commentId: z.string().uuid('Invalid comment ID'),
+    content: z.string().min(1).max(2000),
+  })
+  const inputValidated = UpdateCommentSchema.safeParse({ commentId, content })
+  if (!inputValidated.success) {
+    return { error: 'Invalid input', details: inputValidated.error.issues }
+  }
   
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
     return { error: 'Unauthorized' }
   }
 
-  const { data: existingComment } = await supabase
+  const { data: existingComment, error: fetchError } = await supabase
     .from('comments')
     .select('author_id, post_id')
-    .eq('id', commentId)
+    .eq('id', inputValidated.data.commentId)
     .single()
 
-  if (!existingComment || existingComment.author_id !== user.id) {
+  if (fetchError || !existingComment || existingComment.author_id !== user.id) {
     return { error: 'Comment not found or unauthorized' }
-  }
-
-  const validated = z.string().min(1).max(2000).safeParse(content)
-  if (!validated.success) {
-    return { error: 'Invalid content' }
   }
 
   const { error } = await supabase
     .from('comments')
-    .update({ content: validated.data })
-    .eq('id', commentId)
+    .update({ content: inputValidated.data.content })
+    .eq('id', inputValidated.data.commentId)
 
   if (error) {
     return { error: 'Failed to update comment' }
@@ -129,6 +134,12 @@ export async function updateComment(commentId: string, content: string) {
 // ===========================================
 export async function deleteComment(commentId: string) {
   const supabase = await createClient()
+
+  // Validate input
+  const inputValidated = z.string().uuid('Invalid comment ID').safeParse(commentId)
+  if (!inputValidated.success) {
+    return { error: 'Invalid input', details: inputValidated.error.issues }
+  }
   
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
@@ -138,7 +149,7 @@ export async function deleteComment(commentId: string) {
   const { data: existingComment, error: fetchError } = await supabase
     .from('comments')
     .select('author_id, post_id')
-    .eq('id', commentId)
+    .eq('id', inputValidated.data)
     .single()
 
   if (fetchError || !existingComment || existingComment.author_id !== user.id) {
@@ -151,14 +162,14 @@ export async function deleteComment(commentId: string) {
       const { error: deleteError } = await supabase
         .from('comments')
         .delete()
-        .eq('id', commentId)
+        .eq('id', inputValidated.data)
 
       if (deleteError) throw deleteError
 
       // Update comment count atomically
       const { count, error: countError } = await supabase
         .from('comments')
-        .select('*', { count: 'exact', head: true })
+        .select('id', { count: 'exact', head: true })
         .eq('post_id', existingComment.post_id)
 
       if (countError) throw countError
@@ -186,23 +197,34 @@ export async function deleteComment(commentId: string) {
 // ===========================================
 export async function reactToComment(commentId: string, reactionType: string) {
   const supabase = await createClient()
+
+  // Validate input
+  const ReactToCommentSchema = z.object({
+    commentId: z.string().uuid('Invalid comment ID'),
+    reactionType: z.enum(['like', 'love', 'celebrate', 'insightful']),
+  })
+  const inputValidated = ReactToCommentSchema.safeParse({ commentId, reactionType })
+  if (!inputValidated.success) {
+    return { error: 'Invalid input', details: inputValidated.error.issues }
+  }
+
+  const { commentId: validCommentId } = inputValidated.data
   
   const { data: { user }, error: authError } = await supabase.auth.getUser()
   if (authError || !user) {
     return { error: 'Unauthorized' }
   }
 
-  const validReactions = ['like', 'love', 'celebrate', 'insightful']
-  if (!validReactions.includes(reactionType)) {
-    return { error: 'Invalid reaction type' }
-  }
-
-  const { data: existingReaction } = await supabase
+  const { data: existingReaction, error: reactionFetchError } = await supabase
     .from('comment_likes')
     .select('id')
-    .eq('comment_id', commentId)
+    .eq('comment_id', validCommentId)
     .eq('user_id', user.id)
     .single()
+
+  if (reactionFetchError && reactionFetchError.code !== 'PGRST116') {
+    return { error: 'Failed to check existing reaction' }
+  }
 
   if (existingReaction) {
     // Toggle off - remove like
@@ -219,7 +241,7 @@ export async function reactToComment(commentId: string, reactionType: string) {
     const { error } = await supabase
       .from('comment_likes')
       .insert({
-        comment_id: commentId,
+        comment_id: validCommentId,
         user_id: user.id,
       })
 
@@ -228,7 +250,7 @@ export async function reactToComment(commentId: string, reactionType: string) {
     }
   }
 
-  revalidatePath(`/post/${commentId}`)
+  revalidatePath(`/post/${validCommentId}`)
   
   return { success: true }
 }

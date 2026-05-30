@@ -95,7 +95,8 @@ export async function fetchComments(
     let query = supabase
       .from("comments")
       .select(`
-        *,
+        id, post_id, author_id, content, parent_id, like_count,
+        created_at, updated_at,
         author:profiles (
           display_name,
           full_name,
@@ -246,7 +247,8 @@ export async function fetchCommentById(commentId: string): Promise<{
     const { data, error } = await supabase
       .from("comments")
       .select(`
-        *,
+        id, post_id, author_id, content, parent_id, like_count,
+        created_at, updated_at,
         author:profiles (
           display_name,
           full_name,
@@ -328,7 +330,7 @@ export async function createComment(
         content: input.content.trim(),
         parent_id: input.parent_id,
       })
-      .select()
+      .select('id, post_id, author_id, content, parent_id, like_count, created_at, updated_at')
       .single()
 
     if (error) throw error
@@ -397,7 +399,7 @@ export async function updateComment(
       })
       .eq("id", commentId)
       .eq("author_id", user.id)
-      .select()
+      .select('id, post_id, author_id, content, parent_id, like_count, created_at, updated_at')
       .single()
 
     if (error) throw error
@@ -494,7 +496,7 @@ export async function likeComment(commentId: string): Promise<{
         comment_id: commentId,
         user_id: user.id,
       })
-      .select()
+      .select('id, comment_id, user_id, created_at')
       .single()
 
     if (error) throw error

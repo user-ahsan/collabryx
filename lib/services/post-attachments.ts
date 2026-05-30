@@ -50,13 +50,13 @@ export async function uploadAttachment(
     }
     
     // Verify user owns the post
-    const { data: post, error: postError } = await supabase
+    const { data: post, error: postFetchError } = await supabase
       .from("posts")
       .select("author_id")
       .eq("id", input.postId)
       .single()
     
-    if (postError || !post) {
+    if (postFetchError || !post) {
       return { data: null, error: new Error("Post not found") }
     }
     
@@ -101,7 +101,7 @@ export async function uploadAttachment(
         mime_type: input.file.type,
         order_index: input.orderIndex ?? 0
       })
-      .select()
+      .select('id, post_id, file_url, file_type, file_name, file_size, mime_type, width, height, order_index, created_at')
       .single()
     
     if (dbError) {
@@ -191,13 +191,13 @@ export async function deleteAttachment(
     }
     
     // Verify user owns the post
-    const { data: post } = await supabase
+    const { data: post, error: postOwnerError } = await supabase
       .from("posts")
       .select("author_id")
       .eq("id", attachment.post_id)
       .single()
     
-    if (!post || post.author_id !== user.id) {
+    if (postOwnerError || !post || post.author_id !== user.id) {
       return { error: new Error("Not authorized to delete this attachment") }
     }
     
@@ -240,7 +240,7 @@ export async function getPostAttachments(
     
     const { data, error } = await supabase
       .from("post_attachments")
-      .select("*")
+      .select("id, post_id, file_url, file_type, file_name, file_size, mime_type, width, height, order_index, created_at")
       .eq("post_id", postId)
       .order("order_index", { ascending: true })
     

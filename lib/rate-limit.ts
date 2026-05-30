@@ -56,16 +56,20 @@ const RATE_LIMITS = {
 } as const
 
 // In-memory store for single-instance deployments (development/local)
-// Limitations:
-// - Resets on server restart
-// - Does not work across multiple serverless instances (Vercel, etc.)
-// - Each serverless function instance has its own isolated store
 //
+// ⚠️ PRODUCTION LIMITATIONS:
+// - Resets on server restart (loses all rate limit state)
+// - Does NOT work across multiple serverless instances (Vercel, Lambda, etc.)
+// - Each serverless function instance has its own isolated Map
+// - Users can bypass limits by hitting different function instances
 //
-// For production with multiple instances, use:
-// - Supabase RPC: Create a rate_limit_check RPC function
+// ✅ PRODUCTION FIX: Implement DB-backed rate limiting
+//    Option A: Supabase RPC function `rate_limit_check(key TEXT, max_requests INT, window_sec INT)`
+//    Option B: Use Upstash Redis (serverless-compatible, TTL-based counters)
+//    Option C: Use Vercel KV (if on Vercel Pro)
 //
-// TODO: Implement distributed rate limiting with Supabase for production
+// TODO: Implement distributed rate limiting with a DB/Redis backend before production deployment
+//       Tracked at: lib/rate-limit.ts — migration to distributed storage required
 const store = new Map<string, RateLimitEntry>()
 
 function cleanup() {

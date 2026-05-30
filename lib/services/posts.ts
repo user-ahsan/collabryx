@@ -97,7 +97,9 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
     let query = supabase
       .from("posts")
       .select(`
-        *,
+        id, author_id, content, post_type, intent, link_url,
+        is_pinned, is_archived, reaction_count, comment_count, share_count,
+        version, created_at, updated_at,
         author:profiles (
           full_name,
           display_name,
@@ -420,7 +422,9 @@ export async function fetchPostById(postId: string): Promise<{
     const { data, error } = await supabase
       .from("posts")
       .select(`
-        *,
+        id, author_id, content, post_type, intent, link_url,
+        is_pinned, is_archived, reaction_count, comment_count, share_count,
+        version, created_at, updated_at,
         author:profiles (
           full_name,
           display_name,
@@ -492,7 +496,7 @@ export async function createPost(input: CreatePostInput): Promise<{
         link_url: input.link_url,
         is_pinned: input.is_pinned || false,
       })
-      .select()
+      .select('id, author_id, content, post_type, intent, link_url, is_pinned, is_archived, reaction_count, comment_count, share_count, version, created_at, updated_at')
       .single()
 
     if (error) throw error
@@ -574,7 +578,7 @@ export async function updatePostWithLock(
         .eq("id", postId)
         .eq("author_id", user.id)
         .eq("version", updates.version)
-        .select()
+        .select('id, author_id, content, post_type, intent, link_url, is_pinned, is_archived, reaction_count, comment_count, share_count, version, created_at, updated_at')
         .single()
 
       if (error) {
@@ -697,14 +701,14 @@ export async function updatePostCounterWithLock(
         })
         .eq("id", postId)
         .eq("version", expectedVersion)
-        .select()
+        .select('id, version')
         .single()
 
       if (error || !data) {
         if (attempt < maxRetries) {
           const currentPost = await supabase
             .from("posts")
-            .select()
+            .select('version')
             .eq("id", postId)
             .single()
 
@@ -762,7 +766,7 @@ export async function addReaction(
         },
         { onConflict: "post_id,user_id" }
       )
-      .select()
+      .select('id, post_id, user_id, emoji, created_at')
       .single()
 
     if (error) throw error
@@ -825,13 +829,13 @@ export async function addAttachment(
     }
 
     // Verify user owns the post
-    const { data: post } = await supabase
+    const { data: post, error: postFetchError } = await supabase
       .from("posts")
       .select("author_id")
       .eq("id", input.post_id)
       .single()
 
-    if (!post || post.author_id !== user.id) {
+    if (postFetchError || !post || post.author_id !== user.id) {
       return { data: null, error: new Error("Not authorized to add attachments to this post") }
     }
 
@@ -847,7 +851,7 @@ export async function addAttachment(
         width: input.width,
         height: input.height,
       })
-      .select()
+      .select('id, post_id, file_url, file_type, file_name, file_size, mime_type, width, height, order_index, created_at')
       .single()
 
     if (error) throw error

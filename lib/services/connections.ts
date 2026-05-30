@@ -71,7 +71,13 @@ export async function fetchConnectionRequests(): Promise<{
     const { data: connections, error } = await supabase
       .from("connections")
       .select(`
-        *,
+        id,
+        requester_id,
+        receiver_id,
+        status,
+        message,
+        created_at,
+        updated_at,
         requester:profiles (
           display_name,
           full_name,
@@ -133,7 +139,13 @@ export async function fetchConnections(
 
     // Use separate queries instead of template-literal .or() to avoid injection (#137)
     const queryBase = `
-      *,
+      id,
+      requester_id,
+      receiver_id,
+      status,
+      message,
+      created_at,
+      updated_at,
       requester:profiles (
         display_name,
         full_name,
@@ -272,7 +284,7 @@ export async function sendConnectionRequest(
           status: "pending",
           message: input.message?.trim(),
         })
-        .select()
+        .select('id, requester_id, receiver_id, status, message, created_at')
         .single()
       if (insertError) throw insertError
       data = inserted
@@ -378,7 +390,7 @@ export async function acceptConnectionRequest(
           updated_at: new Date().toISOString(),
         })
         .eq("id", connectionId)
-        .select()
+        .select('id, requester_id, receiver_id, status, updated_at')
         .single()
       if (updateError) throw updateError
       acceptResult = updated
@@ -402,7 +414,7 @@ export async function acceptConnectionRequest(
             participant_1: participant1,
             participant_2: participant2,
           })
-          .select()
+          .select('id')
           .single()
       } catch (err) {
         // Ignore unique constraint violations (conversation may already exist)

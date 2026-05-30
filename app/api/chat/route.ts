@@ -78,16 +78,20 @@ export async function POST(request: NextRequest) {
     // Get or create session
     let sessionId = session_id
     if (!sessionId) {
-      const { data: session } = await supabase
+      const { data: session, error: insertError } = await supabase
         .from('ai_mentor_sessions')
         .insert({
           user_id: user.id,
           title: message.slice(0, 50) + (message.length > 50 ? '...' : ''),
           status: 'active',
         })
-        .select()
+        .select('id')
         .single()
-      sessionId = session?.id
+
+      if (insertError || !session) {
+        return errorResponse('SESSION_CREATE_ERROR', 'Failed to create session', 500)
+      }
+      sessionId = session.id
     } else {
       // Verify session ownership when session_id is provided
       const { data: existingSession, error: sessionError } = await supabase
@@ -103,13 +107,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Save user message
-    await supabase
+    const { error: userInsertError } = await supabase
       .from('ai_mentor_messages')
       .insert({
         session_id: sessionId,
         role: 'user',
         content: message,
       })
+
+    if (userInsertError) {
+      return errorResponse('MESSAGE_SAVE_ERROR', 'Failed to save message', 500)
+    }
 
     // Get conversation history
     const { data: messages } = await supabase
@@ -141,7 +149,7 @@ Be concise, encouraging, and practical. Focus on actionable advice.`
       
       const anthropicClient = getAnthropic()
       const response = await anthropicClient.messages.create({
-        model: 'claude-3-haiku-20240307',
+        model: process.env.ANTHROPIC_MODEL || 'claude-3-haiku-20240307',
         max_tokens: 1000,
         messages: anthropicMessages,
         system: systemPrompt,
@@ -161,7 +169,7 @@ Be concise, encouraging, and practical. Focus on actionable advice.`
       
       const openaiClient = getOpenAI()
       const response = await openaiClient.chat.completions.create({
-        model: 'gpt-4-turbo-preview',
+        model: process.env.OPENAI_MODEL || 'gpt-4-turbo-preview',
         messages: openaiMessages,
         max_tokens: 1000,
         temperature: 0.7,
@@ -171,15 +179,19 @@ Be concise, encouraging, and practical. Focus on actionable advice.`
     }
 
     // Save AI response
-    const { data: aiMessage } = await supabase
+    const { data: aiMessage, error: aiInsertError } = await supabase
       .from('ai_mentor_messages')
       .insert({
         session_id: sessionId,
         role: 'assistant',
         content: aiResponse,
       })
-      .select()
+      .select('id, session_id, role, content, is_saved_to_profile, created_at')
       .single()
+
+    if (aiInsertError || !aiMessage) {
+      return errorResponse('AI_RESPONSE_SAVE_ERROR', 'Failed to save AI response', 500)
+    }
 
     return successResponse({
       message: aiMessage,

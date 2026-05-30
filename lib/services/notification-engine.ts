@@ -48,9 +48,8 @@ export interface CleanupResult {
 /**
  * SECURITY: Service role client bypasses RLS policies.
  * All database operations through this client run with admin privileges.
- * Ensure callers validate authorization before calling these functions,
- * and never expose this client to the browser.
- * TODO: Add explicit authorization checks before each database operation.
+ * Callers MUST pass a verified callerId (from auth.getUser()) for authorization
+ * validation. Never expose this client to the browser.
  */
 function getServiceClient() {
   const serviceRoleKey =
@@ -58,11 +57,28 @@ function getServiceClient() {
   if (!serviceRoleKey || !process.env.NEXT_PUBLIC_SUPABASE_URL) {
     throw new Error("Supabase service role credentials not configured");
   }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return createSupabaseClient<any>(
+  return createSupabaseClient<import("@/types/database.types").Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     serviceRoleKey,
   );
+}
+
+/**
+ * Verify the caller is authorized to send notifications to the target user.
+ * - The caller ID must match actorId when actorId is provided
+ * - Prevents impersonation: only the acting user can send as themselves
+ */
+function verifyCallerAuthorization(
+  callerId: string,
+  actorId?: string,
+): { authorized: boolean; reason?: string } {
+  if (actorId && callerId !== actorId) {
+    return {
+      authorized: false,
+      reason: "Caller does not match actor — impersonation attempt blocked",
+    };
+  }
+  return { authorized: true };
 }
 
 const TYPE_TO_PREF: Record<string, keyof NotificationPreference> = {
@@ -74,12 +90,27 @@ const TYPE_TO_PREF: Record<string, keyof NotificationPreference> = {
   system: "push_enabled",
 };
 
+export interface SendNotificationOptions {
+  /** The authenticated caller's user ID — required for authorization */
+  callerId?: string;
+}
+
 export async function sendNotification(
   input: NotificationInput,
+  options?: SendNotificationOptions,
 ): Promise<SendNotificationResult> {
   const validation = NotificationSchema.safeParse(input);
   if (!validation.success) {
     return { success: false, error: validation.error.errors[0]?.message };
+  }
+
+  // Authorization: verify the caller is authorized to act as the actor
+  if (options?.callerId) {
+    const auth = verifyCallerAuthorization(options.callerId, input.actorId);
+    if (!auth.authorized) {
+      log.warn("Notification auth blocked", { reason: auth.reason, userId: input.userId, callerId: options.callerId });
+      return { success: false, error: auth.reason };
+    }
   }
 
   const allowed = await checkNotificationPreferences(input.userId, input.type);

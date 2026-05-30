@@ -78,6 +78,12 @@ export async function POST(request: NextRequest) {
     }
     
     const { user_id, type, content, actor_id, actor_name, actor_avatar, resource_type, resource_id } = validationResult.data;
+
+    // Authorization: the authenticated user must match actor_id
+    // Prevents impersonation — only the acting user can send as themselves
+    if (actor_id && actor_id !== user.id) {
+      return errorResponse('FORBIDDEN', 'Cannot send notifications as another user', 403)
+    }
     
     // Verify recipient exists
     const { data: recipient } = await supabase
@@ -103,7 +109,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Send notification via notification-engine service
+    // Send notification via notification-engine service with caller authorization
     const result = await sendNotification({
       userId: user_id,
       type,
@@ -113,7 +119,7 @@ export async function POST(request: NextRequest) {
       actorAvatar: actor_avatar,
       resourceType: resource_type,
       resourceId: resource_id,
-    });
+    }, { callerId: user.id });
 
     return NextResponse.json({
       success: result.success,

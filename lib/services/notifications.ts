@@ -69,16 +69,25 @@ export async function fetchNotifications(
 }> {
   try {
     const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-    if (!user) {
+    if (authError || !user) {
       return { data: [], error: new Error("Not authenticated") }
     }
 
     let query = supabase
       .from("notifications")
       .select(`
-        *,
+        id,
+        user_id,
+        type,
+        actor_id,
+        content,
+        resource_type,
+        resource_id,
+        is_read,
+        is_actioned,
+        created_at,
         actor:profiles (
           full_name,
           display_name,
@@ -157,7 +166,7 @@ export async function markNotificationAsRead(
       })
       .eq("id", notificationId)
       .eq("user_id", user.id)
-      .select()
+      .select('id, user_id, type, actor_id, content, resource_type, resource_id, is_read, is_actioned, created_at')
       .single()
 
     if (error) throw error
@@ -298,7 +307,7 @@ export async function getUnreadCount(): Promise<{
 
     const { count, error } = await supabase
       .from("notifications")
-      .select("*", { count: "exact", head: true })
+      .select("id", { count: "exact", head: true })
       .eq("user_id", user.id)
       .eq("is_read", false)
 
@@ -345,7 +354,7 @@ export async function createNotification(
         resource_type: input.resource_type,
         resource_id: input.resource_id,
       })
-      .select()
+      .select('id, user_id, type, actor_id, content, resource_type, resource_id, is_read, is_actioned, created_at')
       .single()
 
     if (error) throw error

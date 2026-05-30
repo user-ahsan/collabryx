@@ -1,7 +1,16 @@
 'use server'
 
+import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+
+// ===========================================
+// ZOD VALIDATION SCHEMAS
+// ===========================================
+
+const NotificationIdSchema = z.object({
+  notificationId: z.string().uuid('Invalid notification ID'),
+})
 
 // ===========================================
 // NOTIFICATIONS SERVER ACTIONS
@@ -11,6 +20,11 @@ import { revalidatePath } from 'next/cache'
 // MARK NOTIFICATION AS READ
 // ===========================================
 export async function markNotificationAsRead(notificationId: string) {
+  const validation = NotificationIdSchema.safeParse({ notificationId })
+  if (!validation.success) {
+    return { error: 'Invalid notification ID' }
+  }
+
   const supabase = await createClient()
   
   const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -63,6 +77,11 @@ export async function markAllNotificationsAsRead() {
 // DELETE NOTIFICATION
 // ===========================================
 export async function deleteNotification(notificationId: string) {
+  const validation = NotificationIdSchema.safeParse({ notificationId })
+  if (!validation.success) {
+    return { error: 'Invalid notification ID' }
+  }
+
   const supabase = await createClient()
   
   const { data: { user }, error: authError } = await supabase.auth.getUser()
@@ -124,7 +143,7 @@ export async function getUnreadCount() {
 
   const { count } = await supabase
     .from('notifications')
-    .select('*', { count: 'exact', head: true })
+    .select('id', { count: 'exact', head: true })
     .eq('user_id', user.id)
     .eq('is_read', false)
 

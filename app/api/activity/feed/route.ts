@@ -21,6 +21,14 @@ const FeedQuerySchema = z.object({
 
 export async function GET(request: Request) {
   try {
+    // Guard: DEVELOPMENT_MODE must only apply in development environment
+    if (process.env.DEVELOPMENT_MODE === 'true' && process.env.NODE_ENV !== 'development') {
+      return NextResponse.json(
+        { error: 'Development mode is not allowed in production' },
+        { status: 403 }
+      )
+    }
+
     const supabase = await createClient()
     
     // Get authenticated user
@@ -53,7 +61,14 @@ export async function GET(request: Request) {
     let query = supabase
       .from("match_activity")
       .select(`
-        *,
+        id,
+        actor_user_id,
+        target_user_id,
+        type,
+        activity,
+        match_percentage,
+        is_read,
+        created_at,
         actor_profile:profiles!match_activity_actor_user_id_fkey (
           id,
           display_name,

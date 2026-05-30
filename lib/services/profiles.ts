@@ -31,7 +31,7 @@ export async function fetchCurrentProfile(): Promise<{
     const { data, error } = await supabase
       .from("profiles")
       .select(`
-        id, email, full_name, display_name, headline, bio, location, avatar_url, banner_url, website_url, collaboration_readiness, is_verified, verification_type, university, profile_completion, looking_for, onboarding_completed, created_at, updated_at,
+        id, full_name, display_name, headline, bio, location, avatar_url, banner_url, website_url, collaboration_readiness, is_verified, verification_type, university, profile_completion, looking_for, onboarding_completed, created_at, updated_at,
         skills:user_skills(id, user_id, skill_name, proficiency, is_primary, created_at),
         interests:user_interests(id, user_id, interest, created_at),
         experiences:user_experiences(id, user_id, title, company, description, start_date, end_date, is_current, order_index, created_at),
@@ -70,7 +70,7 @@ export async function fetchProfileById(userId: string): Promise<{
     const { data, error } = await supabase
       .from("profiles")
       .select(`
-        id, email, full_name, display_name, headline, bio, location, avatar_url, banner_url, website_url, collaboration_readiness, is_verified, verification_type, university, profile_completion, looking_for, onboarding_completed, created_at, updated_at,
+        id, full_name, display_name, headline, bio, location, avatar_url, banner_url, website_url, collaboration_readiness, is_verified, verification_type, university, profile_completion, looking_for, onboarding_completed, created_at, updated_at,
         skills:user_skills(id, user_id, skill_name, proficiency, is_primary, created_at),
         interests:user_interests(id, user_id, interest, created_at),
         experiences:user_experiences(id, user_id, title, company, description, start_date, end_date, is_current, order_index, created_at),
@@ -114,7 +114,7 @@ export async function updateProfile(
       .from("profiles")
       .update(updates)
       .eq("id", user.id)
-      .select("id, email, full_name, display_name, headline, bio, avatar_url, banner_url, location, website_url, collaboration_readiness, is_verified, verification_type, university, profile_completion, looking_for, onboarding_completed, created_at, updated_at")
+      .select("id, full_name, display_name, headline, bio, avatar_url, banner_url, location, website_url, collaboration_readiness, is_verified, verification_type, university, profile_completion, looking_for, onboarding_completed, created_at, updated_at")
       .single()
 
     if (error) throw error
