@@ -18,6 +18,41 @@ const mockSignOut = vi.fn().mockResolvedValue({ error: null })
 const mockRouterPush = vi.fn()
 const mockOpenSettings = vi.fn()
 
+vi.mock("@/hooks/use-matches-query", () => ({
+  useMatches: () => ({ data: [], isLoading: false, error: null }),
+  useDismissMatch: () => ({ mutate: vi.fn() }),
+  useConnectWithMatch: () => ({ mutate: vi.fn() }),
+  useMatchActivity: () => ({ data: [], isLoading: false }),
+  useMarkActivityRead: () => ({ mutate: vi.fn() }),
+  useMatchPreferences: () => ({ data: null, isLoading: false }),
+  useUpdateMatchPreferences: () => ({ mutate: vi.fn() }),
+  useGenerateMatches: () => ({ mutate: vi.fn() }),
+  useGenerateBatchMatches: () => ({ mutate: vi.fn() }),
+  useCheckMatchGenerationStatus: () => ({ data: null, isLoading: false }),
+}))
+
+vi.mock("@/hooks/use-connection-requests", () => ({
+  useConnectionRequests: () => ({
+    receivedRequests: [],
+    sentRequests: [],
+    isLoading: false,
+    error: null,
+    acceptRequest: vi.fn(),
+    declineRequest: vi.fn(),
+    cancelRequest: vi.fn(),
+    refreshRequests: vi.fn(),
+  }),
+}))
+
+vi.mock("@/components/theme-provider", () => ({
+  ThemeProvider: ({ children }: { children: React.ReactNode }) => React.createElement(React.Fragment, null, children),
+  useTheme: () => ({
+    theme: "light" as const,
+    setTheme: vi.fn(),
+    resolvedTheme: "light" as const,
+  }),
+}))
+
 vi.mock('@/lib/supabase/client', () => ({
   createClient: () => ({
     auth: {

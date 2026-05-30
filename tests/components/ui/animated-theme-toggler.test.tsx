@@ -11,6 +11,18 @@ import { render, screen, fireEvent, cleanup } from '@testing-library/react'
 import React from 'react'
 
 // ---------------------------------------------------------------------------
+// Mock theme-provider (useTheme needs ThemeProvider, mock it instead)
+// ---------------------------------------------------------------------------
+vi.mock("@/components/theme-provider", () => ({
+  ThemeProvider: ({ children }: { children: React.ReactNode }) => React.createElement(React.Fragment, null, children),
+  useTheme: () => ({
+    theme: "light" as const,
+    setTheme: vi.fn(),
+    resolvedTheme: "light" as const,
+  }),
+}))
+
+// ---------------------------------------------------------------------------
 // Test-local mocks
 // ---------------------------------------------------------------------------
 const classListAdd = vi.fn()

@@ -11,6 +11,51 @@ import { render, screen, fireEvent, cleanup } from '@testing-library/react'
 import React from 'react'
 
 // ---------------------------------------------------------------------------
+// Mock useMatches and useConnectionRequests (avoid TanStack Query dependency)
+// ---------------------------------------------------------------------------
+vi.mock("@/hooks/use-matches-query", () => ({
+  useMatches: () => ({
+    data: [
+      { id: "m1", matched_user_id: "u1", score: 92, status: "pending" },
+      { id: "m2", matched_user_id: "u2", score: 88, status: "pending" },
+      { id: "m3", matched_user_id: "u3", score: 85, status: "pending" },
+      { id: "m4", matched_user_id: "u4", score: 81, status: "pending" },
+      { id: "m5", matched_user_id: "u5", score: 78, status: "pending" },
+      { id: "m6", matched_user_id: "u6", score: 75, status: "pending" },
+      { id: "m7", matched_user_id: "u7", score: 72, status: "pending" },
+      { id: "m8", matched_user_id: "u8", score: 68, status: "pending" },
+    ],
+    isLoading: false,
+    error: null,
+  }),
+  useDismissMatch: () => ({ mutate: vi.fn(), mutateAsync: vi.fn() }),
+  useConnectWithMatch: () => ({ mutate: vi.fn(), mutateAsync: vi.fn() }),
+  useMatchActivity: () => ({ data: [], isLoading: false }),
+  useMarkActivityRead: () => ({ mutate: vi.fn() }),
+  useMatchPreferences: () => ({ data: null, isLoading: false }),
+  useUpdateMatchPreferences: () => ({ mutate: vi.fn() }),
+  useGenerateMatches: () => ({ mutate: vi.fn() }),
+  useGenerateBatchMatches: () => ({ mutate: vi.fn() }),
+  useCheckMatchGenerationStatus: () => ({ data: null, isLoading: false }),
+}))
+
+vi.mock("@/hooks/use-connection-requests", () => ({
+  useConnectionRequests: () => ({
+    receivedRequests: [
+      { id: "cr1", requester_id: "u1", status: "pending", created_at: "2025-01-01" },
+      { id: "cr2", requester_id: "u2", status: "pending", created_at: "2025-01-02" },
+    ],
+    sentRequests: [],
+    isLoading: false,
+    error: null,
+    acceptRequest: vi.fn().mockResolvedValue(true),
+    declineRequest: vi.fn().mockResolvedValue(true),
+    cancelRequest: vi.fn().mockResolvedValue(true),
+    refreshRequests: vi.fn().mockResolvedValue(undefined),
+  }),
+}))
+
+// ---------------------------------------------------------------------------
 // Mock useUser hook
 // ---------------------------------------------------------------------------
 const mockUserState = {
