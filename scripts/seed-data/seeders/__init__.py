@@ -1,11 +1,26 @@
-"""Seeders package"""
+"""Seeders package - atomic seeder modules"""
 
 __all__ = [
     "profiles_seeder",
-    "content_seeder",
-    "social_seeder",
-    "messaging_seeder",
+    "posts_seeder",
+    "connections_seeder",
+    "matches_seeder",
+    "conversations_seeder",
+    "messages_seeder",
     "notifications_seeder",
     "mentor_seeder",
     "embeddings_seeder",
+    "match_preferences_seeder",
+    "blocked_users_seeder",
+    "match_activity_seeder",
+    "post_attachments_seeder",
+    "comment_likes_seeder",
+    "post_impressions_seeder",
+    "feed_seeder",
+    "embedding_rate_limits_seeder",
+    "audit_logs_seeder",
+    "moderation_logs_seeder",
+    "user_analytics_seeder",
+    "platform_analytics_seeder",
+    "embedding_dead_letter_queue_seeder",
 ]

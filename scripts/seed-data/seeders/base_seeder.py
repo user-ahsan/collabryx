@@ -263,6 +263,35 @@ class BaseSeeder:
         except Exception as e:
             return set()
 
+    def fetch_existing_ids(self, table_name: str, id_field: str = "id", additional_fields=None):
+        """Generic method to fetch existing IDs/records from any table.
+
+        Args:
+            table_name: Table name to query
+            id_field: Primary/unique key field name (default: "id")
+            additional_fields: Extra fields to select alongside id_field
+        """
+        try:
+            cache_key = f"fetch_{table_name}"
+            if cache_key in self._existing_data_cache:
+                return self._existing_data_cache[cache_key]
+
+            select_fields = id_field
+            if additional_fields:
+                select_fields += f",{','.join(additional_fields)}"
+
+            url = f"{config.SUPABASE_REST_URL}/{table_name}?select={select_fields}"
+            response = self.http.get(url, headers=config.API_HEADERS)
+            response.raise_for_status()
+            records = response.json() or []
+
+            self._existing_data_cache[cache_key] = records
+            return records
+
+        except Exception as e:
+            print(f"{Fore.YELLOW}  \u26a0\ufe0f Could not fetch {table_name}: {e}{Style.RESET_ALL}")
+            return []
+
     # =========================================================================
     # UPSERT & CREATE UTILITIES
     # =========================================================================
