@@ -1,4 +1,4 @@
-import { describe, test, expect, beforeEach, afterEach } from 'vitest'
+import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest'
 
 // The source module under test
 import { validateEnv, validateEnvRuntime } from '@/lib/validate-env'
@@ -167,7 +167,7 @@ describe('validateEnvRuntime', () => {
 
   test('does not throw in non-production environment', async () => {
     // Arrange
-    process.env.NODE_ENV = 'development'
+    vi.stubEnv('NODE_ENV', 'development')
 
     // Act & Assert — required vars set by beforeEach, so validateEnv passes
     await expect(validateEnvRuntime()).resolves.toBeUndefined()
@@ -182,7 +182,7 @@ describe('validateEnvRuntime', () => {
 
   test('throws in production when required vars are missing', async () => {
     // Arrange
-    process.env.NODE_ENV = 'production'
+    vi.stubEnv('NODE_ENV', 'production')
     // Override beforeEach defaults — remove required vars to trigger failure
     delete process.env.NEXT_PUBLIC_SUPABASE_URL
     delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -195,7 +195,7 @@ describe('validateEnvRuntime', () => {
 
   test('resolves in production when all required vars are present', async () => {
     // Arrange
-    process.env.NODE_ENV = 'production'
+    vi.stubEnv('NODE_ENV', 'production')
     process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test-project.supabase.co'
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0In0.test'
     process.env.SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0LXNlcnZpY2UifQ.test'
