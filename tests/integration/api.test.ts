@@ -267,53 +267,49 @@ describe('API Integration Tests', () => {
   })
 
   describe('Embeddings Endpoint', () => {
-    it('should reject requests without userId in body (uses user_id from auth)', async () => {
+    it('should accept requests without userId in body (gets user_id from auth)', async () => {
       const { POST } = await import('@/app/api/embeddings/generate/route')
       
-      // Mock authenticated user
+      // Mock authenticated user — user_id comes from auth context
       mockSupabaseClient.auth.getUser.mockResolvedValueOnce({
         data: { user: { id: 'user-123' } },
         error: null,
       })
       
-      // Mock embedding check - no existing embedding
+      // from() calls in route order:
+      // 1. profile_embeddings check (line 190)
       const embBuilder = getFreshMockBuilder()
       embBuilder.single.mockResolvedValueOnce({ data: null, error: { message: 'Not found' } })
       mockSupabaseClient.from.mockReturnValueOnce(embBuilder)
 
-      // Mock profile check
+      // 2. updateEmbeddingStatus → dbClient.from("profile_embeddings").upsert()
+      const statusUpsertBuilder = getFreshMockBuilder()
+      mockSupabaseClient.from.mockReturnValueOnce(statusUpsertBuilder)
+
+      // 3. profiles lookup (line 212)
       const profileBuilder = getFreshMockBuilder()
       profileBuilder.single.mockResolvedValueOnce({ data: { id: 'user-123' }, error: null })
       mockSupabaseClient.from.mockReturnValueOnce(profileBuilder)
 
-      // Mock skills select
+      // 4. user_skills lookup (line 227)
       const skillsBuilder = getFreshMockBuilder()
-      skillsBuilder.eq.mockResolvedValueOnce({ data: [], error: null })
       mockSupabaseClient.from.mockReturnValueOnce(skillsBuilder)
 
-      // Mock interests select
+      // 5. user_interests lookup (line 233)
       const interestsBuilder = getFreshMockBuilder()
-      interestsBuilder.eq.mockResolvedValueOnce({ data: [], error: null })
       mockSupabaseClient.from.mockReturnValueOnce(interestsBuilder)
-
-      // Mock upsert
-      const upsertBuilder = getFreshMockBuilder()
-      upsertBuilder.upsert.mockResolvedValueOnce({ data: null, error: null })
-      mockSupabaseClient.from.mockReturnValueOnce(upsertBuilder)
-
-
 
       const request = new NextRequest('http://localhost/api/embeddings/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: 'test text for embedding' }),
+        // No user_id in body — the route gets it from auth context
+        body: JSON.stringify({}),
       })
 
       const response = await POST(request)
 
-      // Should work since user_id comes from auth, not body
-      // 503 possible if backend service not available, 404 if resource not found
-      expect([200, 400, 401, 404, 500, 503]).toContain(response.status)
+      // No backend configured → returns 503
+      expect(response.status).toBe(503)
     })
 
     it('should handle request with user_id in body', async () => {

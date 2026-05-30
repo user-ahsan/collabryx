@@ -3,12 +3,17 @@ import { render, screen, fireEvent } from '@testing-library/react'
 import React from 'react'
 import { ErrorBoundary } from '@/components/shared/error-boundary'
 
-// Mock window.location.reload
-const reloadMock = vi.fn()
-Object.defineProperty(window, 'location', {
-  value: { reload: reloadMock },
-  writable: true,
-})
+// Mock next/navigation useRouter
+const refreshMock = vi.fn()
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    refresh: refreshMock,
+    push: vi.fn(),
+    replace: vi.fn(),
+    back: vi.fn(),
+    prefetch: vi.fn(),
+  }),
+}))
 
 // Mock window.history.back
 const backMock = vi.fn()
@@ -64,7 +69,7 @@ describe('ErrorBoundary', () => {
     expect(screen.queryByText('Something went wrong')).not.toBeInTheDocument()
   })
 
-  it('should reset state and reload on "Try Again" button click', () => {
+  it('should reset state and refresh on "Try Again" button click', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {})
 
     render(
@@ -76,7 +81,7 @@ describe('ErrorBoundary', () => {
     const tryAgainButton = screen.getByRole('button', { name: /try again/i })
     fireEvent.click(tryAgainButton)
 
-    expect(reloadMock).toHaveBeenCalled()
+    expect(refreshMock).toHaveBeenCalled()
   })
 
   it('should navigate back on "Go Back" button click', () => {
