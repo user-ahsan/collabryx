@@ -13,20 +13,9 @@ import { sanitizeText, stripHtml, sanitizeMarkdown, escapeHtml } from '@/lib/uti
 function sanitizeAIMessage(input: string, maxLength = 2000): string {
   let result = input
 
-  // 1. Strip HTML/script tags
-  result = stripHtml(result)
-
-  // 2. Sanitize markdown (remove script/event handlers)
-  result = sanitizeMarkdown(result)
-
-  // 3. General text sanitization (control chars, trim, max length)
-  result = sanitizeText(result, { maxLength })
-
-  // 4. Neutralize common prompt-injection delimiters
-  // Replace triple-backtick fences that could be used to "break out" of system prompts
-  result = result.replace(/```/g, '` ` `')
-
-  // 5. Neutralize known role-override and jailbreak patterns
+  // 1. Neutralize known role-override and jailbreak patterns FIRST
+  //    (must run before stripHtml so that delimiter injections like <|system|>
+  //     are caught before the angle brackets get stripped as HTML)
   const jailbreakPatterns: Array<{ pattern: RegExp; replace: string }> = [
     // System role delimiter injection — inline or line-start
     { pattern: /\bSYSTEM\s*:\s*/gi, replace: '[filtered_system:] ' },
@@ -49,6 +38,19 @@ function sanitizeAIMessage(input: string, maxLength = 2000): string {
   for (const { pattern, replace } of jailbreakPatterns) {
     result = result.replace(pattern, replace)
   }
+
+  // 2. Strip HTML/script tags
+  result = stripHtml(result)
+
+  // 3. Sanitize markdown (remove script/event handlers)
+  result = sanitizeMarkdown(result)
+
+  // 4. General text sanitization (control chars, trim, max length)
+  result = sanitizeText(result, { maxLength })
+
+  // 5. Neutralize common prompt-injection delimiters
+  // Replace triple-backtick fences that could be used to "break out" of system prompts
+  result = result.replace(/```/g, '` ` `')
 
   return result
 }
