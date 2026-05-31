@@ -1,0 +1,1011 @@
+{
+  "batchIndex": 1,
+  "nodes": [
+    {
+      "id": "file:supabase/setup/99-master-all-tables.sql",
+      "type": "file",
+      "name": "99-master-all-tables.sql",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "Master SQL schema defining all 31 database tables, indexes, views, RLS policies, triggers, and functions for the Collabryx platform",
+      "tags": ["sql", "schema", "database", "supabase", "dll"],
+      "complexity": "high"
+    },
+    {
+      "id": "table:profiles",
+      "type": "table",
+      "name": "profiles",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "User profiles table storing personal info, display name, bio, avatar, verification status, and onboarding state",
+      "tags": ["sql", "table", "user", "profile"],
+      "complexity": "medium"
+    },
+    {
+      "id": "table:user_skills",
+      "type": "table",
+      "name": "user_skills",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "User skills mapping table with proficiency levels and primary skill designation",
+      "tags": ["sql", "table", "skills"],
+      "complexity": "low"
+    },
+    {
+      "id": "table:user_interests",
+      "type": "table",
+      "name": "user_interests",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "User interests mapping table for matching recommendations",
+      "tags": ["sql", "table", "interests"],
+      "complexity": "low"
+    },
+    {
+      "id": "table:user_experiences",
+      "type": "table",
+      "name": "user_experiences",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "User work experiences table with company, title, date range, and ordering",
+      "tags": ["sql", "table", "experience"],
+      "complexity": "low"
+    },
+    {
+      "id": "table:user_projects",
+      "type": "table",
+      "name": "user_projects",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "User projects/portfolio table with tech stack, URLs, and visibility control",
+      "tags": ["sql", "table", "projects"],
+      "complexity": "low"
+    },
+    {
+      "id": "table:posts",
+      "type": "table",
+      "name": "posts",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "Social feed posts with content, type, intent, reactions, comments, and shares tracking",
+      "tags": ["sql", "table", "social", "feed"],
+      "complexity": "medium"
+    },
+    {
+      "id": "table:post_attachments",
+      "type": "table",
+      "name": "post_attachments",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "Post media attachments with file metadata and dimensions",
+      "tags": ["sql", "table", "attachments", "media"],
+      "complexity": "low"
+    },
+    {
+      "id": "table:post_reactions",
+      "type": "table",
+      "name": "post_reactions",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "Post emoji reactions from users",
+      "tags": ["sql", "table", "reactions"],
+      "complexity": "low"
+    },
+    {
+      "id": "table:comments",
+      "type": "table",
+      "name": "comments",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "Post comments with threading support via parent_id and like tracking",
+      "tags": ["sql", "table", "comments"],
+      "complexity": "low"
+    },
+    {
+      "id": "table:comment_likes",
+      "type": "table",
+      "name": "comment_likes",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "Comment likes tracking table",
+      "tags": ["sql", "table", "likes"],
+      "complexity": "low"
+    },
+    {
+      "id": "table:connections",
+      "type": "table",
+      "name": "connections",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "Connection requests tracking with status, requester/receiver, and approval message",
+      "tags": ["sql", "table", "connections", "networking"],
+      "complexity": "low"
+    },
+    {
+      "id": "table:match_suggestions",
+      "type": "table",
+      "name": "match_suggestions",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "AI-generated match suggestions with percentage, AI confidence, and expiration",
+      "tags": ["sql", "table", "matching", "ai"],
+      "complexity": "medium"
+    },
+    {
+      "id": "table:match_scores",
+      "type": "table",
+      "name": "match_scores",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "Detailed match scoring breakdown with semantic, skills, interests, and activity sub-scores",
+      "tags": ["sql", "table", "matching", "scoring"],
+      "complexity": "medium"
+    },
+    {
+      "id": "table:match_activity",
+      "type": "table",
+      "name": "match_activity",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "Match-related activity tracking for notifications and feed",
+      "tags": ["sql", "table", "activity"],
+      "complexity": "low"
+    },
+    {
+      "id": "table:match_preferences",
+      "type": "table",
+      "name": "match_preferences",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "User match preferences including minimum percentage and interest types",
+      "tags": ["sql", "table", "preferences"],
+      "complexity": "low"
+    },
+    {
+      "id": "table:conversations",
+      "type": "table",
+      "name": "conversations",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "Direct messaging conversations between two participants with unread tracking",
+      "tags": ["sql", "table", "messaging"],
+      "complexity": "low"
+    },
+    {
+      "id": "table:messages",
+      "type": "table",
+      "name": "messages",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "Individual messages within conversations with read receipt and attachment support",
+      "tags": ["sql", "table", "messaging"],
+      "complexity": "low"
+    },
+    {
+      "id": "table:notifications",
+      "type": "table",
+      "name": "notifications",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "User notifications with type, actor info, resource linking, and read/actioned state",
+      "tags": ["sql", "table", "notifications"],
+      "complexity": "medium"
+    },
+    {
+      "id": "table:ai_mentor_sessions",
+      "type": "table",
+      "name": "ai_mentor_sessions",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "AI mentor chat sessions with title and status tracking",
+      "tags": ["sql", "table", "ai", "mentor"],
+      "complexity": "low"
+    },
+    {
+      "id": "table:ai_mentor_messages",
+      "type": "table",
+      "name": "ai_mentor_messages",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "AI mentor chat messages with role (user/assistant) and profile saving support",
+      "tags": ["sql", "table", "ai", "chat"],
+      "complexity": "low"
+    },
+    {
+      "id": "table:notification_preferences",
+      "type": "table",
+      "name": "notification_preferences",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "User notification preferences for email types and push notifications",
+      "tags": ["sql", "table", "preferences"],
+      "complexity": "low"
+    },
+    {
+      "id": "table:theme_preferences",
+      "type": "table",
+      "name": "theme_preferences",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "User theme preferences (light/dark mode)",
+      "tags": ["sql", "table", "theme"],
+      "complexity": "low"
+    },
+    {
+      "id": "table:profile_embeddings",
+      "type": "table",
+      "name": "profile_embeddings",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "Vector embeddings storage for user profiles with status tracking and retry metadata",
+      "tags": ["sql", "table", "embeddings", "vector"],
+      "complexity": "medium"
+    },
+    {
+      "id": "table:embedding_dead_letter_queue",
+      "type": "table",
+      "name": "embedding_dead_letter_queue",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "Failed embedding generation jobs with retry logic and failure tracking",
+      "tags": ["sql", "table", "embeddings", "dlq"],
+      "complexity": "medium"
+    },
+    {
+      "id": "table:embedding_rate_limits",
+      "type": "table",
+      "name": "embedding_rate_limits",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "Rate limiting tracking for embedding generation requests",
+      "tags": ["sql", "table", "rate-limiting"],
+      "complexity": "low"
+    },
+    {
+      "id": "table:embedding_pending_queue",
+      "type": "table",
+      "name": "embedding_pending_queue",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "Pending embedding generation queue with trigger source and retry tracking",
+      "tags": ["sql", "table", "embeddings", "queue"],
+      "complexity": "medium"
+    },
+    {
+      "id": "table:feed_scores",
+      "type": "table",
+      "name": "feed_scores",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "Feed ranking scores combining semantic, engagement, recency, and connection boost factors",
+      "tags": ["sql", "table", "feed", "ranking"],
+      "complexity": "medium"
+    },
+    {
+      "id": "table:events",
+      "type": "table",
+      "name": "events",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "Platform analytics events store with type, category, actor, target, session, and IP tracking",
+      "tags": ["sql", "table", "analytics", "events"],
+      "complexity": "medium"
+    },
+    {
+      "id": "table:user_analytics",
+      "type": "table",
+      "name": "user_analytics",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "Per-user aggregated analytics including engagement, influence, activity streaks, and interaction counts",
+      "tags": ["sql", "table", "analytics"],
+      "complexity": "high"
+    },
+    {
+      "id": "table:platform_analytics",
+      "type": "table",
+      "name": "platform_analytics",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "Daily platform-wide analytics aggregation with DAU, MAU, posts, matches, messages, and error metrics",
+      "tags": ["sql", "table", "analytics"],
+      "complexity": "high"
+    },
+    {
+      "id": "table:content_moderation_logs",
+      "type": "table",
+      "name": "content_moderation_logs",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "Content moderation logs with toxicity, spam, NSFW scores and PII detection",
+      "tags": ["sql", "table", "moderation"],
+      "complexity": "medium"
+    },
+    {
+      "id": "table:post_impressions",
+      "type": "table",
+      "name": "post_impressions",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "Post impression tracking per user for feed analytics",
+      "tags": ["sql", "table", "analytics"],
+      "complexity": "low"
+    },
+    {
+      "id": "table:feed_thompson_params",
+      "type": "table",
+      "name": "feed_thompson_params",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "Thompson sampling parameters for feed ranking optimization",
+      "tags": ["sql", "table", "feed", "ml"],
+      "complexity": "low"
+    },
+    {
+      "id": "table:privacy_settings",
+      "type": "table",
+      "name": "privacy_settings",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "User privacy settings for profile visibility, email display, and data download",
+      "tags": ["sql", "table", "privacy"],
+      "complexity": "low"
+    },
+    {
+      "id": "table:blocked_users",
+      "type": "table",
+      "name": "blocked_users",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "User blocking relationships with reason tracking",
+      "tags": ["sql", "table", "moderation"],
+      "complexity": "low"
+    },
+    {
+      "id": "table:audit_logs",
+      "type": "table",
+      "name": "audit_logs",
+      "filePath": "supabase/setup/99-master-all-tables.sql",
+      "summary": "Security audit log for user actions with resource tracking and IP/user-agent capture",
+      "tags": ["sql", "table", "audit", "security"],
+      "complexity": "medium"
+    },
+    {
+      "id": "file:supabase/setup/99-rls-policies-test.sql",
+      "type": "file",
+      "name": "99-rls-policies-test.sql",
+      "filePath": "supabase/setup/99-rls-policies-test.sql",
+      "summary": "RLS policies test SQL for validating row-level security rules",
+      "tags": ["sql", "rls", "security", "test"],
+      "complexity": "low"
+    },
+    {
+      "id": "document:.commandcode/design/smell-report.md",
+      "type": "document",
+      "name": "smell-report.md",
+      "filePath": ".commandcode/design/smell-report.md",
+      "summary": "UX smell report analyzing dominant design issues in the dashboard: glass overload, generic tech hue, feature tile grid, and bounce transitions",
+      "tags": ["design", "ux", "dashboard", "report"],
+      "complexity": "low"
+    },
+    {
+      "id": "document:.commandcode/plans/onboarding-ux-fixes.md",
+      "type": "document",
+      "name": "onboarding-ux-fixes.md",
+      "filePath": ".commandcode/plans/onboarding-ux-fixes.md",
+      "summary": "Onboarding frontend UX robustness plan covering 19 fixes: dropdown positioning, accessibility, Zod alignment, CLS, race conditions, and dead code",
+      "tags": ["plan", "ux", "onboarding", "fixes"],
+      "complexity": "medium"
+    },
+    {
+      "id": "document:.commandcode/taste/taste.md",
+      "type": "document",
+      "name": "taste.md",
+      "filePath": ".commandcode/taste/taste.md",
+      "summary": "Continuously learned design taste guide for CommandCode agent",
+      "tags": ["design", "taste", "guide"],
+      "complexity": "low"
+    },
+    {
+      "id": "document:AGENTS.md",
+      "type": "document",
+      "name": "AGENTS.md",
+      "filePath": "AGENTS.md",
+      "summary": "Development guide with iron rules for AI agents: no new packages, strict TypeScript, server-first architecture, Supabase constraints, and testing mandates",
+      "tags": ["guide", "development", "rules", "agents"],
+      "complexity": "medium"
+    },
+    {
+      "id": "document:docs/01-getting-started/development.md",
+      "type": "document",
+      "name": "development.md",
+      "filePath": "docs/01-getting-started/development.md",
+      "summary": "Development guide covering setup, workflow, commands, code standards, Git workflow, testing, debugging, and performance optimization",
+      "tags": ["docs", "getting-started", "development"],
+      "complexity": "high"
+    },
+    {
+      "id": "document:docs/01-getting-started/installation.md",
+      "type": "document",
+      "name": "installation.md",
+      "filePath": "docs/01-getting-started/installation.md",
+      "summary": "Installation guide with prerequisites, system requirements, step-by-step setup, environment config, DB setup, and troubleshooting",
+      "tags": ["docs", "getting-started", "installation"],
+      "complexity": "medium"
+    },
+    {
+      "id": "document:docs/02-architecture/diagrams.md",
+      "type": "document",
+      "name": "diagrams.md",
+      "filePath": "docs/02-architecture/diagrams.md",
+      "summary": "Architecture diagrams covering system overview, component hierarchy, data flows, database ERD, deployment, and security architecture",
+      "tags": ["docs", "architecture", "diagrams"],
+      "complexity": "medium"
+    },
+    {
+      "id": "document:docs/02-architecture/overview.md",
+      "type": "document",
+      "name": "overview.md",
+      "filePath": "docs/02-architecture/overview.md",
+      "summary": "Comprehensive architecture guide covering project structure, patterns, tech stack, data flow, state management, auth, DB schema, and API design",
+      "tags": ["docs", "architecture", "overview"],
+      "complexity": "high"
+    },
+    {
+      "id": "document:docs/02-architecture/user-stories-and-sequence-diagrams.md",
+      "type": "document",
+      "name": "user-stories-and-sequence-diagrams.md",
+      "filePath": "docs/02-architecture/user-stories-and-sequence-diagrams.md",
+      "summary": "User stories and sequence diagrams covering 18 feature domains: auth, onboarding, profile, matching, messaging, connections, feed, AI mentor, notifications, and more",
+      "tags": ["docs", "architecture", "user-stories", "sequence-diagrams"],
+      "complexity": "high"
+    },
+    {
+      "id": "document:docs/03-core-features/ai-assistant/overview.md",
+      "type": "document",
+      "name": "overview.md",
+      "filePath": "docs/03-core-features/ai-assistant/overview.md",
+      "summary": "AI assistant feature overview covering architecture, capabilities, and integration points",
+      "tags": ["docs", "ai", "assistant"],
+      "complexity": "medium"
+    },
+    {
+      "id": "document:docs/03-core-features/api-reference.md",
+      "type": "document",
+      "name": "api-reference.md",
+      "filePath": "docs/03-core-features/api-reference.md",
+      "summary": "API reference documenting Server Actions for posts, comments, connections, notifications, matches, AI mentor, and REST endpoints for chat, embeddings, and streaming",
+      "tags": ["docs", "api", "reference"],
+      "complexity": "high"
+    },
+    {
+      "id": "document:docs/03-core-features/authentication.md",
+      "type": "document",
+      "name": "authentication.md",
+      "filePath": "docs/03-core-features/authentication.md",
+      "summary": "Authentication documentation covering Supabase setup, auth flow, protected routes, session management, and RLS integration",
+      "tags": ["docs", "auth", "supabase"],
+      "complexity": "medium"
+    },
+    {
+      "id": "document:docs/03-core-features/matching-system.md",
+      "type": "document",
+      "name": "matching-system.md",
+      "filePath": "docs/03-core-features/matching-system.md",
+      "summary": "Matching system documentation covering algorithm, scoring factors, implementation, API, and optimization",
+      "tags": ["docs", "matching", "algorithm"],
+      "complexity": "medium"
+    },
+    {
+      "id": "document:docs/03-core-features/messaging.md",
+      "type": "document",
+      "name": "messaging.md",
+      "filePath": "docs/03-core-features/messaging.md",
+      "summary": "Messaging feature documentation covering architecture, implementation, DB schema, real-time updates, and API reference",
+      "tags": ["docs", "messaging", "realtime"],
+      "complexity": "medium"
+    },
+    {
+      "id": "document:docs/03-core-features/vector-embeddings/overview.md",
+      "type": "document",
+      "name": "overview.md",
+      "filePath": "docs/03-core-features/vector-embeddings/overview.md",
+      "summary": "Vector embeddings system overview covering architecture, implementation, DB schema, embedding generation, and Python worker API",
+      "tags": ["docs", "embeddings", "vector", "ai"],
+      "complexity": "high"
+    },
+    {
+      "id": "document:docs/04-infrastructure/database/embeddings.md",
+      "type": "document",
+      "name": "embeddings.md",
+      "filePath": "docs/04-infrastructure/database/embeddings.md",
+      "summary": "Deep dive into vector embedding system: Python worker, DB tables, triggers, DLQ, rate limiting, monitoring, deployment, and cost estimation",
+      "tags": ["docs", "embeddings", "infrastructure"],
+      "complexity": "high"
+    },
+    {
+      "id": "document:docs/04-infrastructure/database/schema.md",
+      "type": "document",
+      "name": "schema.md",
+      "filePath": "docs/04-infrastructure/database/schema.md",
+      "summary": "Database schema documentation covering all table groups: user management, social, matching, messaging, notifications, AI, preferences, analytics, moderation, and embeddings",
+      "tags": ["docs", "database", "schema"],
+      "complexity": "high"
+    },
+    {
+      "id": "document:docs/04-infrastructure/database/setup-guide.md",
+      "type": "document",
+      "name": "setup-guide.md",
+      "filePath": "docs/04-infrastructure/database/setup-guide.md",
+      "summary": "Database setup guide with quick start, embedding system setup, verification queries, troubleshooting, and post-setup tasks",
+      "tags": ["docs", "database", "setup"],
+      "complexity": "medium"
+    },
+    {
+      "id": "document:docs/04-infrastructure/performance.md",
+      "type": "document",
+      "name": "performance.md",
+      "filePath": "docs/04-infrastructure/performance.md",
+      "summary": "Performance optimization guide covering bundle optimization, React Query, image optimization, fonts, caching, DB optimization, and monitoring",
+      "tags": ["docs", "performance"],
+      "complexity": "medium"
+    },
+    {
+      "id": "document:docs/04-infrastructure/python-worker/deployment.md",
+      "type": "document",
+      "name": "deployment.md",
+      "filePath": "docs/04-infrastructure/python-worker/deployment.md",
+      "summary": "Python worker production deployment guide for Render, Railway, and self-hosted VPS with monitoring, scaling, and rollback procedures",
+      "tags": ["docs", "python-worker", "deployment"],
+      "complexity": "high"
+    },
+    {
+      "id": "document:docs/04-infrastructure/python-worker/development.md",
+      "type": "document",
+      "name": "development.md",
+      "filePath": "docs/04-infrastructure/python-worker/development.md",
+      "summary": "Python worker development guide covering Docker setup, API testing, debugging, common issues, and performance optimization",
+      "tags": ["docs", "python-worker", "development"],
+      "complexity": "medium"
+    },
+    {
+      "id": "document:docs/04-infrastructure/python-worker/overview.md",
+      "type": "document",
+      "name": "overview.md",
+      "filePath": "docs/04-infrastructure/python-worker/overview.md",
+      "summary": "Python worker overview covering features, setup, development, deployment options, and API reference",
+      "tags": ["docs", "python-worker", "overview"],
+      "complexity": "medium"
+    },
+    {
+      "id": "document:docs/05-deployment/checklist.md",
+      "type": "document",
+      "name": "checklist.md",
+      "filePath": "docs/05-deployment/checklist.md",
+      "summary": "Pre-deployment checklist covering environment setup, Vercel/Render deployment, DB migration, security hardening, performance, launch day, and rollback procedures",
+      "tags": ["docs", "deployment", "checklist"],
+      "complexity": "medium"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:profiles",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:user_skills",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:user_interests",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:user_experiences",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:user_projects",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:posts",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:post_attachments",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:post_reactions",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:comments",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:comment_likes",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:connections",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:match_suggestions",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:match_scores",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:match_activity",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:match_preferences",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:conversations",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:messages",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:notifications",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:ai_mentor_sessions",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:ai_mentor_messages",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:notification_preferences",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:theme_preferences",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:profile_embeddings",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:embedding_dead_letter_queue",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:embedding_rate_limits",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:embedding_pending_queue",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:feed_scores",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:events",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:user_analytics",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:platform_analytics",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:content_moderation_logs",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:post_impressions",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:feed_thompson_params",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:privacy_settings",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:blocked_users",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "table:audit_logs",
+      "type": "contains"
+    },
+    {
+      "source": "file:supabase/setup/99-master-all-tables.sql",
+      "target": "file:supabase/setup/99-rls-policies-test.sql",
+      "type": "depends_on"
+    },
+    {
+      "source": "document:docs/04-infrastructure/database/schema.md",
+      "target": "table:profiles",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/04-infrastructure/database/schema.md",
+      "target": "table:user_skills",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/04-infrastructure/database/schema.md",
+      "target": "table:user_interests",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/04-infrastructure/database/schema.md",
+      "target": "table:user_experiences",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/04-infrastructure/database/schema.md",
+      "target": "table:user_projects",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/04-infrastructure/database/schema.md",
+      "target": "table:posts",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/04-infrastructure/database/schema.md",
+      "target": "table:post_attachments",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/04-infrastructure/database/schema.md",
+      "target": "table:comments",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/04-infrastructure/database/schema.md",
+      "target": "table:connections",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/04-infrastructure/database/schema.md",
+      "target": "table:match_suggestions",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/04-infrastructure/database/schema.md",
+      "target": "table:match_scores",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/04-infrastructure/database/schema.md",
+      "target": "table:conversations",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/04-infrastructure/database/schema.md",
+      "target": "table:messages",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/04-infrastructure/database/schema.md",
+      "target": "table:notifications",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/04-infrastructure/database/schema.md",
+      "target": "table:ai_mentor_sessions",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/04-infrastructure/database/schema.md",
+      "target": "table:notification_preferences",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/04-infrastructure/database/schema.md",
+      "target": "table:profile_embeddings",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/04-infrastructure/database/schema.md",
+      "target": "table:embedding_dead_letter_queue",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/04-infrastructure/database/schema.md",
+      "target": "table:embedding_rate_limits",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/04-infrastructure/database/schema.md",
+      "target": "table:embedding_pending_queue",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/04-infrastructure/database/embeddings.md",
+      "target": "table:profile_embeddings",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/04-infrastructure/database/embeddings.md",
+      "target": "table:embedding_dead_letter_queue",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/04-infrastructure/database/embeddings.md",
+      "target": "table:embedding_rate_limits",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/04-infrastructure/database/embeddings.md",
+      "target": "table:embedding_pending_queue",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/03-core-features/vector-embeddings/overview.md",
+      "target": "table:profile_embeddings",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/03-core-features/vector-embeddings/overview.md",
+      "target": "table:embedding_dead_letter_queue",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/03-core-features/vector-embeddings/overview.md",
+      "target": "table:embedding_rate_limits",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/03-core-features/vector-embeddings/overview.md",
+      "target": "table:embedding_pending_queue",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/03-core-features/matching-system.md",
+      "target": "table:match_suggestions",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/03-core-features/matching-system.md",
+      "target": "table:match_scores",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/03-core-features/messaging.md",
+      "target": "table:conversations",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/03-core-features/messaging.md",
+      "target": "table:messages",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/02-architecture/diagrams.md",
+      "target": "document:docs/02-architecture/overview.md",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/02-architecture/overview.md",
+      "target": "document:docs/04-infrastructure/database/schema.md",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/02-architecture/overview.md",
+      "target": "document:docs/03-core-features/authentication.md",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/01-getting-started/installation.md",
+      "target": "document:docs/01-getting-started/development.md",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/04-infrastructure/database/setup-guide.md",
+      "target": "file:supabase/setup/99-master-all-tables.sql",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/04-infrastructure/python-worker/overview.md",
+      "target": "document:docs/04-infrastructure/python-worker/development.md",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/04-infrastructure/python-worker/overview.md",
+      "target": "document:docs/04-infrastructure/python-worker/deployment.md",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/04-infrastructure/database/embeddings.md",
+      "target": "document:docs/04-infrastructure/database/setup-guide.md",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/04-infrastructure/database/embeddings.md",
+      "target": "document:docs/04-infrastructure/python-worker/overview.md",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/03-core-features/vector-embeddings/overview.md",
+      "target": "document:docs/04-infrastructure/database/embeddings.md",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/03-core-features/api-reference.md",
+      "target": "document:docs/03-core-features/authentication.md",
+      "type": "references"
+    },
+    {
+      "source": "document:AGENTS.md",
+      "target": "document:docs/01-getting-started/development.md",
+      "type": "references"
+    },
+    {
+      "source": "document:docs/05-deployment/checklist.md",
+      "target": "document:docs/04-infrastructure/python-worker/deployment.md",
+      "type": "references"
+    },
+    {
+      "source": "table:match_scores",
+      "target": "table:match_suggestions",
+      "type": "references"
+    },
+    {
+      "source": "table:messages",
+      "target": "table:conversations",
+      "type": "references"
+    },
+    {
+      "source": "table:comments",
+      "target": "table:posts",
+      "type": "references"
+    },
+    {
+      "source": "table:post_attachments",
+      "target": "table:posts",
+      "type": "references"
+    },
+    {
+      "source": "table:post_reactions",
+      "target": "table:posts",
+      "type": "references"
+    },
+    {
+      "source": "table:comment_likes",
+      "target": "table:comments",
+      "type": "references"
+    },
+    {
+      "source": "table:feed_scores",
+      "target": "table:posts",
+      "type": "references"
+    },
+    {
+      "source": "table:ai_mentor_messages",
+      "target": "table:ai_mentor_sessions",
+      "type": "references"
+    },
+    {
+      "source": "table:post_impressions",
+      "target": "table:posts",
+      "type": "references"
+    }
+  ]
+}
