@@ -79,3 +79,6 @@ scripts/seed-data/.tmp_avatars/
 temp/
 *tmp*/
 *avatars/
+*manimations/
+media/
+*animations/
