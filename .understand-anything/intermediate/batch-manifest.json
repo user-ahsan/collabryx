@@ -1,0 +1,285 @@
+{
+  "totalBatches": 34,
+  "totalFiles": 850,
+  "batches": [
+    {
+      "batchIndex": 0,
+      "fileCount": 25,
+      "importsCount": 0,
+      "categories": [
+        "config",
+        "infra",
+        "data"
+      ]
+    },
+    {
+      "batchIndex": 1,
+      "fileCount": 25,
+      "importsCount": 0,
+      "categories": [
+        "data",
+        "docs"
+      ]
+    },
+    {
+      "batchIndex": 2,
+      "fileCount": 25,
+      "importsCount": 0,
+      "categories": [
+        "docs",
+        "markup"
+      ]
+    },
+    {
+      "batchIndex": 3,
+      "fileCount": 25,
+      "importsCount": 93,
+      "categories": [
+        "markup",
+        "script",
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 4,
+      "fileCount": 25,
+      "importsCount": 103,
+      "categories": [
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 5,
+      "fileCount": 25,
+      "importsCount": 113,
+      "categories": [
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 6,
+      "fileCount": 25,
+      "importsCount": 136,
+      "categories": [
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 7,
+      "fileCount": 25,
+      "importsCount": 169,
+      "categories": [
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 8,
+      "fileCount": 25,
+      "importsCount": 178,
+      "categories": [
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 9,
+      "fileCount": 25,
+      "importsCount": 139,
+      "categories": [
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 10,
+      "fileCount": 25,
+      "importsCount": 185,
+      "categories": [
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 11,
+      "fileCount": 25,
+      "importsCount": 182,
+      "categories": [
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 12,
+      "fileCount": 25,
+      "importsCount": 113,
+      "categories": [
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 13,
+      "fileCount": 25,
+      "importsCount": 84,
+      "categories": [
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 14,
+      "fileCount": 25,
+      "importsCount": 68,
+      "categories": [
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 15,
+      "fileCount": 25,
+      "importsCount": 86,
+      "categories": [
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 16,
+      "fileCount": 25,
+      "importsCount": 44,
+      "categories": [
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 17,
+      "fileCount": 25,
+      "importsCount": 28,
+      "categories": [
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 18,
+      "fileCount": 25,
+      "importsCount": 68,
+      "categories": [
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 19,
+      "fileCount": 25,
+      "importsCount": 19,
+      "categories": [
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 20,
+      "fileCount": 25,
+      "importsCount": 50,
+      "categories": [
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 21,
+      "fileCount": 25,
+      "importsCount": 49,
+      "categories": [
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 22,
+      "fileCount": 25,
+      "importsCount": 50,
+      "categories": [
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 23,
+      "fileCount": 25,
+      "importsCount": 48,
+      "categories": [
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 24,
+      "fileCount": 25,
+      "importsCount": 48,
+      "categories": [
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 25,
+      "fileCount": 25,
+      "importsCount": 51,
+      "categories": [
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 26,
+      "fileCount": 25,
+      "importsCount": 99,
+      "categories": [
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 27,
+      "fileCount": 25,
+      "importsCount": 200,
+      "categories": [
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 28,
+      "fileCount": 25,
+      "importsCount": 141,
+      "categories": [
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 29,
+      "fileCount": 25,
+      "importsCount": 81,
+      "categories": [
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 30,
+      "fileCount": 25,
+      "importsCount": 55,
+      "categories": [
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 31,
+      "fileCount": 25,
+      "importsCount": 75,
+      "categories": [
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 32,
+      "fileCount": 25,
+      "importsCount": 103,
+      "categories": [
+        "code"
+      ]
+    },
+    {
+      "batchIndex": 33,
+      "fileCount": 25,
+      "importsCount": 23,
+      "categories": [
+        "code",
+        "other"
+      ]
+    }
+  ]
+}
