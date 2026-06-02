@@ -265,13 +265,13 @@ async function main() {
     await displayHealthStatus();
     
     log('\n📋 Useful commands:', 'cyan');
-    log('   View logs: npm run docker:logs', 'blue');
-    log('   Monitor health: npm run docker:health:monitor', 'blue');
-    log('   Check status: npm run docker:status', 'blue');
+    log('   View logs: bun run docker:logs', 'blue');
+    log('   Monitor health: bun run docker:health:monitor', 'blue');
+    log('   Check status: bun run docker:status', 'blue');
     log('');
   } catch (_error) {
     log('\n❌ Service failed to start properly', 'red');
-    log('Check logs with: npm run docker:logs', 'yellow');
+    log('Check logs with: bun run docker:logs', 'yellow');
     process.exit(1);
   }
 }

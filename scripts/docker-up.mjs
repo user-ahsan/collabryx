@@ -124,7 +124,7 @@ async function main() {
   if (isRunning()) {
     log('✅ Service already running', 'green');
     log(`   Port: ${CONFIG.port}`, 'cyan');
-    log('   Logs: npm run docker:logs', 'cyan');
+    log('   Logs: bun run docker:logs', 'cyan');
     return;
   }
   
@@ -134,13 +134,13 @@ async function main() {
     await waitForHealth();
     await showStatus();
     log('\n💡 Commands:', 'cyan');
-    log('   Logs: npm run docker:logs', 'cyan');
-    log('   Stop: npm run docker:down', 'cyan');
-    log('   Rebuild: npm run docker:rebuild', 'cyan');
+    log('   Logs: bun run docker:logs', 'cyan');
+    log('   Stop: bun run docker:down', 'cyan');
+    log('   Rebuild: bun run docker:rebuild', 'cyan');
     log('');
   } catch (_error) {
     log('\n❌ Failed to start', 'red');
-    log('   Check: npm run docker:logs', 'yellow');
+    log('   Check: bun run docker:logs', 'yellow');
     process.exit(1);
   }
 }

@@ -4,10 +4,9 @@ import { readFileSync } from 'fs'
 import { resolve } from 'path'
 
 // =============================================================================
-// TC-004: Verify npm run dev starts Next.js on localhost:3000
-// =============================================================================
+// TC-004: Verify bun run dev starts Next.js on localhost:3000
 //
-// This test validates that `npm run dev` invokes Next.js correctly on the
+// This test validates that `bun run dev` invokes Next.js correctly on the
 // expected port (3000) by inspecting the package.json script and verifying
 // the invocation chain (check-docker.mjs → next dev).
 // =============================================================================
@@ -28,7 +27,7 @@ function getPackageJson(): { scripts?: Record<string, string> } {
   return _pkg!
 }
 
-describe('npm run dev - Dev Server Startup (TC-004)', () => {
+describe('bun run dev - Dev Server Startup (TC-004)', () => {
   beforeEach(() => {
     vi.clearAllMocks()
   })
@@ -101,7 +100,7 @@ describe('npm run dev - Dev Server Startup (TC-004)', () => {
     )
 
     // Act — simulate running `next dev`
-    const output = execSync('npx next dev', { encoding: 'utf-8' })
+    const output = execSync('bunx next dev', { encoding: 'utf-8' })
 
     // Assert
     expect(output).toBeDefined()
@@ -115,7 +114,7 @@ describe('npm run dev - Dev Server Startup (TC-004)', () => {
     mockedExecSync.mockReturnValue('Local: http://localhost:3000')
 
     // Act
-    const output = execSync('npx next dev', { encoding: 'utf-8' })
+    const output = execSync('bunx next dev', { encoding: 'utf-8' })
 
     // Assert
     expect(output).toMatch(/localhost:3000/)
@@ -126,7 +125,7 @@ describe('npm run dev - Dev Server Startup (TC-004)', () => {
     mockedExecSync.mockReturnValue('✓ Ready')
 
     // Act
-    const output = execSync('npx next dev', { encoding: 'utf-8' })
+    const output = execSync('bunx next dev', { encoding: 'utf-8' })
 
     // Assert
     expect(output.length).toBeGreaterThan(0)
@@ -164,6 +163,6 @@ describe('npm run dev - Dev Server Startup (TC-004)', () => {
     })
 
     // Act & Assert
-    expect(() => execSync('npx next dev')).toThrow('Command failed')
+    expect(() => execSync('bunx next dev')).toThrow('Command failed')
   })
 })

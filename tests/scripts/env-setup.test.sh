@@ -3,9 +3,9 @@
 # Collabryx Environment Setup Tests (TC-001, TC-002, TC-003)
 # =============================================================================
 # Tests:
-#   TC-001: npm install executes in Node.js 20+ LTS
-#   TC-002: npm install rejected with Node.js < 20
-#   TC-003: package install fails if using yarn/bun instead of npm 10+
+#   TC-001: bun install executes in Node.js 20+ LTS
+#   TC-002: bun install rejected with Node.js < 20
+#   TC-003: package install fails if using npm/yarn instead of bun
 #
 # Usage:
 #   bash tests/scripts/env-setup.test.sh
@@ -49,12 +49,6 @@ extract_minor() {
   local version="$1"
   version="${version#v}"
   version="${version#*.}"
-  echo "${version%%.*}"
-}
-
-# Helper: extract npm major version
-extract_npm_major() {
-  local version="$1"
   echo "${version%%.*}"
 }
 
@@ -128,11 +122,10 @@ detect_node() {
 
 detect_npm() {
   if command -v npm &>/dev/null; then
+    NPM_INSTALLED="true"
     NPM_VERSION="$(npm --version 2>/dev/null || echo 'unknown')"
-    NPM_MAJOR="$(extract_npm_major "$NPM_VERSION" 2>/dev/null || echo '0')"
   else
-    NPM_VERSION="not installed"
-    NPM_MAJOR="0"
+    NPM_INSTALLED="false"
   fi
 }
 
@@ -162,14 +155,14 @@ detect_bun
 $VERBOSE && {
   echo -e "${CYAN}Detected Runtimes:${NC}"
   echo "  Node.js: $NODE_VERSION (major: $NODE_MAJOR)"
-  echo "  npm:     $NPM_VERSION (major: $NPM_MAJOR)"
-  echo "  yarn:    ${YARN_VERSION:-not installed}"
   echo "  bun:     ${BUN_VERSION:-not installed}"
+  echo "  npm:     ${NPM_VERSION:-not installed}"
+  echo "  yarn:    ${YARN_VERSION:-not installed}"
   echo ""
 }
 
 # =============================================================================
-# TC-001: Verify npm install executes in Node.js 20+ LTS
+# TC-001: Verify bun install executes in Node.js 20+ LTS
 # =============================================================================
 echo -e "${CYAN}[TC-001] Node.js 20+ LTS Requirement${NC}"
 
@@ -197,33 +190,32 @@ else
   fail "package.json not found in current directory"
 fi
 
-# Verify npm install works (dry run: check node_modules exists or run npm ls)
-if [ "$NODE_MAJOR" -ge 20 ] && [ -f "package.json" ]; then
+# Verify bun is available and dependencies can be installed
+if [ "$BUN_INSTALLED" = "true" ]; then
+  pass "bun $BUN_VERSION is installed"
+  
+  # Verify bun.lock exists or node_modules exists
   if [ -d "node_modules" ]; then
     pass "node_modules directory exists (dependencies installed)"
   else
-    echo -e "  ${YELLOW}⚠ SKIP${NC}: node_modules not found — run 'npm install' first"
+    echo -e "  ${YELLOW}⚠ SKIP${NC}: node_modules not found — run 'bun install' first"
   fi
+else
+  fail "bun is not installed — required for this project"
 fi
 
 echo ""
 
 # =============================================================================
-# TC-002: Verify npm install rejected with Node.js < 20
+# TC-002: Verify bun install rejected with Node.js < 20
 # =============================================================================
 echo -e "${CYAN}[TC-002] Node.js < 20 Rejection${NC}"
 
 # Simulate: if we have a legacy Node.js, verify it would be rejected
-# We test this by checking the engines field validation logic
 if [ -f "package.json" ]; then
-  # Simulate: try to determine if npm would reject an install on Node < 20
-  ENGINE_NODE=$(node -e "console.log(require('./package.json').engines?.node || 'none')" 2>/dev/null || echo "none")
-  ENGINE_NPM=$(node -e "console.log(require('./package.json').engines?.npm || 'none')" 2>/dev/null || echo "none")
-
-  # Test the rejection logic: if engines.node is set and current < 20, npm should warn/error
+  # Test the rejection logic: if engines.node is set and current < 20, bun should warn/error
   if [ "$NODE_MAJOR" -ge 20 ]; then
     # We're on Node 20+ — verify that the check itself works
-    # Use npm's built-in engine check
     ENGINE_CHECK=$(node -e "
       const eng = require('./package.json').engines || {};
       const nodeReq = eng.node || '';
@@ -260,61 +252,61 @@ fi
 echo ""
 
 # =============================================================================
-# TC-003: Verify package install fails if using yarn/bun instead of npm 10+
+# TC-003: Verify package install fails if using npm/yarn instead of bun
 # =============================================================================
-echo -e "${CYAN}[TC-003] Package Manager Restriction (npm 10+ only)${NC}"
+echo -e "${CYAN}[TC-003] Package Manager Restriction (bun only)${NC}"
 
-# Verify engines.npm requires >= 10
+# Verify engines.bun exists in package.json
 if [ -f "package.json" ]; then
-  ENGINE_NPM=$(node -e "console.log(require('./package.json').engines?.npm || 'none')" 2>/dev/null || echo "none")
-  $VERBOSE && echo "  package.json engines.npm: $ENGINE_NPM"
+  ENGINE_BUN=$(node -e "console.log(require('./package.json').engines?.bun || 'none')" 2>/dev/null || echo "none")
+  $VERBOSE && echo "  package.json engines.bun: $ENGINE_BUN"
 
-  if echo "$ENGINE_NPM" | grep -qE '(\d+)'; then
-    MIN_NPM=$(echo "$ENGINE_NPM" | grep -oE '[0-9]+' | head -1)
-    assert_greater_equal "$MIN_NPM" 10 \
-      "package.json engines.npm requires npm >= $MIN_NPM"
+  if echo "$ENGINE_BUN" | grep -qE '(\d+)'; then
+    MIN_BUN=$(echo "$ENGINE_BUN" | grep -oE '[0-9]+' | head -1)
+    assert_greater_equal "$MIN_BUN" 1 \
+      "package.json engines.bun requires bun >= $MIN_BUN"
   else
-    fail "package.json engines.npm does not specify npm 10+ requirement"
+    fail "package.json engines.bun does not specify bun requirement"
   fi
 fi
 
-# Verify npm is the preferred package manager (check for lock files)
+# Verify bun.lock exists (bun is the package manager)
+if [ -f "bun.lock" ]; then
+  pass "bun.lock exists (bun is the package manager)"
+elif [ -f "bun.lockb" ]; then
+  pass "bun.lockb exists (bun is the package manager)"
+else
+  echo -e "  ${YELLOW}⚠ INFO${NC}: No bun.lock or bun.lockb found — may need to run 'bun install'"
+fi
+
+# Assert package-lock.json should NOT be present (project uses bun, not npm)
 if [ -f "package-lock.json" ]; then
-  pass "package-lock.json exists (npm is the package manager)"
+  fail "package-lock.json found — project should use bun, not npm"
 else
-  echo -e "  ${YELLOW}⚠ INFO${NC}: No package-lock.json — this may be expected if not yet installed"
+  pass "No package-lock.json detected (correct — project uses bun)"
 fi
 
-# Assert yarn.lock should NOT be present (project uses npm)
+# Assert yarn.lock should NOT be present (project uses bun)
 if [ -f "yarn.lock" ]; then
-  fail "yarn.lock found — project should use npm, not yarn"
+  fail "yarn.lock found — project should use bun, not yarn"
 else
-  pass "No yarn.lock detected (correct — project uses npm)"
+  pass "No yarn.lock detected (correct — project uses bun)"
 fi
 
-# Assert bun.lockb should NOT be present (project uses npm)
-if [ -f "bun.lockb" ]; then
-  fail "bun.lockb found — project should use npm, not bun"
+# Check that bun is the detected package manager
+if [ "$BUN_INSTALLED" = "true" ]; then
+  pass "bun $BUN_VERSION is available and ready"
 else
-  pass "No bun.lockb detected (correct — project uses npm)"
+  fail "bun is not installed — run 'curl -fsSL https://bun.sh/install | bash' or visit https://bun.sh"
 fi
 
-# Check that npm is the detected package manager
-if [ "$NPM_MAJOR" -ge 10 ]; then
-  pass "npm $NPM_MAJOR satisfies >= 10 requirement"
-elif [ "$NPM_MAJOR" -gt 0 ]; then
-  fail "npm version $NPM_MAJOR is below required npm 10+"
-else
-  echo -e "  ${YELLOW}⚠ SKIP${NC}: npm not detected — cannot verify version"
+# Warn if npm or yarn are available (should not be used for this project)
+if [ "$NPM_INSTALLED" = "true" ]; then
+  echo -e "  ${YELLOW}⚠ WARN${NC}: npm is installed but should not be used for this project"
 fi
 
-# Warn if yarn or bun are available (should not be used for this project)
 if [ "$YARN_INSTALLED" = "true" ]; then
   echo -e "  ${YELLOW}⚠ WARN${NC}: yarn is installed but should not be used for this project"
-fi
-
-if [ "$BUN_INSTALLED" = "true" ]; then
-  echo -e "  ${YELLOW}⚠ WARN${NC}: bun is installed but should not be used for this project"
 fi
 
 echo ""

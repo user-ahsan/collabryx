@@ -271,12 +271,12 @@ async function main() {
   log('\n' + '='.repeat(70), 'cyan');
   log('📋 QUICK COMMANDS', 'cyan');
   log('='.repeat(70), 'cyan');
-  log('   Start: npm run docker:up', 'blue');
-  log('   Stop: npm run docker:down', 'blue');
-  log('   Rebuild: npm run docker:rebuild', 'blue');
-  log('   Logs: npm run docker:logs', 'blue');
-  log('   Clean: npm run docker:clean', 'blue');
-  log('   Help: npm run docker:clean -- --help', 'blue');
+  log('   Start: bun run docker:up', 'blue');
+  log('   Stop: bun run docker:down', 'blue');
+  log('   Rebuild: bun run docker:rebuild', 'blue');
+  log('   Logs: bun run docker:logs', 'blue');
+  log('   Clean: bun run docker:clean', 'blue');
+  log('   Help: bun run docker:clean -- --help', 'blue');
   log('');
 }
 

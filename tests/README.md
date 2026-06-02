@@ -204,27 +204,27 @@ tests/
 
 ```bash
 # Run all unit/component/integration tests
-npm run test
+bun run test
 
 # Run with coverage
-npm run test -- --coverage
+bun run test -- --coverage
 
 # Run in watch mode
-npm run test -- --watch
+bun run test -- --watch
 
 # Run E2E tests
-npm run test:e2e
+bun run test:e2e
 
 # Run specific module
-npm run test -- --run tests/unit/hooks/
-npm run test -- --run tests/integration/auth/
-npm run test -- --run tests/components/features/matches/
+bun run test -- --run tests/unit/hooks/
+bun run test -- --run tests/integration/auth/
+bun run test -- --run tests/components/features/matches/
 
 # Run specific test file
-npm run test -- tests/unit/lib/sanitize.test.ts
+bun run test -- tests/unit/lib/sanitize.test.ts
 
 # Run specific test case by pattern
-npm run test -- -t "RLS blocks"
+bun run test -- -t "RLS blocks"
 ```
 
 ---

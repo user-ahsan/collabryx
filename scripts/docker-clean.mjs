@@ -12,9 +12,9 @@
  * - Provides detailed cleanup report
  * 
  * Usage:
- *   npm run docker:clean              # Interactive cleanup
- *   npm run docker:clean -- --force   # Skip confirmations
- *   npm run docker:clean -- --volumes # Include volumes in cleanup
+ *   bun run docker:clean              # Interactive cleanup
+ *   bun run docker:clean -- --force   # Skip confirmations
+ *   bun run docker:clean -- --volumes # Include volumes in cleanup
  */
 
 import { execSync } from 'child_process';
@@ -372,8 +372,8 @@ async function main() {
 
   log('\n✅ Cleanup complete!', 'green');
   log('\nNext steps:', 'cyan');
-  log('   1. Rebuild: npm run docker:rebuild', 'blue');
-  log('   2. Start fresh: npm run docker:up', 'blue');
+  log('   1. Rebuild: bun run docker:rebuild', 'blue');
+  log('   2. Start fresh: bun run docker:up', 'blue');
   log('   3. Check disk usage: docker system df', 'blue');
   log('');
 }

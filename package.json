@@ -4,7 +4,7 @@
   "private": true,
   "engines": {
     "node": ">=22.0.0",
-    "npm": ">=10.5.1"
+    "bun": ">=1.0.0"
   },
   "scripts": {
     "dev": "node scripts/check-docker.mjs && next dev --webpack",
@@ -18,14 +18,14 @@
     "test:e2e": "playwright test",
     "docker:up": "node scripts/docker-up.mjs",
     "docker:down": "node scripts/docker-down.mjs",
-    "docker:restart": "npm run docker:down && npm run docker:up",
+    "docker:restart": "bun run docker:down && bun run docker:up",
     "docker:rebuild": "node scripts/docker-rebuild.mjs",
     "docker:clean": "node scripts/docker-clean.mjs",
     "docker:logs": "node scripts/docker-logs.mjs",
     "docker:health": "node scripts/docker-health.mjs",
     "docker:status": "node scripts/docker-status.mjs",
     "perf:budget": "node scripts/perf-budget.mjs",
-    "perf:budget:ci": "npm run build && npm run perf:budget"
+    "perf:budget:ci": "bun run build && bun run perf:budget"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.33.0",

@@ -7,7 +7,7 @@
  * - Verifies recent backup existence
  * - Documents backup restoration procedure
  * 
- * Usage: npx tsx scripts/verify-backup.ts
+ * Usage: bun run scripts/verify-backup.ts
  */
 
 import { createClient } from '../lib/supabase/server'
@@ -190,10 +190,10 @@ Backups are retained for 7 days.
 
 \`\`\`bash
 # Export database schema and data
-npx supabase db dump -f backup-$(date +%Y%m%d).sql
-
+bunx supabase db dump -f backup-$(date +%Y%m%d).sql
+ 
 # Import backup
-npx supabase db restore -f backup-YYYYMMDD.sql
+bunx supabase db restore -f backup-YYYYMMDD.sql
 \`\`\`
 
 ## Point-in-Time Recovery (PITR)

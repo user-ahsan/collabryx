@@ -225,7 +225,7 @@ export async function getBackendConfig(): Promise<BackendConfig> {
     const cbState = backendCircuitBreaker.getState()
     if (cbState === 'open') {
       console.error('❌ Circuit breaker OPEN for Docker backend')
-      console.error('❌ Run: npm run docker:up')
+      console.error('❌ Run: bun run docker:up')
       return {
         endpoint: null,
         mode: 'docker',
@@ -293,7 +293,7 @@ export async function getBackendConfig(): Promise<BackendConfig> {
   const cbState = backendCircuitBreaker.getState()
   if (cbState === 'open') {
     console.log('⚠️ Circuit breaker OPEN')
-    console.log('💡 Tip: Run "npm run docker:up" to start local backend')
+    console.log('💡 Tip: Run "bun run docker:up" to start local backend')
     
     return {
       endpoint: null,
@@ -313,7 +313,7 @@ export async function getBackendConfig(): Promise<BackendConfig> {
     }
   } catch (_error) {
     console.log('⚠️ Docker backend not available')
-    console.log('💡 Tip: Run "npm run docker:up" to start local backend')
+    console.log('💡 Tip: Run "bun run docker:up" to start local backend')
     
     return {
       endpoint: null,

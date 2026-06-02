@@ -48,7 +48,7 @@ services:
     env: static
     region: oregon
     plan: standard
-    buildCommand: npm run build
+    buildCommand: bun run build
     staticPublishPath: ./.next
     branch: main
     autoDeploy: true

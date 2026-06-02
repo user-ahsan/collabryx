@@ -2,7 +2,7 @@
 
 /**
  * Pre-dev Docker backend check
- * Runs before `npm run dev` when BACKEND_MODE=auto or 'docker'
+ * Runs before `bun run dev` when BACKEND_MODE=auto or 'docker'
  */
 
 import { stdout, stderr } from 'process'
@@ -56,10 +56,10 @@ async function main() {
     stderr.write('\n')
     stderr.write('🔧 Quick fix:\n')
     stderr.write('   1. Start Docker backend:\n')
-    stderr.write('      npm run docker:up\n')
+    stderr.write('      bun run docker:up\n')
     stderr.write('\n')
     stderr.write('   2. Or skip Docker check:\n')
-    stderr.write('      npm run dev:skip-docker\n')
+    stderr.write('      bun run dev:skip-docker\n')
     stderr.write('\n')
     // Don't block dev server startup, just warn
     stdout.write('⚠️  Continuing anyway...\n')

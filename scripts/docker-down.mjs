@@ -52,8 +52,8 @@ function main() {
   
   log('\n✅ Stopped', 'green');
   log('\n💡 Commands:', 'cyan');
-  log('   Start: npm run docker:up', 'cyan');
-  log('   Rebuild: npm run docker:rebuild', 'cyan');
+  log('   Start: bun run docker:up', 'cyan');
+  log('   Rebuild: bun run docker:rebuild', 'cyan');
   log('');
 }
 
