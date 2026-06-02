@@ -11,29 +11,28 @@ describe('ai-mentor-prompts', () => {
       expect(result.length).toBeGreaterThan(0)
     })
 
-    it('should contain key phrases for mentor guidance', () => {
+    it('should identify as Startup Idea Generator', () => {
       const result = buildFallbackSystemPrompt()
-      expect(result).toContain('Collabryx AI Mentor')
-      expect(result).toContain('career advisor')
-      expect(result).toContain('collaboration')
+      expect(result).toContain('Collabryx Startup Idea Generator')
     })
 
-    it('should mention profile and connections guidance', () => {
+    it('should instruct JSON-only output', () => {
       const result = buildFallbackSystemPrompt()
-      expect(result).toContain('connections')
-      expect(result).toContain('profile')
+      expect(result).toContain('JSON')
+      expect(result).toContain('\"message\"')
+      expect(result).toContain('\"suggestions\"')
     })
 
-    it('should instruct to be concise and actionable', () => {
+    it('should mention asking about skills and interests', () => {
       const result = buildFallbackSystemPrompt()
-      expect(result).toContain('concise')
-      expect(result).toContain('actionable')
+      expect(result).toContain('skills')
+      expect(result).toContain('interests')
     })
 
     it('should not reveal AI identity', () => {
       const result = buildFallbackSystemPrompt()
       expect(result).not.toContain('I am an AI')
-      expect(result).not.toContain('I\'m an AI')
+      expect(result).not.toContain("I'm an AI")
       expect(result).not.toContain('artificial intelligence')
     })
   })
@@ -95,23 +94,42 @@ describe('ai-mentor-prompts', () => {
         assembled_at: '2026-04-30T10:00:00Z'
       }
 
-      const result = buildEnhancedSystemPrompt(fullContext, 'How can I improve my portfolio?')
+      const result = buildEnhancedSystemPrompt(fullContext, 'Give me startup ideas')
 
-      expect(result).toContain('Collabryx AI Mentor')
-      expect(result).toContain('## USER CONTEXT')
+      // Core identity
+      expect(result).toContain('Collabryx Startup Idea Generator')
+
+      // Profile section uses ## USER PROFILE (not ## USER CONTEXT)
+      expect(result).toContain('## USER PROFILE')
       expect(result).toContain('Name: Sarah Chen')
       expect(result).toContain('Headline: Full Stack Developer')
       expect(result).toContain('Looking for: collaboration, mentorship')
       expect(result).toContain('Skills: TypeScript, React')
       expect(result).toContain('Career Level: mid-career')
-      expect(result).toContain('## RELEVANT KNOWLEDGE')
+
+      // Relevant context sections
+      expect(result).toContain('## RELEVANT CONTEXT')
       expect(result).toContain('Collaboration best practices')
       expect(result).toContain('relevance: 89%')
-      expect(result).toContain('## SESSION SUMMARY')
+
+      // Session summary
+      expect(result).toContain('## SESSION HISTORY')
       expect(result).toContain('career growth strategies')
       expect(result).toContain('Previous action items:')
+
+      // Conversation history
       expect(result).toContain('## CONVERSATION HISTORY')
-      expect(result).toContain('How can I improve my portfolio?')
+
+      // JSON output format instruction
+      expect(result).toContain('## OUTPUT FORMAT')
+      expect(result).toContain('\"message\"')
+      expect(result).toContain('\"ideas\"')
+      expect(result).toContain('\"suggestions\"')
+      expect(result).toContain('\"profile_match\"')
+
+      // User request
+      expect(result).toContain('## USER REQUEST')
+      expect(result).toContain('Give me startup ideas')
     })
   })
 
@@ -143,12 +161,12 @@ describe('ai-mentor-prompts', () => {
 
       const result = buildEnhancedSystemPrompt(contextWithoutProfile, 'Show me tips')
 
-      expect(result).toContain('## USER CONTEXT')
+      expect(result).toContain('## USER PROFILE')
       expect(result).toContain('Name: Test User')
       expect(result).toContain('Headline: Not specified')
-      expect(result).toContain('## RELEVANT KNOWLEDGE')
+      expect(result).toContain('## RELEVANT CONTEXT')
       expect(result).toContain('Portfolio improvement tips')
-      expect(result).not.toContain('## SESSION SUMMARY')
+      expect(result).not.toContain('## SESSION HISTORY')
       expect(result).not.toContain('## CONVERSATION HISTORY')
     })
 
@@ -172,10 +190,10 @@ describe('ai-mentor-prompts', () => {
         assembled_at: '2026-04-30T10:00:00Z'
       }
 
-      const result = buildEnhancedSystemPrompt(contextWithNoRetrieved, 'What should I learn next?')
+      const result = buildEnhancedSystemPrompt(contextWithNoRetrieved, 'What should I build?')
 
       expect(result).toContain('Name: Jane Smith')
-      expect(result).not.toContain('## RELEVANT KNOWLEDGE')
+      expect(result).not.toContain('## RELEVANT CONTEXT')
     })
 
     it('should handle missing session summary', () => {
@@ -200,7 +218,7 @@ describe('ai-mentor-prompts', () => {
 
       const result = buildEnhancedSystemPrompt(contextWithoutSummary, 'Hello')
 
-      expect(result).not.toContain('## SESSION SUMMARY')
+      expect(result).not.toContain('## SESSION HISTORY')
     })
   })
 
@@ -228,8 +246,8 @@ describe('ai-mentor-prompts', () => {
 
       expect(typeof result).toBe('string')
       expect(result.length).toBeGreaterThan(0)
-      expect(result).toContain('## CURRENT MESSAGE')
-      expect(result).toContain('User: Test message')
+      expect(result).toContain('## USER REQUEST')
+      expect(result).toContain('Test message')
     })
 
     it('should format conversation history with role labels', () => {
@@ -251,23 +269,23 @@ describe('ai-mentor-prompts', () => {
           {
             id: '1',
             role: 'user' as const,
-            content: 'I need help with my career',
+            content: 'I need startup ideas for AI',
             created_at: '2026-04-29T10:00:00Z'
           },
           {
             id: '2',
             role: 'assistant' as const,
-            content: 'I would be happy to help you with your career path. Let me ask some questions to better understand your goals.',
+            content: 'I would be happy to help you find startup ideas based on your skills.',
             created_at: '2026-04-29T10:01:00Z'
           }
         ],
         assembled_at: '2026-04-30T10:00:00Z'
       }
 
-      const result = buildEnhancedSystemPrompt(contextWithHistory, 'What questions?')
+      const result = buildEnhancedSystemPrompt(contextWithHistory, 'What ideas?')
 
       expect(result).toContain('## CONVERSATION HISTORY')
-      expect(result).toContain('user: I need help with my career')
+      expect(result).toContain('user: I need startup ideas for AI')
       expect(result).toContain('assistant: I would be happy to help')
     })
 

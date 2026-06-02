@@ -17,11 +17,12 @@ interface Message {
 
 interface MessageBubbleProps {
   message: Message
+  isStreaming?: boolean
   onSuggestionClick?: (suggestion: string) => void
   onIdeaAction?: (ideaId: number, action: StartupIdeaAction) => void
 }
 
-export function MessageBubble({ message, onSuggestionClick, onIdeaAction }: MessageBubbleProps) {
+export function MessageBubble({ message, isStreaming, onSuggestionClick, onIdeaAction }: MessageBubbleProps) {
   const isAssistant = message.role === 'assistant'
 
   const structuredData = useMemo<AIStructuredResponse | null>(() => {
@@ -61,6 +62,9 @@ export function MessageBubble({ message, onSuggestionClick, onIdeaAction }: Mess
         </div>
         <div className='text-xs md:text-sm leading-relaxed whitespace-pre-wrap break-words'>
           {displayContent}
+          {isStreaming && (
+            <span className='inline-block ml-0.5 w-1.5 h-4 bg-foreground/70 animate-pulse rounded-sm' />
+          )}
         </div>
         {isAssistant && structuredData && (
           <StructuredResponseRenderer

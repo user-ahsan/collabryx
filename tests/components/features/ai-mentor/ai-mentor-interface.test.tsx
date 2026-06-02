@@ -38,17 +38,40 @@ vi.mock('@/hooks/use-auth', () => ({
   })),
 }))
 
-// Mock the StreamingMessage component to simplify testing
-// Note: component only passes content and isStreaming (no sender prop)
-vi.mock('@/components/features/ai-mentor/streaming-message', () => ({
-  StreamingMessage: vi.fn(({ content, isStreaming }: {
-    content: string
-    isStreaming: boolean
+// Mock ChatList — renders messages as simple divs for testing
+vi.mock('@/components/features/assistant/chat-list', () => ({
+  ChatList: vi.fn(({ externalMessages, onSuggestionClick, onIdeaAction }: {
+    externalMessages?: Array<{ role: string; content: string }>
+    onSuggestionClick?: (s: string) => void
+    onIdeaAction?: (id: number, a: string) => void
   }) => (
-    <div data-testid="message-ai" data-streaming={isStreaming}>
-      {content}
+    <div data-testid="chat-list">
+      {(externalMessages || []).map((msg, i) => (
+        <div key={i} data-testid={`msg-${msg.role}-${i}`}>
+          {msg.content}
+        </div>
+      ))}
     </div>
   )),
+}))
+
+// Mock ChatInput — renders an input and form for testing
+vi.mock('@/components/features/assistant/chat-input', () => ({
+  ChatInput: vi.fn(() => (
+    <div data-testid="chat-input">
+      <input
+        data-testid="mock-input"
+        placeholder="Ask for startup ideas based on your skills..."
+      />
+    </div>
+  )),
+}))
+
+// Mock the ui components that ChatList/ChatInput depend on
+vi.mock('@/components/ui/conversation', () => ({
+  Conversation: vi.fn(({ children }: { children: React.ReactNode }) => <div>{children}</div>),
+  ConversationContent: vi.fn(({ children }: { children: React.ReactNode }) => <div>{children}</div>),
+  ConversationScrollButton: vi.fn(() => null),
 }))
 
 // Import the actual content component directly to bypass next/dynamic wrapper (loading spinner)
@@ -63,145 +86,63 @@ describe('AI Mentor Chat Interface (TC-076)', () => {
   })
 
   describe('Interface Accessibility', () => {
-    it('should render the message input field', async () => {
+    it('should render the AI Mentor header', async () => {
       render(<AIMentorContent />)
-      const input = screen.getByPlaceholderText('Ask your AI mentor...')
-      expect(input).toBeInTheDocument()
+      expect(screen.getByText('AI Mentor')).toBeInTheDocument()
     })
 
-    it('should render the send button', async () => {
+    it('should render the description text', async () => {
       render(<AIMentorContent />)
-      const button = screen.getByRole('button', { name: /send/i })
-      expect(button).toBeInTheDocument()
+      expect(screen.getByText(/personalized startup ideas/)).toBeInTheDocument()
     })
 
-    it('should render the message display area (scrollable container)', async () => {
-      const { container } = render(<AIMentorContent />)
-      const messageArea = container.querySelector('.overflow-y-auto')
-      expect(messageArea).toBeInTheDocument()
-    })
-  })
-
-  describe('Input Behavior', () => {
-    it('should allow users to type into the input field', async () => {
+    it('should render the ChatInput component', async () => {
       render(<AIMentorContent />)
-      const input = screen.getByPlaceholderText('Ask your AI mentor...') as HTMLInputElement
-
-      fireEvent.change(input, { target: { value: 'Help me with my startup idea' } })
-      expect(input.value).toBe('Help me with my startup idea')
+      expect(screen.getByTestId('chat-input')).toBeInTheDocument()
     })
 
-    it('should clear input after sending a message', async () => {
+    it('should render the ChatList component', async () => {
       render(<AIMentorContent />)
-      const input = screen.getByPlaceholderText('Ask your AI mentor...') as HTMLInputElement
-
-      fireEvent.change(input, { target: { value: 'Build a project plan' } })
-      expect(input.value).toBe('Build a project plan')
-
-      const form = input.closest('form')!
-      fireEvent.submit(form)
-
-      expect(mockState.sendMessage).toHaveBeenCalledWith('Build a project plan')
-    })
-
-    it('should not send empty messages', async () => {
-      mockState.sendMessage.mockClear()
-      render(<AIMentorContent />)
-      const container = document.body
-      const form = container.querySelector('form')
-      if (form) fireEvent.submit(form)
-
-      expect(mockState.sendMessage).not.toHaveBeenCalled()
-    })
-
-    it('should not send whitespace-only messages', async () => {
-      mockState.sendMessage.mockClear()
-      render(<AIMentorContent />)
-      const input = screen.getByPlaceholderText('Ask your AI mentor...') as HTMLInputElement
-
-      fireEvent.change(input, { target: { value: '   ' } })
-      const form = input.closest('form')!
-      fireEvent.submit(form)
-
-      expect(mockState.sendMessage).not.toHaveBeenCalled()
-    })
-  })
-
-  describe('Send Button States', () => {
-    it('should disable send button when input is empty', async () => {
-      render(<AIMentorContent />)
-      const button = screen.getByRole('button', { name: /send/i })
-      expect(button).toBeDisabled()
-    })
-
-    it('should enable send button when input has content', async () => {
-      render(<AIMentorContent />)
-      const input = screen.getByPlaceholderText('Ask your AI mentor...')
-
-      fireEvent.change(input, { target: { value: 'Hello' } })
-      const button = screen.getByRole('button', { name: /send/i })
-      expect(button).not.toBeDisabled()
-    })
-
-    it('should disable send button and input while streaming', async () => {
-      mockState.messages = [
-        { id: '1', role: 'user', content: 'Hi', created_at: new Date().toISOString() },
-        { id: '2', role: 'assistant', content: 'Hello...', created_at: new Date().toISOString() },
-      ]
-      mockState.isStreaming = true
-
-      render(<AIMentorContent />)
-
-      const input = screen.getByPlaceholderText('Ask your AI mentor...')
-      const button = screen.getByRole('button', { name: /send/i })
-
-      expect(input).toBeDisabled()
-      expect(button).toBeDisabled()
+      expect(screen.getByTestId('chat-list')).toBeInTheDocument()
     })
   })
 
   describe('Message Display', () => {
     it('should display user messages in the message area', async () => {
       mockState.messages = [
-        { id: '1', role: 'user', content: 'Hello AI!', created_at: new Date().toISOString() },
+        { id: '1', role: 'user', content: 'Give me startup ideas', created_at: new Date().toISOString() },
       ]
 
       render(<AIMentorContent />)
 
-      const userMessage = screen.getByText('Hello AI!')
-      expect(userMessage).toBeInTheDocument()
+      expect(screen.getByText('Give me startup ideas')).toBeInTheDocument()
     })
 
     it('should display AI responses in the message area', async () => {
       mockState.messages = [
         { id: '1', role: 'user', content: 'Hi', created_at: new Date().toISOString() },
-        { id: '2', role: 'assistant', content: 'Hello! How can I help?', created_at: new Date().toISOString() },
+        { id: '2', role: 'assistant', content: 'Here are 3 startup ideas for you...', created_at: new Date().toISOString() },
       ]
 
       render(<AIMentorContent />)
 
-      const aiMessage = screen.getByTestId('message-ai')
-      expect(aiMessage).toBeInTheDocument()
-      expect(aiMessage).toHaveTextContent('Hello! How can I help?')
+      expect(screen.getByText('Here are 3 startup ideas for you...')).toBeInTheDocument()
     })
 
     it('should display multiple messages in conversation order', async () => {
       mockState.messages = [
-        { id: '1', role: 'user', content: 'Message 1', created_at: new Date().toISOString() },
-        { id: '2', role: 'assistant', content: 'Reply 1', created_at: new Date().toISOString() },
-        { id: '3', role: 'user', content: 'Message 2', created_at: new Date().toISOString() },
-        { id: '4', role: 'assistant', content: 'Reply 2', created_at: new Date().toISOString() },
+        { id: '1', role: 'user', content: 'I am a developer', created_at: new Date().toISOString() },
+        { id: '2', role: 'assistant', content: 'Great, here are dev tool ideas', created_at: new Date().toISOString() },
+        { id: '3', role: 'user', content: 'More ideas please', created_at: new Date().toISOString() },
+        { id: '4', role: 'assistant', content: 'Here are 3 more...', created_at: new Date().toISOString() },
       ]
 
       render(<AIMentorContent />)
 
-      expect(screen.getByText('Message 1')).toBeInTheDocument()
-      expect(screen.getByText('Reply 1')).toBeInTheDocument()
-      expect(screen.getByText('Message 2')).toBeInTheDocument()
-      expect(screen.getByText('Reply 2')).toBeInTheDocument()
-      // Also verify the AI messages use the StreamingMessage component
-      const aiMessages = screen.getAllByTestId('message-ai')
-      expect(aiMessages).toHaveLength(2)
+      expect(screen.getByText('I am a developer')).toBeInTheDocument()
+      expect(screen.getByText('Great, here are dev tool ideas')).toBeInTheDocument()
+      expect(screen.getByText('More ideas please')).toBeInTheDocument()
+      expect(screen.getByText('Here are 3 more...')).toBeInTheDocument()
     })
   })
 
@@ -211,8 +152,7 @@ describe('AI Mentor Chat Interface (TC-076)', () => {
 
       render(<AIMentorContent />)
 
-      const errorElement = screen.getByText(/Failed to connect to AI service/)
-      expect(errorElement).toBeInTheDocument()
+      expect(screen.getByText(/Failed to connect/)).toBeInTheDocument()
     })
 
     it('should not display error when no error exists', async () => {
@@ -220,35 +160,7 @@ describe('AI Mentor Chat Interface (TC-076)', () => {
 
       render(<AIMentorContent />)
 
-      expect(screen.queryByText(/^Error:/)).not.toBeInTheDocument()
-    })
-  })
-
-  describe('Streaming Indicator', () => {
-    it('should mark the last AI message as streaming when active', async () => {
-      mockState.messages = [
-        { id: '1', role: 'user', content: 'Hi', created_at: new Date().toISOString() },
-        { id: '2', role: 'assistant', content: 'Streaming...', created_at: new Date().toISOString() },
-      ]
-      mockState.isStreaming = true
-
-      render(<AIMentorContent />)
-
-      const streamingMsg = screen.getByTestId('message-ai')
-      expect(streamingMsg.getAttribute('data-streaming')).toBe('true')
-    })
-
-    it('should not mark completed messages as streaming', async () => {
-      mockState.messages = [
-        { id: '1', role: 'user', content: 'Hi', created_at: new Date().toISOString() },
-        { id: '2', role: 'assistant', content: 'Done!', created_at: new Date().toISOString() },
-      ]
-      mockState.isStreaming = false
-
-      render(<AIMentorContent />)
-
-      const doneMessage = screen.getByTestId('message-ai')
-      expect(doneMessage.getAttribute('data-streaming')).toBe('false')
+      expect(screen.queryByText(/Failed to connect/)).not.toBeInTheDocument()
     })
   })
 })

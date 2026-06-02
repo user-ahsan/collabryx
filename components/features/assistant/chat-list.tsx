@@ -30,6 +30,10 @@ export function ChatList({
 }: ChatListProps) {
   const [messages, setMessages] = useState<AIMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
+
+  // Determine if the last external message is currently streaming
+  const lastExtIndex = externalMessages.length - 1
+  const isStreamingLast = isLoadingExternal && lastExtIndex >= 0 && externalMessages[lastExtIndex].role === 'assistant'
   useEffect(() => {
     if (!sessionId) { setMessages([]); return }
     const load = async () => {
@@ -49,9 +53,12 @@ export function ChatList({
       content: m.content,
       structured: undefined as AIStructuredResponse | undefined,
     }))
-    const ext = externalMessages.map((m, i) => ({ key: `ext-${i}`, ...m }))
+    const ext = externalMessages.map((m, i) => {
+      const isStreaming = isStreamingLast && i === lastExtIndex
+      return { key: `ext-${i}`, ...m, isStreaming }
+    })
     return [...loaded, ...ext]
-  }, [messages, externalMessages])
+  }, [messages, externalMessages, isStreamingLast, lastExtIndex])
 
   return (
     <div className='relative flex-1'>
@@ -61,13 +68,22 @@ export function ChatList({
             <div className='flex items-center justify-center h-full text-muted-foreground'>
               Start a conversation with AI Mentor
             </div>
-          ) : (isLoading || isLoadingExternal) ? (
+          ) : isLoading ? (
             <div className='flex items-center justify-center h-full'>
               <Loader2 className='h-8 w-8 animate-spin text-primary' />
             </div>
           ) : combinedMessages.length === 0 ? (
-            <div className='text-center text-muted-foreground py-8'>
-              Ask for startup ideas or career advice to get started!
+            <div className='flex items-center justify-center h-full'>
+              {isLoadingExternal ? (
+                <div className='flex flex-col items-center gap-2 text-muted-foreground'>
+                  <Loader2 className='h-6 w-6 animate-spin' />
+                  <span className='text-sm'>Generating startup ideas...</span>
+                </div>
+              ) : (
+                <div className='text-center text-muted-foreground py-8'>
+                  Ask for startup ideas or career advice to get started!
+                </div>
+              )}
             </div>
           ) : (
             <div className='flex flex-col gap-3 md:gap-4 max-w-3xl mx-auto w-full'>
@@ -75,6 +91,7 @@ export function ChatList({
                 <MessageBubble
                   key={msg.key}
                   message={{ role: msg.role, content: msg.content, structured: msg.structured }}
+                  isStreaming={msg.isStreaming}
                   onSuggestionClick={onSuggestionClick}
                   onIdeaAction={onIdeaAction}
                 />
