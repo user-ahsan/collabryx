@@ -2,6 +2,19 @@ import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 import { checkBot, shouldBlockBot } from "@/lib/bot-detection"
 
+/**
+ * Normalize DEVELOPMENT_MODE to handle different config formats.
+ * Accepts: "true", "testing", "development" (case-insensitive).
+ * Mirrors lib/services/development.ts normalizeDevMode for proxy.ts use
+ * (can't import client-side module in middleware).
+ */
+function isDevMode(): boolean {
+    const value = process.env.DEVELOPMENT_MODE
+    if (!value) return false
+    const normalized = value.toLowerCase().trim()
+    return normalized === "true" || normalized === "testing" || normalized === "development"
+}
+
 export async function proxy(request: NextRequest) {
     // Skip if Supabase is not configured (during build or missing .env.local)
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
@@ -59,10 +72,11 @@ export async function proxy(request: NextRequest) {
         }
     )
 
-    // IMPORTANT: Do NOT use getSession() here.
-    // getUser() sends a request to the Supabase Auth server every time
-    // to revalidate the Auth token — getSession() reads from cookies
-    // which could be tampered with.
+    // Use getUser() here — we need user.email_confirmed_at and user.id
+    // for email gate and profile/onboarding checks below.
+    // For simple "is authenticated?" checks (no user data needed), prefer
+    // getClaims() which validates JWT locally without network call.
+    // NEVER use getSession() for authorization decisions.
     const {
         data: { user },
     } = await supabase.auth.getUser()
@@ -78,9 +92,9 @@ export async function proxy(request: NextRequest) {
 
     let isAuthRoute = protectedRoutes.some(route => request.nextUrl.pathname.startsWith(route))
 
-    // Onboarding requires auth unless DEVELOPMENT_MODE is true
+    // Onboarding requires auth in production; skippable in dev mode
     if (request.nextUrl.pathname.startsWith("/onboarding")) {
-        if (process.env.DEVELOPMENT_MODE !== "true") {
+        if (!isDevMode()) {
             isAuthRoute = true
         }
     }
@@ -119,7 +133,8 @@ export async function proxy(request: NextRequest) {
     }
 
     // Check onboarding status for authenticated users trying to access protected routes
-    if (user && isAuthRoute && !request.nextUrl.pathname.startsWith("/onboarding") && !request.nextUrl.pathname.startsWith("/auth-sync") && process.env.DEVELOPMENT_MODE === "true") {
+    // Redirect incomplete profiles to onboarding (dev mode only — auth-sync handles production)
+    if (user && isAuthRoute && !request.nextUrl.pathname.startsWith("/onboarding") && !request.nextUrl.pathname.startsWith("/auth-sync") && isDevMode()) {
         const { data: profile } = await supabase
             .from("profiles")
             .select("onboarding_completed")

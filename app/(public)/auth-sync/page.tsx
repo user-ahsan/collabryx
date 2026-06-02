@@ -33,12 +33,13 @@ export default async function AuthSyncPage() {
             return redirect("/verify-email")
         }
         
-        // Check profile
+        // Check profile — use maybeSingle() to avoid PGRST116 crash
+        // when no profile row exists yet (e.g., just registered, trigger hasn't fired)
         const { data: profile } = await supabase
             .from("profiles")
             .select("onboarding_completed, profile_completion")
             .eq("id", user.id)
-            .single()
+            .maybeSingle()
 
         if (profile?.onboarding_completed === true) {
             destination = "/dashboard"

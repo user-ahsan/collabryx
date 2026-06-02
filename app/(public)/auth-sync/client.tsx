@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { GlassCard } from "@/components/shared/glass-card"
@@ -47,9 +47,12 @@ export function AuthSyncClient({ destination, needsEmbeddingWait = false }: Auth
             return
         }
 
+        // Track mount state with ref (stable across renders, unlike local let)
+        const isUnmountedRef = { current: false }
+
         // Always redirect after a delay, but show embedding status if needed
         const redirectTimer = setTimeout(() => {
-            if (isUnmounted) return
+            if (isUnmountedRef.current) return
             try {
                 router.push(destination)
             } catch (error) {
@@ -61,19 +64,18 @@ export function AuthSyncClient({ destination, needsEmbeddingWait = false }: Auth
         }, needsEmbeddingWait ? 8000 : 3000)
 
         let pollInterval: NodeJS.Timeout | null = null
-        let isUnmounted = false
 
         // If we need to wait for embedding, poll the status
         if (needsEmbeddingWait) {
             const checkEmbeddingStatus = async () => {
-                if (isUnmounted) return
+                if (isUnmountedRef.current) return
                 
                 try {
                     const supabase = createClient()
                     const { data: { user } } = await supabase.auth.getUser()
                     
                     if (!user) {
-                        if (!isUnmounted) setIsChecking(false)
+                        if (!isUnmountedRef.current) setIsChecking(false)
                         return
                     }
 
@@ -83,7 +85,7 @@ export function AuthSyncClient({ destination, needsEmbeddingWait = false }: Auth
                         .eq("user_id", user.id)
                         .single()
 
-                    if (isUnmounted) return
+                    if (isUnmountedRef.current) return
                     
                     setEmbeddingStatus(embedding?.status || 'not_found')
                     setIsChecking(false)
@@ -96,7 +98,7 @@ export function AuthSyncClient({ destination, needsEmbeddingWait = false }: Auth
                 } catch (error) {
                     console.error('Error checking embedding status:', error)
                     // Don't fail on embedding check errors - just continue with redirect
-                    if (!isUnmounted) setIsChecking(false)
+                    if (!isUnmountedRef.current) setIsChecking(false)
                 }
             }
 
@@ -104,7 +106,7 @@ export function AuthSyncClient({ destination, needsEmbeddingWait = false }: Auth
 
             // Poll every 2 seconds if still processing
             pollInterval = setInterval(() => {
-                if (isUnmounted) {
+                if (isUnmountedRef.current) {
                     clearInterval(pollInterval!)
                     return
                 }
@@ -115,7 +117,7 @@ export function AuthSyncClient({ destination, needsEmbeddingWait = false }: Auth
         }
 
         return () => {
-            isUnmounted = true
+            isUnmountedRef.current = true
             clearTimeout(redirectTimer)
             if (pollInterval) {
                 clearInterval(pollInterval)
