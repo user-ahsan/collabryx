@@ -53,15 +53,12 @@ COPY tests/ ./tests/
 RUN useradd --create-home --shell /bin/bash appuser
 
 # Create required directories with proper permissions
-RUN mkdir -p /app/logs /app/.cache /app/.pytest_cache /tmp && \
+RUN mkdir -p /app/.cache /tmp && \
     chown -R appuser:appuser /app /tmp && \
-    chmod -R 777 /app/.cache /app/.pytest_cache /tmp
+    chmod -R 777 /app/.cache /tmp
 
 # Set ownership before switching user
 RUN chown -R appuser:appuser /app
-
-# Declare volume mount point for logs (persisted externally)
-VOLUME ["/app/logs"]
 
 USER appuser
 

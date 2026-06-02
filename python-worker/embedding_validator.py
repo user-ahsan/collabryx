@@ -109,20 +109,42 @@ class EmbeddingValidator:
         if magnitude == 0:
             return embedding
         return [v / magnitude for v in embedding]
-    
+
+    @classmethod
+    def resize_to_expected(cls, embedding: List[float]) -> List[float]:
+        """
+        Resize embedding to EXPECTED_DIMENSION (384) by padding or truncating.
+        This handles model output dimension mismatches gracefully.
+        """
+        current = len(embedding)
+        target = cls.EXPECTED_DIMENSION
+        if current < target:
+            return embedding + [0.0] * (target - current)
+        elif current > target:
+            return embedding[:target]
+        return embedding
+
     @classmethod
     def validate_and_fix(cls, embedding: List[float]) -> Tuple[List[float], ValidationResult]:
         """
-        Validate embedding and attempt to fix minor issues
+        Validate embedding and attempt to fix common issues:
+        - Wrong dimensions (pad/truncate to 384)
+        - Not normalized (re-normalize)
         Returns (fixed_embedding, validation_result)
         """
-        result = cls.validate(embedding)
+        # Step 1: Fix dimension mismatch if needed
+        if len(embedding) != cls.EXPECTED_DIMENSION:
+            embedding = cls.resize_to_expected(embedding)
         
+        # Step 2: Validate the (possibly resized) embedding
+        result = cls.validate(embedding)
         if result.is_valid:
             return embedding, result
         
+        # Step 3: Try fixing normalization
         if result.status == ValidationStatus.NOT_NORMALIZED:
             normalized = cls.normalize(embedding)
+            # Validate the normalized version with the original dimension check relaxed
             new_result = cls.validate(normalized)
             if new_result.is_valid:
                 return normalized, new_result

@@ -102,8 +102,11 @@ async function generateQueryEmbedding(query: string): Promise<number[]> {
       const pythonWorkerUrl = process.env.PYTHON_WORKER_URL || "http://localhost:8000"
       const res = await fetch(`${pythonWorkerUrl}/generate-embedding`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: query, user_id: "system-fallback" })
+        headers: {
+          "Content-Type": "application/json",
+          "X-Worker-API-Key": process.env.WORKER_API_KEY || "",
+        },
+        body: JSON.stringify({ text: query, user_id: "system-fallback" }),
       })
       if (res.ok) {
         const body = await res.json()

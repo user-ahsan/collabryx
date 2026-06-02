@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { getBackendConfig } from "@/lib/config/backend";
 import { validateCSRFRequest, requiresCSRF } from "@/lib/csrf";
+import { constructSemanticText } from "@/lib/services/embeddings";
 
 export const runtime = "edge"
 
@@ -29,33 +30,6 @@ interface SkillData {
 
 interface InterestData {
   interest: string;
-}
-
-// Helper function to construct semantic text from profile data
-function constructSemanticText(
-  profile: ProfileData,
-  skills: SkillData[],
-  interests: InterestData[]
-): string {
-  const skillsText = skills.length > 0
-    ? skills.map(s => s.skill_name).join(', ')
-    : 'None';
-
-  const interestsText = interests.length > 0
-    ? interests.map(i => i.interest).join(', ')
-    : 'None';
-
-  const goalsText = profile.looking_for && profile.looking_for.length > 0
-    ? profile.looking_for.join(', ')
-    : 'None';
-
-  return `Role: ${profile.role || 'User'}.
-Headline: ${profile.headline || ''}.
-Bio: ${profile.bio || ''}.
-Skills: ${skillsText}.
-Interests: ${interestsText}.
-Goals: ${goalsText}.
-Location: ${profile.location || ''}.`.trim();
 }
 
 // Helper function to update embedding status in database

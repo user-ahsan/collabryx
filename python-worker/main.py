@@ -8,7 +8,7 @@ content moderation, AI mentor, analytics, and feed scoring have been removed.
 from fastapi import FastAPI, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional, List
 import os
 import time
@@ -52,25 +52,18 @@ def validate_env_vars():
         raise RuntimeError(f"Missing required environment variables: {missing}")
 
 
-# Initialize Supabase Client with timeout
+# Declare module-level singletons (initialized in lifespan)
 supabase: Optional[Client] = None
-if SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY:
-    try:
-        supabase = create_client(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
-        logger.info("Supabase client initialized successfully")
-    except Exception as e:
-        logger.error(f"Failed to initialize Supabase client: {e}")
+rate_limiter: Optional[RateLimiter] = None
 
-# Initialize Rate Limiter
-rate_limiter = RateLimiter(supabase) if supabase else None
-
-# In-memory queue with bounded size
-MAX_QUEUE_SIZE = 100
-request_queue = asyncio.Queue(maxsize=MAX_QUEUE_SIZE)
-processing_semaphore = asyncio.Semaphore(5)  # Max 5 concurrent generations
+# A1: Single DB-backed queue — API requests persist through embedding_pending_queue table
+# No in-memory queue needed. Items survive restarts and scale across workers.
 
 # Graceful shutdown flag
 SHUTDOWN_FLAG = False
+
+# Model info cache (computed once at startup, C5)
+_model_info_cache: Optional[dict] = None
 
 
 def signal_handler(signum, frame):
@@ -84,7 +77,7 @@ def signal_handler(signum, frame):
 
 
 async def run_embedding_tests():
-    """Run embedding tests on startup to verify fixes are working with detailed reporting"""
+    """Run embedding tests on startup using run_in_executor to avoid blocking the event loop"""
     import subprocess
     import sys
     import time
@@ -97,22 +90,30 @@ async def run_embedding_tests():
     start_time = time.time()
 
     try:
-        # Run pytest on embedding tests with summary report
-        result = subprocess.run(
-            [
-                sys.executable,
-                "-m",
-                "pytest",
-                "tests/test_embedding.py",
-                "-v",
-                "--tb=short",
-                "-r",
-                "fE",  # Show summary of failed and error tests
-            ],
-            cwd=os.path.dirname(os.path.abspath(__file__)),
-            capture_output=True,
-            text=True,
-            timeout=120,  # 2 minute timeout
+        loop = asyncio.get_event_loop()
+
+        def _run_pytest():
+            return subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "pytest",
+                    "tests/test_embedding.py",
+                    "-v",
+                    "--tb=short",
+                    "-r",
+                    "fE",
+                ],
+                cwd=os.path.dirname(os.path.abspath(__file__)),
+                capture_output=True,
+                text=True,
+                timeout=120,
+            )
+
+        # Run subprocess in thread pool to avoid blocking event loop (B4)
+        result = await asyncio.wait_for(
+            loop.run_in_executor(None, _run_pytest),
+            timeout=130.0,
         )
 
         elapsed_time = time.time() - start_time
@@ -137,7 +138,6 @@ async def run_embedding_tests():
             logger.error("✗ Embedding tests FAILED")
             logger.error(f"Test execution time: {elapsed_time:.2f}s")
             logger.error(f"Return code: {result.returncode}")
-            # Show test output for debugging
             if result.stdout:
                 logger.error("Test output:")
                 for line in result.stdout.split("\n"):
@@ -146,12 +146,11 @@ async def run_embedding_tests():
                 logger.error("Errors:")
                 for line in result.stderr.split("\n"):
                     logger.error(f"  {line}")
-            # Don't fail startup on test failure - just log and continue
             logger.warning(
                 "⚠️ Continuing startup despite test failures - manual review recommended"
             )
 
-    except subprocess.TimeoutExpired:
+    except asyncio.TimeoutError:
         logger.error("Embedding tests timed out (2 min limit)")
         logger.error("This may indicate:")
         logger.error("  - Model loading issues")
@@ -170,7 +169,7 @@ async def run_embedding_tests():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifecycle with graceful shutdown and signal handling"""
-    global SHUTDOWN_FLAG
+    global SHUTDOWN_FLAG, supabase, rate_limiter, _model_info_cache
 
     # Register signal handlers for graceful shutdown
     loop = asyncio.get_event_loop()
@@ -179,6 +178,24 @@ async def lifespan(app: FastAPI):
     logger.info("Signal handlers registered for SIGTERM and SIGINT")
 
     validate_env_vars()
+
+    # B7: Initialize Supabase inside lifespan (not at module level)
+    # Prevents silent degraded mode when env vars are missing at import time
+    supabase_url = os.environ.get("SUPABASE_URL")
+    supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
+    if supabase_url and supabase_key:
+        try:
+            supabase = create_client(supabase_url, supabase_key)
+            rate_limiter = RateLimiter(supabase)
+            logger.info("Supabase client initialized successfully")
+        except Exception as e:
+            logger.error(f"Failed to initialize Supabase client: {e}")
+            supabase = None
+            rate_limiter = None
+
+    # C5: Pre-cache model info at startup
+    _model_info_cache = get_generator().get_model_info()
+
     logger.info("=" * 60)
     logger.info("EMBEDDING SERVICE STARTING UP")
     logger.info("=" * 60)
@@ -186,8 +203,6 @@ async def lifespan(app: FastAPI):
     # Run embedding tests on startup to verify fixes
     await run_embedding_tests()
 
-    logger.info("Starting background queue processor...")
-    processor_task = asyncio.create_task(queue_processor())
     logger.info("Starting DLQ processor...")
     dlq_processor_task = asyncio.create_task(process_dead_letter_queue())
     logger.info("Starting pending queue processor...")
@@ -204,26 +219,10 @@ async def lifespan(app: FastAPI):
     logger.info("=" * 60)
     SHUTDOWN_FLAG = True
 
-    # Report queue state before shutdown
-    queue_size = request_queue.qsize()
-    if queue_size > 0:
-        logger.warning(f"⚠️ {queue_size} items still in queue during shutdown")
-
-    # Wait for queue to drain (with timeout)
-    logger.info("Waiting for queue to drain (max 30s)...")
-    try:
-        await asyncio.wait_for(request_queue.join(), timeout=30.0)
-        logger.info("✓ Queue drained successfully")
-    except asyncio.TimeoutError:
-        logger.warning("⚠️ Queue drain timeout - some items may be lost")
-    except KeyboardInterrupt:
-        logger.warning("⚠️ Shutdown interrupted by user")
-
     # Cancel background tasks gracefully with individual timeouts
     logger.info("Cancelling background tasks...")
 
     tasks_with_names = [
-        ("processor", processor_task),
         ("dlq", dlq_processor_task),
         ("pending", pending_queue_task),
     ]
@@ -243,8 +242,7 @@ async def lifespan(app: FastAPI):
     logger.info("EMBEDDING SERVICE SHUTDOWN COMPLETE")
     logger.info("=" * 60)
 
-    # Close Supabase connections gracefully
-    global supabase
+    # Close Supabase connections gracefully (already declared global above)
     if supabase:
         try:
             logger.info("Closing Supabase client connections...")
@@ -316,7 +314,8 @@ class EmbeddingRequest(BaseModel):
         None, description="Optional request ID for tracking"
     )
 
-    @validator("text")
+    @field_validator("text")
+    @classmethod
     def validate_text(cls, v):
         if not v or len(v.strip()) < 10:
             raise ValueError("Text must be at least 10 characters")
@@ -326,16 +325,21 @@ class EmbeddingRequest(BaseModel):
 
 
 class EmbeddingResponse(BaseModel):
-    """Response body containing generated embedding"""
+    """
+    Response body for embedding generation.
+    Fields like embedding/dimensions/model/processing_time_ms are
+    only populated when status == 'completed'.
+    """
 
     user_id: str
     status: str = "success"
     message: Optional[str] = None
-    embedding: Optional[List[float]] = None
-    dimensions: Optional[int] = None
-    model: Optional[str] = None
+    dimensions: Optional[int] = Field(None, description="384 for completed embeddings")
+    model: Optional[str] = Field(None, description="Model name, populated on completion")
     request_id: Optional[str] = None
-    processing_time_ms: Optional[float] = None
+    processing_time_ms: Optional[float] = Field(
+        None, description="Processing time in ms, populated on completion"
+    )
 
 
 class ProfileDataRequest(BaseModel):
@@ -417,14 +421,14 @@ def store_embedding(user_id: str, embedding: List[float], status: str):
     upsert_success = False
 
     try:
-        # Step 1: Validate embedding before storage
-        validation_result = EmbeddingValidator.validate(embedding)
+        # Step 1: Validate and fix embedding before storage
+        # The validator handles dimension padding/truncation + normalization (A3)
+        embedding, validation_result = EmbeddingValidator.validate_and_fix(embedding)
 
         if not validation_result.is_valid:
             logger.error(
                 f"Pre-storage validation failed for {user_id}: {validation_result.message}"
             )
-            # Attempt to record validation failure
             _mark_embedding_status(
                 user_id, "failed", f"Validation failed: {validation_result.message}"
             )
@@ -432,21 +436,7 @@ def store_embedding(user_id: str, embedding: List[float], status: str):
                 f"Invalid embedding cannot be stored: {validation_result.message}"
             )
 
-        # Step 2: Normalize to 384 dimensions if needed
-        target_dim = 384
-        original_dim = len(embedding)
-        if len(embedding) < target_dim:
-            embedding = embedding + [0.0] * (target_dim - len(embedding))
-            logger.warning(
-                f"Embedding for {user_id} padded from {original_dim} to {target_dim} dimensions"
-            )
-        elif len(embedding) > target_dim:
-            embedding = embedding[:target_dim]
-            logger.warning(
-                f"Embedding for {user_id} truncated from {original_dim} to {target_dim} dimensions"
-            )
-
-        # Step 3: UPSERT with metadata (atomic operation)
+        # Step 2: UPSERT with metadata (atomic operation)
         upsert_response = (
             supabase.table("profile_embeddings")
             .upsert(
@@ -536,129 +526,6 @@ def _mark_embedding_status(
         return False
 
 
-async def generate_and_store_embedding(
-    text: str, user_id: str, request_id: Optional[str] = None
-):
-    """Async function to generate and save embedding with retry logic and timeout"""
-    async with processing_semaphore:
-        try:
-            logger.info(
-                f"Generating embedding for {user_id}",
-                extra={"user_id": user_id, "request_id": request_id},
-            )
-            start_time = time.time()
-
-            # Add timeout to prevent hung workers on model failures
-            embedding = await asyncio.wait_for(
-                get_generator().generate_embedding(text),
-                timeout=30.0,  # 30 second timeout for embedding generation
-            )
-            elapsed_ms = (time.time() - start_time) * 1000
-
-            success = store_embedding(user_id, embedding, "completed")
-
-            if success:
-                logger.info(
-                    f"Embedding generated successfully for {user_id}",
-                    extra={
-                        "user_id": user_id,
-                        "request_id": request_id,
-                        "processing_time_ms": elapsed_ms,
-                        "dimensions": len(embedding),
-                    },
-                )
-            else:
-                logger.error(
-                    f"Failed to store embedding for {user_id}",
-                    extra={"user_id": user_id},
-                )
-
-        except asyncio.TimeoutError:
-            logger.error(
-                f"Embedding generation TIMEOUT for {user_id} (exceeded 30s)",
-                extra={"user_id": user_id, "request_id": request_id},
-            )
-            # Store in DLQ with timeout-specific error
-            await store_in_dead_letter_queue(
-                user_id=user_id,
-                semantic_text=text,
-                failure_reason="Embedding generation timeout (exceeded 30 seconds)",
-                retry_count=0,
-            )
-
-        except Exception as e:
-            logger.error(
-                f"Embedding generation failed for {user_id}: {e}",
-                extra={"user_id": user_id, "request_id": request_id, "error": str(e)},
-            )
-
-            # Get existing retry count if available
-            existing_retry_count = 0
-            if supabase:
-                try:
-                    retry_response = (
-                        supabase.table("embedding_dead_letter_queue")
-                        .select("retry_count")
-                        .eq("user_id", user_id)
-                        .order("created_at", desc=True)
-                        .limit(1)
-                        .execute()
-                    )
-                    if retry_response.data and len(retry_response.data) > 0:
-                        existing_retry_count = retry_response.data[0].get(
-                            "retry_count", 0
-                        )
-                except Exception:
-                    pass
-
-            # Store in DLQ for retry
-            await store_in_dead_letter_queue(
-                user_id=user_id,
-                semantic_text=text,
-                failure_reason=str(e),
-                retry_count=existing_retry_count,
-            )
-
-            # Update status to failed
-            if supabase:
-                try:
-                    supabase.table("profile_embeddings").upsert(
-                        {
-                            "user_id": user_id,
-                            "status": "failed",
-                            "last_updated": datetime.utcnow().isoformat(),
-                        }
-                    ).execute()
-                except Exception as inner_e:
-                    logger.error(
-                        f"Failed to update error status for {user_id}: {inner_e}"
-                    )
-
-
-async def queue_processor():
-    """Background task to process queue with graceful shutdown support"""
-    global SHUTDOWN_FLAG
-    logger.info("Queue processor loop started")
-    while not SHUTDOWN_FLAG:
-        try:
-            # Use timeout to check shutdown flag periodically
-            try:
-                text, user_id, request_id = await asyncio.wait_for(
-                    request_queue.get(), timeout=1.0
-                )
-            except asyncio.TimeoutError:
-                continue  # Check SHUTDOWN_FLAG
-
-            logger.info(f"Queue processor picked up request for user {user_id}")
-            await generate_and_store_embedding(text, user_id, request_id)
-            request_queue.task_done()
-        except Exception as e:
-            if SHUTDOWN_FLAG:
-                logger.info("Queue processor stopping due to shutdown")
-                break
-            logger.error(f"Queue processor error: {e}")
-
-
 async def process_dead_letter_queue():
     """Process retryable items from dead letter queue with atomic claim pattern"""
     while not SHUTDOWN_FLAG:
@@ -707,41 +574,48 @@ async def process_dead_letter_queue():
                         item["semantic_text"]
                     )
 
-                    # Store successfully
-                    store_embedding(item["user_id"], embedding, "completed")
+                    # Store successfully (runs sync Supabase calls in executor)
+                    await loop.run_in_executor(
+                        None, store_embedding, item["user_id"], embedding, "completed"
+                    )
 
-                    # Mark DLQ item as completed
-                    supabase.table("embedding_dead_letter_queue").update(
-                        {
+                    # Mark DLQ item as completed via executor
+                    complete_query = (
+                        supabase.table("embedding_dead_letter_queue")
+                        .update({
                             "status": "completed",
                             "resolved_at": datetime.utcnow().isoformat(),
-                        }
-                    ).eq("id", item["id"]).execute()
+                        })
+                        .eq("id", item["id"])
+                    )
+                    await loop.run_in_executor(None, complete_query.execute)
 
                     logger.info(f"DLQ retry successful for {item['user_id']}")
 
                 except Exception as e:
                     logger.warning(f"DLQ retry failed for {item['user_id']}: {e}")
-                    # Increment retry count and reschedule
                     new_retry_count = item["retry_count"] + 1
                     if new_retry_count >= 3:
-                        status = "exhausted"
-                        supabase.table("embedding_dead_letter_queue").update(
-                            {"retry_count": new_retry_count, "status": status}
-                        ).eq("id", item["id"]).execute()
+                        exhaust_query = (
+                            supabase.table("embedding_dead_letter_queue")
+                            .update({"retry_count": new_retry_count, "status": "exhausted"})
+                            .eq("id", item["id"])
+                        )
+                        await loop.run_in_executor(None, exhaust_query.execute)
                     else:
-                        status = "pending"
                         next_retry = datetime.utcnow() + timedelta(
                             minutes=5 * (new_retry_count + 1)
                         )
-
-                        supabase.table("embedding_dead_letter_queue").update(
-                            {
+                        retry_query = (
+                            supabase.table("embedding_dead_letter_queue")
+                            .update({
                                 "retry_count": new_retry_count,
-                                "status": status,
+                                "status": "pending",
                                 "next_retry": next_retry.isoformat(),
-                            }
-                        ).eq("id", item["id"]).execute()
+                            })
+                            .eq("id", item["id"])
+                        )
+                        await loop.run_in_executor(None, retry_query.execute)
 
             # Wait before next poll (increased from 30s to 60s to reduce DB load)
             await asyncio.sleep(60)
@@ -755,21 +629,25 @@ async def process_pending_queue():
     """Process pending embedding requests from database queue with atomic claim pattern"""
     while not SHUTDOWN_FLAG:
         try:
-            # Get pending requests (candidates for claiming)
-            response = (
+            loop = asyncio.get_event_loop()
+
+            # Get pending requests (candidates for claiming) via executor
+            query = (
                 supabase.table("embedding_pending_queue")
                 .select("*")
                 .eq("status", "pending")
-                .order("created_at")  # Default is ascending
+                .order("created_at")
                 .limit(20)
-                .execute()
             )
+            response = await loop.run_in_executor(None, query.execute)
 
             for item in response.data:
+                # B5: Initialize semantic_text early to prevent NameError in DLQ failure path
+                semantic_text = ""
+
                 try:
                     # ATOMIC CLAIM: Update only if status is still "pending"
-                    # This prevents multiple workers from processing the same item
-                    claim_response = (
+                    claim_query = (
                         supabase.table("embedding_pending_queue")
                         .update(
                             {
@@ -779,48 +657,53 @@ async def process_pending_queue():
                         )
                         .eq("id", item["id"])
                         .eq("status", "pending")  # Critical: atomic claim condition
-                        .execute()
                     )
+                    claim_response = await loop.run_in_executor(None, claim_query.execute)
 
-                    # Check if we successfully claimed this item
                     if not claim_response.data or len(claim_response.data) == 0:
-                        # Another worker claimed it, skip this item
                         logger.debug(
                             f"Item {item['id']} already claimed by another worker, skipping"
                         )
                         continue
 
-                    # Get user profile data
-                    profile_response = (
-                        supabase.from_("profiles")
-                        .select(
-                            "id, display_name, headline, bio, location, looking_for"
+                    # A1: Use pre-constructed text from API requests, or fetch profile data for onboarding
+                    trigger_source = item.get("trigger_source", "")
+                    metadata = item.get("metadata", {}) or {}
+
+                    if trigger_source == "api" and metadata.get("semantic_text"):
+                        semantic_text = metadata["semantic_text"]
+                        logger.debug(
+                            f"Using pre-constructed text for API-triggered item {item['id']}"
                         )
-                        .eq("id", item["user_id"])
-                        .single()
-                        .execute()
-                    )
+                    else:
+                        # Fetch profile data via executor
+                        profile_query = (
+                            supabase.from_("profiles")
+                            .select("id, display_name, headline, bio, location, looking_for")
+                            .eq("id", item["user_id"])
+                            .single()
+                        )
+                        profile_response = await loop.run_in_executor(None, profile_query.execute)
 
-                    skills_response = (
-                        supabase.from_("user_skills")
-                        .select("skill_name")
-                        .eq("user_id", item["user_id"])
-                        .execute()
-                    )
+                        skills_query = (
+                            supabase.from_("user_skills")
+                            .select("skill_name")
+                            .eq("user_id", item["user_id"])
+                        )
+                        skills_response = await loop.run_in_executor(None, skills_query.execute)
 
-                    interests_response = (
-                        supabase.from_("user_interests")
-                        .select("interest")
-                        .eq("user_id", item["user_id"])
-                        .execute()
-                    )
+                        interests_query = (
+                            supabase.from_("user_interests")
+                            .select("interest")
+                            .eq("user_id", item["user_id"])
+                        )
+                        interests_response = await loop.run_in_executor(None, interests_query.execute)
 
-                    # Construct semantic text
-                    semantic_text = construct_semantic_text(
-                        profile_response.data or {},
-                        skills_response.data or [],
-                        interests_response.data or [],
-                    )
+                        semantic_text = construct_semantic_text(
+                            profile_response.data or {},
+                            skills_response.data or [],
+                            interests_response.data or [],
+                        )
 
                     # Generate embedding
                     embedding = await get_generator().generate_embedding(semantic_text)
@@ -829,26 +712,32 @@ async def process_pending_queue():
                     success = store_embedding(item["user_id"], embedding, "completed")
 
                     if success:
-                        # Mark queue item as completed
-                        supabase.table("embedding_pending_queue").update(
-                            {
+                        # Mark queue item as completed via executor
+                        complete_query = (
+                            supabase.table("embedding_pending_queue")
+                            .update({
                                 "status": "completed",
                                 "completed_at": datetime.utcnow().isoformat(),
-                            }
-                        ).eq("id", item["id"]).execute()
+                            })
+                            .eq("id", item["id"])
+                        )
+                        await loop.run_in_executor(None, complete_query.execute)
 
                         logger.info(
                             f"Pending queue processed successfully for {item['user_id']}"
                         )
                     else:
-                        # Storage failed, move to DLQ
-                        supabase.table("embedding_pending_queue").update(
-                            {
+                        # Storage failed, move to DLQ via executor
+                        fail_query = (
+                            supabase.table("embedding_pending_queue")
+                            .update({
                                 "status": "failed",
                                 "last_attempt": datetime.utcnow().isoformat(),
                                 "failure_reason": "Failed to store embedding",
-                            }
-                        ).eq("id", item["id"]).execute()
+                            })
+                            .eq("id", item["id"])
+                        )
+                        await loop.run_in_executor(None, fail_query.execute)
 
                         await store_in_dead_letter_queue(
                             user_id=item["user_id"],
@@ -865,24 +754,25 @@ async def process_pending_queue():
 
                     # Update queue item status
                     try:
-                        supabase.table("embedding_pending_queue").update(
-                            {
+                        fail_query = (
+                            supabase.table("embedding_pending_queue")
+                            .update({
                                 "status": "failed",
                                 "last_attempt": datetime.utcnow().isoformat(),
                                 "failure_reason": str(e),
-                            }
-                        ).eq("id", item["id"]).execute()
+                            })
+                            .eq("id", item["id"])
+                        )
+                        await loop.run_in_executor(None, fail_query.execute)
                     except Exception as update_error:
                         logger.critical(
                             f"Failed to update queue status for {item['user_id']}: {update_error}"
                         )
 
-                    # ALWAYS move to DLQ for retry - this is critical for reliability
+                    # ALWAYS move to DLQ (semantic_text is always defined — B5 fix)
                     dlq_success = await store_in_dead_letter_queue(
                         user_id=item["user_id"],
-                        semantic_text=semantic_text
-                        if "semantic_text" in locals()
-                        else "",
+                        semantic_text=semantic_text or "",
                         failure_reason=str(e),
                         retry_count=0,
                     )
@@ -892,7 +782,6 @@ async def process_pending_queue():
                             f"CRITICAL: DLQ storage failed for {item['user_id']}. Manual intervention required."
                         )
 
-            # Wait before next poll (increased from 10s to 30s to reduce DB load)
             await asyncio.sleep(30)
 
         except Exception as e:
@@ -909,14 +798,15 @@ async def root():
     """Root endpoint with service info"""
     return {
         "message": "Collabryx Embedding Service",
-        "model_info": get_generator().get_model_info(),
-        "queue_size": request_queue.qsize(),
+        "model_info": _model_info_cache or get_generator().get_model_info(),
+        "queue_type": "database-backed (embedding_pending_queue)",
     }
 
 
 @app.get("/health")
 async def health():
     """Health check endpoint with comprehensive system metrics"""
+    global _model_info_cache
     supabase_healthy = False
     try:
         if supabase:
@@ -926,42 +816,41 @@ async def health():
         logger.error(f"Supabase health check failed: {e}")
 
     # Get disk usage
-    disk_usage = shutil.disk_usage("/")
-    disk_percent = (disk_usage.used / disk_usage.total) * 100
+    try:
+        disk_usage = shutil.disk_usage("/")
+        disk_percent = (disk_usage.used / disk_usage.total) * 100
+    except Exception:
+        disk_usage = None
+        disk_percent = 0
 
     # Determine overall status
     status = "healthy"
     if not supabase_healthy:
         status = "degraded"
-    elif disk_percent > 85:
+    elif disk_usage and disk_percent > 85:
         status = "warning"
-        logger.warning(f"High disk usage: {disk_percent:.1f}%")
 
     return {
         "status": status,
         "timestamp": time.time(),
-        "model_info": get_generator().get_model_info(),
+        "model_info": _model_info_cache or get_generator().get_model_info(),
         "supabase_connected": supabase_healthy,
-        "queue_size": request_queue.qsize(),
-        "queue_capacity": MAX_QUEUE_SIZE,
+        "queue_type": "database-backed (embedding_pending_queue)",
         "system": {
             "disk": {
                 "percent": round(disk_percent, 2),
-                "free_gb": round(disk_usage.free / 1024 / 1024 / 1024, 2),
-                "total_gb": round(disk_usage.total / 1024 / 1024 / 1024, 2),
-                "used_gb": round(disk_usage.used / 1024 / 1024 / 1024, 2),
+                "free_gb": round((disk_usage.free / 1024 / 1024 / 1024) if disk_usage else 0, 2),
+                "total_gb": round((disk_usage.total / 1024 / 1024 / 1024) if disk_usage else 0, 2),
+                "used_gb": round((disk_usage.used / 1024 / 1024 / 1024) if disk_usage else 0, 2),
             },
         },
     }
 
 
-
-
-
 @app.get("/model-info")
 async def model_info():
     """Get information about the embedding model"""
-    return get_generator().get_model_info()
+    return _model_info_cache or get_generator().get_model_info()
 
 
 @app.post("/generate-embedding", response_model=EmbeddingResponse)
@@ -972,12 +861,11 @@ async def generate_embedding(request: EmbeddingRequest):
     Includes rate limiting (3 requests per hour per user)
     """
     try:
-        # Check rate limit first
-        # TODO: rate_limiter.check_rate_limit() uses synchronous .execute() internally, which blocks the asyncio event loop. Use run_in_executor() for production.
+        # Check rate limit first (uses run_in_executor for async DB access)
         if rate_limiter:
             rate_limit_result = await rate_limiter.check_rate_limit(request.user_id)
 
-            if not rate_limit_result["allowed"]:
+            if not rate_limit_result.allowed:
                 logger.warning(
                     f"Rate limit exceeded for user {request.user_id}",
                     extra={"user_id": request.user_id},
@@ -987,25 +875,51 @@ async def generate_embedding(request: EmbeddingRequest):
                     detail={
                         "error": "Rate limit exceeded",
                         "message": "Maximum 3 embedding requests per hour",
-                        "retry_after": rate_limit_result["retry_after"],
-                        "reset_at": rate_limit_result["reset_at"],
-                        "remaining": rate_limit_result["remaining"],
+                        "retry_after": rate_limit_result.retry_after,
+                        "reset_at": rate_limit_result.reset_at,
+                        "remaining": rate_limit_result.remaining,
                     },
                     headers={
-                        "Retry-After": str(rate_limit_result["retry_after"]),
-                        "X-RateLimit-Remaining": str(rate_limit_result["remaining"]),
-                        "X-RateLimit-Reset": rate_limit_result["reset_at"] or "",
+                        "Retry-After": str(rate_limit_result.retry_after),
+                        "X-RateLimit-Remaining": str(rate_limit_result.remaining),
+                        "X-RateLimit-Reset": rate_limit_result.reset_at or "",
                     },
                 )
 
-        # Check queue capacity
-        if request_queue.full():
+        # A1: Insert into DB-backed pending queue (persistent across restarts)
+        if not supabase:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Service at capacity, please try again later",
+                detail="Database not available, cannot queue request",
             )
 
-        await request_queue.put((request.text, request.user_id, request.request_id))
+        # Check for existing pending entry to avoid duplicates
+        existing = (
+            supabase.table("embedding_pending_queue")
+            .select("id, status")
+            .eq("user_id", request.user_id)
+            .in_("status", ["pending", "processing"])
+            .execute()
+        )
+        if existing.data and len(existing.data) > 0:
+            logger.info(
+                f"Request already queued for {request.user_id}, skipping duplicate",
+                extra={"user_id": request.user_id},
+            )
+            return EmbeddingResponse(
+                user_id=request.user_id,
+                status="queued",
+                message="Embedding request already queued",
+                request_id=request.request_id,
+            )
+
+        # Insert into persistent queue with semantic_text in metadata
+        supabase.table("embedding_pending_queue").insert({
+            "user_id": request.user_id,
+            "status": "pending",
+            "trigger_source": "api",
+            "metadata": {"semantic_text": request.text, "request_id": request.request_id},
+        }).execute()
 
         logger.info(
             f"Embedding request queued for {request.user_id}",
@@ -1038,13 +952,19 @@ async def generate_embedding_from_profile(request: ProfileDataRequest):
             request.profile, request.skills, request.interests
         )
 
-        if request_queue.full():
+        if not supabase:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Service at capacity, please try again later",
+                detail="Database not available, cannot queue request",
             )
 
-        await request_queue.put((semantic_text, request.user_id, request.request_id))
+        # Insert into DB-backed pending queue (persistent across restarts)
+        supabase.table("embedding_pending_queue").insert({
+            "user_id": request.user_id,
+            "status": "pending",
+            "trigger_source": "api",
+            "metadata": {"semantic_text": semantic_text, "request_id": request.request_id},
+        }).execute()
 
         logger.info(
             f"Profile embedding request queued for {request.user_id}",
