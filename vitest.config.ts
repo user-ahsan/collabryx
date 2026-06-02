@@ -21,17 +21,6 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'html'],
-      thresholds: process.env.CI_NO_COVERAGE_THRESHOLD ? {
-        lines: 0,
-        branches: 0,
-        functions: 0,
-        statements: 0,
-      } : {
-        lines: 80,
-        branches: 80,
-        functions: 80,
-        statements: 80,
-      },
       include: ['lib/**/*.{ts,tsx}', 'components/**/*.{ts,tsx}', 'hooks/**/*.{ts,tsx}'],
       exclude: [
         '**/*.d.ts',

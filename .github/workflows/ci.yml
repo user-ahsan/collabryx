@@ -95,9 +95,6 @@ jobs:
 
       - name: Run integration tests
         run: bun run test -- tests/integration --coverage
-        env:
-          NODE_OPTIONS: --max-old-space-size=4096
-          CI_NO_COVERAGE_THRESHOLD: true
 
       - name: Upload coverage
         uses: actions/upload-artifact@v4
