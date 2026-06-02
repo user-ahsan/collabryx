@@ -39,20 +39,20 @@ vi.mock('@/hooks/use-auth', () => ({
 }))
 
 // Mock the StreamingMessage component to simplify testing
+// Note: component only passes content and isStreaming (no sender prop)
 vi.mock('@/components/features/ai-mentor/streaming-message', () => ({
-  StreamingMessage: vi.fn(({ content, sender, isStreaming }: {
+  StreamingMessage: vi.fn(({ content, isStreaming }: {
     content: string
-    sender: string
     isStreaming: boolean
-    timestamp: Date
   }) => (
-    <div data-testid={`message-${sender}`} data-streaming={isStreaming}>
+    <div data-testid="message-ai" data-streaming={isStreaming}>
       {content}
     </div>
   )),
 }))
 
-import AIMentorPage from '@/app/(auth)/ai-mentor/page'
+// Import the actual content component directly to bypass next/dynamic wrapper (loading spinner)
+import AIMentorContent from '@/app/(auth)/ai-mentor/ai-mentor-content'
 
 describe('AI Mentor Chat Interface (TC-076)', () => {
   beforeEach(() => {
@@ -64,19 +64,19 @@ describe('AI Mentor Chat Interface (TC-076)', () => {
 
   describe('Interface Accessibility', () => {
     it('should render the message input field', async () => {
-      render(<AIMentorPage />)
-      const input = screen.getByPlaceholderText('Ask me anything...')
+      render(<AIMentorContent />)
+      const input = screen.getByPlaceholderText('Ask your AI mentor...')
       expect(input).toBeInTheDocument()
     })
 
     it('should render the send button', async () => {
-      render(<AIMentorPage />)
+      render(<AIMentorContent />)
       const button = screen.getByRole('button', { name: /send/i })
       expect(button).toBeInTheDocument()
     })
 
     it('should render the message display area (scrollable container)', async () => {
-      const { container } = render(<AIMentorPage />)
+      const { container } = render(<AIMentorContent />)
       const messageArea = container.querySelector('.overflow-y-auto')
       expect(messageArea).toBeInTheDocument()
     })
@@ -84,16 +84,16 @@ describe('AI Mentor Chat Interface (TC-076)', () => {
 
   describe('Input Behavior', () => {
     it('should allow users to type into the input field', async () => {
-      render(<AIMentorPage />)
-      const input = screen.getByPlaceholderText('Ask me anything...') as HTMLInputElement
+      render(<AIMentorContent />)
+      const input = screen.getByPlaceholderText('Ask your AI mentor...') as HTMLInputElement
 
       fireEvent.change(input, { target: { value: 'Help me with my startup idea' } })
       expect(input.value).toBe('Help me with my startup idea')
     })
 
     it('should clear input after sending a message', async () => {
-      render(<AIMentorPage />)
-      const input = screen.getByPlaceholderText('Ask me anything...') as HTMLInputElement
+      render(<AIMentorContent />)
+      const input = screen.getByPlaceholderText('Ask your AI mentor...') as HTMLInputElement
 
       fireEvent.change(input, { target: { value: 'Build a project plan' } })
       expect(input.value).toBe('Build a project plan')
@@ -106,7 +106,7 @@ describe('AI Mentor Chat Interface (TC-076)', () => {
 
     it('should not send empty messages', async () => {
       mockState.sendMessage.mockClear()
-      render(<AIMentorPage />)
+      render(<AIMentorContent />)
       const container = document.body
       const form = container.querySelector('form')
       if (form) fireEvent.submit(form)
@@ -116,8 +116,8 @@ describe('AI Mentor Chat Interface (TC-076)', () => {
 
     it('should not send whitespace-only messages', async () => {
       mockState.sendMessage.mockClear()
-      render(<AIMentorPage />)
-      const input = screen.getByPlaceholderText('Ask me anything...') as HTMLInputElement
+      render(<AIMentorContent />)
+      const input = screen.getByPlaceholderText('Ask your AI mentor...') as HTMLInputElement
 
       fireEvent.change(input, { target: { value: '   ' } })
       const form = input.closest('form')!
@@ -129,14 +129,14 @@ describe('AI Mentor Chat Interface (TC-076)', () => {
 
   describe('Send Button States', () => {
     it('should disable send button when input is empty', async () => {
-      render(<AIMentorPage />)
+      render(<AIMentorContent />)
       const button = screen.getByRole('button', { name: /send/i })
       expect(button).toBeDisabled()
     })
 
     it('should enable send button when input has content', async () => {
-      render(<AIMentorPage />)
-      const input = screen.getByPlaceholderText('Ask me anything...')
+      render(<AIMentorContent />)
+      const input = screen.getByPlaceholderText('Ask your AI mentor...')
 
       fireEvent.change(input, { target: { value: 'Hello' } })
       const button = screen.getByRole('button', { name: /send/i })
@@ -150,9 +150,9 @@ describe('AI Mentor Chat Interface (TC-076)', () => {
       ]
       mockState.isStreaming = true
 
-      render(<AIMentorPage />)
+      render(<AIMentorContent />)
 
-      const input = screen.getByPlaceholderText('Ask me anything...')
+      const input = screen.getByPlaceholderText('Ask your AI mentor...')
       const button = screen.getByRole('button', { name: /send/i })
 
       expect(input).toBeDisabled()
@@ -166,11 +166,10 @@ describe('AI Mentor Chat Interface (TC-076)', () => {
         { id: '1', role: 'user', content: 'Hello AI!', created_at: new Date().toISOString() },
       ]
 
-      render(<AIMentorPage />)
+      render(<AIMentorContent />)
 
-      const userMessage = screen.getByTestId('message-user')
+      const userMessage = screen.getByText('Hello AI!')
       expect(userMessage).toBeInTheDocument()
-      expect(userMessage).toHaveTextContent('Hello AI!')
     })
 
     it('should display AI responses in the message area', async () => {
@@ -179,7 +178,7 @@ describe('AI Mentor Chat Interface (TC-076)', () => {
         { id: '2', role: 'assistant', content: 'Hello! How can I help?', created_at: new Date().toISOString() },
       ]
 
-      render(<AIMentorPage />)
+      render(<AIMentorContent />)
 
       const aiMessage = screen.getByTestId('message-ai')
       expect(aiMessage).toBeInTheDocument()
@@ -194,10 +193,15 @@ describe('AI Mentor Chat Interface (TC-076)', () => {
         { id: '4', role: 'assistant', content: 'Reply 2', created_at: new Date().toISOString() },
       ]
 
-      render(<AIMentorPage />)
+      render(<AIMentorContent />)
 
-      const allMessages = screen.getAllByTestId(/message-(user|ai)/)
-      expect(allMessages).toHaveLength(4)
+      expect(screen.getByText('Message 1')).toBeInTheDocument()
+      expect(screen.getByText('Reply 1')).toBeInTheDocument()
+      expect(screen.getByText('Message 2')).toBeInTheDocument()
+      expect(screen.getByText('Reply 2')).toBeInTheDocument()
+      // Also verify the AI messages use the StreamingMessage component
+      const aiMessages = screen.getAllByTestId('message-ai')
+      expect(aiMessages).toHaveLength(2)
     })
   })
 
@@ -205,7 +209,7 @@ describe('AI Mentor Chat Interface (TC-076)', () => {
     it('should display error message when an error occurs', async () => {
       mockState.error = new Error('Failed to connect to AI service')
 
-      render(<AIMentorPage />)
+      render(<AIMentorContent />)
 
       const errorElement = screen.getByText(/Failed to connect to AI service/)
       expect(errorElement).toBeInTheDocument()
@@ -214,7 +218,7 @@ describe('AI Mentor Chat Interface (TC-076)', () => {
     it('should not display error when no error exists', async () => {
       mockState.error = null
 
-      render(<AIMentorPage />)
+      render(<AIMentorContent />)
 
       expect(screen.queryByText(/^Error:/)).not.toBeInTheDocument()
     })
@@ -228,7 +232,7 @@ describe('AI Mentor Chat Interface (TC-076)', () => {
       ]
       mockState.isStreaming = true
 
-      render(<AIMentorPage />)
+      render(<AIMentorContent />)
 
       const streamingMsg = screen.getByTestId('message-ai')
       expect(streamingMsg.getAttribute('data-streaming')).toBe('true')
@@ -241,7 +245,7 @@ describe('AI Mentor Chat Interface (TC-076)', () => {
       ]
       mockState.isStreaming = false
 
-      render(<AIMentorPage />)
+      render(<AIMentorContent />)
 
       const doneMessage = screen.getByTestId('message-ai')
       expect(doneMessage.getAttribute('data-streaming')).toBe('false')
