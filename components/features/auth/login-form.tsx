@@ -19,7 +19,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import { createClient } from "@/lib/supabase/client"
-import { isDevelopmentMode, isEmailVerificationSkipped, getDevelopmentCredentials } from "@/lib/services/development"
+import { isDevelopmentMode, getDevelopmentCredentials } from "@/lib/services/development"
 
 import { toast } from "sonner"
 import Link from "next/link"
@@ -121,17 +121,17 @@ export function LoginForm() {
             }
 
             // ===========================================
-            // EMAIL VERIFICATION CHECK
-            // Respect SKIP_EMAIL_VERIFICATION env var
+            // ROUTING DELEGATED TO AUTH-SYNC (SERVER)
+            // Always redirect to /auth-sync after login.
+            // The server-side auth-sync page handles:
+            //   - email verification check (respects SKIP_EMAIL_VERIFICATION reliably)
+            //   - profile/onboarding routing
+            //   - development test user auto-onboarding
+            //
+            // Client-side env vars are unreliable (NEXT_PUBLIC_* scope).
+            // Server-side process.env always works, so auth-sync is the
+            // single source of truth for auth routing decisions.
             // ===========================================
-            const emailVerified = isEmailVerificationSkipped() ? true : !!data.user?.email_confirmed_at
-            
-            if (!emailVerified) {
-                toast.error("Please verify your email before signing in.")
-                router.push("/verify-email")
-                return
-            }
-
             toast.success("Welcome back! Redirecting...")
             
             // Wait for cookies to be set before redirect

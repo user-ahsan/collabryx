@@ -137,14 +137,18 @@ export async function proxy(request: NextRequest) {
         }
     }
 
-    // Redirect authenticated users away from login/register
+    // Redirect authenticated users away from login/register to auth-sync
+    // auth-sync is the single entry point that handles routing to:
+    //   - onboarding (if profile not completed)
+    //   - verify-email (if email not confirmed and SKIP_EMAIL_VERIFICATION is false)
+    //   - dashboard (if everything is complete)
     const isPublicAuthRoute =
         request.nextUrl.pathname === "/login" ||
         request.nextUrl.pathname === "/register"
 
     if (user && isPublicAuthRoute) {
         const url = request.nextUrl.clone()
-        url.pathname = "/dashboard"
+        url.pathname = "/auth-sync"
         const redirectResponse = NextResponse.redirect(url)
         supabaseResponse.cookies.getAll().forEach(cookie => {
             redirectResponse.cookies.set(cookie.name, cookie.value)

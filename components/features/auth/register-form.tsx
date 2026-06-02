@@ -19,7 +19,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import { createClient } from "@/lib/supabase/client"
-import { devLog, logRedirectDecision, isDevelopmentMode, isEmailVerificationSkipped } from "@/lib/services/development"
+import { devLog, logRedirectDecision, isDevelopmentMode } from "@/lib/services/development"
 
 import { toast } from "sonner"
 import Link from "next/link"
@@ -142,40 +142,44 @@ export function RegisterForm() {
             // Success - log and redirect
             devLog("auth", "Signup successful - account created", {
                 email: data.email,
-                emailVerificationSkipped: isEmailVerificationSkipped(),
             })
             
-            // Check if email verification should be skipped
-            if (isEmailVerificationSkipped()) {
-                devLog("auth", "Email verification skipped - signing in and redirecting to auth-sync", {
+            // ===========================================
+            // POST-SIGNUP AUTO SIGN-IN & ROUTING
+            // After signUp with email confirmation enabled,
+            // Supabase does NOT create a session. We sign the
+            // user in with their password to establish a session,
+            // then delegate all routing to /auth-sync (server).
+            //
+            // auth-sync handles:
+            //   - email verification (respects SKIP_EMAIL_VERIFICATION)
+            //   - profile/onboarding routing
+            //   - development test user auto-onboarding
+            //
+            // If auto sign-in fails, fallback to /verify-email
+            // which has its own server-side redirect guard.
+            // ===========================================
+            devLog("auth", "Auto signing in after signup", {
+                email: data.email,
+            })
+            
+            const { error: signInError } = await supabase.auth.signInWithPassword({
+                email: data.email,
+                password: data.password,
+            })
+            
+            if (signInError) {
+                devLog("auth", "Auto sign-in after signup failed", {
                     email: data.email,
+                    error: signInError.message,
                 })
-                
-                // After signUp with email confirmation enabled, the user has no session.
-                // We sign them in immediately so auth-sync routing works.
-                const { error: signInError } = await supabase.auth.signInWithPassword({
-                    email: data.email,
-                    password: data.password,
-                })
-                
-                if (signInError) {
-                    devLog("auth", "Auto sign-in after signup failed", {
-                        email: data.email,
-                        error: signInError.message,
-                    })
-                    // Fallback: let them verify or log in manually
-                    logRedirectDecision("/register", "/verify-email", "Auto sign-in failed, redirecting to verify")
-                    toast.success("Account created! Redirecting...")
-                    window.location.assign("/verify-email")
-                } else {
-                    logRedirectDecision("/register", "/auth-sync", "Email verification skipped in development")
-                    toast.success("Account created! Welcome to Collabryx.")
-                    window.location.assign("/auth-sync")
-                }
-            } else {
-                logRedirectDecision("/register", "/verify-email", "Account created, email verification required")
-                toast.success("Account created! Please check your email to verify your account.")
+                logRedirectDecision("/register", "/verify-email", "Auto sign-in failed, redirecting to verify-email")
+                toast.success("Account created! Check your email to verify.")
                 window.location.assign("/verify-email")
+            } else {
+                logRedirectDecision("/register", "/auth-sync", "Auto sign-in succeeded, routing via auth-sync")
+                toast.success("Account created! Welcome to Collabryx.")
+                window.location.assign("/auth-sync")
             }
         } catch (error) {
             console.error('Signup error:', error)
