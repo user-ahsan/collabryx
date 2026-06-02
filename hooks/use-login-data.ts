@@ -58,6 +58,7 @@ async function retry<T>(
 
 export function useLoginData() {
   const [isReady, setIsReady] = useState(false)
+  const [hasSession, setHasSession] = useState<boolean | null>(null)
   const retryCountRef = useRef(0)
   const supabase = useMemo(() => createClient(), [])
 
@@ -156,9 +157,19 @@ export function useLoginData() {
   })
 
   // Trigger all queries on mount with retry logic
+  // GUARD: Only fire if we have a valid session — prevents error floods
+  // on pages where auth state is transient (onboarding, Fast Refresh, etc.)
   useEffect(() => {
     const fetchAllData = async () => {
       try {
+        // Verify session exists before firing any queries
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) {
+          setHasSession(false)
+          return
+        }
+        setHasSession(true)
+
         await Promise.all([
           postsQuery.refetch(),
           matchesQuery.refetch(),

@@ -119,7 +119,7 @@ export function RegisterForm() {
                 isDevelopment: isDevelopmentMode(),
             })
             
-            const { error } = await supabase.auth.signUp({
+            const { data: signUpData, error } = await supabase.auth.signUp({
                 email: data.email,
                 password: data.password,
                 options: {
@@ -136,6 +136,17 @@ export function RegisterForm() {
                     errorMessage: error.message,
                 })
                 toast.error(error.message)
+                return
+            }
+
+            // Detect existing user: signUp returns data.user=null when email
+            // is already registered (Supabase doesn't error on duplicates).
+            // An empty identities array also signals an existing account.
+            if (!signUpData.user || (signUpData.user.identities && signUpData.user.identities.length === 0)) {
+                devLog("auth", "Signup blocked - email already registered", {
+                    email: data.email,
+                })
+                toast.error("An account with this email already exists. Please sign in instead.")
                 return
             }
 

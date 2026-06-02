@@ -67,7 +67,7 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
                     .from("profiles")
                     .select("onboarding_completed")
                     .eq("id", user.id)
-                    .single()
+                    .maybeSingle()
 
                 // New user if profile doesn't exist or onboarding not completed
                 if (user && !profile?.onboarding_completed) {
