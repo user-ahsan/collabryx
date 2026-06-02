@@ -109,7 +109,9 @@ export function RegisterForm() {
         
         try {
             const origin = typeof window !== 'undefined' ? window.location.origin : ''
-            const redirectTo = `${origin}/auth-sync`
+            // Point email verification redirect to the callback route so it can exchange the auth code
+            // The callback then forwards to /auth-sync for session routing
+            const redirectTo = `${origin}/api/auth/callback?next=/auth-sync`
             
             devLog("auth", "Calling supabase.auth.signUp", {
                 email: data.email,
@@ -145,12 +147,31 @@ export function RegisterForm() {
             
             // Check if email verification should be skipped
             if (isEmailVerificationSkipped()) {
-                devLog("auth", "Email verification skipped - redirecting to dashboard", {
+                devLog("auth", "Email verification skipped - signing in and redirecting to auth-sync", {
                     email: data.email,
                 })
-                logRedirectDecision("/register", "/dashboard", "Email verification skipped in development")
-                toast.success("Account created! Welcome to Collabryx.")
-                window.location.assign("/dashboard")
+                
+                // After signUp with email confirmation enabled, the user has no session.
+                // We sign them in immediately so auth-sync routing works.
+                const { error: signInError } = await supabase.auth.signInWithPassword({
+                    email: data.email,
+                    password: data.password,
+                })
+                
+                if (signInError) {
+                    devLog("auth", "Auto sign-in after signup failed", {
+                        email: data.email,
+                        error: signInError.message,
+                    })
+                    // Fallback: let them verify or log in manually
+                    logRedirectDecision("/register", "/verify-email", "Auto sign-in failed, redirecting to verify")
+                    toast.success("Account created! Redirecting...")
+                    window.location.assign("/verify-email")
+                } else {
+                    logRedirectDecision("/register", "/auth-sync", "Email verification skipped in development")
+                    toast.success("Account created! Welcome to Collabryx.")
+                    window.location.assign("/auth-sync")
+                }
             } else {
                 logRedirectDecision("/register", "/verify-email", "Account created, email verification required")
                 toast.success("Account created! Please check your email to verify your account.")
