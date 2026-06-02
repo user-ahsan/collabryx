@@ -20,7 +20,7 @@ import { useUser } from "@/hooks/use-profile"
 import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import Link from "next/link"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { usePathname } from "next/navigation"
 
 
@@ -31,7 +31,7 @@ export function MobileNav() {
     const supabase = createClient()
 
     const pathname = usePathname()
-    const [prevPathname, setPrevPathname] = useState(pathname)
+    const prevPathname = useRef(pathname)
     const { openSettings } = useSettings()
 
     const handleLogout = async () => {
@@ -41,9 +41,10 @@ export function MobileNav() {
 
     // Close sheet when route changes
     useEffect(() => {
-        if (pathname !== prevPathname) {
-            setPrevPathname(pathname)
-            setOpen(false)
+        if (pathname !== prevPathname.current) {
+            prevPathname.current = pathname
+            // Use queueMicrotask to avoid cascading render warning
+            queueMicrotask(() => setOpen(false))
         }
     }, [pathname])
 

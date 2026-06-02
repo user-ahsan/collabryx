@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button"
 import { FileText, Users, Shield, AlertCircle, ArrowRight } from "lucide-react"
 import Link from "next/link"
 
+export const dynamic = "force-dynamic"
+
 export default function TermsPage() {
 	return (
 		<div className="container max-w-4xl mx-auto py-8 px-4 md:px-6">

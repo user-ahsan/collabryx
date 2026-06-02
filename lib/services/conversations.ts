@@ -142,7 +142,7 @@ export async function fetchUserConversations(
     )
     const uniqueIds = [...new Set(otherUserIds)]
 
-    let profileMap = new Map<string, { name: string; avatar: string }>()
+    const profileMap = new Map<string, { name: string; avatar: string }>()
     if (uniqueIds.length > 0) {
       const { data: profiles } = await supabase
         .from("profiles")

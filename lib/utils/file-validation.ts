@@ -73,7 +73,7 @@ export function validateFileType(
   mimeType: string,
   allowedTypes: readonly string[],
   fileName?: string
-) {
+): { valid: true } | { valid: false; error: string } {
   if (!allowedTypes.includes(mimeType)) {
     return {
       valid: false,

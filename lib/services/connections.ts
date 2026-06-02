@@ -91,21 +91,24 @@ export async function fetchConnectionRequests(): Promise<{
 
     if (error) throw error
 
-    const mappedConnections: ConnectionWithUser[] = (connections || []).map((conn) => ({
-      id: conn.id,
-      requester_id: conn.requester_id,
-      receiver_id: conn.receiver_id,
-      status: conn.status,
-      message: conn.message,
-      created_at: conn.created_at,
-      updated_at: conn.updated_at,
-      other_user_id: conn.requester_id,
-      other_user_name: conn.requester?.display_name || conn.requester?.full_name || "Unknown",
-      other_user_avatar: conn.requester?.avatar_url || "",
-      other_user_headline: conn.requester?.headline,
-      other_user_initials: formatInitials(conn.requester?.display_name || conn.requester?.full_name || "Unknown"),
-      created_at_formatted: formatTimeAgo(conn.created_at),
-    }))
+    const mappedConnections: ConnectionWithUser[] = (connections || []).map((conn) => {
+      const requester = conn.requester?.[0]
+      return {
+        id: conn.id,
+        requester_id: conn.requester_id,
+        receiver_id: conn.receiver_id,
+        status: conn.status,
+        message: conn.message,
+        created_at: conn.created_at,
+        updated_at: conn.updated_at,
+        other_user_id: conn.requester_id,
+        other_user_name: requester?.display_name || requester?.full_name || "Unknown",
+        other_user_avatar: requester?.avatar_url || "",
+        other_user_headline: requester?.headline,
+        other_user_initials: formatInitials(requester?.display_name || requester?.full_name || "Unknown"),
+        created_at_formatted: formatTimeAgo(conn.created_at),
+      }
+    })
 
     return { data: mappedConnections, error: null }
   } catch (error) {
@@ -189,7 +192,7 @@ export async function fetchConnections(
 
     const mappedConnections: ConnectionWithUser[] = (connections || []).map((conn) => {
       const isRequester = conn.requester_id === user.id
-      const otherUser = isRequester ? conn.receiver : conn.requester
+      const otherUser = (isRequester ? conn.receiver : conn.requester)?.[0]
 
       return {
         id: conn.id,
@@ -199,7 +202,7 @@ export async function fetchConnections(
         message: conn.message,
         created_at: conn.created_at,
         updated_at: conn.updated_at,
-        other_user_id: otherUser?.id || "",
+        other_user_id: isRequester ? conn.receiver_id : conn.requester_id,
         other_user_name: otherUser?.display_name || otherUser?.full_name || "Unknown",
         other_user_avatar: otherUser?.avatar_url || "",
         other_user_headline: otherUser?.headline,
@@ -284,7 +287,7 @@ export async function sendConnectionRequest(
           status: "pending",
           message: input.message?.trim(),
         })
-        .select('id, requester_id, receiver_id, status, message, created_at')
+        .select('id, requester_id, receiver_id, status, message, created_at, updated_at')
         .single()
       if (insertError) throw insertError
       data = inserted
@@ -390,7 +393,7 @@ export async function acceptConnectionRequest(
           updated_at: new Date().toISOString(),
         })
         .eq("id", connectionId)
-        .select('id, requester_id, receiver_id, status, updated_at')
+        .select('id, requester_id, receiver_id, status, updated_at, created_at')
         .single()
       if (updateError) throw updateError
       acceptResult = updated

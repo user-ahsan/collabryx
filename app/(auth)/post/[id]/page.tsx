@@ -2,6 +2,8 @@ import { PostDetailView } from "@/components/features/dashboard/posts/post-detai
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 
+export const dynamic = "force-dynamic"
+
 export default async function PostPage({ params }: { params: Promise<{ id: string }> }) {
     const { id: postId } = await params
     const supabase = await createClient()

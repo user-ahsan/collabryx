@@ -3,6 +3,8 @@ import { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { ModerationDashboardClient } from "./moderation-dashboard-client"
 
+export const dynamic = "force-dynamic"
+
 export const metadata: Metadata = {
   title: "Content Moderation | Admin",
   description: "Manage and review reported content",

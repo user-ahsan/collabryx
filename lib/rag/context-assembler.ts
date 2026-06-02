@@ -64,11 +64,12 @@ export async function assembleRAGContext(options: AssemblerOptions): Promise<Ext
     // Safe character-budget truncation limits history to roughly 4000 tokens (~16000 characters)
     // to protect context window limits from overflowing with heavy messages/code blocks.
     conversation_history: (() => {
+      const last10 = messages.slice(-10)
       let charCount = 0
       const safeHistory: AIMessage[] = []
       // Iterate backwards from most recent messages to prioritize recent context
-      for (let i = messages.length - 1; i >= 0; i--) {
-        const msg = messages[i]
+      for (let i = last10.length - 1; i >= 0; i--) {
+        const msg = last10[i]
         const length = msg.content ? msg.content.length : 0
         if (charCount + length > 16000) break
         charCount += length

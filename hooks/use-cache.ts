@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { toast } from "sonner"
 import { getCache, setCache } from "@/lib/dashboard-cache"
 
@@ -94,15 +94,5 @@ export function useCache<T>({
  * ```
  */
 export function useCacheOnly<T>(key: string): T | null {
-  const [data, setData] = useState<T | null>(() => getCache<T>(key))
-
-  // Load from cache on mount if needed
-  useEffect(() => {
-    const cached = getCache<T>(key)
-    if (cached !== null) {
-      setData(cached)
-    }
-  }, [key])
-
-  return data
+  return useMemo(() => getCache<T>(key), [key])
 }

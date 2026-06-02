@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input"
 import { Mail, MessageCircle, Book, LifeBuoy, ArrowRight, Search } from "lucide-react"
 import Link from "next/link"
 
+export const dynamic = "force-dynamic"
+
 export default function HelpPage() {
 	return (
 		<div className="container max-w-4xl mx-auto py-8 px-4 md:px-6">

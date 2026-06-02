@@ -108,7 +108,7 @@ export async function sendMessage(
       .eq("id", input.conversationId)
 
     if (updateError) {
-      logger.db.warn("Failed to update conversation last_message", updateError)
+      logger.db.warn("Failed to update conversation last_message", { error: updateError })
     }
 
     return { data, error: null }
@@ -180,7 +180,7 @@ export async function fetchMessages(
 
     // Collect unique sender IDs for batch profile fetch
     const senderIds = [...new Set((data ?? []).map((m) => m.sender_id))]
-    let senderMap = new Map<string, { name: string; avatar: string }>()
+    const senderMap = new Map<string, { name: string; avatar: string }>()
 
     if (senderIds.length > 0) {
       const { data: profiles } = await supabase

@@ -5,6 +5,8 @@ import { retrieveContextFromVectorStore } from '@/lib/rag/vector-retriever'
 const createMockQueryBuilder = () => {
   const queryBuilder = {
     select: vi.fn().mockReturnThis(),
+    order: vi.fn().mockReturnThis(),
+    gt: vi.fn().mockReturnThis(),
     limit: vi.fn().mockResolvedValue({ data: [], error: null })
   }
   return queryBuilder

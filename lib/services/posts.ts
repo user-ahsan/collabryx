@@ -438,6 +438,7 @@ export async function fetchPostById(postId: string): Promise<{
 
     if (error) throw error
 
+    const author = data.author?.[0]
     const mappedPost: PostWithAuthor = {
       id: data.id,
       author_id: data.author_id,
@@ -453,9 +454,9 @@ export async function fetchPostById(postId: string): Promise<{
       version: data.version,
       created_at: data.created_at,
       updated_at: data.updated_at,
-      author_name: data.author?.display_name || data.author?.full_name || "Unknown",
-      author_role: data.author?.role || "Member",
-      author_avatar: data.author?.avatar_url || "",
+      author_name: author?.display_name || author?.full_name || "Unknown",
+      author_role: author?.role || "Member",
+      author_avatar: author?.avatar_url || "",
       time_ago: formatTimeAgo(data.created_at),
     }
 

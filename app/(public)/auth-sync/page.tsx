@@ -3,6 +3,8 @@ import { completeTestUserOnboarding, isDevelopmentMode } from "@/lib/services/de
 import { AuthSyncClient } from "./client"
 import { redirect } from 'next/navigation'
 
+export const dynamic = "force-dynamic"
+
 export default async function AuthSyncPage() {
     let destination = "/dashboard"
     let needsEmbeddingWait = false

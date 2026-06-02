@@ -17,6 +17,10 @@ vi.mock('@/lib/rate-limit', () => ({
   rateLimit: vi.fn(() => ({ allowed: true, response: null })),
 }))
 
+vi.mock('next/headers', () => ({
+  headers: vi.fn(() => new Map([['origin', 'http://localhost'], ['host', 'localhost']])),
+}))
+
 describe('Auth API Routes', () => {
   beforeEach(() => {
     vi.clearAllMocks()

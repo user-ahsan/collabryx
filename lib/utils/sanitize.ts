@@ -281,15 +281,14 @@ export function sanitizeFilename(filename: string): string {
 export function sanitizeMarkdown(markdown: string): string {
   if (!markdown) return ""
   
-  // If in browser-like environment, leverage our DOM-safe html sanitizer
-  if (typeof DOMParser !== "undefined") {
-    return sanitizeHtml(markdown)
-  }
-  
-  // Server-side fallback: Escape script tags and dangerous HTML events securely
   let result = markdown
   
-  // Escape script tag structures strictly
+  // If in browser-like environment, leverage our DOM-safe html sanitizer first
+  if (typeof DOMParser !== "undefined") {
+    result = sanitizeHtml(result)
+  }
+  
+  // Strip script tags and dangerous HTML event handlers securely (covers both fallback and markdown-based injections)
   result = result.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
   
   // Remove event handlers completely

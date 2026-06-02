@@ -110,21 +110,24 @@ export async function GET(request: Request) {
         full_name?: string
         avatar_url?: string
         headline?: string
+      }[]
+    }) => {
+      const actorProfile = activity.actor_profile?.[0]
+      return {
+        id: activity.id,
+        type: activity.type,
+        activity: activity.activity,
+        match_percentage: activity.match_percentage,
+        created_at: activity.created_at,
+        is_read: activity.is_read,
+        actor: {
+          id: actorProfile?.id || activity.actor_user_id,
+          name: actorProfile?.display_name || actorProfile?.full_name || "Unknown User",
+          avatar: actorProfile?.avatar_url || null,
+          headline: actorProfile?.headline || null,
+        },
       }
-    }) => ({
-      id: activity.id,
-      type: activity.type,
-      activity: activity.activity,
-      match_percentage: activity.match_percentage,
-      created_at: activity.created_at,
-      is_read: activity.is_read,
-      actor: {
-        id: activity.actor_profile?.id || activity.actor_user_id,
-        name: activity.actor_profile?.display_name || activity.actor_profile?.full_name || "Unknown User",
-        avatar: activity.actor_profile?.avatar_url || null,
-        headline: activity.actor_profile?.headline || null,
-      },
-    }))
+    })
 
     return NextResponse.json({
       data: transformedActivities,

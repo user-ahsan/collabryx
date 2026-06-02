@@ -134,49 +134,55 @@ export async function fetchComments(
     if (commentsError) throw commentsError
 
     // Map comments with author info and nested replies
-    const mappedComments: CommentWithAuthor[] = (comments || []).map((comment) => ({
-      id: comment.id,
-      post_id: comment.post_id,
-      author_id: comment.author_id,
-      content: comment.content,
-      parent_id: comment.parent_id,
-      like_count: comment.like_count,
-      created_at: comment.created_at,
-      updated_at: comment.updated_at,
-      author_name: comment.author?.display_name || comment.author?.full_name || "Unknown",
-      author_avatar: comment.author?.avatar_url || "",
-      author_headline: comment.author?.headline,
-      time_ago: formatTimeAgo(comment.created_at),
-      replies: (comment.replies || []).map((reply: {
-        id: string
-        post_id: string
-        author_id: string
-        content: string
-        parent_id: string | null
-        like_count: number
-        created_at: string
-        updated_at: string
-        author?: {
-          display_name?: string
-          full_name?: string
-          avatar_url?: string
-          headline?: string
-        }
-      }) => ({
-        id: reply.id,
-        post_id: reply.post_id,
-        author_id: reply.author_id,
-        content: reply.content,
-        parent_id: reply.parent_id,
-        like_count: reply.like_count,
-        created_at: reply.created_at,
-        updated_at: reply.updated_at,
-        author_name: reply.author?.display_name || reply.author?.full_name || "Unknown",
-        author_avatar: reply.author?.avatar_url || "",
-        author_headline: reply.author?.headline,
-        time_ago: formatTimeAgo(reply.created_at),
-      })),
-    }))
+    const mappedComments: CommentWithAuthor[] = (comments || []).map((comment) => {
+      const author = comment.author?.[0]
+      return {
+        id: comment.id,
+        post_id: comment.post_id,
+        author_id: comment.author_id,
+        content: comment.content,
+        parent_id: comment.parent_id ?? undefined,
+        like_count: comment.like_count,
+        created_at: comment.created_at,
+        updated_at: comment.updated_at,
+        author_name: author?.display_name || author?.full_name || "Unknown",
+        author_avatar: author?.avatar_url || "",
+        author_headline: author?.headline,
+        time_ago: formatTimeAgo(comment.created_at),
+        replies: (comment.replies || []).map((reply: {
+          id: string
+          post_id: string
+          author_id: string
+          content: string
+          parent_id: string | null
+          like_count: number
+          created_at: string
+          updated_at: string
+          author?: {
+            display_name?: string
+            full_name?: string
+            avatar_url?: string
+            headline?: string
+          }[]
+        }) => {
+          const replyAuthor = reply.author?.[0]
+          return {
+            id: reply.id,
+            post_id: reply.post_id,
+            author_id: reply.author_id,
+            content: reply.content,
+            parent_id: reply.parent_id ?? undefined,
+            like_count: reply.like_count,
+            created_at: reply.created_at,
+            updated_at: reply.updated_at,
+            author_name: replyAuthor?.display_name || replyAuthor?.full_name || "Unknown",
+            author_avatar: replyAuthor?.avatar_url || "",
+            author_headline: replyAuthor?.headline,
+            time_ago: formatTimeAgo(reply.created_at),
+          }
+        }),
+      }
+    })
 
     // Fetch user's likes on ALL comments (top-level and replies) in a SINGLE batch query
     if (user) {
@@ -261,6 +267,7 @@ export async function fetchCommentById(commentId: string): Promise<{
 
     if (error) throw error
 
+    const author = data.author?.[0]
     const mappedComment: CommentWithAuthor = {
       id: data.id,
       post_id: data.post_id,
@@ -270,9 +277,9 @@ export async function fetchCommentById(commentId: string): Promise<{
       like_count: data.like_count,
       created_at: data.created_at,
       updated_at: data.updated_at,
-      author_name: data.author?.display_name || data.author?.full_name || "Unknown",
-      author_avatar: data.author?.avatar_url || "",
-      author_headline: data.author?.headline,
+      author_name: author?.display_name || author?.full_name || "Unknown",
+      author_avatar: author?.avatar_url || "",
+      author_headline: author?.headline,
       time_ago: formatTimeAgo(data.created_at),
       replies: [],
     }

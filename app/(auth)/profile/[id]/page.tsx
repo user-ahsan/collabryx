@@ -6,6 +6,8 @@ import { notFound } from 'next/navigation'
 import { ConnectionButton } from '@/components/features/connections/connection-button'
 import { MatchScore } from '@/components/shared/match-score'
 
+export const dynamic = "force-dynamic"
+
 export async function generateMetadata({
   params,
 }: {

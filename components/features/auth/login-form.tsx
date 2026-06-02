@@ -23,6 +23,7 @@ import { isDevelopmentMode, getDevelopmentCredentials } from "@/lib/services/dev
 
 import { toast } from "sonner"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
 import { logger } from "@/lib/logger"
@@ -47,6 +48,7 @@ const loginSchema = z.object({
 })
 
 export function LoginForm() {
+    const router = useRouter()
     const [isLoading, setIsLoading] = React.useState(false)
     const [showProviderDialog, setShowProviderDialog] = React.useState(false)
     const [providerToShow, setProviderToShow] = React.useState<"google" | "github" | "apple" | null>(null)
@@ -123,7 +125,7 @@ export function LoginForm() {
             // Wait for cookies to be set before redirect
             await new Promise(resolve => setTimeout(resolve, 1000))
             
-            window.location.href = "/auth-sync"
+            router.push("/auth-sync")
         } catch (error) {
             logger.auth.error('Login failed', { error })
             toast.error("An unexpected error occurred.")

@@ -5,6 +5,8 @@ import { Bookmark, MessageCircle, Heart, Share2, ExternalLink, Filter } from "lu
 import Link from "next/link"
 import { redirect } from "next/navigation"
 
+export const dynamic = "force-dynamic"
+
 interface BookmarkedPost {
   id: string
   content: string

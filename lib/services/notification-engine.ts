@@ -119,8 +119,9 @@ export async function sendNotification(
   }
 
   const supabase = getServiceClient();
-  const { data, error } = await supabase
-    .from("notifications")
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const notificationsQuery: any = supabase.from("notifications");
+  const { data, error } = await notificationsQuery
     .insert({
       user_id: input.userId,
       type: input.type,
@@ -132,11 +133,11 @@ export async function sendNotification(
       resource_id: input.resourceId,
     })
     .select("id")
-    .single();
+    .single() as { data: { id: string } | null; error: Error | null };
 
-  if (error) {
+  if (error || !data) {
     log.error("Failed to send notification", error, { userId: input.userId });
-    return { success: false, error: error.message };
+    return { success: false, error: error?.message || "Failed to create notification" };
   }
 
   // Broadcast for real-time delivery (best-effort)
@@ -205,7 +206,8 @@ export async function generateDigest(options?: {
   for (const [userId, typeCounts] of grouped) {
     if (dryRun) continue;
     const content = buildDigestContent(targetDate, typeCounts);
-    const { error: insertError } = await supabase.from("notifications").insert({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error: insertError } = await (supabase.from("notifications") as any).insert({
       user_id: userId,
       type: "system" as const,
       content,
@@ -249,16 +251,18 @@ export async function cleanupExpiredNotifications(options?: {
   const errors: string[] = [];
   for (let offset = 0; offset < count; offset += batchSize) {
     // Fetch IDs first so we know exactly how many rows this batch will delete
-    let fetchQ = supabase.from("notifications").select("id")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let fetchQ: any = (supabase.from("notifications") as any).select("id")
       .lt("created_at", cutoffDate.toISOString())
       .range(offset, offset + batchSize - 1);
     if (options?.userId) fetchQ = fetchQ.eq("user_id", options.userId);
-    const { data: batchRows, error: fetchError } = await fetchQ;
+    const { data: batchRows, error: fetchError } = await fetchQ as { data: { id: string }[] | null; error: Error | null };
     if (fetchError) { errors.push(`Batch ${offset}: ${fetchError.message}`); continue; }
     if (!batchRows?.length) break;
 
-    const batchIds = batchRows.map((r) => r.id);
-    const del = supabase.from("notifications").delete().in("id", batchIds);
+    const batchIds = batchRows.map((r: { id: string }) => r.id);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const del = (supabase.from("notifications") as any).delete().in("id", batchIds);
     const { error: delError } = await del;
     if (delError) errors.push(`Batch ${offset}: ${delError.message}`);
     else deleted += batchIds.length;

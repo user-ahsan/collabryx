@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button"
 import { CreditCard, FileText, Building2 } from "lucide-react"
 import Link from "next/link"
 
+export const dynamic = "force-dynamic"
+
 export default function BillingPage() {
 	return (
 		<div className="container max-w-4xl mx-auto py-6 px-6">

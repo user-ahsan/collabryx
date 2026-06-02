@@ -2,6 +2,8 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { FileQuestion } from "lucide-react"
 
+export const dynamic = "force-dynamic"
+
 export default function NotFound() {
 	return (
 		<div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 text-center">

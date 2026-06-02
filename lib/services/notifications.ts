@@ -109,21 +109,24 @@ export async function fetchNotifications(
 
     if (error) throw error
 
-    const mappedNotifications: NotificationWithActor[] = (notifications || []).map((notif) => ({
-      id: notif.id,
-      user_id: notif.user_id,
-      type: notif.type,
-      actor_id: notif.actor_id,
-      actor_name: notif.actor?.display_name || notif.actor?.full_name,
-      actor_avatar: notif.actor?.avatar_url,
-      content: notif.content,
-      resource_type: notif.resource_type,
-      resource_id: notif.resource_id,
-      is_read: notif.is_read,
-      is_actioned: notif.is_actioned,
-      created_at: notif.created_at,
-      time_ago: formatTimeAgo(notif.created_at),
-    }))
+    const mappedNotifications: NotificationWithActor[] = (notifications || []).map((notif) => {
+      const actor = notif.actor?.[0]
+      return {
+        id: notif.id,
+        user_id: notif.user_id,
+        type: notif.type,
+        actor_id: notif.actor_id,
+        actor_name: actor?.display_name || actor?.full_name,
+        actor_avatar: actor?.avatar_url,
+        content: notif.content,
+        resource_type: notif.resource_type,
+        resource_id: notif.resource_id,
+        is_read: notif.is_read,
+        is_actioned: notif.is_actioned,
+        created_at: notif.created_at,
+        time_ago: formatTimeAgo(notif.created_at),
+      }
+    })
 
     return { data: mappedNotifications, error: null }
   } catch (error) {

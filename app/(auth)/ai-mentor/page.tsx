@@ -1,64 +1,18 @@
-'use client'
+import NextDynamic from "next/dynamic"
+import { Metadata } from "next"
 
-import { useState } from 'react'
-import { useAIStream } from '@/hooks/use-ai-stream'
-import { StreamingMessage } from '@/components/features/ai-mentor/streaming-message'
-import { useAuth } from '@/hooks/use-auth'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+export const metadata: Metadata = {
+  title: "AI Mentor",
+  description: "Get AI-powered mentorship and guidance",
+}
+
+export const dynamic = "force-dynamic"
+
+const AIMentorContent = NextDynamic(
+  () => import("./ai-mentor-content"),
+  { loading: () => <div className="flex items-center justify-center min-h-[60vh]"><div className="h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" /></div> }
+)
 
 export default function AIMentorPage() {
-  const { user } = useAuth()
-  const [input, setInput] = useState('')
-  
-  const { 
-    messages, 
-    isStreaming, 
-    sendMessage, 
-    error 
-  } = useAIStream({
-    userId: user?.id || ''
-  })
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!input.trim() || isStreaming) return
-    await sendMessage(input)
-    setInput('')
-  }
-
-  return (
-    <div className="flex flex-col h-[calc(100vh-4rem)]">
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((msg) => (
-          <StreamingMessage
-            key={msg.id}
-            content={msg.content}
-            sender={msg.role === 'user' ? 'user' : 'ai'}
-            isStreaming={isStreaming && msg === messages[messages.length - 1] && msg.role === 'assistant'}
-            timestamp={new Date(msg.created_at)}
-          />
-        ))}
-        {error && (
-          <div className="p-4 rounded-lg bg-destructive/10 text-destructive text-sm">
-            Error: {error.message}
-          </div>
-        )}
-      </div>
-
-      <form onSubmit={handleSubmit} className="p-4 border-t">
-        <div className="flex gap-2">
-          <Input
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask me anything..."
-            disabled={isStreaming}
-          />
-          <Button type="submit" disabled={isStreaming || !input.trim()}>
-            Send
-          </Button>
-        </div>
-      </form>
-    </div>
-  )
+  return <AIMentorContent />
 }
