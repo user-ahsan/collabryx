@@ -82,3 +82,6 @@ temp/
 *manimations/
 media/
 *animations/
+
+# understand-anything generated artifacts
+.understand-anything/
