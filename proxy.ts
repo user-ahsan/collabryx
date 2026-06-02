@@ -95,8 +95,30 @@ export async function proxy(request: NextRequest) {
         return redirectResponse
     }
 
+    // ===========================================
+    // EMAIL VERIFICATION GATE
+    // Redirect unverified users to verify-email page
+    // Skip if SKIP_EMAIL_VERIFICATION=true (dev only)
+    // ===========================================
+    if (user && isAuthRoute) {
+        const skipEmailVerification = process.env.SKIP_EMAIL_VERIFICATION === "true"
+        const emailNotConfirmed = !user.email_confirmed_at
+
+        if (!skipEmailVerification && emailNotConfirmed) {
+            // Don't redirect if already on verify-email or auth-sync (avoids loop)
+            if (!request.nextUrl.pathname.startsWith("/verify-email") && !request.nextUrl.pathname.startsWith("/auth-sync")) {
+                const url = request.nextUrl.clone()
+                url.pathname = "/verify-email"
+                const redirectResponse = NextResponse.redirect(url)
+                supabaseResponse.cookies.getAll().forEach(cookie => {
+                    redirectResponse.cookies.set(cookie.name, cookie.value)
+                })
+                return redirectResponse
+            }
+        }
+    }
+
     // Check onboarding status for authenticated users trying to access protected routes
-    // Only redirect to onboarding in development mode
     if (user && isAuthRoute && !request.nextUrl.pathname.startsWith("/onboarding") && !request.nextUrl.pathname.startsWith("/auth-sync") && process.env.DEVELOPMENT_MODE === "true") {
         const { data: profile } = await supabase
             .from("profiles")

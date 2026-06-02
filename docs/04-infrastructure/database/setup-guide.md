@@ -113,6 +113,7 @@ To speed up local testing, add this to your `.env.local`:
 
 ```env
 SKIP_EMAIL_VERIFICATION=true
+# Alternately, for client-side: NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION=true
 ```
 
 This bypasses email confirmation so new test accounts can access the dashboard immediately. See [Development Guide](../../01-getting-started/development.md#skipping-email-verification-development-only) for details.

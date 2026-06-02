@@ -75,12 +75,16 @@ During local development, waiting for email confirmation can slow down testing. 
 SKIP_EMAIL_VERIFICATION=true
 ```
 
+You can also use `NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION=true` (useful for client-side scenarios). Only one is needed — if either is set, verification is skipped.
+
 **What this does:**
 - **Registration:** New users are redirected to `/dashboard` immediately instead of `/verify-email`
-- **Login:** The login API returns `email_verified: true` regardless of Supabase's `email_confirmed_at` status
+- **Login:** The login form and API accept unverified accounts; redirect to verify-email page is bypassed
+- **Protected Routes:** The middleware allows access to all pages without email confirmation
+- **Auth Sync:** The post-login sync page skips the verification check
 - **Startup:** A warning is logged to the console confirming the setting is active
 
-> ⚠️ **WARNING:** Never set `SKIP_EMAIL_VERIFICATION=true` in production. This bypasses email confirmation and allows unverified accounts to access the platform.
+> ⚠️ **WARNING:** Never set `SKIP_EMAIL_VERIFICATION=true` or `NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION=true` in production. This bypasses email confirmation and allows unverified accounts to access the platform.
 
 ---
 

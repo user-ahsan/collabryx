@@ -19,7 +19,7 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import { createClient } from "@/lib/supabase/client"
-import { isDevelopmentMode, getDevelopmentCredentials } from "@/lib/services/development"
+import { isDevelopmentMode, isEmailVerificationSkipped, getDevelopmentCredentials } from "@/lib/services/development"
 
 import { toast } from "sonner"
 import Link from "next/link"
@@ -108,7 +108,7 @@ export function LoginForm() {
         }
         
         try {
-            const { error } = await supabase.auth.signInWithPassword({
+            const { data, error } = await supabase.auth.signInWithPassword({
                 email: email,
                 password: password,
             })
@@ -117,6 +117,18 @@ export function LoginForm() {
 
             if (error) {
                 toast.error(error.message)
+                return
+            }
+
+            // ===========================================
+            // EMAIL VERIFICATION CHECK
+            // Respect SKIP_EMAIL_VERIFICATION env var
+            // ===========================================
+            const emailVerified = isEmailVerificationSkipped() ? true : !!data.user?.email_confirmed_at
+            
+            if (!emailVerified) {
+                toast.error("Please verify your email before signing in.")
+                router.push("/verify-email")
                 return
             }
 

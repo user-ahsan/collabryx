@@ -24,6 +24,15 @@ export default async function AuthSyncPage() {
             return redirect("/login?error=auth")
         }
         
+        // ===========================================
+        // EMAIL VERIFICATION CHECK
+        // Respect SKIP_EMAIL_VERIFICATION env var
+        // ===========================================
+        const skipEmailVerification = process.env.SKIP_EMAIL_VERIFICATION === "true"
+        if (!skipEmailVerification && !user.email_confirmed_at) {
+            return redirect("/verify-email")
+        }
+        
         // Check profile
         const { data: profile } = await supabase
             .from("profiles")

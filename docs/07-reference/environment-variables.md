@@ -149,7 +149,8 @@ AI_PROVIDER_1_PRIORITY=1
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `SKIP_EMAIL_VERIFICATION` | Bypass email verification | `false` |
+| `SKIP_EMAIL_VERIFICATION` | Bypass email verification (server-side) | `false` |
+| `NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION` | Bypass email verification (client-side) | `false` |
 
 ### Feature Flags
 
@@ -169,13 +170,16 @@ AI_PROVIDER_1_PRIORITY=1
 
 | Variable | Description | Type | Default |
 |----------|-------------|------|---------|
-| `SKIP_EMAIL_VERIFICATION` | Skips email verification requirement in development | `"true"` or `"false"` | `false` |
+| `SKIP_EMAIL_VERIFICATION` | Skips email verification requirement in development (server-side) | `"true"` or `"false"` | `false` |
+| `NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION` | Skips email verification (client-side; use instead of `SKIP_EMAIL_VERIFICATION` for client components) | `"true"` or `"false"` | `false` |
 
-> ⚠️ **WARNING:** `SKIP_EMAIL_VERIFICATION` should **NEVER** be used in production. It bypasses email confirmation, allowing unverified accounts to access the platform.
+> ⚠️ **WARNING:** Both `SKIP_EMAIL_VERIFICATION` and `NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION` should **NEVER** be used in production. They bypass email confirmation, allowing unverified accounts to access the platform.
 
-**When `SKIP_EMAIL_VERIFICATION=true`:**
+**When `SKIP_EMAIL_VERIFICATION=true` (or `NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION=true`):**
 - Registration redirects new users to `/dashboard` instead of `/verify-email`
 - Login API returns `email_verified: true` regardless of Supabase's `email_confirmed_at` status
+- Login form accepts unverified accounts
+- Middleware allows access to protected routes without email confirmation
 - A startup warning is logged to the console
 
 ---
@@ -209,6 +213,7 @@ AI_PROVIDER_1_PRIORITY=1
 
 # Development (optional - skip email verification locally)
 # SKIP_EMAIL_VERIFICATION=true
+# NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION=true  # client-side alternative
 
 ```
 
@@ -246,6 +251,7 @@ AI_PROVIDER_2_PRIORITY=2
 
 # Development (optional - skip email verification locally)
 # SKIP_EMAIL_VERIFICATION=true
+# NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION=true  # client-side alternative
 
 ```
 
@@ -453,6 +459,7 @@ AI_PROVIDER_1_PRIORITY=1
 
 # Development (optional - skip email verification locally)
 # SKIP_EMAIL_VERIFICATION=true
+# NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION=true  # client-side alternative
 
 ```
 

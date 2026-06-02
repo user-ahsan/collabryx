@@ -326,4 +326,155 @@ describe('Development Mode Detection', () => {
       expect(!!value3).toBe(false)
     })
   })
+
+  describe('isEmailVerificationSkipped (SKIP_EMAIL_VERIFICATION / NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION)', () => {
+    const ORIGINAL_ENV = { ...process.env }
+
+    afterEach(() => {
+      process.env = { ...ORIGINAL_ENV }
+    })
+
+    it('should return false when neither env var is set', async () => {
+      delete process.env.SKIP_EMAIL_VERIFICATION
+      delete process.env.NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION
+      vi.resetModules()
+      const { isEmailVerificationSkipped } = await import('@/lib/services/development')
+      expect(isEmailVerificationSkipped()).toBe(false)
+    })
+
+    it('should return false when both env vars are "false"', async () => {
+      process.env.SKIP_EMAIL_VERIFICATION = 'false'
+      process.env.NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION = 'false'
+      vi.resetModules()
+      const { isEmailVerificationSkipped } = await import('@/lib/services/development')
+      expect(isEmailVerificationSkipped()).toBe(false)
+    })
+
+    it('should return true when SKIP_EMAIL_VERIFICATION="true"', async () => {
+      process.env.SKIP_EMAIL_VERIFICATION = 'true'
+      delete process.env.NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION
+      vi.resetModules()
+      const { isEmailVerificationSkipped } = await import('@/lib/services/development')
+      expect(isEmailVerificationSkipped()).toBe(true)
+    })
+
+    it('should return true when NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION="true"', async () => {
+      delete process.env.SKIP_EMAIL_VERIFICATION
+      process.env.NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION = 'true'
+      vi.resetModules()
+      const { isEmailVerificationSkipped } = await import('@/lib/services/development')
+      expect(isEmailVerificationSkipped()).toBe(true)
+    })
+
+    it('should return true when BOTH env vars are "true"', async () => {
+      process.env.SKIP_EMAIL_VERIFICATION = 'true'
+      process.env.NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION = 'true'
+      vi.resetModules()
+      const { isEmailVerificationSkipped } = await import('@/lib/services/development')
+      expect(isEmailVerificationSkipped()).toBe(true)
+    })
+
+    it('should return false when SKIP_EMAIL_VERIFICATION="false" and NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION="true"', async () => {
+      process.env.SKIP_EMAIL_VERIFICATION = 'false'
+      process.env.NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION = 'true'
+      vi.resetModules()
+      const { isEmailVerificationSkipped } = await import('@/lib/services/development')
+      expect(isEmailVerificationSkipped()).toBe(true)
+    })
+
+    it('should return true when SKIP_EMAIL_VERIFICATION="true" and NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION="false"', async () => {
+      process.env.SKIP_EMAIL_VERIFICATION = 'true'
+      process.env.NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION = 'false'
+      vi.resetModules()
+      const { isEmailVerificationSkipped } = await import('@/lib/services/development')
+      expect(isEmailVerificationSkipped()).toBe(true)
+    })
+
+    it('should return false when SKIP_EMAIL_VERIFICATION is set to an unrecognized value', async () => {
+      process.env.SKIP_EMAIL_VERIFICATION = 'YES'
+      delete process.env.NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION
+      vi.resetModules()
+      const { isEmailVerificationSkipped } = await import('@/lib/services/development')
+      expect(isEmailVerificationSkipped()).toBe(false)
+    })
+  })
+
+  describe('isUserEmailVerified helper', () => {
+    it('should return true when user has email_confirmed_at and SKIP is not set', async () => {
+      delete process.env.SKIP_EMAIL_VERIFICATION
+      delete process.env.NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION
+      vi.resetModules()
+      const { isUserEmailVerified } = await import('@/lib/services/development')
+
+      const user = { email_confirmed_at: '2024-01-01T00:00:00Z' }
+      expect(isUserEmailVerified(user)).toBe(true)
+    })
+
+    it('should return false when user has null email_confirmed_at and SKIP is not set', async () => {
+      delete process.env.SKIP_EMAIL_VERIFICATION
+      delete process.env.NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION
+      vi.resetModules()
+      const { isUserEmailVerified } = await import('@/lib/services/development')
+
+      const user = { email_confirmed_at: null }
+      expect(isUserEmailVerified(user)).toBe(false)
+    })
+
+    it('should return false when user has undefined email_confirmed_at and SKIP is not set', async () => {
+      delete process.env.SKIP_EMAIL_VERIFICATION
+      delete process.env.NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION
+      vi.resetModules()
+      const { isUserEmailVerified } = await import('@/lib/services/development')
+
+      const user = { email_confirmed_at: undefined }
+      expect(isUserEmailVerified(user)).toBe(false)
+    })
+
+    it('should return false when user is null', async () => {
+      delete process.env.SKIP_EMAIL_VERIFICATION
+      delete process.env.NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION
+      vi.resetModules()
+      const { isUserEmailVerified } = await import('@/lib/services/development')
+
+      expect(isUserEmailVerified(null)).toBe(false)
+    })
+
+    it('should return false when user is undefined', async () => {
+      delete process.env.SKIP_EMAIL_VERIFICATION
+      delete process.env.NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION
+      vi.resetModules()
+      const { isUserEmailVerified } = await import('@/lib/services/development')
+
+      expect(isUserEmailVerified(undefined)).toBe(false)
+    })
+
+    it('should return true regardless of email_confirmed_at when SKIP_EMAIL_VERIFICATION="true"', async () => {
+      process.env.SKIP_EMAIL_VERIFICATION = 'true'
+      delete process.env.NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION
+      vi.resetModules()
+      const { isUserEmailVerified } = await import('@/lib/services/development')
+
+      const user = { email_confirmed_at: null }
+      expect(isUserEmailVerified(user)).toBe(true)
+    })
+
+    it('should return true regardless of email_confirmed_at when NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION="true"', async () => {
+      delete process.env.SKIP_EMAIL_VERIFICATION
+      process.env.NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION = 'true'
+      vi.resetModules()
+      const { isUserEmailVerified } = await import('@/lib/services/development')
+
+      const user = { email_confirmed_at: null }
+      expect(isUserEmailVerified(user)).toBe(true)
+    })
+
+    it('should return true for null user when SKIP_EMAIL_VERIFICATION="true"', async () => {
+      process.env.SKIP_EMAIL_VERIFICATION = 'true'
+      delete process.env.NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION
+      vi.resetModules()
+      const { isUserEmailVerified } = await import('@/lib/services/development')
+
+      expect(isUserEmailVerified(null)).toBe(true)
+    })
+  })
 })

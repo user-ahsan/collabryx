@@ -25,7 +25,11 @@ const DEVELOPMENT_MODE = normalizeDevMode(process.env.DEVELOPMENT_MODE)
 const DEBUG_ENABLED = process.env.DEBUG === "true" || process.env.DEBUG === "1"
 const ENABLE_PERFORMANCE_LOGS = process.env.ENABLE_PERFORMANCE_LOGS === "true"
 const LOG_LEVEL = process.env.LOG_LEVEL || "info"
-const SKIP_EMAIL_VERIFICATION = process.env.SKIP_EMAIL_VERIFICATION === "true"
+// Support both SKIP_EMAIL_VERIFICATION (server-side) and
+// NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION (client-side) for cross-environment compatibility
+const SKIP_EMAIL_VERIFICATION =
+    process.env.SKIP_EMAIL_VERIFICATION === "true" ||
+    process.env.NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION === "true"
 
 const TEST_USER_EMAIL = "test123@collabryx.com"
 const TEST_USER_PASSWORD = "test123"
@@ -50,6 +54,7 @@ if (typeof window !== 'undefined' && (DEVELOPMENT_MODE || DEBUG_ENABLED)) {
 ║  LOG_LEVEL:         ${LOG_LEVEL.padEnd(30)}║
 ║  PERF_LOGS:         ${String(ENABLE_PERFORMANCE_LOGS).padEnd(30)}║
 ║  SKIP_EMAIL_VERIFY: ${String(SKIP_EMAIL_VERIFICATION).padEnd(30)}║
+║  NEXT_PUBLIC_SKIP:  ${String(process.env.NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION)?.padEnd(30) || "(unset)".padEnd(30)}║
 ║                                                          ║
 ║  Dev Mode Active:   ${String(DEVELOPMENT_MODE).padEnd(30)}║
 ║  Debug Enabled:     ${String(DEBUG_ENABLED).padEnd(30)}║
@@ -84,11 +89,16 @@ function validateEnvironment(): void {
     warnings.push("DEBUG=true but LOG_LEVEL=error - debug logs will not appear")
   }
   
-  // Check SKIP_EMAIL_VERIFICATION value
-  const skipEmailValue = process.env.SKIP_EMAIL_VERIFICATION
-  if (skipEmailValue && skipEmailValue !== "true" && skipEmailValue !== "false") {
-    warnings.push(`SKIP_EMAIL_VERIFICATION="${skipEmailValue}" is not a recognized value. Use: "true" or "false"`)
-  }
+    // Check SKIP_EMAIL_VERIFICATION value
+    const skipEmailValue = process.env.SKIP_EMAIL_VERIFICATION
+    if (skipEmailValue && skipEmailValue !== "true" && skipEmailValue !== "false") {
+        warnings.push(`SKIP_EMAIL_VERIFICATION="${skipEmailValue}" is not a recognized value. Use: "true" or "false"`)
+    }
+    // Check NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION value (for client-side usage)
+    const skipEmailPublicValue = process.env.NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION
+    if (skipEmailPublicValue && skipEmailPublicValue !== "true" && skipEmailPublicValue !== "false") {
+        warnings.push(`NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION="${skipEmailPublicValue}" is not a recognized value. Use: "true" or "false"`)
+    }
   
   // Log warnings
   if (warnings.length > 0) {
@@ -302,6 +312,29 @@ export function isEmailVerificationSkipped(): boolean {
 }
 
 /**
+ * Centralized email verification check for services and API routes.
+ *
+ * Checks the user's email_confirmed_at status while respecting the
+ * SKIP_EMAIL_VERIFICATION env var override.
+ *
+ * Use this in any service/API route that requires the user's email to be verified.
+ *
+ * @param user - The authenticated Supabase user object (or object with email_confirmed_at)
+ * @returns true if email is confirmed OR verification is skipped via env var
+ *
+ * @example
+ * ```ts
+ * const { data: { user } } = await supabase.auth.getUser()
+ * if (!isUserEmailVerified(user)) {
+ *   throw new Error("Email not verified")
+ * }
+ * ```
+ */
+export function isUserEmailVerified(user: { email_confirmed_at?: string | null } | null | undefined): boolean {
+    return isEmailVerificationSkipped() ? true : !!user?.email_confirmed_at
+}
+
+/**
  * Get current development configuration
  * Useful for debugging and environment checks
  * 
@@ -316,6 +349,7 @@ export function getDevelopmentConfig(): {
   nodeEnv: string | undefined
   developmentModeValue: string | undefined
   skipEmailVerificationValue: string | undefined
+  skipEmailVerificationPublicValue: string | undefined
 } {
   return {
     isDevelopmentMode: DEVELOPMENT_MODE,
@@ -326,6 +360,7 @@ export function getDevelopmentConfig(): {
     nodeEnv: process.env.NODE_ENV,
     developmentModeValue: process.env.DEVELOPMENT_MODE,
     skipEmailVerificationValue: process.env.SKIP_EMAIL_VERIFICATION,
+    skipEmailVerificationPublicValue: process.env.NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION,
   }
 }
 
