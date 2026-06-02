@@ -106,6 +106,7 @@
     },
     "postcss": "^8.5.10",
     "protobufjs": "^7.5.8",
-    "@protobufjs/utf8": "^1.1.1"
+    "@protobufjs/utf8": "^1.1.1",
+    "ws": "^8.20.1"
   }
 }

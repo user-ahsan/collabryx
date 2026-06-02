@@ -177,7 +177,7 @@ async function searchKeywordIndex(
   }
 
   // Retrieve all profiles using cursor-based pagination for scalability
-  const allProfiles: any[] = []
+  const allProfiles: Record<string, unknown>[] = []
   let lastId: string | null = null
   const pageSize = 200
   let keepFetching = true
