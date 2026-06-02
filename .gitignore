@@ -39,7 +39,7 @@ yarn-error.log*
 .vercel
 
 # bun
-bun.lock
+# bun.lock is intentionally tracked for CI reproducibility (equivalent to package-lock.json)
 
 # python worker
 python-worker/.venv/
