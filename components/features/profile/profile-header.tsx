@@ -85,6 +85,9 @@ interface ProfileHeaderProps {
     connectionCount?: number
     profileViews?: number
     lastActive?: string | null
+
+    // Action slot for connection button + match score (other profile view)
+    actionSlot?: React.ReactNode
 }
 
 export function ProfileHeader({
@@ -112,6 +115,7 @@ export function ProfileHeader({
     connectionCount,
     profileViews,
     lastActive,
+    actionSlot,
 }: ProfileHeaderProps) {
     const safeSkills = skills ?? []
     const safeName = displayName || "User"
@@ -198,6 +202,14 @@ export function ProfileHeader({
                                     <p className="text-sm md:text-base text-emerald-500/90 dark:text-emerald-400 font-medium mt-1.5 break-words">{safeHeadline}</p>
                                 )}
                             </div>
+
+                            {/* Action slot — connection button + match score for other profile views.
+                                Positioned top-right on desktop, flows below on mobile. */}
+                            {actionSlot && (
+                                <div className="shrink-0 self-start md:mt-1">
+                                    {actionSlot}
+                                </div>
+                            )}
                         </div>
 
                         {/* University Display */}

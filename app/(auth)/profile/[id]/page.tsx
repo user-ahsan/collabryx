@@ -57,7 +57,6 @@ import { notFound } from 'next/navigation'
 import { ConnectionButton } from '@/components/features/connections/connection-button'
 import { MatchScore } from '@/components/shared/match-score'
 import { GlassCard } from '@/components/shared/glass-card'
-import { Sparkles } from 'lucide-react'
 import type { Profile, UserSkill, UserExperience, UserProject, UserInterest } from '@/types/database.types'
 
 export const dynamic = "force-dynamic"
@@ -135,8 +134,8 @@ async function MatchScoreSection({ profileId, userId }: { profileId: string; use
     <MatchScore
       overall={matchSuggestion.match_percentage}
       dimensions={dimensions}
-      showBreakdown={true}
-      className="w-[220px]"
+      showBreakdown={false}
+      className="w-full sm:min-w-[180px] sm:max-w-[220px]"
       aiConfidence={matchSuggestion.ai_confidence ?? undefined}
       aiExplanation={matchSuggestion.ai_explanation ?? undefined}
     />
@@ -266,17 +265,16 @@ export default async function ProfilePage({
         connectionCount={analytics?.connections_count ?? 0}
         profileViews={analytics?.profile_views_last_30_days ?? 0}
         lastActive={analytics?.last_active ?? null}
+        // ACTION SLOT: Connection button + MatchScore embedded in header top-right
+        actionSlot={!isOwnProfile && user ? (
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+            <ConnectionButton userId={profileId} variant="default" size="default" />
+            <Suspense fallback={<MatchScoreSkeleton />}>
+              <MatchScoreSection profileId={profileId} userId={user.id} />
+            </Suspense>
+          </div>
+        ) : undefined}
       />
-
-      {/* Connection & Match Actions for other users */}
-      {!isOwnProfile && user && (
-        <div className="flex flex-row flex-wrap items-center gap-3 mb-6">
-          <ConnectionButton userId={profileId} variant="default" size="default" />
-          <Suspense fallback={<MatchScoreSkeleton />}>
-            <MatchScoreSection profileId={profileId} userId={user.id} />
-          </Suspense>
-        </div>
-      )}
 
       <ProfileTabs
         bio={p.bio}
