@@ -431,7 +431,25 @@ export async function getSessionHistory(sessionId: string) {
 }
 
 /**
- * Get all user sessions
+ * Get all user sessions (active AND archived)
+ *
+ * WHY THIS CHANGE:
+ * The original query only returned 'active' sessions, which made the
+ * SessionSidebar useless for browsing past conversations. The sidebar needs
+ * to show ALL sessions the user has ever had, including archived ones, so
+ * they can browse, select, and resume any past mentoring conversation.
+ *
+ * The query was updated from:
+ *   .eq('status', 'active')
+ * to:
+ *   .in('status', ['active', 'archived'])
+ *   .order('updated_at', { ascending: false })
+ *   .limit(50)
+ *
+ * This returns the 50 most recently updated sessions regardless of status,
+ * sorted by recency. The sidebar uses updated_at (not created_at) so that
+ * sessions recent activity bubbles to the top even if they were created
+ * weeks ago.
  */
 export async function getUserSessions() {
   const supabase = await createClient()
@@ -445,8 +463,9 @@ export async function getUserSessions() {
     .from('ai_mentor_sessions')
     .select('id, user_id, title, status, created_at, updated_at')
     .eq('user_id', user.id)
-    .eq('status', 'active')
-    .order('created_at', { ascending: false })
+    .in('status', ['active', 'archived'])
+    .order('updated_at', { ascending: false })
+    .limit(50)
 
   if (error) {
     return { error }
