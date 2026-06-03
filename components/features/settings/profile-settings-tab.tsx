@@ -12,6 +12,10 @@ import { validateProfileSettings } from "@/lib/validations/settings"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
+import { CollaborationSelector } from "@/components/shared/collaboration-selector"
+import { Separator } from "@/components/ui/separator"
+
+type CollaborationReadiness = "available" | "open" | "not-available"
 
 export function ProfileSettingsTab({ userId }: { userId: string }) {
     const supabase = createClient()
@@ -27,6 +31,7 @@ export function ProfileSettingsTab({ userId }: { userId: string }) {
         location: "",
         website_url: ""
     })
+    const [collaborationReadiness, setCollaborationReadiness] = useState<CollaborationReadiness>("available")
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -40,6 +45,7 @@ export function ProfileSettingsTab({ userId }: { userId: string }) {
                         location: "San Francisco, CA",
                         website_url: "https://dev.example.com"
                     })
+                    setCollaborationReadiness("available")
                     setIsLoading(false)
                     return
                 }
@@ -60,6 +66,9 @@ export function ProfileSettingsTab({ userId }: { userId: string }) {
                         location: data.location || "",
                         website_url: data.website_url || ""
                     })
+                    if (data.collaboration_readiness) {
+                        setCollaborationReadiness(data.collaboration_readiness)
+                    }
                 }
             } catch (error) {
                 console.error("Error fetching profile:", error)
@@ -118,11 +127,18 @@ export function ProfileSettingsTab({ userId }: { userId: string }) {
                     bio: profile.bio,
                     location: profile.location,
                     website_url: profile.website_url,
+                    collaboration_readiness: collaborationReadiness,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', userId)
 
             if (updateError) throw updateError
+
+            // Trigger embedding regeneration — profile fields (headline, bio, location, collaboration_readiness)
+            // are used in the semantic embedding text for matching
+            const { error: rpcError } = await supabase.rpc('regenerate_embedding', { p_user_id: userId })
+            if (rpcError) console.warn("Embedding regeneration trigger failed:", rpcError)
+
             setSuccessMsg("Profile saved successfully.")
             toast.success("Profile updated")
 
@@ -221,6 +237,23 @@ export function ProfileSettingsTab({ userId }: { userId: string }) {
                         value={profile.bio}
                         onChange={(e) => updateField("bio", e.target.value)}
                         placeholder="A short bio about yourself..."
+                    />
+                </div>
+
+                <Separator className={cn("my-2", glass("divider"))} />
+
+                {/* Collaboration Readiness Status */}
+                <div className="space-y-3">
+                    <div>
+                        <h3 className="text-sm font-semibold text-foreground">Collaboration Status</h3>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                            Control whether other users see you as available for collaboration opportunities.
+                            This badge is displayed on your profile header.
+                        </p>
+                    </div>
+                    <CollaborationSelector
+                        value={collaborationReadiness}
+                        onChange={setCollaborationReadiness}
                     />
                 </div>
 

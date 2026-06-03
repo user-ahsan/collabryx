@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -42,6 +42,10 @@ interface Project {
 const [experiences, setExperiences] = useState<Experience[]>([])
     const [projects, setProjects] = useState<Project[]>([])
 
+    // Track initial DB state for safe diff-based saves
+    const initialExperiencesRef = useRef<Experience[]>([])
+    const initialProjectsRef = useRef<Project[]>([])
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -64,8 +68,13 @@ const [experiences, setExperiences] = useState<Experience[]>([])
                 if (expRes.error) throw expRes.error
                 if (projRes.error) throw projRes.error
 
-                setExperiences(expRes.data || [])
-                setProjects(projRes.data || [])
+                const fetchedExperiences = (expRes.data || []).map(e => ({ ...e }))
+                const fetchedProjects = (projRes.data || []).map(p => ({ ...p }))
+
+                setExperiences(fetchedExperiences)
+                setProjects(fetchedProjects)
+                initialExperiencesRef.current = fetchedExperiences
+                initialProjectsRef.current = fetchedProjects
             } catch (error) {
                 console.error("Error fetching data:", error)
                 setError("Failed to load experiences and projects.")
@@ -151,53 +160,116 @@ const [experiences, setExperiences] = useState<Experience[]>([])
                 return
             }
 
-            // For Experiences: Delete all then insert (id intentionally omitted for fresh insert)
-            const expsToInsert = experiences
-                .filter(e => e.title || e.company)
-                .map(e => {
-                    const { ...rest } = e;
-                    return { user_id: userId, ...rest };
-                })
+            // ── Diff-based Experiences Save ─────────────────────────────────
+            const initialExpIds = new Set(initialExperiencesRef.current.map(e => e.id))
+            const currentExpIds = new Set(experiences.map(e => e.id))
 
-            const { error: delExpErr } = await supabase.from('user_experiences').delete().eq('user_id', userId)
-            if (delExpErr) throw delExpErr
-            if (expsToInsert.length > 0) {
-                const { error: insExpErr } = await supabase.from('user_experiences').insert(expsToInsert)
-                if (insExpErr) throw insExpErr
+            // Find removed experiences (had DB ID, now gone from UI)
+            const expIdsToRemove = initialExperiencesRef.current
+                .filter(e => !currentExpIds.has(e.id))
+                .map(e => e.id)
+
+            // Find experiences that were updated (have DB ID, still in UI)
+            const expsToUpdate = experiences.filter(e => initialExpIds.has(e.id) && (e.title || e.company))
+
+            // Find new experiences (no DB ID — started with 'new-')
+            const expsToAdd = experiences.filter(e => !initialExpIds.has(e.id) && (e.title || e.company))
+
+            // Execute experience operations
+            if (expIdsToRemove.length > 0) {
+                const { error } = await supabase.from('user_experiences').delete().in('id', expIdsToRemove)
+                if (error) throw new Error(`Failed to remove experiences: ${error.message}`)
             }
 
-            // For Projects: Delete all then insert (id intentionally omitted for fresh insert)
-            const projsToInsert = projects
-                .filter(p => p.title)
-                .map(p => {
-                    const { ...rest } = p;
-                    return { user_id: userId, ...rest };
-                })
-
-            const { error: delProjErr } = await supabase.from('user_projects').delete().eq('user_id', userId)
-            if (delProjErr) throw delProjErr
-            if (projsToInsert.length > 0) {
-                const { error: insProjErr } = await supabase.from('user_projects').insert(projsToInsert)
-                if (insProjErr) throw insProjErr
+            for (const exp of expsToUpdate) {
+                const { id, ...updateData } = exp
+                const { error } = await supabase
+                    .from('user_experiences')
+                    .update(updateData)
+                    .eq('id', id)
+                if (error) throw new Error(`Failed to update experience: ${error.message}`)
             }
+
+            if (expsToAdd.length > 0) {
+                const { error } = await supabase
+                    .from('user_experiences')
+                    .insert(expsToAdd.map(e => {
+                        const { id, ...rest } = e
+                        return { user_id: userId, ...rest }
+                    }))
+                if (error) throw new Error(`Failed to add experiences: ${error.message}`)
+            }
+
+            // ── Diff-based Projects Save ────────────────────────────────────
+            const initialProjIds = new Set(initialProjectsRef.current.map(p => p.id))
+            const currentProjIds = new Set(projects.map(p => p.id))
+
+            const projIdsToRemove = initialProjectsRef.current
+                .filter(p => !currentProjIds.has(p.id))
+                .map(p => p.id)
+
+            const projsToUpdate = projects.filter(p => initialProjIds.has(p.id) && p.title)
+            const projsToAdd = projects.filter(p => !initialProjIds.has(p.id) && p.title)
+
+            if (projIdsToRemove.length > 0) {
+                const { error } = await supabase.from('user_projects').delete().in('id', projIdsToRemove)
+                if (error) throw new Error(`Failed to remove projects: ${error.message}`)
+            }
+
+            for (const proj of projsToUpdate) {
+                const { id, ...updateData } = proj
+                const { error } = await supabase
+                    .from('user_projects')
+                    .update(updateData)
+                    .eq('id', id)
+                if (error) throw new Error(`Failed to update project: ${error.message}`)
+            }
+
+            if (projsToAdd.length > 0) {
+                const { error } = await supabase
+                    .from('user_projects')
+                    .insert(projsToAdd.map(p => {
+                        const { id, ...rest } = p
+                        return { user_id: userId, ...rest }
+                    }))
+                if (error) throw new Error(`Failed to add projects: ${error.message}`)
+            }
+
+            // ── Trigger embedding regeneration ─────────────────────────────
+            await supabase.rpc('regenerate_embedding', { p_user_id: userId })
 
             setSuccessMsg("Experience & Projects saved successfully.")
             toast.success("Experience & projects updated")
             setTimeout(() => setSuccessMsg(null), 3000)
 
-            // Refetch to get actual IDs
+            // Refetch to get actual IDs for newly inserted items
             const [expRes, projRes] = await Promise.all([
                 supabase.from('user_experiences').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
                 supabase.from('user_projects').select('*').eq('user_id', userId).order('created_at', { ascending: false })
             ])
-            setExperiences(expRes.data || [])
-            setProjects(projRes.data || [])
+            if (expRes.data) {
+                setExperiences(expRes.data)
+                initialExperiencesRef.current = expRes.data.map(e => ({ ...e }))
+            }
+            if (projRes.data) {
+                setProjects(projRes.data)
+                initialProjectsRef.current = projRes.data.map(p => ({ ...p }))
+            }
 
         } catch (error) {
             console.error(error)
             const errorMessage = error instanceof Error ? error.message : "Failed to save data."
             setError(errorMessage)
             toast.error(errorMessage)
+            // Refetch to restore UI to known state after failure
+            try {
+                const [expRes, projRes] = await Promise.all([
+                    supabase.from('user_experiences').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
+                    supabase.from('user_projects').select('*').eq('user_id', userId).order('created_at', { ascending: false })
+                ])
+                if (expRes.data) setExperiences(expRes.data)
+                if (projRes.data) setProjects(projRes.data)
+            } catch { /* silent restore */ }
         } finally {
             setIsSaving(false)
         }
@@ -357,7 +429,7 @@ const [experiences, setExperiences] = useState<Experience[]>([])
                                 <div className="flex items-center gap-2">
                                     <Switch
                                         checked={proj.is_public}
-                                        onChange={(e) => updateProject(proj.id, 'is_public', e.target.checked)}
+                                        onCheckedChange={(checked: boolean) => updateProject(proj.id, 'is_public', checked)}
                                     />
                                     <Label>Publicly Visible to Matches</Label>
                                 </div>

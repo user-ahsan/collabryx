@@ -201,8 +201,8 @@ export function PrivacySettingsForm({ userId }: PrivacySettingsFormProps) {
                             </div>
                             <Switch
                                 checked={formData.show_email}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                    handleQuickToggle("show_email", e.target.checked)
+                                onCheckedChange={(checked: boolean) =>
+                                    handleQuickToggle("show_email", checked)
                                 }
                                 disabled={isUpdating}
                             />
@@ -222,8 +222,8 @@ export function PrivacySettingsForm({ userId }: PrivacySettingsFormProps) {
                             </div>
                             <Switch
                                 checked={formData.show_connections_list}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                    handleQuickToggle("show_connections_list", e.target.checked)
+                                onCheckedChange={(checked: boolean) =>
+                                    handleQuickToggle("show_connections_list", checked)
                                 }
                                 disabled={isUpdating}
                             />
@@ -243,8 +243,8 @@ export function PrivacySettingsForm({ userId }: PrivacySettingsFormProps) {
                             </div>
                             <Switch
                                 checked={formData.activity_status_visible}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                    handleQuickToggle("activity_status_visible", e.target.checked)
+                                onCheckedChange={(checked: boolean) =>
+                                    handleQuickToggle("activity_status_visible", checked)
                                 }
                                 disabled={isUpdating}
                             />
@@ -270,8 +270,8 @@ export function PrivacySettingsForm({ userId }: PrivacySettingsFormProps) {
                             </div>
                             <Switch
                                 checked={formData.allow_data_download}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                    handleQuickToggle("allow_data_download", e.target.checked)
+                                onCheckedChange={(checked: boolean) =>
+                                    handleQuickToggle("allow_data_download", checked)
                                 }
                                 disabled={isUpdating}
                             />

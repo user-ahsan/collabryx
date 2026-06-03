@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -27,6 +27,10 @@ export function SkillsInterestsSettingsTab({ userId }: { userId: string }) {
     const [interestsInput, setInterestsInput] = useState("")
     const [interests, setInterests] = useState<{ id?: string, interest: string }[]>([])
 
+    // Track initial DB state for safe diff-based saves
+    const initialSkillsRef = useRef<{ id: string, skill_name: string }[]>([])
+    const initialInterestsRef = useRef<{ id: string, interest: string }[]>([])
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -45,8 +49,13 @@ export function SkillsInterestsSettingsTab({ userId }: { userId: string }) {
                 if (skillsRes.error) throw skillsRes.error
                 if (interestsRes.error) throw interestsRes.error
 
-                setSkills(skillsRes.data || [])
-                setInterests(interestsRes.data || [])
+                const fetchedSkills = (skillsRes.data || []).map(s => ({ id: s.id, skill_name: s.skill_name }))
+                const fetchedInterests = (interestsRes.data || []).map(i => ({ id: i.id, interest: i.interest }))
+
+                setSkills(fetchedSkills)
+                setInterests(fetchedInterests)
+                initialSkillsRef.current = fetchedSkills
+                initialInterestsRef.current = fetchedInterests
             } catch (error) {
                 console.error("Error fetching skills/interests:", error)
                 setError("Failed to load data.")
@@ -114,24 +123,66 @@ export function SkillsInterestsSettingsTab({ userId }: { userId: string }) {
                 return
             }
 
-            // Reconcile Skills: Delete all existing and insert new
-            const { error: delSkillsErr } = await supabase.from('user_skills').delete().eq('user_id', userId)
-            if (delSkillsErr) throw delSkillsErr
-            if (skills.length > 0) {
-                const { error: insSkillsErr } = await supabase.from('user_skills').insert(
-                    skills.map(s => ({ user_id: userId, skill_name: s.skill_name }))
-                )
-                if (insSkillsErr) throw insSkillsErr
+            // ── Diff-based Skills Save ─────────────────────────────────────
+            // Find skills that were in DB but removed in UI → delete by ID
+            const currentSkillIds = new Set(skills.filter(s => s.id).map(s => s.id))
+            const skillsToRemove = initialSkillsRef.current.filter(s => !currentSkillIds.has(s.id))
+            
+            // Skills in UI without IDs → newly added → insert
+            const skillsToAdd = skills.filter(s => !s.id)
+
+            if (skillsToRemove.length > 0) {
+                const { error: delErr } = await supabase
+                    .from('user_skills')
+                    .delete()
+                    .in('id', skillsToRemove.map(s => s.id))
+                if (delErr) throw new Error(`Failed to remove skills: ${delErr.message}`)
+            }
+            if (skillsToAdd.length > 0) {
+                const { error: insErr } = await supabase
+                    .from('user_skills')
+                    .insert(skillsToAdd.map(s => ({ user_id: userId, skill_name: s.skill_name })))
+                if (insErr) throw new Error(`Failed to add skills: ${insErr.message}`)
             }
 
-            // Reconcile Interests
-            const { error: delIntErr } = await supabase.from('user_interests').delete().eq('user_id', userId)
-            if (delIntErr) throw delIntErr
-            if (interests.length > 0) {
-                const { error: insIntErr } = await supabase.from('user_interests').insert(
-                    interests.map(i => ({ user_id: userId, interest: i.interest }))
-                )
-                if (insIntErr) throw insIntErr
+            // ── Diff-based Interests Save ──────────────────────────────────
+            const currentInterestIds = new Set(interests.filter(i => i.id).map(i => i.id))
+            const interestsToRemove = initialInterestsRef.current.filter(i => !currentInterestIds.has(i.id))
+            const interestsToAdd = interests.filter(i => !i.id)
+
+            if (interestsToRemove.length > 0) {
+                const { error: delErr } = await supabase
+                    .from('user_interests')
+                    .delete()
+                    .in('id', interestsToRemove.map(i => i.id))
+                if (delErr) throw new Error(`Failed to remove interests: ${delErr.message}`)
+            }
+            if (interestsToAdd.length > 0) {
+                const { error: insErr } = await supabase
+                    .from('user_interests')
+                    .insert(interestsToAdd.map(i => ({ user_id: userId, interest: i.interest })))
+                if (insErr) throw new Error(`Failed to add interests: ${insErr.message}`)
+            }
+
+            // ── Trigger embedding regeneration ─────────────────────────────
+            // Fast-path: immediately mark embedding as stale (SQL triggers also handle this)
+            await supabase.rpc('regenerate_embedding', { p_user_id: userId })
+
+            // ── Update local refs to reflect new state ─────────────────────
+            // Refetch to get DB-assigned IDs for newly inserted items
+            const [skillsRes, interestsRes] = await Promise.all([
+                supabase.from('user_skills').select('id, skill_name').eq('user_id', userId),
+                supabase.from('user_interests').select('id, interest').eq('user_id', userId)
+            ])
+            if (skillsRes.data) {
+                const updatedSkills = skillsRes.data.map(s => ({ id: s.id, skill_name: s.skill_name }))
+                setSkills(updatedSkills)
+                initialSkillsRef.current = updatedSkills
+            }
+            if (interestsRes.data) {
+                const updatedInterests = interestsRes.data.map(i => ({ id: i.id, interest: i.interest }))
+                setInterests(updatedInterests)
+                initialInterestsRef.current = updatedInterests
             }
 
             setSuccessMsg("Skills & Interests saved successfully.")
@@ -142,6 +193,15 @@ export function SkillsInterestsSettingsTab({ userId }: { userId: string }) {
             const errorMessage = error instanceof Error ? error.message : "Failed to save data."
             setError(errorMessage)
             toast.error(errorMessage)
+            // Refetch to restore UI to known state after failure
+            try {
+                const [skillsRes, interestsRes] = await Promise.all([
+                    supabase.from('user_skills').select('id, skill_name').eq('user_id', userId),
+                    supabase.from('user_interests').select('id, interest').eq('user_id', userId)
+                ])
+                if (skillsRes.data) setSkills(skillsRes.data.map(s => ({ id: s.id, skill_name: s.skill_name })))
+                if (interestsRes.data) setInterests(interestsRes.data.map(i => ({ id: i.id, interest: i.interest })))
+            } catch { /* silent — state may be stale but no data lost */ }
         } finally {
             setIsSaving(false)
         }

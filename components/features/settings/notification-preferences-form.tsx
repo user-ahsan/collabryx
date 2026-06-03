@@ -133,8 +133,8 @@ export function NotificationPreferencesForm({ userId }: NotificationPreferencesF
                             </div>
                             <Switch
                                 checked={formData.email_new_connections}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                    handleQuickToggle("email_new_connections", e.target.checked)
+                                onCheckedChange={(checked: boolean) =>
+                                    handleQuickToggle("email_new_connections", checked)
                                 }
                                 disabled={isUpdating}
                             />
@@ -154,8 +154,8 @@ export function NotificationPreferencesForm({ userId }: NotificationPreferencesF
                             </div>
                             <Switch
                                 checked={formData.email_messages}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                    handleQuickToggle("email_messages", e.target.checked)
+                                onCheckedChange={(checked: boolean) =>
+                                    handleQuickToggle("email_messages", checked)
                                 }
                                 disabled={isUpdating}
                             />
@@ -175,8 +175,8 @@ export function NotificationPreferencesForm({ userId }: NotificationPreferencesF
                             </div>
                             <Switch
                                 checked={formData.email_post_likes}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                    handleQuickToggle("email_post_likes", e.target.checked)
+                                onCheckedChange={(checked: boolean) =>
+                                    handleQuickToggle("email_post_likes", checked)
                                 }
                                 disabled={isUpdating}
                             />
@@ -196,8 +196,8 @@ export function NotificationPreferencesForm({ userId }: NotificationPreferencesF
                             </div>
                             <Switch
                                 checked={formData.email_comments}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                    handleQuickToggle("email_comments", e.target.checked)
+                                onCheckedChange={(checked: boolean) =>
+                                    handleQuickToggle("email_comments", checked)
                                 }
                                 disabled={isUpdating}
                             />
@@ -217,8 +217,8 @@ export function NotificationPreferencesForm({ userId }: NotificationPreferencesF
                             </div>
                             <Switch
                                 checked={formData.ai_smart_match_alerts}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                    handleQuickToggle("ai_smart_match_alerts", e.target.checked)
+                                onCheckedChange={(checked: boolean) =>
+                                    handleQuickToggle("ai_smart_match_alerts", checked)
                                 }
                                 disabled={isUpdating}
                             />
@@ -244,8 +244,8 @@ export function NotificationPreferencesForm({ userId }: NotificationPreferencesF
                             </div>
                             <Switch
                                 checked={formData.push_enabled}
-                                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                                    handleQuickToggle("push_enabled", e.target.checked)
+                                onCheckedChange={(checked: boolean) =>
+                                    handleQuickToggle("push_enabled", checked)
                                 }
                                 disabled={isUpdating}
                             />
