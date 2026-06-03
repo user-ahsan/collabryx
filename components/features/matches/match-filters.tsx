@@ -1,7 +1,7 @@
 "use client"
 
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import {
     Select,
     SelectContent,
@@ -9,120 +9,163 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { Search, SlidersHorizontal, LayoutGrid, List, Sparkles } from "lucide-react"
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command"
+import { LayoutGrid, List, ArrowUpDown, Check, ChevronDown } from "lucide-react"
 import { GlassCard } from "@/components/shared/glass-card"
-import { useState } from "react"
-import { SemanticSearchDialog } from "./semantic-search-dialog"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
 
 type ViewMode = "grid" | "list"
+type SortOption = "compatibility" | "name" | "role"
 
 interface MatchFiltersProps {
     viewMode?: ViewMode
     onViewModeChange?: (mode: ViewMode) => void
+    /** All unique skills extracted from fetched matches */
+    skills?: string[]
+    /** Currently selected skill filter (empty = all) */
+    selectedSkill?: string
+    onSkillChange?: (skill: string) => void
+    /** Current sort option */
+    sortBy?: SortOption
+    onSortChange?: (sort: SortOption) => void
 }
 
 export function MatchFilters({
     viewMode = "grid",
-    onViewModeChange
+    onViewModeChange,
+    skills = [],
+    selectedSkill = "",
+    onSkillChange,
+    sortBy = "compatibility",
+    onSortChange,
 }: MatchFiltersProps) {
-    const [semanticSearchOpen, setSemanticSearchOpen] = useState(false)
+    const [skillPopoverOpen, setSkillPopoverOpen] = useState(false)
 
     return (
-        <>
-            <div className="mb-4 w-full z-50">
-                <GlassCard innerClassName="p-2 sm:p-3">
-                    <div className="flex flex-col gap-2 md:flex-row md:items-center">
-                        {/* Natural Language Search */}
-                        <div className="relative flex-1 min-w-0">
-                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input
-                                type="search"
-                                placeholder="Search by skills, interests, or role..."
-                                className="h-10 pl-9 pr-20 w-full text-sm"
-                            />
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="absolute right-1 top-1/2 -translate-y-1/2 h-8 px-2 text-xs text-muted-foreground hover:text-primary"
-                                onClick={() => setSemanticSearchOpen(true)}
-                            >
-                                <Sparkles className="mr-1 h-3 w-3" />
-                                AI
-                            </Button>
-                        </div>
-
-                        <div className="flex items-center gap-2 shrink-0">
-                            {/* Role Filter */}
-                            <Select defaultValue="all">
-                                <SelectTrigger className="h-10 w-[130px] text-xs sm:text-sm hidden md:flex">
-                                    <SelectValue placeholder="Role" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Roles</SelectItem>
-                                    <SelectItem value="developer">Developer</SelectItem>
-                                    <SelectItem value="designer">Designer</SelectItem>
-                                    <SelectItem value="manager">Product Manager</SelectItem>
-                                    <SelectItem value="founder">Founder</SelectItem>
-                                </SelectContent>
-                            </Select>
-
-                            {/* Availability Filter */}
-                            <Select defaultValue="any">
-                                <SelectTrigger className="h-10 w-[130px] text-xs sm:text-sm hidden lg:flex">
-                                    <SelectValue placeholder="Availability" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="any">Any Availability</SelectItem>
-                                    <SelectItem value="fulltime">Full-time</SelectItem>
-                                    <SelectItem value="parttime">Part-time</SelectItem>
-                                    <SelectItem value="hackathon">Hackathon</SelectItem>
-                                </SelectContent>
-                            </Select>
-
-                            {/* Advanced Filter Toggle */}
-                            <Button
-                                variant="outline"
-                                size="icon"
-                                className="h-10 w-10 shrink-0 flex lg:hidden"
-                            >
-                                <SlidersHorizontal className="h-4 w-4" />
-                            </Button>
-
-                            {/* View Toggle */}
-                            <div className={cn(
-                                "flex items-center gap-1 p-1 rounded-lg border",
-                                glass("subtle")
-                            )}>
+        <div className="mb-4 w-full z-50">
+            <GlassCard innerClassName="p-2 sm:p-3">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    {/* Skills Filter — searchable combobox, portal-rendered */}
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                        <Popover open={skillPopoverOpen} onOpenChange={setSkillPopoverOpen}>
+                            <PopoverTrigger asChild>
                                 <Button
-                                    variant={viewMode === "grid" ? "secondary" : "ghost"}
-                                    size="sm"
-                                    className="h-8 px-2"
-                                    onClick={() => onViewModeChange?.("grid")}
+                                    variant="outline"
+                                    role="combobox"
+                                    aria-expanded={skillPopoverOpen}
+                                    className="h-9 w-full sm:w-[200px] justify-between text-xs font-normal"
                                 >
-                                    <LayoutGrid className="h-4 w-4" />
+                                    <span className="truncate">
+                                        {selectedSkill
+                                            ? selectedSkill
+                                            : "Filter by skill..."}
+                                    </span>
+                                    <ChevronDown className="ml-1 h-3.5 w-3.5 shrink-0 opacity-50" />
                                 </Button>
-                                <Button
-                                    variant={viewMode === "list" ? "secondary" : "ghost"}
-                                    size="sm"
-                                    className="h-8 px-2"
-                                    onClick={() => onViewModeChange?.("list")}
-                                >
-                                    <List className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        </div>
+                            </PopoverTrigger>
+                            <PopoverContent
+                                className="w-[280px] p-0"
+                                align="start"
+                                sideOffset={4}
+                            >
+                                <Command>
+                                    <CommandInput placeholder="Search skills..." />
+                                    <CommandList>
+                                        <CommandEmpty>No skill found.</CommandEmpty>
+                                        <CommandGroup>
+                                            <CommandItem
+                                                value=""
+                                                onSelect={() => {
+                                                    onSkillChange?.("")
+                                                    setSkillPopoverOpen(false)
+                                                }}
+                                            >
+                                                <Check
+                                                    className={cn(
+                                                        "mr-2 h-3.5 w-3.5",
+                                                        !selectedSkill ? "opacity-100" : "opacity-0"
+                                                    )}
+                                                />
+                                                All Skills
+                                            </CommandItem>
+                                            {skills.map((skill) => (
+                                                <CommandItem
+                                                    key={skill}
+                                                    value={skill}
+                                                    onSelect={() => {
+                                                        onSkillChange?.(skill)
+                                                        setSkillPopoverOpen(false)
+                                                    }}
+                                                >
+                                                    <Check
+                                                        className={cn(
+                                                            "mr-2 h-3.5 w-3.5",
+                                                            selectedSkill === skill ? "opacity-100" : "opacity-0"
+                                                        )}
+                                                    />
+                                                    {skill}
+                                                </CommandItem>
+                                            ))}
+                                        </CommandGroup>
+                                    </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
+
+                        {/* Sort By */}
+                        <Select
+                            value={sortBy}
+                            onValueChange={(val) => onSortChange?.(val as SortOption)}
+                        >
+                            <SelectTrigger className="h-9 w-full sm:w-[150px] text-xs">
+                                <ArrowUpDown className="mr-1.5 h-3 w-3 shrink-0" />
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="compatibility">Best Match</SelectItem>
+                                <SelectItem value="name">Name A-Z</SelectItem>
+                                <SelectItem value="role">Role</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
-                </GlassCard>
-            </div>
 
-            <SemanticSearchDialog
-                open={semanticSearchOpen}
-                onOpenChange={setSemanticSearchOpen}
-                onSearch={(_project, _bio) => {
-                }}
-            />
-        </>
+                    {/* View Toggle */}
+                    <div className={cn(
+                        "flex items-center gap-1 p-1 rounded-lg border self-start sm:self-auto",
+                        glass("subtle")
+                    )}>
+                        <Button
+                            variant={viewMode === "grid" ? "secondary" : "ghost"}
+                            size="sm"
+                            className="h-8 px-2"
+                            onClick={() => onViewModeChange?.("grid")}
+                        >
+                            <LayoutGrid className="h-4 w-4" />
+                        </Button>
+                        <Button
+                            variant={viewMode === "list" ? "secondary" : "ghost"}
+                            size="sm"
+                            className="h-8 px-2"
+                            onClick={() => onViewModeChange?.("list")}
+                        >
+                            <List className="h-4 w-4" />
+                        </Button>
+                    </div>
+                </div>
+            </GlassCard>
+        </div>
     )
 }
