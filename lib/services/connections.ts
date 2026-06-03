@@ -89,10 +89,17 @@ export async function fetchConnectionRequests(): Promise<{
       .eq("status", "pending")
       .order("created_at", { ascending: false })
 
-    if (error) throw error
+    if (error) {
+      // New users may not have profiles yet — treat gracefully
+      if (error.code === "PGRST116" || error.message?.includes("contains 0 rows") || error.code === "42501") {
+        return { data: [], error: null }
+      }
+      throw error
+    }
 
     const mappedConnections: ConnectionWithUser[] = (connections || []).map((conn) => {
-      const requester = conn.requester?.[0]
+      // Supabase returns a single object for many-to-one joins (not an array)
+      const requester = conn.requester as { display_name?: string; full_name?: string; avatar_url?: string; headline?: string } | null
       return {
         id: conn.id,
         requester_id: conn.requester_id,
@@ -112,7 +119,7 @@ export async function fetchConnectionRequests(): Promise<{
 
     return { data: mappedConnections, error: null }
   } catch (error) {
-    log.error("Error fetching connection requests:", error)
+    log.warn("Error fetching connection requests (may be new user):", { error: error instanceof Error ? error.message : String(error) })
     return { 
       data: [], 
       error: error instanceof Error ? error : new Error("[Connections] Failed to fetch connection requests") 

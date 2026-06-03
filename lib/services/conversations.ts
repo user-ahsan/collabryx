@@ -1,18 +1,10 @@
 import { createClient } from "@/lib/supabase/server"
-import { z } from "zod"
 import { logger } from "@/lib/logger"
 import type { Conversation, Message } from "@/types/database.types"
 
 // ===========================================
 // CONVERSATIONS SERVICE
 // ===========================================
-
-const CreateConversationSchema = z.object({
-  participant_1: z.string().uuid(),
-  participant_2: z.string().uuid(),
-}).refine((data) => data.participant_1 < data.participant_2, {
-  message: "participant_1 must be lexicographically less than participant_2",
-})
 
 export interface ConversationWithParticipantInfo extends Conversation {
   other_user_id: string

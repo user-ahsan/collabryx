@@ -147,23 +147,6 @@ export const notificationPreferenceSchema = z.object({
 })
 
 // ===========================================
-// ACTIVITY TRACKING SCHEMAS
-// ===========================================
-
-export const activityTrackSchema = z.object({
-  action: z.enum(["view", "click", "search", "share", "like", "comment"]),
-  target_type: z.enum(["profile", "post", "project", "match"]),
-  target_id: uuidSchema,
-  metadata: z.record(z.string(), z.unknown()).optional(),
-})
-
-export const activityFeedSchema = z.object({
-  limit: z.coerce.number().min(1).max(100).default(20),
-  offset: z.coerce.number().min(0).default(0),
-  action: z.enum(["view", "click", "search", "share", "like", "comment"]).optional(),
-})
-
-// ===========================================
 // AI & CHAT SCHEMAS
 // ===========================================
 

@@ -35,10 +35,14 @@ let anthropic: Anthropic | null = null
 
 function getOpenAIClient(): OpenAI {
   if (!openai) {
-    if (!process.env.OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY environment variable is not set')
+    const apiKey = process.env.OPENROUTER_API_KEY || process.env.OPENAI_API_KEY
+    if (!apiKey) {
+      throw new Error('OPENAI_API_KEY or OPENROUTER_API_KEY environment variable is not set')
     }
-    openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+    const baseURL = process.env.OPENROUTER_API_KEY
+      ? (process.env.OPENROUTER_BASE_URL || 'https://openrouter.ai/api/v1')
+      : undefined
+    openai = new OpenAI({ apiKey, baseURL })
   }
   return openai
 }
@@ -137,8 +141,9 @@ function getProvider(): 'openai' | 'anthropic' | 'qwen' {
   const provider = process.env.LLM_PROVIDER || 'openai'
   if (provider === 'anthropic' && process.env.ANTHROPIC_API_KEY) return 'anthropic'
   if (provider === 'qwen' && process.env.DASHSCOPE_API_KEY) return 'qwen'
+  if (process.env.OPENROUTER_API_KEY) return 'openai'  // OpenRouter uses OpenAI-compatible API
   if (process.env.OPENAI_API_KEY) return 'openai'
-  throw new Error('No AI provider configured')
+  throw new Error('No AI provider configured (set OPENROUTER_API_KEY or OPENAI_API_KEY)')
 }
 
 /**
@@ -204,7 +209,7 @@ async function callAI(messages: Array<{ role: string; content: string }>, system
     ]
     const openaiClient = getOpenAIClient()
     const response = await openaiClient.chat.completions.create({
-      model: 'gpt-4-turbo-preview',
+      model: process.env.OPENROUTER_MODEL || 'gpt-4-turbo-preview',
       messages: openaiMessages,
       max_tokens: 500,
       temperature: 0.7,

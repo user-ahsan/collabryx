@@ -281,7 +281,7 @@ export function useConnectionRequests(): UseConnectionRequestsReturn {
       setReceivedRequests(received || [])
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to fetch connection requests"
-      logger.app.error("Error fetching connection requests", err)
+      logger.app.warn("Error fetching connection requests (new user may not have connections)", { error: err })
       setError(errorMessage)
       setReceivedRequests([])
       setSentRequests([])

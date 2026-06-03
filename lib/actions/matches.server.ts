@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { withAudit } from './audit.server'
 import { z } from 'zod'
-import { logger } from '@/lib/logger'
 
 // ===========================================
 // VALIDATION SCHEMAS

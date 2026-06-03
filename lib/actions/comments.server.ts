@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { withAudit } from './audit.server'
-import { logger } from '@/lib/logger'
 
 // ===========================================
 // COMMENTS SERVER ACTIONS

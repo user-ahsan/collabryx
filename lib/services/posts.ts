@@ -103,8 +103,7 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
         author:profiles (
           full_name,
           display_name,
-          avatar_url,
-          role
+          avatar_url
         )
       `, { count: 'exact' })
       .eq("is_archived", false)
@@ -169,7 +168,7 @@ export async function fetchPosts(options: PostsQueryOptions = {}): Promise<{
       created_at: post.created_at,
       updated_at: post.updated_at,
       author_name: post.author?.display_name || post.author?.full_name || "Unknown",
-      author_role: post.author?.role || "Member",
+      author_role: "Member", // profiles table has no role column — default to Member
       author_avatar: post.author?.avatar_url || "",
       time_ago: formatTimeAgo(post.created_at),
     }))
@@ -393,7 +392,12 @@ export async function fetchPersonalizedFeed(options: PostsQueryOptions = {}): Pr
     return { data: mappedPosts, error: null, queryCount, duration }
   } catch (error) {
     const queryDuration = Date.now() - queryStartTime
-    logger.api.error("Error fetching personalized feed", error, { queryCount, duration: queryDuration })
+    // Only log as warning for new users / transient failures — the fallback works
+    logger.api.warn("Personalized feed unavailable — falling back to chronological", { 
+      error: error instanceof Error ? error.message : String(error),
+      queryCount, 
+      duration: queryDuration 
+    })
     // Fall back to chronological on any error
     return fetchPosts(options)
   }

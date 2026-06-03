@@ -13,6 +13,7 @@ import {
   updateMatchPreferences,
 } from '@/lib/services/matches'
 import { generateMatches, generateBatchMatches, checkMatchGenerationStatus } from '@/lib/services/match-generation'
+import { createClient } from '@/lib/supabase/client'
 
 export const MATCH_QUERY_KEYS = {
   all: ['matches'] as const,
@@ -23,19 +24,22 @@ export const MATCH_QUERY_KEYS = {
 }
 
 export function useMatches(filters?: { limit?: number; minScore?: number }) {
+  const supabase = createClient()
+
   return useQuery({
     queryKey: MATCH_QUERY_KEYS.list(filters),
     queryFn: async () => {
+      // Guard: silently skip if no session to avoid error floods
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return []
+      
       const { data, error } = await fetchMatches(filters)
       if (error) throw error
       return data
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 15,   // 15 minutes
-    retry: 3,
-    retryDelay: (attemptIndex) => {
-      return Math.min(1000 * 2 ** attemptIndex, 10000) // 1s, 2s, 4s, max 10s
-    },
+    retry: false, // Don't retry auth errors — they're not transient
   })
 }
 

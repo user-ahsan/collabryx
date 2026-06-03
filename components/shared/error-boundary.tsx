@@ -4,6 +4,8 @@ import { Component, ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { AlertCircle } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { glass } from '@/lib/utils/glass-variants'
 
 interface Props {
   children: ReactNode
@@ -38,26 +40,28 @@ class ErrorBoundaryClass extends Component<Props, State> {
 
       return (
         <div className="flex flex-col items-center justify-center min-h-[400px] p-6 text-center">
-          <AlertCircle className="h-12 w-12 text-destructive mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Something went wrong</h2>
-          <p className="text-muted-foreground mb-4 max-w-md">
-            {this.state.error?.message || 'An unexpected error occurred'}
-          </p>
-          <div className="flex gap-2">
-            <Button
-              onClick={() => {
-                this.setState({ hasError: false, error: undefined })
-                this.props.router?.refresh()
-              }}
-            >
-              Try Again
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => window.history.back()}
-            >
-              Go Back
-            </Button>
+          <div className={cn("p-8 rounded-2xl max-w-md w-full", glass("overlay"))}>
+            <AlertCircle className="h-12 w-12 text-destructive mb-4 mx-auto" />
+            <h2 className="text-xl font-semibold mb-2">Something went wrong</h2>
+            <p className="text-muted-foreground mb-4">
+              {this.state.error?.message || 'An unexpected error occurred'}
+            </p>
+            <div className="flex gap-2 justify-center">
+              <Button
+                onClick={() => {
+                  this.setState({ hasError: false, error: undefined })
+                  this.props.router?.refresh()
+                }}
+              >
+                Try Again
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => window.history.back()}
+              >
+                Go Back
+              </Button>
+            </div>
           </div>
         </div>
       )

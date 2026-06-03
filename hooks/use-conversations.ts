@@ -55,8 +55,12 @@ async function fetchConversations(): Promise<Conversation[]> {
         .order("created_at", { ascending: false })
 
     if (conversationsError) {
-        console.error("Failed to fetch conversations:", conversationsError)
-        throw conversationsError
+        // New users won't have conversations — graceful empty state
+        if (conversationsError.code === "PGRST116" || conversationsError.message?.includes("contains 0 rows")) {
+            return []
+        }
+        console.warn("Failed to fetch conversations (may be new user):", conversationsError)
+        return []
     }
 
     const conversationsPromises = (conversations || []).map(async (conv) => {
