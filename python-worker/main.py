@@ -107,6 +107,8 @@ from contextlib import asynccontextmanager
 
 from dotenv import load_dotenv
 from supabase import create_client, Client
+import httpx
+import ssl
 
 from embedding_generator import get_generator, construct_semantic_text
 from rate_limiter import RateLimiter
@@ -114,10 +116,13 @@ from embedding_validator import EmbeddingValidator
 
 load_dotenv()
 
-# Configure structured JSON logging
+# Configure structured JSON logging with explicit date format
+# Using a fixed format avoids locale-dependent date strings and ensures
+# the timestamp is always parseable regardless of system locale.
 logging.basicConfig(
     level=logging.INFO,
     format='{"timestamp": "%(asctime)s", "level": "%(levelname)s", "logger": "%(name)s", "message": "%(message)s"}',
+    datefmt="%Y-%m-%dT%H:%M:%S",
 )
 logger = logging.getLogger(__name__)
 
@@ -165,10 +170,32 @@ _health_db_cache = {"ts": 0.0, "healthy": False}
 HEALTH_DB_CACHE_TTL = 15  # seconds
 
 
-async def _execute(query):
-    """Execute a Supabase query in the dedicated thread pool — NEVER blocks the event loop."""
+async def _execute(query, max_retries=3):
+    """Execute a Supabase query in the dedicated thread pool — NEVER blocks the event loop.
+    
+    Automatically retries on SSL/connection errors (common on Windows where
+    httpx SSL handshakes can intermittently fail). Retries with 1s/2s/4s backoff.
+    """
     loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(_db_executor, query.execute)
+    last_error = None
+    
+    for attempt in range(max_retries):
+        try:
+            return await loop.run_in_executor(_db_executor, query.execute)
+        except (ssl.SSLError, httpx.RemoteProtocolError, httpx.ConnectError, httpx.TimeoutException) as ssl_err:
+            last_error = ssl_err
+            if attempt < max_retries - 1:
+                wait = 2 ** attempt  # 1s, 2s, 4s
+                logger.warning(f"SSL/connection error (attempt {attempt + 1}/{max_retries}), retrying in {wait}s: {ssl_err}")
+                await asyncio.sleep(wait)
+            else:
+                logger.error(f"SSL/connection error after {max_retries} retries: {ssl_err}")
+        except Exception as e:
+            # Non-SSL errors — don't retry, just pass through
+            raise e
+    
+    if last_error:
+        raise last_error
 
 
 # Validate required environment variables
@@ -306,6 +333,27 @@ async def lifespan(app: FastAPI):
     if supabase_url and supabase_key:
         try:
             supabase = create_client(supabase_url, supabase_key)
+
+            # Windows SSL workaround: httpx on Windows can fail with
+            # "SSL: EOF occurred in violation of protocol" when the system
+            # CA bundle is missing. We configure the internal httpx clients
+            # with a proper SSL context to avoid this.
+            try:
+                ssl_context = ssl.create_default_context()
+                # Relax SSL fingerprint checking for Windows compatibility
+                ssl_context.check_hostname = True
+                ssl_context.verify_mode = ssl.CERT_REQUIRED
+                custom_client = httpx.Client(verify=ssl_context, timeout=httpx.Timeout(30.0))
+                # Patch the internal postgrest HTTP client if accessible
+                if hasattr(supabase, "postgrest") and hasattr(supabase.postgrest, "session"):
+                    supabase.postgrest.session = custom_client
+                # Patch storage client
+                if hasattr(supabase, "storage") and hasattr(supabase.storage, "_client"):
+                    supabase.storage._client = custom_client
+            except Exception as ssl_err:
+                # SSL config failed — continue with default (will retry on DB ops)
+                logger.warning(f"SSL configuration note (non-fatal): {ssl_err}")
+
             rate_limiter = RateLimiter(supabase)
             logger.info("Supabase client initialized successfully")
         except Exception as e:
