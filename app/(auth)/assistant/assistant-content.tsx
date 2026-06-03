@@ -1,3 +1,32 @@
+/**
+ * ============================================================================
+ * AssistantContent — AI Assistant Page (Shared ChatInput Pattern)
+ * ============================================================================
+ *
+ * WHY THIS CHANGE:
+ * The ChatInput component's interface changed from:
+ *   props: { sessionId, onMessageSent }
+ * to:
+ *   props: { isStreaming, onSend }
+ *
+ * This file was passing the OLD props (sessionId={sessionId} onMessageSent={() => {}})
+ * which caused a TypeScript build error. Additionally, it was importing
+ * getOrCreateActiveSession from lib/actions/ai-mentor.ts to create a server-side
+ * session, but that function's result was never used for anything meaningful
+ * since the old ChatInput was broken anyway.
+ *
+ * The fix replaces the manual session-loading pattern with the useAIStream
+ * hook, matching the AI Mentor page's architecture. The hook:
+ *  - Creates session server-side on first sendMessage
+ *  - Syncs the real session ID via onSessionReady
+ *  - Provides isStreaming state to disable input during generation
+ *  - Provides sendMessage as the onSend callback for ChatInput
+ *
+ * Note: The rest of this page (starter cards, workspace panel, sample output)
+ * remains unchanged — only the session loading and ChatInput wiring were
+ * updated to match the new component interface.
+ * ============================================================================
+ */
 "use client"
 
 import { ChatInput } from "@/components/features/assistant/chat-input"
@@ -10,7 +39,8 @@ import { glass } from "@/lib/utils/glass-variants"
 import { Sparkles, Target, Zap, FileText, Loader2 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
-import { getOrCreateActiveSession } from "@/lib/actions/ai-mentor"
+import { useAIStream } from "@/hooks/use-ai-stream"
+import { useAuth } from "@/hooks/use-auth"
 
 const STARTERS = [
     {
@@ -63,30 +93,29 @@ Based on your profile, you should find:
 - Marketing/Growth lead (content, social media)`
 
 export default function AssistantContent() {
+    const { user } = useAuth()
     const [workspaceOpen, setWorkspaceOpen] = useState(false)
     const [workspaceContent, setWorkspaceContent] = useState("")
     const [sessionId, setSessionId] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(true)
 
+    const { messages, isStreaming, sendMessage, error } = useAIStream({
+        userId: user?.id ?? '',
+        onSessionReady: (sid) => {
+            setSessionId(sid)
+            setIsLoading(false)
+        },
+        onError: () => setIsLoading(false),
+    })
+
+    // If hook hasn't returned a session yet, show loading briefly
     useEffect(() => {
-        const loadSession = async () => {
-            try {
-                setIsLoading(true)
-                const result = await getOrCreateActiveSession()
-                if (result.error) {
-                    toast.error("Failed to load AI Mentor session")
-                    return
-                }
-                setSessionId(result.data.id)
-            } catch (error) {
-                console.error("Error loading session:", error)
-                toast.error("Failed to load AI Mentor")
-            } finally {
-                setIsLoading(false)
-            }
+        if (user) {
+            // Timeout in case stream isn't used immediately
+            const timer = setTimeout(() => setIsLoading(false), 3000)
+            return () => clearTimeout(timer)
         }
-        loadSession()
-    }, [])
+    }, [user])
 
     const handleOpenWorkspace = (content: string) => {
         setWorkspaceContent(content)
@@ -145,7 +174,7 @@ export default function AssistantContent() {
                 </div>
 
                 <div className="max-w-3xl mx-auto w-full">
-                    <ChatInput sessionId={sessionId} onMessageSent={() => {}} />
+                    <ChatInput isStreaming={isStreaming} onSend={sendMessage} />
                     <p className="text-[10px] text-center text-muted-foreground mt-2 px-2">
                         AI can make mistakes. Consider checking important information.
                     </p>
