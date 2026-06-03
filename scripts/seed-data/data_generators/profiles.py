@@ -632,6 +632,36 @@ def generate_complete_profile(
         "years_experience": years_experience,
     }
 
+    # =========================================================================
+    # SOCIAL PROFILE URLS (github_url, linkedin_url, twitter_url, portfolio_url)
+    # =========================================================================
+    # WHY THIS WAS ADDED:
+    # The profiles table in Supabase has four social/portfolio URL columns that
+    # were NOT being populated by the original seeder. While the core profile
+    # fields (name, email, bio, headline, etc.) were filled, these four columns
+    # always remained NULL. This meant any feature querying social links (profile
+    # pages, connection cards, user search results) would show empty social
+    # sections for ALL seeded profiles, making the test data unrealistic.
+    #
+    # The fix generates realistic social URLs based on each user's actual first
+    # and last name (lowercased, spaces/dashes stripped). Each URL has a
+    # randomized fill rate to mimic real-world adoption patterns:
+    #   - GitHub:      85% (most developers have GitHub)
+    #   - LinkedIn:    90% (nearly everyone has LinkedIn)
+    #   - Twitter/X:   60% (common but not universal)
+    #   - Portfolio:   50% (about half maintain a personal site)
+    #
+    # This gives us realistic data where profiles have varied social link
+    # combinations rather than all-or-nothing, which is critical for testing
+    # UI states like "show GitHub but no portfolio" or "no social links at all".
+    # =========================================================================
+    first_name_lower = first_name.lower().replace(" ", "").replace("-", "")
+    last_name_lower = last_name.lower().replace(" ", "").replace("-", "")
+    profile["github_url"] = f"https://github.com/{first_name_lower}{last_name_lower}" if random.random() < 0.85 else None
+    profile["linkedin_url"] = f"https://linkedin.com/in/{first_name_lower}-{last_name_lower}" if random.random() < 0.9 else None
+    profile["twitter_url"] = f"https://twitter.com/@{first_name_lower}{last_name_lower}" if random.random() < 0.6 else None
+    profile["portfolio_url"] = f"https://{first_name_lower}{last_name_lower}.dev" if random.random() < 0.5 else None
+
     # Generate related data
     profile["skills"] = generate_skills(industry)
     profile["interests"] = generate_interests(industry)

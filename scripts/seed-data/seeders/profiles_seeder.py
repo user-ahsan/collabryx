@@ -198,6 +198,33 @@ class ProfilesSeeder:
                 "profile_completion": profile_data["profile_completion"],
                 "looking_for": profile_data["looking_for"],
                 "onboarding_completed": profile_data["onboarding_completed"],
+                # SOCIAL URL FIELDS - Added to fix incomplete profile seeding
+                # ------------------------------------------------------------------
+                # WHY: The profiles table schema includes four social link columns
+                # (github_url, linkedin_url, twitter_url, portfolio_url) that were
+                # defined in the database schema and in the TypeScript types but were
+                # never populated by any seeder. The original ProfilesSeeder only
+                # wrote the 16 core fields from the generate_complete_profile dict
+                # and silently ignored the rest. This meant that even after seeding
+                # 500+ profiles, these columns remained NULL for every single row.
+                #
+                # Impact: Downstream features that depend on social links (the profile
+                # header component, user card grids, connection suggestion panels, and
+                # the onboarding flow) could not be properly tested because there was
+                # never any social data to render. UI states like "partial social links"
+                # or "no social links" were impossible to validate without manually
+                # editing database rows.
+                #
+                # Fix: The data generator (profiles.py) now produces random social URLs
+                # with realistic fill rates per platform. The seeder must extract these
+                # from the generated profile dict and include them in the REST API
+                # POST/PATCH payload so they actually reach the database. Without this
+                # change, the data in the generator would be generated and immediately
+                # discarded — computed but never persisted.
+                "github_url": profile_data.get("github_url"),
+                "linkedin_url": profile_data.get("linkedin_url"),
+                "twitter_url": profile_data.get("twitter_url"),
+                "portfolio_url": profile_data.get("portfolio_url"),
             }
 
             # Check if profile exists but is incomplete — update it
