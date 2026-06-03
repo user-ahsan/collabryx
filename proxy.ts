@@ -73,16 +73,13 @@ export async function proxy(request: NextRequest) {
         }
     )
 
-    // Use getUser() here — we need user.email_confirmed_at and user.id
-    // for email gate and profile/onboarding checks below.
-    // For simple "is authenticated?" checks (no user data needed), prefer
-    // getClaims() which validates JWT locally without network call.
-    // NEVER use getSession() for authorization decisions.
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
-
-    // Auto-login for development mode has been removed to restore original auth flow.
+    // ===========================================
+    // AUTH CHECK — two-tier for maximum performance
+    // ===========================================
+    // Tier 1: getClaims() validates JWT locally (~0ms, no network).
+    // Use this for simple "is authenticated?" guarding.
+    const { data: jwtData } = await supabase.auth.getClaims()
+    const isAuthenticated = !!jwtData?.claims?.sub
 
     // Protected routes: redirect to login if not authenticated
     const protectedRoutes = [
@@ -100,7 +97,7 @@ export async function proxy(request: NextRequest) {
         }
     }
 
-    if (!user && isAuthRoute) {
+    if (!isAuthenticated && isAuthRoute) {
         const url = request.nextUrl.clone()
         url.pathname = "/login"
         const redirectResponse = NextResponse.redirect(url)
@@ -111,16 +108,19 @@ export async function proxy(request: NextRequest) {
     }
 
     // ===========================================
-    // EMAIL VERIFICATION GATE
-    // Redirect unverified users to verify-email page
-    // Skip if SKIP_EMAIL_VERIFICATION=true (dev only)
+    // EMAIL VERIFICATION + ONBOARDING GATES
+    // Tier 2: getUser() makes a network call — only call when we
+    // need actual user data (email, profile checks). Avoid at all
+    // costs for simple auth guards.
     // ===========================================
-    if (user && isAuthRoute) {
+    if (isAuthenticated && isAuthRoute) {
+        const { data: { user } } = await supabase.auth.getUser()
+
+        // Email verification gate
         const skipEmailVerification = process.env.SKIP_EMAIL_VERIFICATION === "true"
-        const emailNotConfirmed = !user.email_confirmed_at
+        const emailNotConfirmed = user && !user.email_confirmed_at
 
         if (!skipEmailVerification && emailNotConfirmed) {
-            // Don't redirect if already on verify-email or auth-sync (avoids loop)
             if (!request.nextUrl.pathname.startsWith("/verify-email") && !request.nextUrl.pathname.startsWith("/auth-sync")) {
                 const url = request.nextUrl.clone()
                 url.pathname = "/verify-email"
@@ -131,25 +131,24 @@ export async function proxy(request: NextRequest) {
                 return redirectResponse
             }
         }
-    }
 
-    // Check onboarding status for authenticated users trying to access protected routes
-    // Redirect incomplete profiles to onboarding (dev mode only — auth-sync handles production)
-    if (user && isAuthRoute && !request.nextUrl.pathname.startsWith("/onboarding") && !request.nextUrl.pathname.startsWith("/auth-sync") && isDevMode()) {
-        const { data: profile } = await supabase
-            .from("profiles")
-            .select("onboarding_completed")
-            .eq("id", user.id)
-            .single()
+        // Onboarding check (dev mode only — auth-sync handles production)
+        if (user && !request.nextUrl.pathname.startsWith("/onboarding") && !request.nextUrl.pathname.startsWith("/auth-sync") && isDevMode()) {
+            const { data: profile } = await supabase
+                .from("profiles")
+                .select("onboarding_completed")
+                .eq("id", user.id)
+                .single()
 
-        if (!profile || profile.onboarding_completed !== true) {
-            const url = request.nextUrl.clone()
-            url.pathname = "/onboarding"
-            const redirectResponse = NextResponse.redirect(url)
-            supabaseResponse.cookies.getAll().forEach(cookie => {
-                redirectResponse.cookies.set(cookie.name, cookie.value)
-            })
-            return redirectResponse
+            if (!profile || profile.onboarding_completed !== true) {
+                const url = request.nextUrl.clone()
+                url.pathname = "/onboarding"
+                const redirectResponse = NextResponse.redirect(url)
+                supabaseResponse.cookies.getAll().forEach(cookie => {
+                    redirectResponse.cookies.set(cookie.name, cookie.value)
+                })
+                return redirectResponse
+            }
         }
     }
 
