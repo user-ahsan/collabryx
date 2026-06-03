@@ -114,7 +114,14 @@ Help the user evaluate collaboration opportunities by:
 - Consider **career stage alignment** (e.g., executive + early-career can work well)
 - Evaluate **looking_for alignment** (do their goals match?)
 - Be honest about **potential red flags**
-- Suggest **specific collaboration formats** based on the context`
+- Suggest **specific collaboration formats** based on the context
+- For each startup idea, include a niche_score object with:
+  - overall (0-100): Overall viability prediction
+  - market_fit (0-100): Market demand and timing
+  - skill_match (0-100): How well both people's skills complement each other
+  - feasibility (0-100): How doable it is with current resources
+  - uniqueness (0-100): How differentiated it is from existing solutions
+- Include a why_you_two field for each idea explaining why this specific pair should build it`
 }
 
 /**

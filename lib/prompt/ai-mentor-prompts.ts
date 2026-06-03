@@ -144,7 +144,7 @@ User: ${userMessage}`)
 }
 
 function buildDefaultMentorPrompt(context: ExtendedRAGContext, userMessage: string): string {
-  const outputSchema = `{"message":"Your response text","ideas":[{"id":1,"title":"Startup name","tagline":"Value proposition","problem":"Problem it solves","solution":"How it solves it","target_market":"Who it serves","why_you":"Why this matches their skills","difficulty":"easy","actions":["validate","market_research","build_mvp"]}],"suggestions":["Follow-up 1","Follow-up 2","Follow-up 3"],"profile_match":{"skills_used":["skill1","skill2"],"interests_addressed":["interest1","interest2"],"match_score":85}}`
+  const outputSchema = `{"message":"Your response text","ideas":[{"id":1,"title":"Startup name","tagline":"Value proposition","problem":"Problem it solves","solution":"How it solves it","target_market":"Who it serves","why_you":"Why this matches their skills","why_you_two":"Why both people should build this together","difficulty":"easy","niche_score":{"overall":82,"market_fit":85,"skill_match":78,"feasibility":70,"uniqueness":92},"actions":["validate","market_research","build_mvp"]}],"suggestions":["Follow-up 1","Follow-up 2","Follow-up 3"],"profile_match":{"skills_used":["skill1","skill2"],"interests_addressed":["interest1","interest2"],"match_score":85}}`
 
   const parts: string[] = []
 
@@ -218,7 +218,9 @@ For general chat / mentorship (no ideas), use:
 {"message":"Your helpful response","suggestions":["Follow-up 1","Follow-up 2","Follow-up 3"]}
 
 The "actions" array must use values from: validate, find_cofounder, market_research, build_mvp, competitor_analysis, fundraising, team_building, customer_interviews.
-The "difficulty" field must be exactly "easy", "moderate", or "hard".`)
+The "difficulty" field must be exactly "easy", "moderate", or "hard".
+For collaboration scenarios, include "why_you_two" explaining why both people should build it together.
+For each idea, include a "niche_score" object with: overall (0-100), market_fit (0-100), skill_match (0-100), feasibility (0-100), uniqueness (0-100).`)
 
   if (context.conversation_history && context.conversation_history.length > 0) {
     const historyPreview = context.conversation_history
