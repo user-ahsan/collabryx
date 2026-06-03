@@ -1,5 +1,32 @@
 "use client"
 
+/**
+ * Feed — Dashboard Activity Feed
+ * 
+ * REMOVED: AIContextCard ("Matching on Fintech / Python / MVP" card)
+ * 
+ * WHY IT WAS REMOVED:
+ * The AIContextCard displayed hardcoded matching preferences ("Fintech interest",
+ * "Python backend skills", "MVP-stage availability") that were not actually
+ * derived from the user's profile data. These were fake preferences baked into
+ * DEFAULT_CONTEXTS that had no connection to the user's actual skills,
+ * interests, or collaboration goals entered during onboarding. Displaying this
+ * as "Matching on..." was misleading because:
+ *   1. The values were static strings, not computed from the user's data
+ *   2. The "Edit" button had no real functionality behind it
+ *   3. It took up vertical space in the feed with zero actionable value
+ * 
+ * THE PROBLEM IT CREATED:
+ * New users would see "Matching on Fintech interest, Python backend skills,
+ * MVP-stage availability" regardless of what they actually entered during
+ * onboarding. A student with design skills looking for mentorship would still
+ * see "Python backend" — which eroded trust in the platform's relevance.
+ * 
+ * Instead of keeping a broken component with fake data, it was fully deleted
+ * including its file, import, and usage. If real matching context is needed
+ * in the future, it should be computed from the user's actual skills,
+ * interests, and collaboration preferences stored in the profiles table.
+ */
 import { useState, useMemo, useCallback, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
 import { useReducedMotion } from "@/hooks/use-reduced-motion"
@@ -25,7 +52,6 @@ import { InfiniteScrollTrigger } from "./posts/infinite-scroll-trigger"
 import { CommentSection } from "./comments/comment-section"
 import { ShareDialog } from "./comments/share-dialog"
 import { PostDetailDialog } from "./posts/post-detail-dialog"
-import { AIContextCard } from "./ai-context-card"
 import { RequestReminderModal } from "./request-reminder/RequestReminderModal"
 import { GlassCard } from "@/components/shared/glass-card"
 
@@ -302,9 +328,6 @@ export function Feed() {
                     </div>
                 </GlassCard>
             )}
-
-            {/* AI Context Card */}
-            <AIContextCard />
 
             {/* Request Reminder Card */}
             <RequestReminderModal />

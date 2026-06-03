@@ -1,6 +1,15 @@
 // ─── Dashboard Cache Utility ─────────────────────────────────────────────────
 // Generic localStorage-based cache with graceful error handling.
 // Pattern: API → cache → hardcoded fallback (see RequestReminderModal for reference)
+//
+// CACHE KEYS REMOVED:
+//   AI_CONTEXTS: "collabryx_ai_contexts"
+//   This key was used by the now-deleted AIContextCard component to cache
+//   hardcoded matching preferences. Since the component was removed (the
+//   "Matching on Fintech / Python / MVP" card had fake data not derived from
+//   user profiles), the cache key is no longer referenced anywhere. Keeping
+//   it would just be dead code. If real AI context caching is needed in the
+//   future, a new key should be added with proper data provenance.
 
 export const CACHE_VERSION = '1.0.0'
 const DEFAULT_TTL = 1000 * 60 * 30 // 30 minutes
@@ -16,7 +25,7 @@ export const CACHE_KEYS = {
     FEED_POSTS: "collabryx_feed_posts",
     MATCHES: "collabryx_matches",
     MATCH_ACTIVITY: "collabryx_match_activity",
-    AI_CONTEXTS: "collabryx_ai_contexts",
+    // Removed: AI_CONTEXTS
 } as const
 
 export function getCache<T>(key: string): T | null {

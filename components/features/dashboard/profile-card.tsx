@@ -1,5 +1,51 @@
 "use client"
 
+/**
+ * ProfileCard — Dashboard Sidebar Profile Summary (Phase 4)
+ * 
+ * WHAT THIS COMPONENT DOES:
+ * Displays a compact profile summary card in the dashboard sidebar showing the
+ * current user's avatar, name, headline, location, social link, and key stats
+ * (profile views, connections). It serves as both a navigational element
+ * (links to the full profile and connections pages) and an at-a-glance
+ * identity marker.
+ * 
+ * WHY THIS REWRITE WAS NEEDED:
+ * The previous version was purely hardcoded:
+ *   - name: "Sophie Chen" (hardcoded string)
+ *   - avatar: "/avatars/01.png" (fake path)
+ *   - headline: "Frontend Architect | Building the future of UI at TechFlow"
+ *   - location: "San Francisco, CA"
+ *   - website: "github.com/sophie"
+ *   - profile views: "1,234" (fake number)
+ *   - connections: "567" (fake number)
+ * This meant every user saw the same fake profile card, which was confusing
+ * and provided zero value.
+ * 
+ * HOW IT FETCHES REAL DATA NOW:
+ *   useProfile() — React Query hook that fetches from supabase.profiles.
+ *     Returns: avatar_url, banner_url, display_name, full_name, headline,
+ *     location, github_url, linkedin_url, website_url, etc.
+ *   useUserAnalytics() — React Query hook that fetches from the
+ *     supabase.user_analytics table. Returns: profile_views_count,
+ *     connections_count, engagement_score, and 20+ other metrics.
+ * 
+ * STATE HANDLING:
+ *   Loading → Skeleton card with pulse animations for every section
+ *   Error → Error card with "Unable to load profile" message
+ *   Success → Real data rendered with the following fallback chain:
+ *     - Name: display_name || full_name || "User"
+ *     - Social link: github_url || linkedin_url || website_url
+ *     - Banner: banner_url from DB, or bg-muted/60 fallback (no gradient)
+ *     - Stats: analytics value, or 0 if no analytics record exists
+ *     - Empty location/link: those rows are hidden entirely
+ * 
+ * WHY NO GRADIENT FALLBACK:
+ * The previous bg-gradient-to-r from-primary to-primary/60 banner dominated
+ * the visual hierarchy and clashed with users who had real banner images.
+ * Using bg-muted/60 (a subtle, neutral background) keeps the card clean
+ * while still providing visual structure for the avatar overlap.
+ */
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { MapPin, Link as LinkIcon, Eye, Users, Loader2 } from "lucide-react"
@@ -12,7 +58,7 @@ import { formatInitials } from "@/lib/utils/format-initials"
 function ProfileCardSkeleton() {
     return (
         <GlassCard>
-            <div className="h-16 sm:h-20 bg-gradient-to-r from-primary/40 to-primary/20 rounded-t-xl md:rounded-t-2xl animate-pulse" />
+            <div className="h-16 sm:h-20 bg-muted/30 rounded-t-xl md:rounded-t-2xl animate-pulse" />
             <div className="relative px-3 sm:px-4 md:px-6 pb-2 pt-0">
                 <div className="relative -top-8 sm:-top-10 mb-[-2rem] sm:mb-[-2.5rem]">
                     <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-muted animate-pulse border-4 border-background" />
@@ -44,7 +90,7 @@ export function ProfileCard() {
     if (profileError || !profile) {
         return (
             <GlassCard>
-                <div className="h-16 sm:h-20 bg-gradient-to-r from-primary/40 to-primary/20 rounded-t-xl md:rounded-t-2xl" />
+                <div className="h-16 sm:h-20 bg-muted/30 rounded-t-xl md:rounded-t-2xl" />
                 <div className="px-3 sm:px-4 md:px-6 py-6 text-center">
                     <p className="text-sm text-muted-foreground">Unable to load profile.</p>
                 </div>
@@ -74,7 +120,7 @@ export function ProfileCard() {
                     style={{ backgroundImage: `url(${profile.banner_url})` }}
                 />
             ) : (
-                <div className="h-16 sm:h-20 bg-gradient-to-r from-primary to-primary/60 rounded-t-xl md:rounded-t-2xl" />
+                <div className="h-16 sm:h-20 rounded-t-xl md:rounded-t-2xl bg-muted/60" />
             )}
 
             <div className="relative px-3 sm:px-4 md:px-6 pb-2 pt-0">
