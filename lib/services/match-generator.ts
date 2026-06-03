@@ -225,8 +225,8 @@ async function persistMatchScores(
     if (upsertError) {
       logger.app.error("Failed to batch upsert match_scores", {
         message: upsertError.message,
-        code: (upsertError as Record<string, unknown>).code,
-        details: (upsertError as Record<string, unknown>).details,
+        code: (upsertError as unknown as Record<string, unknown>).code,
+        details: (upsertError as unknown as Record<string, unknown>).details,
       });
     }
   }
@@ -401,7 +401,7 @@ export async function generateMatchesForUser(
     if (insertError) {
       logger.app.error("Error inserting match suggestions", {
         message: insertError.message,
-        code: (insertError as Record<string, unknown>).code,
+        code: (insertError as unknown as Record<string, unknown>).code,
       });
     }
 

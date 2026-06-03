@@ -333,6 +333,16 @@ export interface NotificationPreference {
   email_post_likes: boolean;
   email_comments: boolean;
   push_enabled: boolean;
+  push_new_connections: boolean;
+  push_connect_accepted: boolean;
+  push_messages: boolean;
+  push_match_alerts: boolean;
+  push_post_likes: boolean;
+  push_comments: boolean;
+  push_comment_likes: boolean;
+  push_mentions: boolean;
+  push_achievements: boolean;
+  in_app_notifications: boolean;
   updated_at: string; // TIMESTAMPTZ
 }
 
