@@ -3,18 +3,21 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 
-const Switch = React.forwardRef<
-    HTMLInputElement,
-    React.ComponentProps<"input">
->(({ className, ...props }, ref) => {
-    return (
-        <label className="relative inline-flex items-center cursor-pointer">
-            <input
-                type="checkbox"
-                className="sr-only peer"
-                ref={ref}
-                {...props}
-            />
+interface SwitchProps extends Omit<React.ComponentProps<"input">, "onChange"> {
+    onCheckedChange?: (checked: boolean) => void;
+}
+
+const Switch = React.forwardRef<HTMLInputElement, SwitchProps>(
+    ({ className, onCheckedChange, ...props }, ref) => {
+        return (
+            <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    ref={ref}
+                    onChange={(e) => onCheckedChange?.(e.target.checked)}
+                    {...props}
+                />
             <div
                 className={cn(
                     "w-9 h-5 bg-input rounded-full peer peer-disabled:cursor-not-allowed peer-disabled:opacity-50 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-ring/50 peer-focus:ring-offset-2 peer-checked:bg-primary transition-colors",
