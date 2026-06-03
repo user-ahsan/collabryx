@@ -11,44 +11,57 @@ export function MatchCardSkeleton({ count = 8 }: MatchCardSkeletonProps) {
     return (
         <>
             {Array.from({ length: count }).map((_, i) => (
-                <Card key={i} className="h-full overflow-hidden border bg-card p-6">
-                    <div className="flex flex-col items-center">
-                        {/* Avatar skeleton */}
-                        <Skeleton className="h-28 w-28 rounded-full mb-4" />
+                <Card key={i} className="h-full overflow-hidden border bg-card">
+                    {/* Banner skeleton */}
+                    <Skeleton className="h-[100px] w-full rounded-t-xl rounded-b-none" />
 
-                        {/* Name & Role */}
-                        <Skeleton className="h-6 w-32 mb-2" />
-                        <Skeleton className="h-4 w-24 mb-4" />
+                    {/* Avatar - centered, overlapping */}
+                    <div className="flex justify-center -mt-10 mb-1">
+                        <Skeleton className="h-20 w-20 rounded-full ring-4 ring-background" />
                     </div>
 
-                    {/* Match Score */}
-                    <div className="mb-6 space-y-3 rounded-xl bg-muted p-4">
-                        <div className="flex items-center justify-between">
-                            <Skeleton className="h-4 w-20" />
-                            <Skeleton className="h-5 w-12" />
+                    {/* Content */}
+                    <div className="flex flex-col px-4 pb-4 gap-2.5">
+                        {/* Name + Role */}
+                        <div className="flex flex-col items-center gap-1">
+                            <Skeleton className="h-5 w-36" />
+                            <Skeleton className="h-4 w-24" />
                         </div>
-                        <Skeleton className="h-2 w-full animate-pulse" />
-                    </div>
 
-                    {/* Skills */}
-                    <div className="mb-6 flex flex-wrap justify-center gap-1.5">
-                        <Skeleton className="h-6 w-16" />
-                        <Skeleton className="h-6 w-20" />
-                        <Skeleton className="h-6 w-14" />
-                        <Skeleton className="h-6 w-18" />
-                    </div>
+                        {/* Location + Status */}
+                        <div className="flex justify-center gap-2">
+                            <Skeleton className="h-4 w-16" />
+                            <Skeleton className="h-4 w-20" />
+                        </div>
 
-                    {/* Bio */}
-                    <div className="space-y-2 mb-6">
-                        <Skeleton className="h-3 w-full" />
-                        <Skeleton className="h-3 w-full" />
-                        <Skeleton className="h-3 w-3/4" />
-                    </div>
+                        {/* Match Score card */}
+                        <div className="rounded-lg border bg-muted/20 p-3 space-y-2">
+                            <div className="flex items-center justify-between">
+                                <Skeleton className="h-4 w-14" />
+                                <Skeleton className="h-5 w-10" />
+                            </div>
+                            <Skeleton className="h-1.5 w-full" />
+                        </div>
 
-                    {/* Actions */}
-                    <div className="grid grid-cols-2 gap-3">
-                        <Skeleton className="h-10" />
-                        <Skeleton className="h-10" />
+                        {/* Skills */}
+                        <div className="flex flex-wrap gap-1.5">
+                            <Skeleton className="h-5 w-14 rounded-full" />
+                            <Skeleton className="h-5 w-20 rounded-full" />
+                            <Skeleton className="h-5 w-16 rounded-full" />
+                        </div>
+
+                        {/* Bio */}
+                        <div className="space-y-1">
+                            <Skeleton className="h-3 w-full" />
+                            <Skeleton className="h-3 w-3/4" />
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex gap-2 pt-3 border-t">
+                            <Skeleton className="h-9 flex-1" />
+                            <Skeleton className="h-9 w-9 rounded-md" />
+                            <Skeleton className="h-9 w-9 rounded-md" />
+                        </div>
                     </div>
                 </Card>
             ))}
