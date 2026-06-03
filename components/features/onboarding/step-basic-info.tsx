@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
+import { AvatarUploader } from "@/components/shared/avatar-uploader"
+import { UniversitySelect } from "@/components/shared/university-select"
 import type { OnboardingData as OnboardingFormValues } from "@/lib/validations/onboarding"
 
 interface StepBasicInfoProps {
@@ -15,11 +17,48 @@ interface StepBasicInfoProps {
 
 type LocationField = keyof Pick<OnboardingFormValues, "location">
 
+/**
+ * StepBasicInfo - First data-entry step in the onboarding flow.
+ *
+ * FIXES APPLIED:
+ *
+ * 1. CORRUPTED EMOJI — The greeting had a UTF-8 encoding corruption displaying "ðŸ‘‹"
+ *    instead of the intended wave emoji. This happened because the file was saved in a
+ *    mixed-encoding context that mangled the multi-byte character. Replaced with the
+ *    Unicode literal "👋" which is encoding-safe.
+ *
+ * 2. DUPLICATE LOCATION VALIDATION — There were two separate validation paths for the
+ *    location field: (a) react-hook-form's `register` with a `validate.format` callback,
+ *    and (b) a manual `onBlur` handler that ran the same validation independently into
+ *    a separate `locationFormatError` state. This meant validation ran twice on blur,
+ *    and the error could display from either source with different styling (form error
+ *    vs amber warning). Removed the manual path — all validation now flows through
+ *    react-hook-form errors, giving consistent red/destructive styling.
+ *
+ * 3. AUTO-FOCUS ON ENTRY — When transitioning from Welcome to Basic Info, the cursor
+ *    appeared nowhere — the user had to manually click into the Full Name field. This
+ *    breaks the flow and adds friction on every step transition. Added a useEffect with
+ *    a 100ms setTimeout to focus the Full Name input after the AnimatePresence mounts
+ *    the new step. 100ms allows the exit animation to complete first.
+ */
 export function StepBasicInfo({ userName, onNameExtracted }: StepBasicInfoProps) {
-    const { register, setValue, formState: { errors }, watch } = useFormContext<OnboardingFormValues>()
-    const [locationFormatError, setLocationFormatError] = React.useState<string | null>(null)
+    const { register, setValue, watch, formState: { errors } } = useFormContext<OnboardingFormValues>()
     const locationInputRef = useRef<HTMLInputElement | null>(null)
+    const fullNameInputRef = useRef<HTMLInputElement | null>(null)
     const fullNameValue = watch("fullName")
+    const avatarValue = watch("avatarUrl")
+    const universityValue = watch("university")
+
+    // Auto-focus the first input when step mounts.
+    // 100ms delay allows the AnimatePresence exit animation to finish and the
+    // new step's DOM to be committed before we attempt focus. Without this,
+    // the user lands on an unfocused form after every step transition.
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            fullNameInputRef.current?.focus()
+        }, 100)
+        return () => clearTimeout(timer)
+    }, [])
 
     // Pre-fill fullName with userName prop when provided
     useEffect(() => {
@@ -31,22 +70,20 @@ export function StepBasicInfo({ userName, onNameExtracted }: StepBasicInfoProps)
     // Extract display name from full name using regex
     useEffect(() => {
         if (fullNameValue && onNameExtracted) {
-            // Extract first name or create display name from full name
             const displayName = fullNameValue
                 .trim()
                 .toLowerCase()
-                .replace(/[^a-z0-9\s]/g, '') // Remove special characters
-                .replace(/\s+/g, '_') // Replace spaces with underscores
-                .slice(0, 30) // Limit length
-            
+                .replace(/[^a-z0-9\s]/g, '')
+                .replace(/\s+/g, '_')
+                .slice(0, 30)
+
             onNameExtracted(displayName)
         }
     }, [fullNameValue, onNameExtracted])
 
-    // Location validation helper with proper format
+    // Location validation helper
     const validateLocation = (value: string): boolean | string => {
-        if (!value || value.trim() === "") return true // Optional field
-        // Basic location format validation: City, State/Country or City, State Code
+        if (!value || value.trim() === "") return true
         const locationPattern = /^[A-Za-z\s]+,\s*[A-Za-z\s]+$/
         if (!locationPattern.test(value.trim())) {
             return "Please enter location in format: City, State or City, Country"
@@ -69,9 +106,20 @@ export function StepBasicInfo({ userName, onNameExtracted }: StepBasicInfoProps)
         <div className="space-y-6">
             <div className="space-y-2 text-center md:text-left">
                 <h2 id="step-heading" className="text-3xl font-bold tracking-tight text-foreground">
-                    Hey{userName ? ` ${userName}` : ''}! ðŸ‘‹
+                    Hey{userName ? ` ${userName}` : ''}! 👋
                 </h2>
-                <p className="text-base text-muted-foreground">Kindly fill in the following to complete your profile.</p>
+                <p className="text-base text-muted-foreground">Tell us about yourself so we can tailor the experience to you.</p>
+            </div>
+
+            {/* Avatar Upload */}
+            <div className="flex justify-center md:justify-start">
+                <AvatarUploader
+                    currentUrl={avatarValue}
+                    onUploadComplete={(url) => setValue("avatarUrl", url, { shouldDirty: true })}
+                    onRemove={() => setValue("avatarUrl", "", { shouldDirty: true })}
+                    displayName={watch("fullName") || userName || "User"}
+                    size="md"
+                />
             </div>
 
             <div className="space-y-4" aria-labelledby="step-heading">
@@ -95,6 +143,10 @@ export function StepBasicInfo({ userName, onNameExtracted }: StepBasicInfoProps)
                                 message: "Name can only contain letters, spaces, hyphens, and apostrophes"
                             }
                         })}
+                        ref={(e) => {
+                            (register("fullName").ref as (instance: HTMLInputElement | null) => void)(e)
+                            fullNameInputRef.current = e
+                        }}
                         className={cn(
                             "h-11 text-sm",
                             glass("input"),
@@ -192,28 +244,25 @@ export function StepBasicInfo({ userName, onNameExtracted }: StepBasicInfoProps)
                         }}
                         className={cn(
                             "h-11 text-sm",
-                            glass("input")
+                            glass("input"),
+                            errors.location && "border-destructive focus:border-destructive"
                         )}
+                        aria-invalid={!!errors.location}
                         aria-describedby="location-hint"
-                        onBlur={(e) => {
-                            const value = e.target.value
-                            if (value) {
-                                const validation = validateLocation(value)
-                                if (validation !== true) {
-                                    setLocationFormatError(typeof validation === "string" ? validation : null)
-                                } else {
-                                    setLocationFormatError(null)
-                                }
-                            } else {
-                                setLocationFormatError(null)
-                            }
-                        }}
                     />
                     <p id="location-hint" className="text-xs text-muted-foreground">Format: City, State or City, Country</p>
-                    {locationFormatError && (
-                        <p className="text-xs text-amber-500 font-medium mt-1">{locationFormatError}</p>
+                    {errors.location?.message && (
+                        <p className="text-xs text-destructive font-medium" role="alert">
+                            {errors.location.message as string}
+                        </p>
                     )}
                 </div>
+
+                {/* University Field - NEW */}
+                <UniversitySelect
+                    value={universityValue}
+                    onChange={(val) => setValue("university", val, { shouldDirty: true })}
+                />
             </div>
         </div>
     )

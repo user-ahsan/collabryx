@@ -3,14 +3,38 @@
 import React from "react"
 import { useFormContext, Controller } from "react-hook-form"
 import { Label } from "@/components/ui/label"
-import { InlineSearchableCombobox, ComboboxOption } from "@/components/ui/inline-searchable-combobox"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import { X } from "lucide-react"
 import { collaborationGoals } from "@/lib/data/collaboration-goals"
 import { industriesDatabase } from "@/lib/data/industries-database"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
+import { TagSelectorCard } from "@/components/features/onboarding/tag-selector-card"
+import { CollaborationSelector } from "@/components/shared/collaboration-selector"
+import type { ComboboxOption } from "@/components/ui/searchable-combobox"
 
+/**
+ * StepInterestsAndGoals - Third data step: collaboration goals + industry interests.
+ *
+ * FIXES APPLIED:
+ *
+ * 1. HELPER TEXT IMPROVEMENT — The original text "Select all that apply from the card on
+ *    the right" assumed a desktop two-column layout that doesn't exist on mobile (the card
+ *    stacks below). Changed to "Search or browse categories below" which accurately
+ *    describes the interaction regardless of viewport. Same for the interests section.
+ *
+ * 2. TIP TEXT CLEANUP — Removed emoji bullet from tip text (💡) for consistency with
+ *    the rest of the onboarding flow which uses plain text. Reworded to be more specific
+ *    about the value: "Your interests help us match you with relevant opportunities"
+ *    instead of vague "Or add custom industries."
+ */
 export function StepInterestsAndGoals() {
-  const { control, formState: { errors } } = useFormContext()
+  const { control, watch, setValue, formState: { errors } } = useFormContext()
+  const [goalsSearch, setGoalsSearch] = React.useState("")
+  const [interestsSearch, setInterestsSearch] = React.useState("")
+
+  const collaborationValue = watch("collaborationReadiness")
 
   // Convert goals database to combobox options
   const goalOptions: ComboboxOption[] = React.useMemo(() => 
@@ -48,39 +72,72 @@ export function StepInterestsAndGoals() {
         control={control}
         name="goals"
         render={({ field }) => {
-          const currentGoals = field.value || []
+          const currentGoals: string[] = field.value || []
+
+          const handleRemoveGoal = (id: string) => {
+            field.onChange(currentGoals.filter(g => g !== id))
+          }
 
           return (
             <div className="space-y-4 relative" aria-labelledby="step-heading">
               <div className="space-y-1.5">
-                <Label htmlFor="goals-combobox" className="text-sm font-semibold text-foreground">Collaboration Goals <span className="text-muted-foreground font-normal">(Optional)</span></Label>
-                <p id="goals-hint" className="text-sm text-muted-foreground">Select all that apply from our comprehensive list.</p>
+                <Label htmlFor="goals-input" className="text-sm font-semibold text-foreground">Collaboration Goals <span className="text-muted-foreground font-normal">(Optional)</span></Label>
+                <p id="goals-hint" className="text-sm text-muted-foreground">Select all that apply — search or browse categories below.</p>
               </div>
               {typeof errors.goals?.message === "string" && (
                 <p id="goals-error" className="text-xs text-destructive font-medium" role="alert">{errors.goals.message}</p>
               )}
 
-              <InlineSearchableCombobox
-                options={goalOptions}
-                selected={currentGoals}
-                onChange={(selected) => field.onChange(selected)}
-                searchPlaceholder="Search goals (e.g., Find Co-Founder, Networking, Mentorship)..."
-                emptyMessage="No goals found."
-                maxHeight={350}
-                allowCustom={false}
-                showCategories={true}
-                className="goals-combobox"
-                aria-describedby={typeof errors.goals?.message === "string" ? "goals-error" : "goals-hint"}
-              />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="space-y-3 min-w-0">
+                  <Input
+                    id="goals-input"
+                    value={goalsSearch}
+                    onChange={(e) => setGoalsSearch(e.target.value)}
+                    placeholder="Search goals (e.g., Find Co-Founder, Networking)..."
+                    className={cn("h-12 text-base", glass("input"))}
+                  />
+                  {currentGoals.length > 0 && (
+                    <div className={cn("flex flex-wrap gap-2 p-3 rounded-lg min-h-[48px]", glass("subtle"))} role="list" aria-label="Selected goals">
+                      {currentGoals.map((goalId) => {
+                        const goal = goalOptions.find(g => g.id === goalId)
+                        return (
+                          <Badge key={goalId} variant="secondary" className="px-3 py-1.5 text-sm gap-2 bg-primary/10 hover:bg-primary/20 text-primary border-none" role="listitem">
+                            {goal?.label || goalId}
+                            <button type="button" onClick={() => handleRemoveGoal(goalId)} className="p-0.5 rounded-full hover:bg-primary/20 transition-colors" aria-label={`Remove goal`}>
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </Badge>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
 
-              <div className={cn(
-                "p-4 rounded-lg",
-                glass("subtle")
-              )}>
-                <p className="text-sm text-muted-foreground">
-                  💡 <strong>Tip:</strong> Select goals that match what you&apos;re looking for - from finding co-founders to networking, mentorship, freelance work, and more.
-                </p>
+                <div className="min-h-[250px] lg:min-h-[350px]">
+                  <TagSelectorCard
+                    options={goalOptions}
+                    selected={currentGoals}
+                    onChange={(selected) => field.onChange(selected)}
+                    searchValue={goalsSearch}
+                    onSearchChange={setGoalsSearch}
+                    searchPlaceholder="Search goals..."
+                    emptyMessage="No goals match your search."
+                    title="Collaboration Goals"
+                    showCategories={true}
+                    maxHeight={350}
+                  />
+                </div>
               </div>
+
+                  <div className={cn(
+                    "p-4 rounded-lg",
+                    glass("subtle")
+                  )}>
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Tip:</strong> Select goals that match what you&apos;re looking for — from finding co-founders to networking, mentorship, freelance work, and more.
+                    </p>
+                  </div>
             </div>
           )
         }}
@@ -91,49 +148,85 @@ export function StepInterestsAndGoals() {
         control={control}
         name="interests"
         render={({ field }) => {
-          const currentInterests = field.value || []
+          const currentInterests: string[] = field.value || []
+
+          const handleRemoveInterest = (id: string) => {
+            field.onChange(currentInterests.filter(i => i !== id))
+          }
 
           return (
             <div className="space-y-4 pt-6 border-t border-border/20">
               <div className="space-y-1.5">
-                <Label htmlFor="interests-combobox" className="text-sm font-semibold text-foreground">
+                <Label htmlFor="interests-input" className="text-sm font-semibold text-foreground">
                   Your Interests / Industries <span className="text-destructive" aria-hidden="true">*</span>
                   <span className="sr-only">(required)</span>
                 </Label>
-                <p id="interests-hint" className="text-sm text-muted-foreground">Select industries you&apos;re interested in or working in.</p>
+                <p id="interests-hint" className="text-sm text-muted-foreground">Pick industries you care about — search or browse categories below.</p>
               </div>
               
-              <InlineSearchableCombobox
-                options={industryOptions}
-                selected={currentInterests}
-                onChange={(selected) => field.onChange(selected)}
-                searchPlaceholder="Search industries (e.g., Technology, Healthcare, Construction, Plumbing)..."
-                emptyMessage="No industries found. Type to add a custom industry."
-                maxHeight={350}
-                allowCustom={true}
-                onAddCustom={(customIndustry) => {
-                  if (!currentInterests.includes(customIndustry)) {
-                    field.onChange([...currentInterests, customIndustry])
-                  }
-                }}
-                showCategories={true}
-                className="interests-combobox"
-                aria-required="true"
-                aria-describedby="interests-hint"
-              />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="space-y-3 min-w-0">
+                  <Input
+                    id="interests-input"
+                    value={interestsSearch}
+                    onChange={(e) => setInterestsSearch(e.target.value)}
+                    placeholder="Search industries (e.g., Technology, Healthcare)..."
+                    className={cn("h-12 text-base", glass("input"))}
+                    aria-required="true"
+                  />
+                  {currentInterests.length > 0 && (
+                    <div className={cn("flex flex-wrap gap-2 p-3 rounded-lg min-h-[48px]", glass("subtle"))} role="list" aria-label="Selected interests">
+                      {currentInterests.map((interestId) => {
+                        const industry = industryOptions.find(i => i.id === interestId)
+                        return (
+                          <Badge key={interestId} variant="secondary" className="px-3 py-1.5 text-sm gap-2 bg-primary/10 hover:bg-primary/20 text-primary border-none" role="listitem">
+                            {industry?.label || interestId}
+                            <button type="button" onClick={() => handleRemoveInterest(interestId)} className="p-0.5 rounded-full hover:bg-primary/20 transition-colors" aria-label={`Remove interest`}>
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </Badge>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
 
-              <div className={cn(
-                "p-4 rounded-lg",
-                glass("subtle")
-              )}>
-                <p className="text-sm text-muted-foreground">
-                  💡 <strong>Tip:</strong> Choose from 500+ industries including tech, healthcare, trades (plumber, electrician), services, and more. Or add custom industries.
-                </p>
+                <div className="min-h-[250px] lg:min-h-[400px]">
+                  <TagSelectorCard
+                    options={industryOptions}
+                    selected={currentInterests}
+                    onChange={(selected) => field.onChange(selected)}
+                    searchValue={interestsSearch}
+                    onSearchChange={setInterestsSearch}
+                    searchPlaceholder="Search industries..."
+                    emptyMessage="No industries match your search."
+                    title="Industries & Interests"
+                    showCategories={true}
+                    maxHeight={400}
+                  />
+                </div>
               </div>
+
+                  <div className={cn(
+                    "p-4 rounded-lg",
+                    glass("subtle")
+                  )}>
+                    <p className="text-sm text-muted-foreground">
+                      <strong>Tip:</strong> Choose from 500+ industries — tech, healthcare, trades, services, and more. Your interests help us match you with relevant opportunities.
+                    </p>
+                  </div>
             </div>
           )
         }}
       />
+
+      {/* Collaboration Readiness - NEW */}
+      <div className="pt-6 border-t border-border/20">
+        <CollaborationSelector
+          value={collaborationValue || "available"}
+          onChange={(val) => setValue("collaborationReadiness", val, { shouldDirty: true })}
+        />
+      </div>
     </div>
   )
 }

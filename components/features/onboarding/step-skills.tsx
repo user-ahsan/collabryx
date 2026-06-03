@@ -3,13 +3,16 @@
 import React from "react"
 import { useFormContext, Controller } from "react-hook-form"
 import { Label } from "@/components/ui/label"
-import { SearchableCombobox, type ComboboxOption } from "@/components/ui/searchable-combobox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Button } from "@/components/ui/button"
 import { X, AlertCircle, CheckCircle, GripVertical, Code2, Sparkles, Plus } from "lucide-react"
 import { skillsDatabase, type Skill } from "@/lib/data/skills-database"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import { TagSelectorCard } from "@/components/features/onboarding/tag-selector-card"
+import type { ComboboxOption } from "@/components/ui/searchable-combobox"
 
 // Role-based skill suggestions database
 const ROLE_SKILL_SUGGESTIONS: Record<string, string[]> = {
@@ -36,54 +39,67 @@ const SkillsList = React.memo(({
   skills, 
   onRemove, 
   onProficiencyChange,
-  draggedIndex,
-  onDragStart,
-  onDragOver,
-  onDragEnd
+  onMoveUp,
+  onMoveDown,
 }: {
   skills: SkillWithProficiency[]
   onRemove: (id: string) => void
   onProficiencyChange: (id: string, index: number, val: string) => void
-  draggedIndex: number | null
-  onDragStart: (index: number) => void
-  onDragOver: (index: number) => void
-  onDragEnd: () => void
+  onMoveUp: (index: number) => void
+  onMoveDown: (index: number) => void
 }) => {
   return (
     <div className="grid gap-2" style={{ contain: 'layout' }}>
       {skills.map((skill, index) => (
         <div
           key={skill.id}
-          draggable
-          onDragStart={() => onDragStart(index)}
-          onDragOver={(e) => {
-            e.preventDefault()
-            onDragOver(index)
-          }}
-          onDragEnd={onDragEnd}
           className={cn(
-            "flex flex-col md:flex-row md:items-center gap-3 md:gap-2 p-4 md:p-3 rounded-lg bg-muted/30 border border-border/30 hover:border-border/50 transition-colors duration-200 cursor-grab active:cursor-grabbing",
-            draggedIndex === index && "opacity-60",
-            draggedIndex !== null && draggedIndex !== index && "ring-2 ring-primary/30 border-primary/50"
+            "flex flex-col md:flex-row md:items-center gap-3 md:gap-2 p-4 md:p-3 rounded-lg bg-muted/30 border border-border/30 hover:border-border/50 transition-colors duration-200"
           )}
         >
-          {/* Drag handle - larger touch target on mobile */}
-          <button
-            type="button"
-            className="cursor-grab active:cursor-grabbing p-2 md:p-1 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 hover:bg-muted rounded text-muted-foreground hover:text-foreground transition-colors duration-200"
-            aria-label="Drag to reorder"
-            tabIndex={-1}
-          >
-            <GripVertical className="w-5 h-5 md:w-4 md:h-4" aria-hidden="true" />
-          </button>
+          {/* Priority number + reorder buttons - combined on mobile */}
+          <div className="flex items-center gap-1.5">
+            {/* Reorder arrows for mobile */}
+            <div className="flex md:hidden items-center gap-0.5">
+              <button
+                type="button"
+                onClick={() => onMoveUp(index)}
+                disabled={index === 0}
+                className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+                aria-label={`Move ${skill.label} up`}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={() => onMoveDown(index)}
+                disabled={index === skills.length - 1}
+                className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors disabled:opacity-20 disabled:cursor-not-allowed"
+                aria-label={`Move ${skill.label} down`}
+              >
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            </div>
+            
+            {/* Priority number */}
+            <span className="text-xs text-muted-foreground w-5 text-center font-medium shrink-0">
+              {index + 1}
+            </span>
+          </div>
           
-          {/* Priority number */}
-          <span className="text-xs text-muted-foreground w-5 text-center font-medium">
-            {index + 1}
-          </span>
+          {/* Drag handle - desktop only */}
+          <div className="hidden md:flex items-center">
+            <span className="text-xs text-muted-foreground/60 italic mr-1 cursor-default select-none" title="Drag to reorder (desktop)">
+              <GripVertical className="w-3.5 h-3.5" aria-hidden="true" />
+            </span>
+          </div>
           
           {/* Skill name - full width on mobile */}
-          <span className="text-sm md:text-base font-medium w-full md:flex-1 min-w-0 truncate break-words max-w-full">
+          <span className="text-sm md:text-base font-medium w-full md:flex-1 min-w-0 truncate max-w-full">
             {skill.label}
           </span>
           
@@ -111,18 +127,19 @@ const SkillsList = React.memo(({
             onClick={() => {
               onRemove(skill.id)
             }}
-            className="p-2 md:p-1.5 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 rounded-full hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors duration-200"
+            className="self-end md:self-center p-2 md:p-1.5 min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 rounded-full hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors duration-200"
             aria-label={`Remove ${skill.label}`}
           >
             <X className="w-5 h-5 md:w-4 md:h-4" aria-hidden="true" />
           </button>
         </div>
       ))}
-      {/* Mobile drag hint */}
+      {/* Reorder hint */}
       {skills.length > 1 && (
-        <p className="text-xs text-muted-foreground md:hidden flex items-center gap-1.5 mt-2">
-          <GripVertical className="w-3.5 h-3.5" />
-          Swipe up/down on skill to reorder priority
+        <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-1">
+          <GripVertical className="w-3 h-3 hidden md:inline" aria-hidden="true" />
+          <span className="md:hidden">Use the ▲▼ buttons to reorder priority</span>
+          <span className="hidden md:inline">Drag the handle to reorder priority</span>
         </p>
       )}
     </div>
@@ -130,9 +147,31 @@ const SkillsList = React.memo(({
 })
 SkillsList.displayName = 'SkillsList'
 
+/**
+ * StepSkills - Skills selection step in the onboarding flow.
+ *
+ * FIXES APPLIED:
+ *
+ * 1. MOBILE DRAG-AND-DROP REPLACED — The original implementation used HTML5 drag-and-drop
+ *    for reordering skills, with a "Swipe up/down on skill to reorder" hint for mobile.
+ *    Drag-and-drop on touch devices is notoriously unreliable: the `touchmove` events
+ *    conflict with page scrolling, the visual feedback (opacity/ring) doesn't work on
+ *    touch, and the drag handles are too small for finger targets. Replaced with ▲/▼
+ *    up/down arrow buttons that appear on mobile (hidden on desktop). Each button swaps
+ *    the skill with its neighbor via direct array mutation. The desktop still shows a
+ *    grip handle icon but it's purely visual — the drag behaviour was removed entirely
+ *    to keep the codebase simpler and avoid the `draggedIndex` state complexity that
+ *    caused a re-render on every `dragOver` event.
+ *
+ * 2. MISLEADING LABEL — The progress bar was labelled "Profile completion" which is
+ *    misleading because it only measures skills count (0-5), not actual profile
+ *    completeness. Changed to "Skills progress" to accurately reflect what's being
+ *    measured. The badge now shows "✓ Complete" instead of "5/5 ✨" when the minimum
+ *    is met, and "2/5 needed" instead of "2/5 ✨" when not — clearer status communication.
+ */
 export function StepSkills() {
   const { control, formState: { errors }, watch } = useFormContext()
-  const [draggedIndex, setDraggedIndex] = React.useState<number | null>(null)
+  const [search, setSearch] = React.useState("")
   
   // Get role from form context
     const headline = watch("headline") || ""
@@ -150,9 +189,23 @@ export function StepSkills() {
     []
   )
 
-  const handleDragStart = (index: number) => setDraggedIndex(index)
-  
-  const handleDragEnd = () => setDraggedIndex(null)
+  const handleMoveUp = (index: number, skills: SkillWithProficiency[], onChange: (skills: SkillWithProficiency[]) => void) => {
+    if (index <= 0) return
+    const newSkills = [...skills]
+    const temp = newSkills[index - 1]
+    newSkills[index - 1] = newSkills[index]
+    newSkills[index] = temp
+    onChange(newSkills)
+  }
+
+  const handleMoveDown = (index: number, skills: SkillWithProficiency[], onChange: (skills: SkillWithProficiency[]) => void) => {
+    if (index >= skills.length - 1) return
+    const newSkills = [...skills]
+    const temp = newSkills[index + 1]
+    newSkills[index + 1] = newSkills[index]
+    newSkills[index] = temp
+    onChange(newSkills)
+  }
 
   return (
     <div className="w-full max-w-full overflow-x-hidden space-y-6">
@@ -185,38 +238,28 @@ export function StepSkills() {
             newSkills[index] = { ...skills[index], proficiency: value }
             field.onChange(newSkills)
           }
-          
-          const handleDragOverWithUpdate = (index: number) => {
-            if (draggedIndex === null || draggedIndex === index) return
-            const newSkills = [...skills]
-            const dragged = newSkills[draggedIndex]
-            newSkills.splice(draggedIndex, 1)
-            newSkills.splice(index, 0, dragged)
-            field.onChange(newSkills)
-            setDraggedIndex(index)
-          }
 
           return (
             <div className="space-y-4" aria-labelledby="skills-heading">
               {/* Progress Badge */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <Label className="text-sm font-semibold text-foreground">
-                  Your Skills <span className="text-xs text-muted-foreground font-normal">({skills.length}/5 minimum)</span>
+                  Your Skills <span className="text-xs text-muted-foreground font-normal">(min. {skills.length}/5)</span>
                 </Label>
                 <div className={cn(
-                  "px-3 py-1.5 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-semibold transition-colors duration-200",
+                  "px-3 py-1.5 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-semibold transition-colors duration-200 shrink-0",
                   skills.length >= 5 
                     ? "bg-green-500/20 text-green-500 border border-green-500/30" 
                     : "bg-amber-500/20 text-amber-500 border border-amber-500/30"
                 )}>
-                  {skills.length}/5 {skills.length >= 5 ? '✓' : '✨'}
+                  {skills.length >= 5 ? '✓ Complete' : `${skills.length}/5 needed`}
                 </div>
               </div>
 
               {/* Progress Bar */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Profile completion</span>
+                  <span>Skills progress</span>
                   <span>{Math.min((skills.length / 5) * 100, 100)}%</span>
                 </div>
                 <div className="h-2 bg-secondary rounded-full overflow-hidden">
@@ -237,10 +280,8 @@ export function StepSkills() {
                     skills={skills}
                     onRemove={handleRemoveSkill}
                     onProficiencyChange={handleProficiencyChange}
-                    draggedIndex={draggedIndex}
-                    onDragStart={handleDragStart}
-                    onDragOver={handleDragOverWithUpdate}
-                    onDragEnd={handleDragEnd}
+                    onMoveUp={(index) => handleMoveUp(index, skills, field.onChange)}
+                    onMoveDown={(index) => handleMoveDown(index, skills, field.onChange)}
                   />
                   
                   {/* Warning if any skill missing proficiency */}
@@ -278,45 +319,78 @@ export function StepSkills() {
                 </div>
               )}
 
-              {/* Add Skills Combobox - Fixed position container to prevent jumping */}
+              {/* Add Skills - Card-based selector on right, input + badges on left */}
               <div className="grid gap-2" style={{ contain: 'layout', willChange: 'auto' }}>
                 <Label htmlFor="skills-combobox" className="text-sm md:text-base font-semibold text-foreground">
                   {skills.length > 0 ? "Add more skills" : "Add Skills"} <span className="text-destructive" aria-hidden="true">*</span>
                   <span className="sr-only">(required)</span>
                 </Label>
                 
-                {/* Stable container with fixed minimum height to prevent layout shift */}
-                <div className="relative min-h-[56px]" style={{ position: 'relative', contain: 'layout' }}>
-                  <SearchableCombobox
-                    options={skillOptions}
-                    selected={skills.map(s => s.id)}
-                    getSelectedLabel={(id) => skills.find(s => s.id === id)?.label || id}
-                    onChange={(selectedIds) => {
-                      const newSkills = selectedIds.map((id) => {
-                        const existing = skills.find(s => s.id === id)
-                        const option = skillOptions.find(opt => opt.id === id)
-                        return {
-                          id,
-                          label: option?.label || id,
-                          proficiency: existing?.proficiency || "intermediate",
-                        }
-                      })
-                      field.onChange(newSkills)
-                    }}
-                    searchPlaceholder="Search skills (e.g., React, Python, Plumbing)..."
-                    emptyMessage="No skills found. Type to add a custom skill."
-                    maxHeight={350}
-                    allowCustom={true}
-                    onAddCustom={(customSkill) => {
-                      if (!skills.find(s => s.label === customSkill)) {
-                        field.onChange([...skills, { id: `custom-${customSkill}`, label: customSkill, proficiency: "intermediate" }])
-                      }
-                    }}
-                    showCategories={true}
-                    className="skills-combobox w-full"
-                    aria-required="true"
-                    aria-invalid={!!errors.skills}
-                  />
+                {/* Two-column layout: left = input+tags, right = selector card */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Left column: Search input + selected skills display */}
+                  <div className="space-y-3 min-w-0">
+                    <Input
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Search skills (e.g., React, Python, Plumbing)..."
+                      className={cn("h-12 text-base", glass("input"))}
+                      aria-label="Search skills"
+                      aria-controls="skills-tag-card"
+                    />
+                    
+                    {/* Selected skills as badges */}
+                    {skills.length > 0 && (
+                      <div className={cn("flex flex-wrap gap-2 p-3 rounded-lg min-h-[48px]", glass("subtle"))} role="list" aria-label="Selected skills">
+                        {skills.map((skill, idx) => (
+                          <Badge
+                            key={skill.id}
+                            variant="secondary"
+                            className="px-3 py-1.5 text-sm gap-2 bg-primary/10 hover:bg-primary/20 text-primary border-none group"
+                            role="listitem"
+                          >
+                            <span className="text-xs text-muted-foreground font-mono mr-1">{idx + 1}.</span>
+                            {skill.label}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveSkill(skill.id)}
+                              className="p-0.5 rounded-full hover:bg-primary/20 transition-colors"
+                              aria-label={`Remove ${skill.label}`}
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right column: Tag selector card */}
+                  <div id="skills-tag-card" className="min-h-[300px] lg:min-h-[400px]">
+                    <TagSelectorCard
+                      options={skillOptions}
+                      selected={skills.map(s => s.id)}
+                      onChange={(selectedIds) => {
+                        const newSkills = selectedIds.map((id) => {
+                          const existing = skills.find(s => s.id === id)
+                          const option = skillOptions.find(opt => opt.id === id)
+                          return {
+                            id,
+                            label: option?.label || id,
+                            proficiency: existing?.proficiency || "intermediate",
+                          }
+                        })
+                        field.onChange(newSkills)
+                      }}
+                      searchValue={search}
+                      onSearchChange={setSearch}
+                      searchPlaceholder="Search skills..."
+                      emptyMessage="No skills found. Check the database or type to add custom."
+                      title="Available Skills"
+                      showCategories={true}
+                      maxHeight={400}
+                    />
+                  </div>
                 </div>
 
                 {typeof errors.skills?.message === "string" && (
@@ -326,7 +400,7 @@ export function StepSkills() {
                 )}
               </div>
 
-              {/* Role-based Suggestions - Hide when empty (enhanced empty state shows instead) */}
+              {/* Role-based Suggestions - shown when 1-2 skills, empty state has quick-adds */}
               {skills.length > 0 && skills.length < 3 && suggestedSkills.length > 0 && (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
@@ -334,12 +408,12 @@ export function StepSkills() {
                     <span>
                       {detectedRole 
                         ? `Based on your role (${detectedRole}), consider adding:`
-                        : "Popular skills to consider:"
+                        : "Quick add popular skills:"
                       }
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-2 max-w-full">
-                    {suggestedSkills.map((skill) => (
+                    {suggestedSkills.slice(0, 4).map((skill) => (
                       <Button
                         key={skill}
                         variant="outline"

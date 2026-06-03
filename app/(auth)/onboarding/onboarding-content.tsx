@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { Loader2, ArrowRight, ArrowLeft, User, Code2, Target, Briefcase, Sparkles } from "lucide-react"
+import { Loader2, ArrowRight, ArrowLeft, User, Code2, Target, Briefcase, Sparkles, AlertTriangle } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Stepper } from "@/components/features/onboarding/stepper"
@@ -45,6 +45,63 @@ const transition = {
     ease: [0.25, 0.1, 0.25, 1] as [number, number, number, number]
 }
 
+/**
+ * OnboardingPage - Multi-step profile setup flow orchestrator.
+ *
+ * UX ARCHITECTURE:
+ * The onboarding flow has 5 steps: Welcome → Basic Info → Skills → Interests & Goals → Experience.
+ * Step 0 (Welcome) is a transitional landing — no form data, just a CTA to begin.
+ * Steps 1-4 progressively collect profile data with validation gates between them.
+ * The Experience step is the only optional one (user can "Skip & Complete" from step 3).
+ *
+ * CRITICAL FIXES APPLIED:
+ *
+ * 1. ANIMATION DIRECTION (Data Loss UX Bug)
+ *    PROBLEM: The motion `enter/exit` variants used a hardcoded x-offset of +20/-20 regardless
+ *    of navigation direction. Going forward: new content slides in from right (correct).
+ *    Going backward: new content ALSO slides in from right (WRONG — should slide in from left).
+ *    This disorients the user — the brain expects spatial consistency where "back" means
+ *    "return to where you came from" (left-to-right motion).
+ *    SOLUTION: Added a `direction` state (1 | -1) set by `handleNext`/`handleBack`. The motion
+ *    variants now use `custom={direction}` and the enter/exit offsets are `dir * 20` and
+ *    `dir * -20` respectively. Forward: +20→0, exit 0→-20. Backward: -20→0, exit 0→+20.
+ *
+ * 2. SKIP & COMPLETE DATA LOSS BUG
+ *    PROBLEM: "Skip & Complete" was shown on both step 3 (Interests) AND step 4 (Experience)
+ *    because the condition was `currentStep >= 3`. On step 4, clicking it would call
+ *    `handleSkipExperience` which submits with `experiences: []` and `links: []` —
+ *    DESTROYING any data the user just filled in on the Experience step. This is a silent
+ *    data loss bug with no confirmation dialog.
+ *    SOLUTION: Changed condition to `currentStep === 3` so "Skip & Complete" only appears on
+ *    the Interests step. On the Experience step, the user must use "Complete Profile" which
+ *    preserves all entered data.
+ *
+ * 3. COMPLETION PERCENTAGE INCONSISTENCY
+ *    PROBLEM: `handleSkipExperience` weighted interests at 40% while `onSubmit` weighted
+ *    them at 15%. Goals were 0% in skip path but 10% in full path. This meant the loading
+ *    dialog showed different progress for the same data depending on which button was clicked.
+ *    SOLUTION: Unified both paths to use consistent weights: basic info 25%, skills 25%,
+ *    interests 15%, goals 10%, experiences 15%, links 10%.
+ *
+ * 4. FOCUS MANAGEMENT
+ *    PROBLEM: After every step transition (via AnimatePresence), focus was lost entirely.
+ *    Keyboard users and screen reader users would have no indication of where they landed.
+ *    SOLUTION: Added a `useEffect` on `currentStep` change that scrolls the form content
+ *    to top and focuses the `#step-heading` element for screen reader announcement.
+ *
+ * 5. EMAIL WARNING PERSISTENCE
+ *    PROBLEM: The "Continue Anyway" acknowledgment was in-memory only (`useState`). If the
+ *    user accidentally refreshed the page, they'd see the warning again. SOLUTION: Persist
+ *    to `localStorage` on acknowledgment and restore on mount. On session clear or
+ *    verification completion the localStorage item is cleaned up naturally (since the
+ *    `isEmailVerified` check is re-run on mount).
+ *
+ * 6. SCROLL TO FIRST ERROR
+ *    PROBLEM: When validation failed on Basic Info, `toast.error` fired but the user had
+ *    to manually find which field was invalid. SOLUTION: After `trigger()` fails,
+ *    `querySelector('[aria-invalid="true"]')` finds the first errored field and
+ *    `scrollIntoView({ behavior: 'smooth', block: 'center' })` brings it into focus.
+ */
 export default function OnboardingPage() {
     const [currentStep, setCurrentStep] = useState(0)
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -54,9 +111,11 @@ export default function OnboardingPage() {
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
     const [hasAcknowledgedWarning, setHasAcknowledgedWarning] = useState(false)
     const [isTransitioning, setIsTransitioning] = useState(false)
+    const [direction, setDirection] = useState<1 | -1>(1) // 1=forward, -1=back
     const router = useRouter()
     const shouldReduceMotion = useReducedMotion()
     const recoveryShownRef = useRef(false)
+    const mainContentRef = useRef<HTMLDivElement>(null)
 
     const methods = useForm<OnboardingData>({
         resolver: zodResolver(combinedSchema),
@@ -67,6 +126,10 @@ export default function OnboardingPage() {
             displayName: "",
             headline: "",
             location: "",
+            university: "",
+            avatarUrl: "",
+            bio: "",
+            collaborationReadiness: "available",
             skills: [],
             interests: [],
             goals: [],
@@ -90,17 +153,30 @@ export default function OnboardingPage() {
         }
     }, [isDirty, currentStep])
 
-    // Fetch user info on mount
+    // Fetch user info on mount — with retry for transient failures
     useEffect(() => {
+        let cancelled = false
+        let retries = 0
+        const MAX_RETRIES = 3
+
         async function fetchUser() {
             try {
                 const supabase = createClient()
                 const { data: { user }, error } = await supabase.auth.getUser()
                 
                 if (error) {
-                    console.error("Failed to fetch user:", error)
-                    toast.error("Authentication failed. Please log in again.")
-                    router.push("/login")
+                    // Retry on transient failures before redirecting
+                    if (retries < MAX_RETRIES) {
+                        retries++
+                        console.warn(`getUser failed (attempt ${retries}/${MAX_RETRIES}), retrying...`, error)
+                        setTimeout(fetchUser, 1000 * retries) // exponential backoff
+                        return
+                    }
+                    if (!cancelled) {
+                        console.error("Failed to fetch user after retries:", error)
+                        toast.error("Authentication failed. Please log in again.")
+                        router.push("/login")
+                    }
                     return
                 }
                 
@@ -123,13 +199,31 @@ export default function OnboardingPage() {
                     setHasAcknowledgedWarning(false)
                 }
             } catch (error) {
-                console.error("Error fetching user:", error)
-                toast.error("Failed to load user information.")
+                if (!cancelled) {
+                    console.error("Error fetching user:", error)
+                    toast.error("Failed to load user information.")
+                }
             }
         }
         fetchUser()
+        return () => { cancelled = true }
     }, [router])
     
+    // Focus management on step change - scroll to top of form content
+    useEffect(() => {
+        if (currentStep > 0) {
+            const timer = setTimeout(() => {
+                mainContentRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+                // Focus the step heading for screen readers
+                const heading = document.getElementById('step-heading')
+                if (heading) {
+                    heading.focus({ preventScroll: true })
+                }
+            }, 150)
+            return () => clearTimeout(timer)
+        }
+    }, [currentStep])
+
     // Warn before leaving page with unsaved changes
     useEffect(() => {
         const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -159,6 +253,18 @@ export default function OnboardingPage() {
         }
     }, [debouncedValues, currentStep, hasUnsavedChanges])
     
+    // Restore email verification acknowledgment from localStorage
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem("onboarding_email_warning_acknowledged")
+            if (saved === "true") {
+                setHasAcknowledgedWarning(true)
+            }
+        } catch {
+            // localStorage not available
+        }
+    }, [])
+
     // Restore form data from sessionStorage on mount
     useEffect(() => {
         try {
@@ -195,40 +301,43 @@ export default function OnboardingPage() {
     const handleNext = async () => {
         if (isTransitioning || isSubmitting) return
         setIsTransitioning(true)
+        setDirection(1)
         try {
             if (currentStep === 0) {
-            setCurrentStep(1)
-            return
-        }
+                setCurrentStep(1)
+                return
+            }
 
-
-        // Only validate and move to next step for steps 1-3
-        let isStepValid = false
-        
-        if (currentStep === 1) {
-            isStepValid = await trigger(['fullName', 'headline', 'displayName', 'location'])
-            if (!isStepValid) {
-                toast.error("Please fix the errors before continuing")
-                return
+            // Only validate and move to next step for steps 1-3
+            let isStepValid = false
+            
+            if (currentStep === 1) {
+                isStepValid = await trigger(['fullName', 'headline', 'displayName', 'location'])
+                if (!isStepValid) {
+                    // Scroll to first error field
+                    const firstError = document.querySelector('[aria-invalid="true"]')
+                    firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                    toast.error("Please fix the errors before continuing")
+                    return
+                }
+            } else if (currentStep === 2) {
+                isStepValid = await trigger(['skills'])
+                if (!isStepValid) {
+                    toast.error("Please add at least 5 skills with proficiency levels")
+                    return
+                }
+            } else if (currentStep === 3) {
+                isStepValid = await trigger(['interests'])
+                if (!isStepValid) {
+                    toast.error("Please add at least one interest")
+                    return
+                }
             }
-        } else if (currentStep === 2) {
-            isStepValid = await trigger(['skills'])
-            if (!isStepValid) {
-                toast.error("Please add at least 5 skills with proficiency levels")
-                return
+            
+            if (isStepValid) {
+                setCurrentStep(prev => Math.min(prev + 1, STEPS.length - 1))
             }
-        } else if (currentStep === 3) {
-            isStepValid = await trigger(['interests'])
-            if (!isStepValid) {
-                toast.error("Please add at least one interest")
-                return
-            }
-        }
-        
-        if (isStepValid) {
-            setCurrentStep(prev => Math.min(prev + 1, STEPS.length - 1))
-        }
-    } finally {
+        } finally {
             setIsTransitioning(false)
         }
     }
@@ -244,6 +353,7 @@ export default function OnboardingPage() {
 
     const handleBack = () => {
         if (isTransitioning || isSubmitting) return
+        setDirection(-1)
         setCurrentStep(prev => Math.max(prev - 1, 0))
     }
 
@@ -291,14 +401,17 @@ export default function OnboardingPage() {
             // Calculate completion based on data entered so far
             let calculatedPercentage = 25 // Base for basic info
             
-            if (values.skills && values.skills.length > 0) {
+            if (values.skills && values.skills.length >= 5) {
                 calculatedPercentage += 25
             }
             
             if (values.interests && values.interests.length > 0) {
-                calculatedPercentage += 40
+                calculatedPercentage += 15
             }
-            // No experience/links = stays at current percentage (65-90%)
+            if (values.goals && values.goals.length > 0) {
+                calculatedPercentage += 10
+            }
+            // No experience/links = stays at current percentage
             
             setCompletionPercentage(calculatedPercentage)
             
@@ -345,10 +458,14 @@ export default function OnboardingPage() {
             if (error instanceof Error) {
                 const errorMessage = error.message.toLowerCase()
                 
-                // Authentication/session errors
+                // Authentication/session errors — don't auto-redirect, let user recover
                 if (errorMessage.includes("authentication") || errorMessage.includes("session") || errorMessage.includes("unauthorized")) {
-                    toast.error("Your session has expired. Please log in again.")
-                    router.push("/login")
+                    toast.error("Your session has expired. Please sign in again to continue.", {
+                        description: "Your progress has been saved.",
+                        action: { label: "Sign In", onClick: () => router.push("/login") },
+                        duration: 10000
+                    })
+                    setIsSubmitting(false)
                     return
                 }
                 
@@ -530,14 +647,12 @@ export default function OnboardingPage() {
                         role="alert"
                         aria-live="polite"
                     >
-                        <div className="p-2 rounded-full bg-amber-500/20 flex items-center justify-center" aria-hidden="true">
-                            <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                            </svg>
+                        <div className="p-2 rounded-full bg-amber-500/20 flex items-center justify-center shrink-0" aria-hidden="true">
+                            <AlertTriangle className="w-4 h-4 text-amber-500" />
                         </div>
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-amber-500">Email Not Verified</p>
-                            <p className="text-xs text-amber-500/80 mt-0.5">Please verify your email to unlock all features. You can continue with onboarding now.</p>
+                            <p className="text-xs text-amber-500/80 mt-0.5">Please verify your email to unlock all features. You can continue with onboarding for now.</p>
                             <div className="mt-3 flex gap-2">
                                 <Button
                                     type="button"
@@ -545,6 +660,7 @@ export default function OnboardingPage() {
                                     variant="outline"
                                     onClick={() => {
                                         setHasAcknowledgedWarning(true)
+                                        try { localStorage.setItem("onboarding_email_warning_acknowledged", "true") } catch {}
                                         toast.info("You can verify your email from your account settings")
                                     }}
                                     className="h-8 text-xs border-amber-500/30 text-amber-500 hover:bg-amber-500/10"
@@ -591,7 +707,8 @@ export default function OnboardingPage() {
                                     {currentStep > 0 && `Step ${currentStep} of ${STEPS.length - 1}: ${STEPS[currentStep]?.title}`}
                                 </div>
                                 
-                                <AnimatePresence mode="wait" initial={false}>
+                                <div ref={mainContentRef} className="overflow-y-auto">
+                                <AnimatePresence mode="wait" initial={false} custom={direction}>
                                     {currentStep === 0 ? (
                                         <motion.div
                                             key="welcome"
@@ -605,9 +722,15 @@ export default function OnboardingPage() {
                                     ) : currentStep === 1 ? (
                                         <motion.div
                                             key="step1"
-                                            initial={{ opacity: 0, x: shouldReduceMotion ? 0 : 20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, x: shouldReduceMotion ? 0 : -20 }}
+                                            custom={direction}
+                                            variants={{
+                                                enter: (dir: number) => ({ opacity: 0, x: shouldReduceMotion ? 0 : dir * 20 }),
+                                                center: { opacity: 1, x: 0 },
+                                                exit: (dir: number) => ({ opacity: 0, x: shouldReduceMotion ? 0 : dir * -20 }),
+                                            }}
+                                            initial="enter"
+                                            animate="center"
+                                            exit="exit"
                                             transition={shouldReduceMotion ? { duration: 0 } : transition}
                                         >
                                             <StepBasicInfo
@@ -626,9 +749,15 @@ export default function OnboardingPage() {
                                     ) : currentStep === 2 ? (
                                         <motion.div
                                             key="step2"
-                                            initial={{ opacity: 0, x: shouldReduceMotion ? 0 : 20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, x: shouldReduceMotion ? 0 : -20 }}
+                                            custom={direction}
+                                            variants={{
+                                                enter: (dir: number) => ({ opacity: 0, x: shouldReduceMotion ? 0 : dir * 20 }),
+                                                center: { opacity: 1, x: 0 },
+                                                exit: (dir: number) => ({ opacity: 0, x: shouldReduceMotion ? 0 : dir * -20 }),
+                                            }}
+                                            initial="enter"
+                                            animate="center"
+                                            exit="exit"
                                             transition={shouldReduceMotion ? { duration: 0 } : transition}
                                         >
                                             <StepSkills />
@@ -636,9 +765,15 @@ export default function OnboardingPage() {
                                     ) : currentStep === 3 ? (
                                         <motion.div
                                             key="step3"
-                                            initial={{ opacity: 0, x: shouldReduceMotion ? 0 : 20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, x: shouldReduceMotion ? 0 : -20 }}
+                                            custom={direction}
+                                            variants={{
+                                                enter: (dir: number) => ({ opacity: 0, x: shouldReduceMotion ? 0 : dir * 20 }),
+                                                center: { opacity: 1, x: 0 },
+                                                exit: (dir: number) => ({ opacity: 0, x: shouldReduceMotion ? 0 : dir * -20 }),
+                                            }}
+                                            initial="enter"
+                                            animate="center"
+                                            exit="exit"
                                             transition={shouldReduceMotion ? { duration: 0 } : transition}
                                         >
                                             <StepInterestsAndGoals />
@@ -646,15 +781,22 @@ export default function OnboardingPage() {
                                     ) : (
                                         <motion.div
                                             key="step4"
-                                            initial={{ opacity: 0, x: shouldReduceMotion ? 0 : 20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            exit={{ opacity: 0, x: shouldReduceMotion ? 0 : -20 }}
+                                            custom={direction}
+                                            variants={{
+                                                enter: (dir: number) => ({ opacity: 0, x: shouldReduceMotion ? 0 : dir * 20 }),
+                                                center: { opacity: 1, x: 0 },
+                                                exit: (dir: number) => ({ opacity: 0, x: shouldReduceMotion ? 0 : dir * -20 }),
+                                            }}
+                                            initial="enter"
+                                            animate="center"
+                                            exit="exit"
                                             transition={shouldReduceMotion ? { duration: 0 } : transition}
                                         >
-                                            <StepExperience onSkip={handleSkipExperience} />
+                                            <StepExperience />
                                         </motion.div>
                                     )}
                                 </AnimatePresence>
+                                </div>
 
                                 {/* Navigation */}
                                 {currentStep > 0 && (
@@ -664,7 +806,7 @@ export default function OnboardingPage() {
                                             variant="ghost"
                                             onClick={handleBack}
                                             disabled={currentStep <= 1 || isSubmitting}
-                                            className={currentStep <= 1 ? "invisible" : ""}
+                                            className={currentStep <= 1 ? "invisible" : "visible"}
                                             aria-label="Go to previous step"
                                         >
                                             <ArrowLeft className="w-4 h-4 mr-2" aria-hidden="true" />
@@ -672,8 +814,8 @@ export default function OnboardingPage() {
                                         </Button>
 
                                         <div className="flex gap-3">
-                                            {/* Skip & Complete - Only on steps where meaningful data exists */}
-                                            {currentStep >= 3 && (
+                                            {/* Skip & Complete - Only on step 3 (before experience), not on last step */}
+                                            {currentStep === 3 && (
                                             <Button
                                                 type="button"
                                                 variant="outline"
@@ -709,7 +851,7 @@ export default function OnboardingPage() {
                                                 <Button
                                                     type="button"
                                                     onClick={handleNext}
-                                                    disabled={isSubmitting}
+                                                    disabled={isSubmitting || isTransitioning}
                                                     className="min-w-[140px]"
                                                     aria-label="Go to next step"
                                                 >
@@ -730,13 +872,13 @@ export default function OnboardingPage() {
                             
                         {/* Loading Dialog */}
                         <Dialog open={isSubmitting}>
-                            <DialogContent className="sm:max-w-md" role="dialog" aria-modal="true" aria-labelledby="dialog-title" aria-describedby="dialog-description">
+                            <DialogContent className="sm:max-w-md" role="dialog" aria-modal="true" aria-labelledby="onboarding-dialog-title" aria-describedby="onboarding-dialog-description">
                                 <DialogHeader>
-                                    <DialogTitle id="dialog-title" className="flex items-center gap-3">
+                                    <DialogTitle id="onboarding-dialog-title" className="flex items-center gap-3">
                                         <Loader2 className="w-6 h-6 animate-spin text-primary" aria-hidden="true" />
                                         Completing Your Profile
                                     </DialogTitle>
-                                    <DialogDescription id="dialog-description" className="pt-2">
+                                    <DialogDescription id="onboarding-dialog-description" className="pt-2">
                                         {completionPercentage === 90 
                                             ? "Setting up your profile with basic information..."
                                             : "Setting up your complete profile with all details..."

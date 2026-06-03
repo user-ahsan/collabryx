@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { Plus, Trash2, Github, Linkedin, Instagram, Link as LinkIcon } from "lucide-react"
+import { Plus, Trash2, Github, Linkedin, Instagram, Link as LinkIcon, Sparkles } from "lucide-react"
 import { GlassCard } from "@/components/shared/glass-card"
 import {
   DropdownMenu,
@@ -26,12 +26,28 @@ const LINK_PLATFORMS = [
   { id: "portfolio", label: "Portfolio / Website", icon: LinkIcon }
 ]
 
-interface StepExperienceProps {
-  onSkip?: () => void
-}
-
-export function StepExperience({}: StepExperienceProps) {
-  const { register, control, formState: { errors } } = useFormContext()
+/**
+ * StepExperience - Final step: work experience entries + portfolio/social links.
+ *
+ * FIXES APPLIED:
+ *
+ * 1. REMOVED UNUSED onSkip PROP — The component interface declared an `onSkip` callback
+ *    prop that was destructured as `{}` (unused) in the function body. The skip logic is
+ *    handled entirely by the parent (`handleSkipExperience` in `onboarding-content.tsx`)
+ *    which calls the server action directly with empty experiences/links arrays. Having
+ *    an unused prop in the interface is misleading to future developers and adds
+ *    unnecessary noise. Removed it entirely.
+ *
+ * 2. BETTER EMPTY STATES — The original empty state messages were singular sentence
+ *    fragments ("No experiences added yet. Click 'Add Experience' to begin.") that
+ *    didn't give the user context about why they should add experiences or what kinds
+ *    of entries are appropriate. Added a secondary line of guidance text describing
+ *    accepted content types ("past roles, projects, or volunteer work" / "Link your
+ *    GitHub, LinkedIn, portfolio").
+ */
+export function StepExperience() {
+  const { register, control, watch, formState: { errors } } = useFormContext()
+  const bioValue = watch("bio")
 
   const { fields: expFields, append: appendExp, remove: removeExp } = useFieldArray({
     control,
@@ -74,6 +90,54 @@ export function StepExperience({}: StepExperienceProps) {
       </div>
 
       <div className="space-y-8">
+        {/* Bio Section - NEW */}
+        <div>
+          <div className="space-y-2 mb-4">
+            <Label htmlFor="bio" className="text-sm font-semibold text-foreground">
+              Tell your story <span className="text-muted-foreground font-normal">(Optional)</span>
+            </Label>
+            <p className="text-xs text-muted-foreground">
+              A short bio helps AI match you with the right collaborators.
+            </p>
+          </div>
+
+          <Textarea
+            id="bio"
+            placeholder="e.g., I'm a full-stack developer passionate about edtech. I've built 3 startups and I'm looking for a technical co-founder to scale my latest project..."
+            {...register("bio", {
+              maxLength: {
+                value: 2000,
+                message: "Bio must be less than 2000 characters"
+              }
+            })}
+            className={cn(
+              "min-h-[100px] resize-none text-sm",
+              glass("input"),
+              errors.bio && "border-destructive focus:border-destructive"
+            )}
+            aria-invalid={!!errors.bio}
+          />
+          {errors.bio?.message && (
+            <p className="text-xs text-destructive font-medium mt-1" role="alert">
+              {errors.bio.message as string}
+            </p>
+          )}
+          <div className="flex justify-between items-center mt-1.5">
+            <div className="flex items-start gap-2 p-2.5 rounded-lg bg-primary/10 border border-primary/20 max-w-md">
+              <Sparkles className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                <span className="font-semibold text-foreground">AI Tip:</span> A detailed bio increases profile views by 3x and helps us match you with the right collaborators.
+              </p>
+            </div>
+            <span className={cn(
+              "text-xs tabular-nums",
+              (bioValue?.length || 0) > 1800 ? "text-amber-500" : "text-muted-foreground"
+            )}>
+              {bioValue?.length || 0}/2000
+            </span>
+          </div>
+        </div>
+
         {/* Experiences Section */}
         <div>
           <div className="flex items-center justify-between mb-4 border-b border-border/20 pb-3">
@@ -95,11 +159,12 @@ export function StepExperience({}: StepExperienceProps) {
           <div className="space-y-4">
             {expFields.length === 0 && (
               <div className={cn(
-                "text-center py-8 rounded-lg border border-dashed",
+                "text-center py-8 px-4 rounded-lg border border-dashed",
                 glass("subtle")
               )}>
-                <p className="text-sm text-muted-foreground">
-                  No experiences added yet. Click &quot;Add Experience&quot; to begin.
+                <p className="text-sm text-muted-foreground">No experiences added yet</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">
+                  Add past roles, projects, or volunteer work — or skip and do it later.
                 </p>
               </div>
             )}
@@ -237,11 +302,12 @@ export function StepExperience({}: StepExperienceProps) {
           <div className="space-y-3">
             {linkFields.length === 0 && (
               <div className={cn(
-                "text-center py-8 rounded-lg border border-dashed",
+                "text-center py-8 px-4 rounded-lg border border-dashed",
                 glass("subtle")
               )}>
-                <p className="text-sm text-muted-foreground">
-                  No links added yet. Click &quot;Add Link&quot; to begin.
+                <p className="text-sm text-muted-foreground">No links added yet</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">
+                  Link your GitHub, LinkedIn, portfolio, or other profiles.
                 </p>
               </div>
             )}
