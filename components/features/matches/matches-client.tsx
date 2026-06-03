@@ -212,7 +212,7 @@ export function MatchesClient() {
                 />
                 {isPending ? (
                     viewMode === "grid" ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 pb-20">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5 pb-20">
                         <MatchCardSkeleton count={8} />
                     </div>
                     ) : (
@@ -270,7 +270,7 @@ export function MatchesClient() {
                         </div>
                     </GlassCard>
                 ) : viewMode === "grid" ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 pb-20">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5 pb-20">
                         {matches.map((match, index) => renderMatchCard(match, index, viewMode))}
                     </div>
                 ) : viewMode === "list" ? (
