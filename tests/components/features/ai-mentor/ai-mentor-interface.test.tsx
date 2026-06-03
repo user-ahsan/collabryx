@@ -4,7 +4,7 @@
  * with input field, send button, and message display area present.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 
 // Use a mutable object so hoisted vi.mock factory can reference it
 const mockState = vi.hoisted(() => ({
@@ -40,7 +40,7 @@ vi.mock('@/hooks/use-auth', () => ({
 
 // Mock ChatList — renders messages as simple divs for testing
 vi.mock('@/components/features/assistant/chat-list', () => ({
-  ChatList: vi.fn(({ externalMessages, onSuggestionClick, onIdeaAction }: {
+  ChatList: vi.fn(({ externalMessages, onSuggestionClick: _onSuggestionClick, onIdeaAction: _onIdeaAction }: {
     externalMessages?: Array<{ role: string; content: string }>
     onSuggestionClick?: (s: string) => void
     onIdeaAction?: (id: number, a: string) => void

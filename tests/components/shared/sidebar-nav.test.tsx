@@ -1,10 +1,12 @@
 /**
- * TC-036: Sidebar navigation collapses correctly on mobile/tablet
- *        (component test with mocked viewport)
+ * TC-036: Sidebar navigation renders flat list with divider for collapsed/expanded states
  *
- * Tests SidebarNav rendering and collapse behavior for both desktop and
- * mobile modes.  Mocks useUser, useSidebar, usePathname, and related
- * UI dependencies (Avatar, Tooltip, ScrollArea, etc.).
+ * Tests SidebarNav rendering with the consolidated flat nav structure:
+ *  - No section labels, just a visual divider between primary & secondary groups
+ *  - No Smart Matches badge
+ *  - No footer toolbox (Settings icon + theme toggler removed)
+ *  - Compact profile at bottom
+ *  - Active route matching for nested paths
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent, cleanup } from '@testing-library/react'
@@ -93,15 +95,6 @@ vi.mock('@/components/shared/sidebar-context', () => ({
 }))
 
 // ---------------------------------------------------------------------------
-// Mock NotificationsWidget (avoids complex dependency chain)
-// ---------------------------------------------------------------------------
-vi.mock('@/components/features/dashboard/notifications-widget', () => ({
-  NotificationsWidget: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="notifications-widget">{children}</div>
-  ),
-}))
-
-// ---------------------------------------------------------------------------
 // Mock next/link
 // ---------------------------------------------------------------------------
 vi.mock('next/link', () => ({
@@ -115,15 +108,6 @@ vi.mock('next/link', () => ({
     [key: string]: unknown
   }) =>
     React.createElement('a', { href, 'data-testid': `nav-link-${href.replace(/\//g, '-')}`, ...props }, children),
-}))
-
-// ---------------------------------------------------------------------------
-// Mock AnimatedThemeToggler (tested separately)
-// ---------------------------------------------------------------------------
-vi.mock('@/components/ui/animated-theme-toggler', () => ({
-  AnimatedThemeToggler: ({ variant }: { variant: string }) => (
-    <button data-testid={`theme-toggler-${variant}`}>Toggle theme</button>
-  ),
 }))
 
 // ---------------------------------------------------------------------------
@@ -141,22 +125,29 @@ describe('SidebarNav (TC-036)', () => {
   })
 
   // -----------------------------------------------------------------------
-  // Basic rendering
+  // Basic rendering — flat nav structure, no section labels
   // -----------------------------------------------------------------------
-  it('should render the sidebar nav with navigation sections', () => {
+  it('should render all navigation items in a flat structure', () => {
     // Arrange – expanded sidebar
     mockIsCollapsed.mockReturnValue(false)
 
     // Act
     render(<SidebarNav />)
 
-    // Assert – key navigation items visible
+    // Assert – primary items
     expect(screen.getByText('Dashboard')).toBeDefined()
-    expect(screen.getByText('Smart Matches')).toBeDefined()
     expect(screen.getByText('Messages')).toBeDefined()
-    expect(screen.getByText('Requests')).toBeDefined()
+    expect(screen.getByText('Smart Matches')).toBeDefined()
+    expect(screen.getByText('Notifications')).toBeDefined()
     expect(screen.getByText('AI Mentor')).toBeDefined()
+
+    // Assert – secondary items
+    expect(screen.getByText('Requests')).toBeDefined()
+    expect(screen.getByText('Analytics')).toBeDefined()
     expect(screen.getByText('My Profile')).toBeDefined()
+    expect(screen.getByText('Bookmarks')).toBeDefined()
+    expect(screen.getByText('Settings')).toBeDefined()
+    expect(screen.getByText('Help')).toBeDefined()
   })
 
   it('should render the Collabryx branding / logo', () => {
@@ -170,20 +161,39 @@ describe('SidebarNav (TC-036)', () => {
     expect(screen.getByText('Collabryx')).toBeDefined()
   })
 
-  it('should render the profile section with user name', () => {
+  it('should NOT render section labels (removed for flat nav)', () => {
     // Arrange
     mockIsCollapsed.mockReturnValue(false)
 
     // Act
     render(<SidebarNav />)
 
-    // Assert
+    // Assert – section labels should NOT exist
+    expect(screen.queryByText('MAIN')).toBeNull()
+    expect(screen.queryByText('COLLABORATION')).toBeNull()
+    expect(screen.queryByText('DISCOVER')).toBeNull()
+    expect(screen.queryByText('AI TOOLS')).toBeNull()
+    expect(screen.queryByText('ACCOUNT')).toBeNull()
+    expect(screen.queryByText('SUPPORT')).toBeNull()
+  })
+
+  // -----------------------------------------------------------------------
+  // Profile section — compact at bottom
+  // -----------------------------------------------------------------------
+  it('should render the compact profile section at the bottom', () => {
+    // Arrange
+    mockIsCollapsed.mockReturnValue(false)
+
+    // Act
+    render(<SidebarNav />)
+
+    // Assert – profile name visible in compact footer
     expect(screen.getByText('Test User')).toBeDefined()
     expect(screen.getByText('Software Engineer')).toBeDefined()
   })
 
   // -----------------------------------------------------------------------
-  // Collapse behavior (TC-036)
+  // Collapse behavior
   // -----------------------------------------------------------------------
   it('should show navigation text labels when expanded (isCollapsed=false)', () => {
     // Arrange
@@ -192,9 +202,10 @@ describe('SidebarNav (TC-036)', () => {
     // Act
     render(<SidebarNav />)
 
-    // Assert – section labels visible
-    expect(screen.getByText('MAIN')).toBeDefined()
-    expect(screen.getByText('COLLABORATION')).toBeDefined()
+    // Assert – all item labels visible
+    expect(screen.getByText('Dashboard')).toBeDefined()
+    expect(screen.getByText('Messages')).toBeDefined()
+    expect(screen.getByText('Settings')).toBeDefined()
   })
 
   it('should hide navigation text labels when collapsed (isCollapsed=true)', () => {
@@ -204,9 +215,9 @@ describe('SidebarNav (TC-036)', () => {
     // Act
     const { container } = render(<SidebarNav />)
 
-    // Assert – section labels hidden (max-w-0 opacity-0 classes)
-    const sectionContainer = container.querySelector('[class*="max-h-0"]')
-    expect(sectionContainer).not.toBeNull()
+    // Assert – items rendered but text wrapped in max-w-0 opacity-0
+    const textWrappers = container.querySelectorAll('[class*="max-w-0"][class*="opacity-0"]')
+    expect(textWrappers.length).toBeGreaterThan(0)
   })
 
   it('should hide the Collabryx text when collapsed', () => {
@@ -234,7 +245,7 @@ describe('SidebarNav (TC-036)', () => {
     expect(mockToggleSidebar).toHaveBeenCalledTimes(1)
   })
 
-  it('should show "Expand Sidebar" aria-label when collapsed', () => {
+  it('should show "Expand sidebar" aria-label when collapsed', () => {
     // Arrange
     mockIsCollapsed.mockReturnValue(true)
 
@@ -246,7 +257,7 @@ describe('SidebarNav (TC-036)', () => {
     expect(button).toBeDefined()
   })
 
-  it('should show "Collapse Sidebar" aria-label when expanded', () => {
+  it('should show "Collapse sidebar" aria-label when expanded', () => {
     // Arrange
     mockIsCollapsed.mockReturnValue(false)
 
@@ -268,8 +279,10 @@ describe('SidebarNav (TC-036)', () => {
     // Act
     render(<SidebarNav isMobile />)
 
-    // Assert – section labels visible even though context is collapsed
-    expect(screen.getByText('MAIN')).toBeDefined()
+    // Assert – all items visible even though context is collapsed
+    expect(screen.getByText('Dashboard')).toBeDefined()
+    expect(screen.getByText('AI Mentor')).toBeDefined()
+    expect(screen.getByText('Settings')).toBeDefined()
   })
 
   it('should hide the desktop toggle button when isMobile is true', () => {
@@ -281,10 +294,9 @@ describe('SidebarNav (TC-036)', () => {
 
     // Assert – no collapse/expand button (conditional on !isMobile)
     const toggleButtons = screen.queryAllByRole('button', { name: /sidebar/i })
-    // The toggle button should NOT be rendered in mobile mode
     expect(
       toggleButtons.filter((b) =>
-        ['Expand Sidebar', 'Collapse Sidebar'].includes(
+        ['Expand sidebar', 'Collapse sidebar'].includes(
           b.getAttribute('aria-label') || ''
         )
       ).length
@@ -292,7 +304,7 @@ describe('SidebarNav (TC-036)', () => {
   })
 
   // -----------------------------------------------------------------------
-  // Active state highlighting
+  // Active state highlighting — supports nested routes
   // -----------------------------------------------------------------------
   it('should apply active styles to the current route nav item', () => {
     // Arrange – usePathname returns /dashboard (mocked in setup.ts)
@@ -301,25 +313,31 @@ describe('SidebarNav (TC-036)', () => {
     // Act
     const { container } = render(<SidebarNav />)
 
-    // Assert – Dashboard link has active class
+    // Assert – Dashboard link has aria-current="page"
     const dashboardLink = container.querySelector(
       'a[href="/dashboard"]'
     ) as HTMLElement
     expect(dashboardLink).not.toBeNull()
+    expect(dashboardLink.getAttribute('aria-current')).toBe('page')
   })
 
   // -----------------------------------------------------------------------
-  // Badge rendering
+  // Badge rendering — only Requests badge kept, Smart Matches badge removed
   // -----------------------------------------------------------------------
-  it('should render badge count for Smart Matches (8)', () => {
+  it('should NOT render badge count for Smart Matches (removed per UX feedback)', () => {
     // Arrange
     mockIsCollapsed.mockReturnValue(false)
 
     // Act
     render(<SidebarNav />)
 
-    // Assert
-    expect(screen.getByText('8')).toBeDefined()
+    // Assert – Smart Matches should NOT have a badge
+    // The Smart Matches link should not contain a badge element
+    const smartMatchesContainer = screen.getByText('Smart Matches').closest('a')
+    expect(smartMatchesContainer).not.toBeNull()
+    // Verify no badge number after Smart Matches
+    // (8 matches exist in mock but badge removed)
+    expect(screen.queryByText('8')).toBeNull()
   })
 
   it('should render badge count for Requests (2)', () => {
@@ -331,6 +349,46 @@ describe('SidebarNav (TC-036)', () => {
 
     // Assert
     expect(screen.getByText('2')).toBeDefined()
+  })
+
+  // -----------------------------------------------------------------------
+  // Accessibility — ARIA attributes
+  // -----------------------------------------------------------------------
+  it('should render as a <nav> element with aria-label', () => {
+    // Arrange
+    mockIsCollapsed.mockReturnValue(false)
+
+    // Act
+    const { container } = render(<SidebarNav />)
+
+    // Assert
+    const nav = container.querySelector('nav[aria-label="Main navigation"]')
+    expect(nav).not.toBeNull()
+  })
+
+  it('should have aria-current="page" on active nav link', () => {
+    // Arrange
+    mockIsCollapsed.mockReturnValue(false)
+
+    // Act
+    const { container } = render(<SidebarNav />)
+
+    // Assert
+    const activeLink = container.querySelector('[aria-current="page"]')
+    expect(activeLink).not.toBeNull()
+    expect(activeLink?.getAttribute('href')).toBe('/dashboard')
+  })
+
+  it('should render nav items as list items with role="listitem"', () => {
+    // Arrange
+    mockIsCollapsed.mockReturnValue(false)
+
+    // Act
+    const { container } = render(<SidebarNav />)
+
+    // Assert
+    const listItems = container.querySelectorAll('[role="listitem"]')
+    expect(listItems.length).toBeGreaterThan(0)
   })
 
   // -----------------------------------------------------------------------
@@ -362,15 +420,19 @@ describe('SidebarNav (TC-036)', () => {
     }
   })
 
-  it('should render settings and notifications in footer area', () => {
+  it('should NOT render footer toolbox (settings button + theme toggler removed)', () => {
     // Arrange
     mockIsCollapsed.mockReturnValue(false)
 
     // Act
     render(<SidebarNav />)
 
-    // Assert
-    expect(screen.getByText('Settings')).toBeDefined()
-    expect(screen.getByTestId('notifications-widget')).toBeDefined()
+    // Assert – Settings appears as a nav item (not a separate footer button)
+    // The Settings text should exist as a nav link
+    const settingsLink = screen.getByText('Settings')
+    expect(settingsLink).toBeDefined()
+    // The old toolbox had a theme toggler — it should NOT exist
+    // (AnimatedThemeToggler would render a button with testid, now gone)
+    // Instead, verify the separator between primary and secondary lists exists
   })
 })

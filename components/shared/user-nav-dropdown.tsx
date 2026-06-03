@@ -16,6 +16,8 @@ import {
     AvatarImage,
 } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 import { useSettings } from "@/hooks/use-settings"
 import { useUser } from "@/hooks/use-profile"
 import { useRouter } from "next/navigation"
@@ -59,7 +61,7 @@ export function UserNavDropdown() {
                     </div>
                 </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56" align="end" forceMount>
+            <DropdownMenuContent className={cn("w-56", glass("dropdown"))} align="end" forceMount>
                 <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium leading-none">

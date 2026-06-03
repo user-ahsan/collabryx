@@ -5,6 +5,7 @@ import { useCallback, useState, useRef } from 'react'
 import { Upload, X, Image as ImageIcon, FileText, AlertCircle, CheckCircle2 } from 'lucide-react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
+import { glass } from '@/lib/utils/glass-variants'
 
 /**
  * Get CSRF token from cookies
@@ -214,8 +215,9 @@ export function FileUpload({
       <div
         className={cn(
           'relative border-2 border-dashed rounded-lg p-6 transition-colors',
+          glass("subtle"),
           isDragging 
-            ? 'border-primary bg-primary/5' 
+            ? 'border-primary bg-primary/10' 
             : 'border-muted-foreground/25 hover:border-primary/50',
           disabled && 'opacity-50 pointer-events-none',
           preview && 'border-solid'

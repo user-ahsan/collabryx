@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { MoreHorizontal, UserPlus, Bookmark, BookmarkCheck, Flag, Copy, Eye } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 
 interface GlassDropdownMenuProps {
     children?: React.ReactNode
@@ -27,7 +28,7 @@ export function GlassDropdownMenu({ children, className }: GlassDropdownMenuProp
             </DropdownMenuTrigger>
             <DropdownMenuContent
                 align="end"
-                className="w-48 bg-card/80 backdrop-blur-xl border border-border/60 shadow-lg rounded-xl p-1"
+                className={cn("w-48 p-1", glass("dropdown"), "rounded-xl")}
             >
                 {children}
             </DropdownMenuContent>
