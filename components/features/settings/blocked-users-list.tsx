@@ -50,27 +50,6 @@ export function BlockedUsersList({ userId }: BlockedUsersListProps) {
         try {
             setIsLoading(true)
 
-            if (process.env.NODE_ENV === 'development') {
-                await new Promise(resolve => setTimeout(resolve, 500))
-                setBlockedUsers([
-                    {
-                        id: 'block-1',
-                        blocker_id: userId,
-                        blocked_id: 'user-2',
-                        reason: 'Spam',
-                        created_at: new Date().toISOString(),
-                        blocked_profile: {
-                            id: 'user-2',
-                            display_name: 'Spam Bot',
-                            avatar_url: undefined,
-                            headline: 'Spam account',
-                            full_name: undefined
-                        }
-                    }
-                ])
-                return
-            }
-
             const { data, error } = await supabase
                 .from('blocked_users')
                 .select(`
@@ -121,15 +100,6 @@ export function BlockedUsersList({ userId }: BlockedUsersListProps) {
         }
 
         try {
-            if (process.env.NODE_ENV === 'development') {
-                await new Promise(resolve => setTimeout(resolve, 300))
-                setSearchResults([
-                    { id: 'user-3', display_name: 'Test User', headline: 'Software Developer', avatar_url: null, full_name: undefined },
-                    { id: 'user-4', display_name: 'Another User', headline: 'Designer', avatar_url: null, full_name: undefined }
-                ])
-                return
-            }
-
             const { data, error } = await supabase
                 .from('profiles')
                 .select('id, display_name, full_name, headline, avatar_url')
@@ -166,29 +136,6 @@ export function BlockedUsersList({ userId }: BlockedUsersListProps) {
         try {
             setIsBlocking(true)
 
-            if (process.env.NODE_ENV === 'development') {
-                await new Promise(resolve => setTimeout(resolve, 500))
-                setBlockedUsers(prev => [
-                    ...prev,
-                    {
-                        id: `block-${Date.now()}`,
-                        blocker_id: userId,
-                        blocked_id: userToBlock.id,
-                        reason: undefined,
-                        created_at: new Date().toISOString(),
-                        blocked_profile: {
-                            id: userToBlock.id,
-                            display_name: userToBlock.name,
-                            avatar_url: undefined,
-                            headline: undefined,
-                            full_name: undefined
-                        }
-                    }
-                ])
-                toast.success(`Blocked ${userToBlock.name}`)
-                return
-            }
-
             const { error } = await supabase
                 .from('blocked_users')
                 .insert({
@@ -214,13 +161,6 @@ export function BlockedUsersList({ userId }: BlockedUsersListProps) {
     const handleUnblockUser = async (blockedId: string, _userName?: string) => {
         try {
             setIsUnblocking(blockedId)
-
-            if (process.env.NODE_ENV === 'development') {
-                await new Promise(resolve => setTimeout(resolve, 500))
-                setBlockedUsers(prev => prev.filter(b => b.blocked_id !== blockedId))
-                toast.success('User unblocked')
-                return
-            }
 
             const { error } = await supabase
                 .from('blocked_users')

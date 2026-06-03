@@ -49,17 +49,6 @@ const [experiences, setExperiences] = useState<Experience[]>([])
     useEffect(() => {
         const fetchData = async () => {
             try {
-                if (process.env.NODE_ENV === 'development') {
-                    setExperiences([
-                        { id: '1', title: 'Senior Software Engineer', company: 'TechStart', description: 'Built an AI-powered platform using Next.js and Supabase.', start_date: '2022-01-01', is_current: true }
-                    ])
-                    setProjects([
-                        { id: '1', title: 'Collabryx Platform', url: 'https://collabryx.com', description: 'A platform to find co-founders utilizing AI matching.', is_public: true }
-                    ])
-                    setIsLoading(false)
-                    return
-                }
-
                 const [expRes, projRes] = await Promise.all([
                     supabase.from('user_experiences').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
                     supabase.from('user_projects').select('*').eq('user_id', userId).order('created_at', { ascending: false })
@@ -153,13 +142,6 @@ const [experiences, setExperiences] = useState<Experience[]>([])
         }
 
         try {
-            if (process.env.NODE_ENV === 'development') {
-                await new Promise(resolve => setTimeout(resolve, 500))
-                setSuccessMsg("Experience & Projects saved successfully (Dev mode).")
-                setTimeout(() => setSuccessMsg(null), 3000)
-                return
-            }
-
             // ── Diff-based Experiences Save ─────────────────────────────────
             const initialExpIds = new Set(initialExperiencesRef.current.map(e => e.id))
             const currentExpIds = new Set(experiences.map(e => e.id))

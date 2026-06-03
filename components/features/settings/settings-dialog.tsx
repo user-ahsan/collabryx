@@ -48,13 +48,6 @@ export function SettingsDialog() {
                 setIsLoading(true)
                 setError(null)
 
-                if (process.env.NODE_ENV === 'development') {
-                    setUserId('dev-user-123')
-                    setEmail('developer@example.com')
-                    setIsLoading(false)
-                    return
-                }
-
                 const { data: { user }, error: authError } = await supabase.auth.getUser()
 
                 if (authError) throw authError

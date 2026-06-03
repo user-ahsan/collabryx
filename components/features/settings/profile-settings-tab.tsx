@@ -36,20 +36,6 @@ export function ProfileSettingsTab({ userId }: { userId: string }) {
     useEffect(() => {
         const fetchProfile = async () => {
             try {
-                if (process.env.NODE_ENV === 'development') {
-                    setProfile({
-                        display_name: "Dev User",
-                        full_name: "Developer Name",
-                        headline: "Senior Software Engineer",
-                        bio: "Building cool things.",
-                        location: "San Francisco, CA",
-                        website_url: "https://dev.example.com"
-                    })
-                    setCollaborationReadiness("available")
-                    setIsLoading(false)
-                    return
-                }
-
                 const { data, error } = await supabase
                     .from('profiles')
                     .select('*')
@@ -111,13 +97,6 @@ export function ProfileSettingsTab({ userId }: { userId: string }) {
         }
 
         try {
-            if (process.env.NODE_ENV === 'development') {
-                await new Promise(resolve => setTimeout(resolve, 500))
-                setSuccessMsg("Profile saved successfully (Dev mode).")
-                setTimeout(() => setSuccessMsg(null), 3000)
-                return
-            }
-
             const { error: updateError } = await supabase
                 .from('profiles')
                 .update({

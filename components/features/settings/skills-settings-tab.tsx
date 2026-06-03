@@ -34,13 +34,6 @@ export function SkillsInterestsSettingsTab({ userId }: { userId: string }) {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                if (process.env.NODE_ENV === 'development') {
-                    setSkills([{ skill_name: "React" }, { skill_name: "TypeScript" }, { skill_name: "UI Design" }])
-                    setInterests([{ interest: "Web3" }, { interest: "AI Tooling" }])
-                    setIsLoading(false)
-                    return
-                }
-
                 const [skillsRes, interestsRes] = await Promise.all([
                     supabase.from('user_skills').select('id, skill_name').eq('user_id', userId),
                     supabase.from('user_interests').select('id, interest').eq('user_id', userId)
@@ -116,13 +109,6 @@ export function SkillsInterestsSettingsTab({ userId }: { userId: string }) {
         }
 
         try {
-            if (process.env.NODE_ENV === 'development') {
-                await new Promise(resolve => setTimeout(resolve, 500))
-                setSuccessMsg("Skills & Interests saved successfully (Dev mode).")
-                setTimeout(() => setSuccessMsg(null), 3000)
-                return
-            }
-
             // ── Diff-based Skills Save ─────────────────────────────────────
             // Find skills that were in DB but removed in UI → delete by ID
             const currentSkillIds = new Set(skills.filter(s => s.id).map(s => s.id))
