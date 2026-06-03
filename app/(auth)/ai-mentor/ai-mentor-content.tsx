@@ -61,6 +61,7 @@
 'use client'
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAIStream } from '@/hooks/use-ai-stream'
 import { useAuth } from '@/hooks/use-auth'
 import { ChatList } from '@/components/features/assistant/chat-list'
@@ -82,10 +83,12 @@ export default function AIMentorContent({ collaborateUserId, startupContextParam
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
-  const [otherUserIds, setOtherUserIds] = useState<string[] | undefined>(
-    collaborateUserId ? [collaborateUserId] : undefined
+  const otherUserIds = useMemo(
+    () => collaborateUserId ? [collaborateUserId] : undefined,
+    [collaborateUserId]
   )
   const collabMessageSent = useRef(false)
+  const sendMessageRef = useRef<((content: string) => Promise<void>) | null>(null)
 
   const { messages, isStreaming, sendMessage, error, sessionId } = useAIStream({
     userId: user?.id ?? '',
@@ -98,14 +101,26 @@ export default function AIMentorContent({ collaborateUserId, startupContextParam
     },
   })
 
-  // Auto-send collaboration message when page loads with ?collaborate=userId
+  // Keep ref in sync so auto-send effect doesn't depend on sendMessage identity
+  sendMessageRef.current = sendMessage
+
+  // Auto-send collaboration message ONCE when page loads with ?collaborate=userId
+  // This effect intentionally omits sendMessage from deps to avoid re-triggering
+  // when the streaming hook recreates sendMessage after getting a session_id.
+  // Using sendMessageRef.current ensures we always call the latest sendMessage.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (collaborateUserId && user?.id && !collabMessageSent.current) {
       collabMessageSent.current = true
       const collaborationMessage = `I want to collaborate with this person. Give me 3 detailed startup ideas we could build together based on our combined skills and interests. For each idea, include a niche_score breakdown with overall, market_fit, skill_match, feasibility, and uniqueness scores. Make each idea a proper startup plan with problem, solution, target market, and why_you_two sections.`
-      sendMessage(collaborationMessage)
+      // Use setTimeout to ensure sendMessageRef is populated from the useAIStream hook
+      // which may not be ready on the very first render
+      const timer = setTimeout(() => {
+        sendMessageRef.current?.(collaborationMessage)
+      }, 100)
+      return () => clearTimeout(timer)
     }
-  }, [collaborateUserId, user?.id, sendMessage])
+  }, [collaborateUserId, user?.id])
 
   // Session switching — reset when user picks a different session
   const handleSessionSelect = useCallback((sid: string) => {
