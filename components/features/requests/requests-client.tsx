@@ -1,11 +1,12 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
-import { UserPlus, X, CheckCircle2, Clock, Sparkles, Mail } from "lucide-react"
+import { UserPlus, X, CheckCircle2, Clock, Sparkles, Mail, Lightbulb } from "lucide-react"
 import { GlassCard } from "@/components/shared/glass-card"
 import { MatchReasonBadge } from "@/components/ui/match-reason-badge"
 import { formatInitials } from "@/lib/utils/format-initials"
@@ -23,6 +24,7 @@ interface RequestCardProps {
 }
 
 function RequestCard({ connection, type, onAccept, onDecline, onCancel }: RequestCardProps) {
+    const router = useRouter();
     const isReceived = type === "received";
     const [isActionPending, setIsActionPending] = useState(false);
 
@@ -170,6 +172,20 @@ function RequestCard({ connection, type, onAccept, onDecline, onCancel }: Reques
                                     )}
                                 >
                                     View Profile
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    disabled={isActionPending}
+                                    className={cn(
+                                        "w-full xs:w-auto min-h-[44px] xs:min-h-[36px]",
+                                        "border-primary/20 text-primary hover:bg-primary/5 hover:border-primary/40",
+                                        glass("buttonGhost")
+                                    )}
+                                    onClick={() => router.push(`/ai-mentor?collaborate=${connection.other_user_id}`)}
+                                >
+                                    <Lightbulb className="mr-1.5 h-4 w-4" />
+                                    Build Startup Plan
                                 </Button>
                             </>
                         ) : (

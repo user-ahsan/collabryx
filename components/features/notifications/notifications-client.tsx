@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useCallback } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { Bell, Heart, MessageSquare, UserPlus } from "lucide-react"
+import { Bell, Heart, MessageSquare, UserPlus, Lightbulb } from "lucide-react"
 import { toast } from "sonner"
 import { GlassCard } from "@/components/shared/glass-card"
 import { glass } from "@/lib/utils/glass-variants"
@@ -11,7 +12,7 @@ import { glass } from "@/lib/utils/glass-variants"
 interface Notification {
     id: string
     type: "connect" | "message" | "like" | "system"
-    actor: { name: string; avatar: string }
+    actor: { id: string; name: string; avatar: string }
     content: string
     time: string
     read: boolean
@@ -22,6 +23,7 @@ interface NotificationsClientProps {
 }
 
 export function NotificationsClient({ initialNotifications }: NotificationsClientProps) {
+    const router = useRouter()
     const [notifications, setNotifications] = useState<Notification[]>(initialNotifications)
 
     const handleMarkAllRead = useCallback(() => {
@@ -90,9 +92,23 @@ export function NotificationsClient({ initialNotifications }: NotificationsClien
                                 </div>
 
                                 {n.type === "connect" && (
-                                    <div className="flex gap-2 mt-3">
-                                        <Button size="sm" className="h-8 px-4">Accept</Button>
-                                        <Button size="sm" variant="outline" className="h-8 px-4">Ignore</Button>
+                                    <div className="flex flex-col sm:flex-row gap-2 mt-3">
+                                        <div className="flex gap-2">
+                                            <Button size="sm" className="h-8 px-4">Accept</Button>
+                                            <Button size="sm" variant="outline" className="h-8 px-4">Ignore</Button>
+                                        </div>
+                                        <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className={cn(
+                                                "h-8 px-4",
+                                                "border-primary/20 text-primary hover:bg-primary/5 hover:border-primary/40"
+                                            )}
+                                            onClick={() => router.push(`/ai-mentor?collaborate=${n.actor.id}`)}
+                                        >
+                                            <Lightbulb className="mr-1.5 h-3.5 w-3.5" />
+                                            See What You Can Build
+                                        </Button>
                                     </div>
                                 )}
                             </div>

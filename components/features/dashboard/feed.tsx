@@ -41,6 +41,7 @@ import { reactToPost, toggleBookmark } from "@/lib/actions/posts.server"
 import type { PostWithAuthor } from "@/types/database.types"
 import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
+import { useAuth } from "@/hooks/use-auth"
 
 import { PostCard } from "./posts/post-card"
 import { PostHeader } from "./posts/post-header"
@@ -74,6 +75,7 @@ interface PostUI extends PostWithAuthor {
 
 export function Feed() {
     const prefersReduced = useReducedMotion()
+    const { user: currentUser } = useAuth()
     // Check if user has completed embedding (for banner display only)
     const [hasEmbedding, setHasEmbedding] = useState<boolean | null>(null)
     
@@ -318,7 +320,27 @@ export function Feed() {
         }
     }
 
+    /** Show a collaborate toast when reacting to someone else's post */
+    const showCollaborateToast = useCallback((post: PostUI) => {
+        if (!currentUser || post.author_id === currentUser.id) return
+        toast("Want to collaborate?", {
+            description: `See what you can build with ${post.author}`,
+            action: {
+                label: "Explore Ideas",
+                onClick: () => window.location.href = `/ai-mentor?collaborate=${post.author_id}`,
+            },
+            duration: 8000,
+        })
+    }, [currentUser])
+
     const handleReaction = async (postId: string, emoji: string) => {
+        const post = posts.find(p => p.id === postId)
+
+        // Show collaborate toast if reacting to someone else's post
+        if (post && emoji === 'like') {
+            showCollaborateToast(post)
+        }
+
         // Optimistic update
         setPosts(prev => prev.map(p =>
             p.id === postId ? { ...p, myReaction: p.myReaction === emoji ? null : emoji } : p
@@ -346,6 +368,11 @@ export function Feed() {
         const currentReaction = post?.myReaction
         const newEmoji = currentReaction === 'like' ? null : 'like'
 
+        // Show collaborate toast if liking someone else's post
+        if (post && newEmoji === 'like') {
+            showCollaborateToast(post)
+        }
+
         // Optimistic update
         setPosts(prev => prev.map(p =>
             p.id === postId ? { ...p, myReaction: newEmoji } : p
@@ -356,13 +383,13 @@ export function Feed() {
             if (result.error) {
                 // Revert on failure
                 setPosts(prev => prev.map(p =>
-                    p.id === postId ? { ...p, myReaction: currentReaction } : p
+                    p.id === postId ? { ...p, myReaction: currentReaction ?? null } : p
                 ))
                 toast.error(result.error)
             }
         } catch {
             setPosts(prev => prev.map(p =>
-                p.id === postId ? { ...p, myReaction: currentReaction } : p
+                p.id === postId ? { ...p, myReaction: currentReaction ?? null } : p
             ))
             toast.error("Failed to like post")
         }

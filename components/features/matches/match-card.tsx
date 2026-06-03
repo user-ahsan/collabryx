@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
-import { UserPlus, Sparkles, MapPin, MessageSquare } from "lucide-react"
+import { UserPlus, Sparkles, MapPin, MessageSquare, Lightbulb } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { startConversationAction } from "@/lib/actions/conversations.server"
 import { WhyMatchModal } from "./why-match-modal"
@@ -249,57 +249,77 @@ export const MatchCard = React.memo(function MatchCard({ match, index = 0, isNew
                             )}
 
                             {/* Spacer + Actions at bottom */}
-                            <div className="mt-auto flex gap-2 pt-3 border-t border-border/40 items-center">
-                                {!requestSent ? (
-                                    <Button
-                                        className={cn(
-                                            "flex-1 h-9 text-xs font-medium",
-                                            glass("buttonPrimary")
-                                        )}
-                                        onClick={(e) => {
-                                            e.stopPropagation()
-                                            setRequestSent(true)
-                                        }}
-                                    >
-                                        <UserPlus className="mr-1.5 h-3.5 w-3.5" />
-                                        Connect
-                                    </Button>
-                                ) : (
+                            <div className="mt-auto flex flex-col gap-2 pt-3 border-t border-border/40">
+                                {/* Primary action row */}
+                                <div className="flex gap-2 items-center">
+                                    {!requestSent ? (
+                                        <Button
+                                            className={cn(
+                                                "flex-1 h-9 text-xs font-medium",
+                                                glass("buttonPrimary")
+                                            )}
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                setRequestSent(true)
+                                            }}
+                                        >
+                                            <UserPlus className="mr-1.5 h-3.5 w-3.5" />
+                                            Connect
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            variant="outline"
+                                            className={cn(
+                                                "flex-1 h-9 text-xs font-medium border-emerald-500/20 bg-emerald-500/10 text-emerald-500 transition-colors",
+                                                "hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 group/cancel"
+                                            )}
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                                setRequestSent(false)
+                                            }}
+                                        >
+                                            <span className="group-hover/cancel:hidden flex items-center justify-center w-full">Request Sent</span>
+                                            <span className="hidden group-hover/cancel:flex items-center justify-center w-full">Cancel Request</span>
+                                        </Button>
+                                    )}
+
                                     <Button
                                         variant="outline"
-                                        className={cn(
-                                            "flex-1 h-9 text-xs font-medium border-emerald-500/20 bg-emerald-500/10 text-emerald-500 transition-colors",
-                                            "hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30 group/cancel"
-                                        )}
-                                        onClick={(e) => {
-                                            e.stopPropagation()
-                                            setRequestSent(false)
-                                        }}
+                                        size="icon"
+                                        className="h-9 w-9 shrink-0"
+                                        onClick={handleMessage}
+                                        disabled={messageLoading}
                                     >
-                                        <span className="group-hover/cancel:hidden flex items-center justify-center w-full">Request Sent</span>
-                                        <span className="hidden group-hover/cancel:flex items-center justify-center w-full">Cancel Request</span>
+                                        <MessageSquare className={cn("h-3.5 w-3.5", messageLoading && "animate-pulse")} />
                                     </Button>
-                                )}
 
+                                    <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
+                                        <MatchCardDropdown
+                                            isSaved={isSaved}
+                                            onSave={() => setIsSaved(!isSaved)}
+                                            onViewProfile={() => router.push(`/profile/${match.id}`)}
+                                            onReport={() => { }}
+                                            onCopyLink={() => navigator.clipboard.writeText(window.location.href)}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Build Startup Plan button */}
                                 <Button
                                     variant="outline"
-                                    size="icon"
-                                    className="h-9 w-9 shrink-0"
-                                    onClick={handleMessage}
-                                    disabled={messageLoading}
+                                    className={cn(
+                                        "w-full h-8 text-xs font-medium transition-all",
+                                        "border-primary/20 text-primary hover:bg-primary/5 hover:border-primary/40",
+                                        glass("buttonGhost")
+                                    )}
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        router.push(`/ai-mentor?collaborate=${match.profileId}`)
+                                    }}
                                 >
-                                    <MessageSquare className={cn("h-3.5 w-3.5", messageLoading && "animate-pulse")} />
+                                    <Lightbulb className="mr-1.5 h-3.5 w-3.5" />
+                                    Build Startup Plan Together
                                 </Button>
-
-                                <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
-                                    <MatchCardDropdown
-                                        isSaved={isSaved}
-                                        onSave={() => setIsSaved(!isSaved)}
-                                        onViewProfile={() => router.push(`/profile/${match.id}`)}
-                                        onReport={() => { }}
-                                        onCopyLink={() => navigator.clipboard.writeText(window.location.href)}
-                                    />
-                                </div>
                             </div>
                         </div>
                     </div>
