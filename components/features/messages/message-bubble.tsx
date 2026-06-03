@@ -13,7 +13,7 @@ interface MessageBubbleProps {
     readAt?: string | null
     createdAt: string
     attachmentUrl?: string
-    attachmentType?: "image" | "file"
+    attachmentType?: string
     className?: string
 }
 

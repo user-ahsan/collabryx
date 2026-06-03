@@ -58,7 +58,7 @@ export function InlineEditHeadline({ initialHeadline }: InlineEditHeadlineProps)
         }
         setIsSaving(true)
         try {
-            await updateProfile({ headline: trimmed || null })
+            await updateProfile({ headline: trimmed || undefined })
             setIsEditing(false)
         } catch {
             setValue(initialHeadline ?? "")

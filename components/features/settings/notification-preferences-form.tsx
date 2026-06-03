@@ -188,7 +188,7 @@ export function NotificationPreferencesForm({ userId }: NotificationPreferencesF
         const synced = { ...prev }
         // Only sync fields that exist in preferences (handle partial sync gracefully)
         for (const key of Object.keys(synced) as PreferenceKey[]) {
-          const prefValue = (preferences as Record<string, unknown>)[key]
+          const prefValue = (preferences as unknown as Record<string, unknown>)[key]
           if (typeof prefValue === "boolean") {
             synced[key] = prefValue
           }
@@ -206,7 +206,7 @@ export function NotificationPreferencesForm({ userId }: NotificationPreferencesF
 
   const handleSave = async () => {
     try {
-      await updatePreferences(formData as Parameters<typeof updatePreferences>[0])
+      await updatePreferences(formData as unknown as Parameters<typeof updatePreferences>[0])
       setHasChanges(false)
     } catch (error) {
       console.error("Error saving preferences:", error)
@@ -216,7 +216,7 @@ export function NotificationPreferencesForm({ userId }: NotificationPreferencesF
   const handleQuickToggle = (field: PreferenceKey, value: boolean) => {
     updateField(field, value)
     const updatedData = { ...formData, [field]: value }
-    updatePreferences(updatedData as Parameters<typeof updatePreferences>[0]).catch((_err: Error) => {
+    updatePreferences(updatedData as unknown as Parameters<typeof updatePreferences>[0]).catch((_err: Error) => {
       console.error("Error updating preference:", _err)
       toast.error("Failed to update preference")
     })
@@ -322,7 +322,7 @@ export function NotificationPreferencesForm({ userId }: NotificationPreferencesF
 
               <div className="space-y-2 pl-6">
                 {NOTIFICATION_TYPES.map((item, index) => {
-                  const IconComponent = item.icon
+                  const IconComponent = item.icon as React.FC<{ className?: string }>
                   return (
                     <div key={item.key}>
                       <div className="flex items-center justify-between py-2">
@@ -361,11 +361,9 @@ export function NotificationPreferencesForm({ userId }: NotificationPreferencesF
 
               <div className="space-y-3 pl-6">
                 {NOTIFICATION_TYPES.filter((t) => t.email).map((item, index) => {
-                  const emailKey = item.key.replace("push_", "email_") as PreferenceKey
-                  const IconComponent = item.icon
-
+                  const IconComponent = item.icon as React.FC<{ className?: string }>
                   return (
-                    <div key={emailKey}>
+                    <div key={item.key}>
                       <div className="flex items-center justify-between py-2">
                         <div className="flex items-start gap-3">
                           <IconComponent className="mt-0.5 h-4 w-4 text-muted-foreground shrink-0" />
@@ -377,8 +375,8 @@ export function NotificationPreferencesForm({ userId }: NotificationPreferencesF
                           </div>
                         </div>
                         <Switch
-                          checked={formData[emailKey]}
-                          onCheckedChange={(checked) => handleQuickToggle(emailKey, checked)}
+                          checked={formData[item.key]}
+                          onCheckedChange={(checked) => handleQuickToggle(item.key, checked)}
                           disabled={isUpdating}
                         />
                       </div>

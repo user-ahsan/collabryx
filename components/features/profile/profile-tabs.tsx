@@ -136,7 +136,7 @@ export function ProfileTabs({
         }
         setIsSavingBio(true)
         try {
-            await updateProfile({ bio: trimmed || null })
+            await updateProfile({ bio: trimmed || undefined })
             setIsEditingBio(false)
             toast.success("Bio updated")
         } catch {

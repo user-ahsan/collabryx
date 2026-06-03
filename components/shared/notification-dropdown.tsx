@@ -127,7 +127,7 @@ export function NotificationDropdown({ onOpenChange }: NotificationDropdownProps
   }, [deleteNotification])
 
   const getNotificationIcon = (type: string) => {
-    const IconComponent = NOTIFICATION_ICONS[type as keyof typeof NOTIFICATION_ICONS] || Bell
+    const IconComponent = (NOTIFICATION_ICONS[type as keyof typeof NOTIFICATION_ICONS] || Bell) as React.FC<{ className?: string }>
     const colorClass = NOTIFICATION_COLORS[type as keyof typeof NOTIFICATION_COLORS] || 'text-gray-500'
     
     return <IconComponent className={cn("h-5 w-5 shrink-0", colorClass)} />
