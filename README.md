@@ -97,7 +97,7 @@
 
 ### Prerequisites
 
-- **Node.js 20+** (LTS)
+- **Node.js 22+** (LTS)
 - **Bun 1.x** (package manager — never use npm)
 - **Git**
 - **Docker** (for Python worker - optional for development)
@@ -127,7 +127,7 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 
 ### Run Tests
 
-**118 test files | 750+ test cases | 10 modules (TC-001 through TC-100)**
+**117 test files + 6 E2E specs | 750+ test cases | 10 modules (TC-001 through TC-100)**
 
 ```bash
 # Run all unit/component/integration tests (Vitest)
@@ -168,8 +168,7 @@ collabryx/
 │   ├── (public)/              # Public routes (landing, login, register)
 │   └── api/                   # API routes (22+ endpoints)
 ├── components/
-│   ├── features/              # Domain-specific components
-│   │   ├── activity/          # Activity feed
+│   ├── features/              # Domain-specific components (17 domains)
 │   │   ├── ai-mentor/         # AI mentor chat
 │   │   ├── analytics/         # Analytics dashboard
 │   │   ├── assistant/         # AI assistant
@@ -185,11 +184,13 @@ collabryx/
 │   │   ├── posts/             # Post attachments
 │   │   ├── profile/           # User profile
 │   │   ├── requests/          # Connection requests
+│   │   ├── search/            # Global search
 │   │   └── settings/          # User settings
-│   ├── shared/                # Cross-feature components
+│   ├── shared/                # Cross-feature components (22)
 │   │   ├── glass-card.tsx     # Glassmorphism card
 │   │   ├── sidebar-nav.tsx    # Navigation
 │   │   └── user-nav-dropdown.tsx
+│   │   [+ 19 more shared components]
 │   ├── ui/                    # shadcn/ui primitives (52 components)
 │   └── providers/             # React context providers
 ├── e2e/                       # Root-level Playwright E2E tests
@@ -197,32 +198,37 @@ collabryx/
 │   ├── use-auth.ts            # Authentication
 │   ├── use-messages.ts        # Messaging
 │   ├── use-matches-query.ts   # Matching logic
-│   └── use-settings.ts        # User settings
+│   ├── use-settings.ts        # User settings
+│   ├── use-ai-stream.ts       # AI streaming
+│   └── use-analytics.ts       # Analytics tracking
 ├── lib/
 │   ├── actions/               # Server Actions (10)
-│   ├── ai/                    # AI provider system
-│   │   └── providers/         # Provider implementations
+│   ├── ai/                    # Universal AI provider system
+│   │   ├── providers/         # Provider implementations (OpenAI, Anthropic, MiniMax)
+│   │   ├── errors.ts          # AI error types
+│   │   └── streaming.ts       # Streaming utilities
 │   ├── config/                # Configuration modules
 │   ├── constants/             # Constants
 │   ├── data/                  # Data definitions
 │   ├── errors/                # Error types
 │   ├── prompt/                # AI prompt templates
-│   ├── rag/                   # RAG pipeline
-│   ├── services/              # Business logic (18 services)
+│   ├── rag/                   # RAG pipeline (6 modules: context, retrieval, summarization)
+│   ├── services/              # Business logic (22 services)
 │   ├── supabase/              # Supabase client setup
 │   ├── utils/                 # Utility functions
 │   └── validations/           # Zod schemas
 ├── scripts/                   # Automation scripts
 │   ├── *.mjs                  # Docker management scripts
 │   └── seed-data/             # Database seeding
-├── tests/                     # Test suite (120+ files, 750+ tests)
-│   ├── unit/                  # Unit tests
-│   ├── components/            # Component tests
-│   ├── integration/           # Integration tests (30+ files)
-│   ├── e2e/                   # E2E Playwright tests
+├── tests/                     # Test suite (130+ files, 750+ tests)
+│   ├── unit/                  # Unit tests (55 files)
+│   ├── components/            # Component tests (27 files)
+│   ├── integration/           # Integration tests (34 files)
+│   ├── e2e/                   # E2E Playwright tests (6 specs)
 │   ├── scripts/               # Shell infrastructure tests
 │   └── setup/                 # Global mocks & fixtures
-├── docs/                      # Documentation (33+ files)
+├── diagrams/                  # Exported diagram assets
+├── docs/                      # Documentation (35 files)
 ├── python-worker/             # Python embedding service (FastAPI)
 │   ├── main.py                # FastAPI entry point
 │   ├── embedding_generator.py # Sentence Transformers logic
@@ -231,13 +237,15 @@ collabryx/
 │   └── tests/                 # Pytest suite
 ├── supabase/                  # Database config
 │   ├── config.toml            # Supabase configuration
-│   ├── migrations/            # Migration files
+│   ├── migrations/            # Migration files (7)
 │   └── setup/                 # Schema setup (34 tables + RLS + triggers)
+│       ├── 99-master-all-tables.sql  # Master schema (run this)
+│       └── README.md          # Database setup guide
 ├── public/                    # Static assets
 │   ├── icons/                 # ~140 Lucide icons
 │   ├── images/                # SVG assets
 │   └── Models/                # 3D models (GLTF)
-├── types/                     # TypeScript type definitions (5 files)
+├── types/                     # TypeScript type definitions (6 files)
 ├── AGENTS.md                  # AI agent development guide
 ├── ISSUES.md                  # Known issues tracker
 ├── proxy.ts                   # Auth middleware
@@ -437,12 +445,12 @@ DEBUG=false
 
 ## 📊 Database
 
-Collabryx uses **34 tables** in Supabase (PostgreSQL) with:
+Collabryx uses **36+ tables** in Supabase (PostgreSQL) with:
 
 - Row Level Security (RLS) on all tables
 - Realtime subscriptions enabled
 - Automatic embedding generation triggers
-- Optimized indexes (103 total) for performance
+- Optimized indexes for performance
 - pgvector for vector similarity search
 
 ### Core Tables
@@ -460,7 +468,8 @@ Collabryx uses **34 tables** in Supabase (PostgreSQL) with:
 | `comments` | Post comments (threaded) |
 | `comment_likes` | Comment likes |
 | `connections` | User connections |
-| `connection_requests` | Pending requests |
+| `privacy_settings` | Privacy preferences |
+| `blocked_users` | Blocked user management |
 | `match_suggestions` | AI match suggestions |
 | `match_scores` | Match compatibility scores |
 | `match_activity` | Match activity tracking |
@@ -474,15 +483,18 @@ Collabryx uses **34 tables** in Supabase (PostgreSQL) with:
 | `profile_embeddings` | Vector embeddings (384 dim) |
 | `embedding_dead_letter_queue` | Failed embedding retries |
 | `embedding_pending_queue` | Onboarding embedding queue |
-| `embedding_rate_limits` | Rate limiting |
+| `embedding_rate_limits` | Rate limiting (3/hour/user) |
 | `theme_preferences` | UI theme preferences |
-| `user_engagement_metrics` | Engagement analytics |
-| `user_activity_analytics` | Activity analytics |
-| `feature_adoption_metrics` | Feature usage tracking |
-| `analytics_aggregation_queue` | Analytics job queue |
-| `content_reports` | Content reports |
-| `content_moderation_queue` | Moderation queue |
+| `feed_scores` | Feed ranking scores |
+| `feed_thompson_params` | Thompson sampling params |
+| `post_impressions` | Post impression tracking |
+| `user_analytics` | User analytics |
+| `platform_analytics` | Platform-wide analytics |
+| `events` | Event tracking |
+| `audit_logs` | Audit trail |
 | `content_moderation_logs` | Moderation audit log |
+| `profile_visits` | Profile visit tracking |
+| `user_bookmarks` | User bookmarks |
 
 📖 **Complete schema:** [Database Setup](./supabase/setup/) • [Architecture](./docs/02-architecture/overview.md)
 

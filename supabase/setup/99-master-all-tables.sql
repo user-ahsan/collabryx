@@ -2641,7 +2641,7 @@ COMMENT ON TABLE public.messages IS 'Direct messages between users with read rec
 -- - embedding_dead_letter_queue: Failed retry queue (3 retries max)
 -- - embedding_rate_limits: 3 requests/hour/user limit
 -- - embedding_pending_queue: Reliable onboarding queue
--- - check_embedding_rate_limit: Rate limit checker (100/hour)
+-- - check_embedding_rate_limit: Rate limit checker (3/hour)
 -- - queue_embedding_request: Queue management
 -- - get_pending_queue_stats: Queue statistics
 --

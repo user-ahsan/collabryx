@@ -1,7 +1,8 @@
 # Architecture Diagrams
 
-**Last Updated:** 2026-03-16  
-**Version:** 1.0.0
+**Last Updated:** 2026-06-03  
+**Version:** 1.1.0  
+**Changes:** Removed stale `Edge Functions` reference (replaced with `Server Actions`), fixed feature component list (removed `activity/`, added `search/`)
 
 Visual diagrams illustrating Collabryx system architecture, data flows, and component relationships.
 
@@ -33,7 +34,7 @@ graph TB
         SSR[Server Components]
         CSR[Client Components]
         API[API Routes]
-        Edge[Edge Functions]
+        SA[Server Actions]
     end
     
     subgraph Backend["Backend - Supabase"]
@@ -133,12 +134,12 @@ graph TD
         Profile[profile/]
         Onboarding[onboarding/]
         Settings[settings/]
-        Activity[activity/]
         Analytics[analytics/]
         Assistant[assistant/]
         Connections[connections/]
         Landing[landing/]
         Notifications[notifications/]
+        Search[search/]
         AI-Mentor[ai-mentor/]
     end
     

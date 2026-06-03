@@ -78,8 +78,9 @@ collabryx/
 │   ├── (public)/              # Public routes (landing, login, register)
 │   └── api/                   # API routes (22+ endpoints)
 ├── components/
-│   ├── features/              # Domain-specific components (16 domains)
-│   │   ├── activity/          # Activity feed
+│   ├── features/              # Domain-specific components (17 domains)
+│   │   ├── activity/          # Activity feed (LEGACY - migrated to analytics/)
+│   │   │                     # Note: directory may not exist in all branches
 │   │   ├── ai-mentor/         # AI mentor chat
 │   │   ├── analytics/         # Analytics dashboard
 │   │   ├── assistant/         # AI assistant
@@ -95,6 +96,7 @@ collabryx/
 │   │   ├── posts/             # Post attachments
 │   │   ├── profile/           # User profile
 │   │   ├── requests/          # Connection requests
+│   │   ├── search/            # Global search
 │   │   └── settings/          # User settings
 │   ├── shared/                # Cross-feature components (18)
 │   │   ├── glass-card.tsx     # Glassmorphism card
@@ -176,7 +178,7 @@ collabryx/
 │   ├── icons/                 # ~140 Lucide icons
 │   ├── images/                # SVG assets
 │   └── Models/                # 3D models (GLTF)
-├── types/                     # TypeScript type definitions (5 files)
+├── types/                     # TypeScript type definitions (6 files)
 ├── AGENTS.md                  # AI agent development guide (this file)
 ├── ISSUES.md                  # Known issues tracker
 ├── proxy.ts                   # Auth middleware

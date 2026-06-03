@@ -10,7 +10,7 @@ Complete guide to setting up the Collabryx database schema in Supabase.
 
 **DO NOT run individual SQL files (01-23).** They are reference-only.
 
-Run the master migration file that includes all 34 tables:
+Run the master migration file that includes all 36 tables:
 
 ```sql
 -- In Supabase SQL Editor:
@@ -20,7 +20,7 @@ Run the master migration file that includes all 34 tables:
 supabase/setup/99-master-all-tables.sql
 ```
 
-This creates all 34 tables including:
+This creates all 36 tables including:
 - User management (profiles, user_skills, user_interests, user_experiences, user_projects)
 - Social features (posts, post_attachments, post_reactions, comments, comment_likes, connections)
 - Matching system (match_suggestions, match_scores, match_activity, match_preferences)

@@ -217,9 +217,9 @@ CREATE TRIGGER on_profile_update
 **Purpose:** Prevent API abuse and model overload
 
 **Limits:**
-- 3 requests per minute per user
-- 100 requests per minute total
-- Sliding window (1 minute)
+- 3 requests per hour per user
+- Sliding window (1 hour, resets on window_end)
+- No global rate limit (per-user only)
 
 **Implementation:**
 ```python
@@ -639,4 +639,4 @@ Already implemented in `embedding_rate_limits` table.
 
 **Need help?** Check [Troubleshooting](#troubleshooting) or contact DevOps.
 
-[← Back to Infrastructure](../README.md) | [Python Worker →](../python-worker/README.md)
+[← Back to Infrastructure](../README.md) | [Python Worker →](../04-infrastructure/python-worker/overview.md)

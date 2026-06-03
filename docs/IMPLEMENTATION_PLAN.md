@@ -1,8 +1,17 @@
 ﻿# Collabryx AI Mentor Implementation Plan
 
-**Generated:** 2026-04-30
-**Version:** 1.0
-**Status:** Ready for Implementation
+**Generated:** 2026-04-30  
+**Last Updated:** 2026-06-03  
+**Version:** 1.0  
+**Status:** 🔄 Partially Implemented (Tasks 1-6 core files exist)  
+
+> ⚠️ **Status Update (2026-06-03):** The following files proposed in this plan already exist in the codebase:  
+> `lib/rag/types.ts`, `lib/rag/context-fetcher.ts`, `lib/rag/context-assembler.ts`,  
+> `lib/rag/vector-retriever.ts`, `lib/rag/session-summarizer.ts`, `lib/rag/startup-prompts.ts`,  
+> `lib/ai/providers/minimax.ts`  
+>  
+> This document serves as **reference architecture** and a **roadmap for remaining tasks**.  
+> See [AI Mentor Current Overview](./03-core-features/ai-assistant/overview.md) for the up-to-date architecture.
 
 ---
 
@@ -17,7 +26,7 @@
 7. [Task 4: Hybrid Search Implementation](#task-4-hybrid-search-implementation)
 8. [Task 5: Streaming UI](#task-5-streaming-ui)
 9. [Task 6: Session Summarization](#task-6-session-summarization)
-
+10. ~~[Task 7: — MISSING]~~ *(see note below)*
 11. [Task 8: Cross-Encoder Re-Ranking](#task-8-cross-encoder-re-ranking)
 12. [File Structure](#file-structure)
 13. [Gitignore Rules](#gitignore-rules)
@@ -673,10 +682,19 @@ describe('Summarizer', () => {
   })
 })
 ```
-
 ---
 
+## ~~Task 7: [MISSING]~~
 
+> ⚠️ **Task 7 is not documented in this plan.** The table of contents and dependency graph reference a Task 7, but its section was never written. Based on the dependency graph, Task 7 was parallelizable with Task 5 and was a dependency for Task 8.
+>
+> Likely candidates for Task 7 based on context:
+> - **Startup Prompts** — the `lib/rag/startup-prompts.ts` file now exists and contains startup planning templates
+> - **Prompt Optimization** — prompt tuning for the AI mentor responses
+>
+> **Current status:** `startup-prompts.ts` is implemented. If Task 7 was startup prompts, it is complete.
+
+---
 
 ## Task 8: Cross-Encoder Re-Ranking
 

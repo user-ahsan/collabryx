@@ -304,7 +304,7 @@ bun run docker:rebuild
 
 ## 📚 Related Documentation
 
-- [Python Worker Deployment](./docs/05-deployment/python-worker.md)
+- [Python Worker Deployment](../04-infrastructure/python-worker/deployment.md)
 - [Embedding System](./docs/04-infrastructure/database/embeddings.md)
 - [Infrastructure Overview](./docs/04-infrastructure/overview.md)
 

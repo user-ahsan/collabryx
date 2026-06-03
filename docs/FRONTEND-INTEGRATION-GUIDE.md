@@ -1,7 +1,8 @@
-﻿# Frontend Integration Guide - New Native TS Endpoints
+﻿# Frontend Integration Guide - Native TS Endpoints
 
-**Date:** 2026-03-19  
-**Branch:** `feature/missing-api-endpoints`
+**Date:** 2026-03-19 (historical — content is integrated)  
+**Status:** 📝 Reference — All endpoints implemented  
+**Original Branch:** `feature/missing-api-endpoints`
 
 ---
 

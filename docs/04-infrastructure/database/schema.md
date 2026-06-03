@@ -1,9 +1,11 @@
 # Database Schema
 
-Complete reference for Collabryx database schema (34 tables).
+Complete reference for Collabryx database schema.
 
-**Version:** 4.1.0 (Final Boss - Self-Contained)  
-**Last Updated:** 2026-03-21
+**Version:** 4.2.0 (Self-Contained)  
+**Last Updated:** 2026-06-03  
+**Total Tables:** 36 (master) + 2 (migrations) = 38  
+**Note:** Some analytics/moderation tables were refactored. See [master file](https://github.com/your-org/collabryx/blob/main/supabase/setup/99-master-all-tables.sql) for authoritative list.
 
 ---
 
@@ -24,10 +26,10 @@ Complete reference for Collabryx database schema (34 tables).
 ## Overview
 
 **Database:** PostgreSQL (Supabase)  
-**Total Tables:** 34  
+**Total Tables:** 38 (36 in master + 2 migration-added)  
 **Extensions:** pgvector  
 **Master File:** `supabase/setup/99-master-all-tables.sql` (run this file only)  
-**Version:** 4.1.0 (Self-contained, no external dependencies)
+**Version:** 4.2.0 (Self-contained, no external dependencies)
 
 ### What's New in v4.1.0
 
