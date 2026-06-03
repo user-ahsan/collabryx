@@ -125,19 +125,19 @@
 .dark {
   --background: #0A0A0F;
   --foreground: oklch(0.985 0 0);
-  --card: #0A0A0F;
+  --card: #111118;
   --card-foreground: oklch(0.985 0 0);
-  --popover: #0A0A0F;
+  --popover: #14141A;
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.922 0 0);
   --primary-foreground: oklch(0.205 0 0);
   --brand: oklch(0.488 0.243 264.376);
   --brand-foreground: oklch(0.985 0 0);
-  --secondary: #0A0A0F;
+  --secondary: #0E0E14;
   --secondary-foreground: oklch(0.985 0 0);
-  --muted: #0A0A0F;
+  --muted: #151520;
   --muted-foreground: oklch(0.708 0 0);
-  --accent: #0A0A0F;
+  --accent: oklch(0.488 0.243 264.376 / 8%);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
@@ -148,11 +148,11 @@
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: #0A0A0F;
+  --sidebar: #0C0C13;
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
   --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: #0A0A0F;
+  --sidebar-accent: #0E0E16;
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
@@ -325,7 +325,7 @@
     z-index: -1;
     pointer-events: none;
     border-radius: inherit;
-    background-image: url("https://grainy-gradients.vercel.app/noise.svg");
+    background-image: url("/noise.svg");
     background-repeat: repeat;
     background-size: 150px 150px;
     opacity: 0.05;
@@ -393,4 +393,158 @@
 ::view-transition-new(root) {
   animation: none;
   mix-blend-mode: normal;
+}
+
+/* ===========================================
+   GLOW GLASS SYSTEM - Collabryx Signature Aesthetic
+   ===========================================
+   PROBLEM SOLVED:
+   The GlassCard component had its signature blue-tinted glass aesthetic
+   stripped during a refactor where inline glass styles (backdrop-blur-2xl,
+   blue-950 background, blue-400 borders, ambient glow shadows, and three
+   decorative DOM elements: top highlight streak, left edge highlight,
+   blue ambient tint overlay) were extracted into a glass-variants.ts
+   utility. However, the DOM decorations were deleted entirely and the
+   glassDecorations entries for leftHighlight and ambientTint were left
+   as empty strings, causing the signature Collabryx glow to disappear
+   across all ~95 GlassCard instances in the app.
+   
+   SOLUTION:
+   This CSS utility system restores the full glass glow aesthetic using
+   pure CSS pseudo-elements (::before, ::after) instead of requiring
+   extra DOM nodes. Three tiered classes were created:
+   
+   1. .glass-glow (Base):
+      - Blue-tinted background with 24px blur and saturate(120%) for
+        the signature frosted glass depth
+      - Blue-400 border at 8% opacity for the subtle edge glow
+      - Dual box-shadow: an outer rgba(59,130,246) glow at 6% and an
+        inner white inset highlight for the "lit edge" effect
+      - isolation: isolate to create a stacking context so pseudo-
+        elements with z-index: -1 render behind content
+      - ::before renders the blue ambient tint gradient overlay
+      - ::after renders both the top edge highlight streak and left
+        edge highlight via layered background gradients
+      - Dark mode variant adjusts backgrounds and shadows for the
+        #0A0A0F deep navy-black surface
+   
+   2. .glass-glow-hover (Interactive):
+      - Smooth 300ms cubic-bezier transition
+      - On hover: lifts 2px, intensifies the background and border
+        opacity, enhances the blue glow shadow for a "lit from within"
+        interaction feedback
+   
+   3. .glass-glow-strong (Emphasis):
+      - Stronger border and amplified blue ambient glow for cards that
+        need visual prominence (billing stats, analytics highlights)
+      - 60px spread negative offset creates a wider, softer glow aura
+   
+   WHY CSS PSEUDO-ELEMENTS INSTEAD OF DOM NODES:
+   The original approach used three separate <div> elements inside
+   GlassCard for decorations. This bloated the DOM and made the
+   component less composable. By moving to CSS ::before/::after,
+   any element (not just GlassCard) gets the full glow by adding a
+   single className="glass-glow", making the system:
+   - More performant (no extra DOM nodes)
+   - More composable (works on any element, any component)
+   - Easier to maintain (single source of truth in CSS)
+   - Simpler to apply (one class vs importing a component)
+   =========================================== */
+
+/* Base glass card with ambient blue glow */
+.glass-glow {
+  position: relative;
+  isolation: isolate;
+  background: rgba(13, 25, 48, 0.03);
+  backdrop-filter: blur(24px) saturate(120%);
+  -webkit-backdrop-filter: blur(24px) saturate(120%);
+  border: 1px solid rgba(96, 165, 250, 0.08);
+  box-shadow:
+    0 4px 32px 0 rgba(59, 130, 246, 0.06),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.dark .glass-glow {
+  background: rgba(13, 25, 48, 0.05);
+  box-shadow:
+    0 4px 32px 0 rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Blue ambient tint overlay */
+.glass-glow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: -1;
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.04) 0%,
+    transparent 50%,
+    rgba(99, 102, 241, 0.03) 100%
+  );
+}
+
+/* Top streak + left edge highlights */
+.glass-glow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: -1;
+  background:
+    linear-gradient(
+      to right,
+      transparent 0%,
+      rgba(147, 197, 253, 0.3) 50%,
+      transparent 100%
+    ) 0 0 / 100% 1px no-repeat,
+    linear-gradient(
+      to bottom,
+      rgba(147, 197, 253, 0.2) 0%,
+      transparent 100%
+    ) 0 0 / 1px 100% no-repeat;
+}
+
+/* Hover interaction - lift + enhanced glow */
+.glass-glow-hover {
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  cursor: pointer;
+}
+
+.glass-glow-hover:hover {
+  transform: translateY(-2px);
+  background: rgba(13, 25, 48, 0.05);
+  border-color: rgba(96, 165, 250, 0.14);
+  box-shadow:
+    0 8px 40px 0 rgba(59, 130, 246, 0.12),
+    0 1px 0 0 rgba(255, 255, 255, 0.08) inset;
+}
+
+.dark .glass-glow-hover:hover {
+  background: rgba(13, 25, 48, 0.08);
+  box-shadow:
+    0 8px 40px 0 rgba(59, 130, 246, 0.15),
+    0 8px 32px 0 rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Stronger glow for emphasis cards (billing stats, analytics highlights) */
+.glass-glow-strong {
+  border-color: rgba(96, 165, 250, 0.14);
+  box-shadow:
+    0 4px 32px 0 rgba(59, 130, 246, 0.10),
+    0 0 60px -20px rgba(59, 130, 246, 0.08),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+}
+
+.dark .glass-glow-strong {
+  box-shadow:
+    0 4px 32px 0 rgba(0, 0, 0, 0.5),
+    0 0 60px -20px rgba(59, 130, 246, 0.12),
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
 }
