@@ -14,6 +14,28 @@ type SupabaseAdmin = ReturnType<typeof createSupabaseClient<any>>;
 // COSINE SIMILARITY
 // ===========================================
 
+/** Match proxy.ts isDevMode — accepts "true", "testing", "development" */
+function isDevMode(): boolean {
+  const value = process.env.DEVELOPMENT_MODE
+  if (!value) return false
+  const n = value.toLowerCase().trim()
+  return n === "true" || n === "testing" || n === "development"
+}
+
+/** Supabase JS client returns pgvector columns as strings like "[-0.03,0.01,...]".
+ *  Parse to a number array. Already an array -> pass through. */
+function parseVector(v: unknown): number[] {
+  if (Array.isArray(v)) return v as number[]
+  if (typeof v === "string") {
+    try {
+      return JSON.parse(v) as number[]
+    } catch {
+      return []
+    }
+  }
+  return []
+}
+
 export function cosineSimilarity(a: number[], b: number[]): number {
   const minLen = Math.min(a.length, b.length);
   if (minLen === 0) return 0;
@@ -139,22 +161,6 @@ function generateReasons(breakdown: MatchScoreBreakdown, overlappingSkills: stri
   return reasons;
 }
 
-async function fetchCandidateData(
-  supabase: SupabaseAdmin,
-  candidateId: string,
-) {
-  const [{ data: skills }, { data: interests }, { data: profile }] = await Promise.all([
-    supabase.from("user_skills").select("skill_name").eq("user_id", candidateId),
-    supabase.from("user_interests").select("interest").eq("user_id", candidateId),
-    supabase.from("profiles").select("collaboration_readiness").eq("id", candidateId).single(),
-  ]);
-  return {
-    skills: skills?.map((s) => s.skill_name) ?? [],
-    interests: interests?.map((i) => i.interest) ?? [],
-    activity: profile?.collaboration_readiness ?? "",
-  };
-}
-
 async function persistMatchScores(
   supabase: SupabaseAdmin,
   userId: string,
@@ -174,7 +180,10 @@ async function persistMatchScores(
 
   if (fetchError || !existingSuggestions || existingSuggestions.length === 0) {
     if (fetchError) {
-      logger.app.error("Error batch fetching existing match suggestions", fetchError);
+      logger.app.error("Error batch fetching existing match suggestions", {
+        message: fetchError.message,
+        code: (fetchError as Record<string, unknown>).code,
+      });
     }
     return;
   }
@@ -214,7 +223,11 @@ async function persistMatchScores(
       .upsert(scoresToUpsert, { onConflict: "suggestion_id" });
 
     if (upsertError) {
-      logger.app.error("Failed to batch upsert match_scores", upsertError);
+      logger.app.error("Failed to batch upsert match_scores", {
+        message: upsertError.message,
+        code: (upsertError as Record<string, unknown>).code,
+        details: (upsertError as Record<string, unknown>).details,
+      });
     }
   }
 }
@@ -235,6 +248,11 @@ export async function generateMatchesForUser(
     .single();
 
   if (embError || !userEmbedding?.embedding) return [];
+
+  const parsedUserEmbedding = parseVector(userEmbedding.embedding);
+  if (isDevMode()) {
+    console.log("[match-generator] embedding dims:", parsedUserEmbedding.length);
+  }
 
   const [{ data: userSkillsData }, { data: userInterestsData }, { data: userProfile }, { data: prefs }] =
     await Promise.all([
@@ -275,12 +293,18 @@ export async function generateMatchesForUser(
     .eq("status", "completed");
 
   if (excludeList.length > 0) {
-    query = query.not("user_id", "in", excludeList);
+    // Supabase .not().in() requires parenthesized CSV string: "(id1,id2)"
+    query = query.not("user_id", "in", `(${excludeList.join(",")})`);
   }
 
   const { data: candidates, error: candError } = await query;
 
-  if (candError || !candidates) return [];
+  if (candError || !candidates) {
+    if (isDevMode()) {
+      console.warn("[match-generator] candidate fetch error:", candError);
+    }
+    return [];
+  }
 
   const suggestions: GeneratedMatchSuggestion[] = [];
   const candidateSkillsMap = new Map<string, string[]>();
@@ -315,6 +339,7 @@ export async function generateMatchesForUser(
     batchActivityMap.set(row.id, row.collaboration_readiness ?? "");
   }
 
+  let scoredCount = 0;
   for (const candidate of candidates) {
     if (!candidate.embedding) continue;
 
@@ -325,9 +350,10 @@ export async function generateMatchesForUser(
     };
     candidateSkillsMap.set(candidate.user_id, candData.skills);
 
+    const candEmbedding = parseVector(candidate.embedding);
     const breakdown = calculateMatchScore(
-      userEmbedding.embedding,
-      candidate.embedding,
+      parsedUserEmbedding,
+      candEmbedding,
       userSkills,
       candData.skills,
       userInterests,
@@ -337,6 +363,7 @@ export async function generateMatchesForUser(
     );
 
     if (breakdown.overallScore < effectiveMinScore) continue;
+    scoredCount++;
 
     const overlappingSkills = userSkills.filter((s) =>
       candData.skills.some((cs) => cs.toLowerCase() === s.toLowerCase()),
@@ -353,6 +380,12 @@ export async function generateMatchesForUser(
   suggestions.sort((a, b) => b.matchPercentage - a.matchPercentage);
   const topSuggestions = suggestions.slice(0, limit);
 
+  if (isDevMode()) {
+    console.log(
+      `[match-generator] ${candidates.length} candidates → ${scoredCount} above minScore → returning ${topSuggestions.length}`
+    );
+  }
+
   if (topSuggestions.length > 0) {
     const { error: insertError } = await supabase.from("match_suggestions").upsert(
       topSuggestions.map((s) => ({
@@ -365,7 +398,12 @@ export async function generateMatchesForUser(
       { onConflict: "user_id,matched_user_id" },
     );
 
-    if (insertError) logger.app.error("Error inserting match suggestions", insertError);
+    if (insertError) {
+      logger.app.error("Error inserting match suggestions", {
+        message: insertError.message,
+        code: (insertError as Record<string, unknown>).code,
+      });
+    }
 
     await persistMatchScores(supabase, userId, topSuggestions, candidateSkillsMap);
   }

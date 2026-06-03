@@ -120,7 +120,7 @@ export function MatchFilters({
             <SemanticSearchDialog
                 open={semanticSearchOpen}
                 onOpenChange={setSemanticSearchOpen}
-                onSearch={(project, bio) => {
+                onSearch={(_project, _bio) => {
                 }}
             />
         </>
