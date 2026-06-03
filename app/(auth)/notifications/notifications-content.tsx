@@ -37,7 +37,7 @@ interface DisplayNotification {
   content: string
   time: string
   read: boolean
-  resourceType?: 'post' | 'profile' | 'conversation' | 'match'
+  resourceType?: 'post' | 'profile' | 'conversation' | 'match' | 'comment'
   resourceId?: string
   connectionId?: string
 }

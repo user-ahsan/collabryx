@@ -285,12 +285,12 @@ export interface Message {
 export interface Notification {
   id: string; // UUID
   user_id: string; // UUID
-  type: 'connect' | 'message' | 'like' | 'comment' | 'system' | 'match';
+  type: 'connect' | 'connect_accepted' | 'message' | 'like' | 'comment' | 'comment_like' | 'match' | 'mention' | 'system' | 'achievement';
   actor_id?: string; // UUID
   actor_name?: string;
   actor_avatar?: string;
   content: string;
-  resource_type?: 'post' | 'profile' | 'conversation' | 'match';
+  resource_type?: 'post' | 'profile' | 'conversation' | 'match' | 'comment';
   resource_id?: string; // UUID
   is_read: boolean;
   is_actioned: boolean;
