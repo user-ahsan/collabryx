@@ -664,7 +664,7 @@ def generate_profiles(count: int, existing_emails: set = None) -> List[Dict[str,
         List of complete profile dictionaries
     """
     profiles = []
-    used_emails = existing_emails if existing_emails else set()
+    used_emails = set(existing_emails) if existing_emails else set()
 
     # Use random industry distribution if enabled, otherwise distribute evenly
     use_random = config.SEED_PROFILES_RANDOMIZE_INDUSTRIES

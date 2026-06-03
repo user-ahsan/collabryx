@@ -23,6 +23,7 @@ class ProfilesSeeder:
         self.created_user_ids = []
         self.existing_emails: Set[str] = set()
         self.existing_profile_ids: Set[str] = set()
+        self.incomplete_profile_ids: Set[str] = set()
         self.stats = {
             "created": 0,
             "skipped_email_exists": 0,
@@ -50,15 +51,23 @@ class ProfilesSeeder:
             return set()
 
     def fetch_existing_profile_ids(self) -> Set[str]:
-        """Fetch all existing profile IDs"""
+        """Fetch all existing profile IDs + onboarding status to detect incomplete profiles"""
         try:
             response = self.http.get(
-                f"{config.SUPABASE_REST_URL}/profiles?select=id",
+                f"{config.SUPABASE_REST_URL}/profiles?select=id,onboarding_completed",
                 headers=config.API_HEADERS,
             )
             response.raise_for_status()
             profiles = response.json() or []
             self.existing_profile_ids = {p["id"] for p in profiles}
+            # Track incomplete profiles separately — these need updating, not skipping
+            self.incomplete_profile_ids = {
+                p["id"] for p in profiles if not p.get("onboarding_completed")
+            }
+            print(
+                f"{Fore.YELLOW}  → Found {len(self.existing_profile_ids)} profiles"
+                f" ({len(self.incomplete_profile_ids)} incomplete){Style.RESET_ALL}"
+            )
             return self.existing_profile_ids
         except Exception as e:
             print(
@@ -165,24 +174,12 @@ class ProfilesSeeder:
             return None
 
     def create_profile(self, user_id: str, profile_data: Dict[str, Any]) -> bool:
-        """Create profile record via REST API with incremental seeding (skip if exists)
+        """Create or update profile record via REST API.
 
-        Args:
-            user_id: Auth user ID
-            profile_data: Profile data dictionary
-
-        Returns:
-            True if created, False if skipped or failed
+        If the profile already exists (created by DB trigger) but is incomplete
+        (onboarding_completed=false), PATCH it with full data. Otherwise skip.
         """
         try:
-            # Check if profile already exists
-            if user_id in self.existing_profile_ids:
-                print(
-                    f"{Fore.YELLOW}  ⚠️  Profile exists, skipping: {profile_data['display_name']}{Style.RESET_ALL}"
-                )
-                self.stats["skipped_profile_exists"] += 1
-                return False
-
             profile = {
                 "id": user_id,
                 "email": profile_data["email"],
@@ -203,10 +200,48 @@ class ProfilesSeeder:
                 "onboarding_completed": profile_data["onboarding_completed"],
             }
 
+            # Check if profile exists but is incomplete — update it
+            if user_id in self.incomplete_profile_ids:
+                patch_headers = dict(config.API_HEADERS)
+                patch_headers["Prefer"] = "return=minimal"
+                resp = self.http.patch(
+                    f"{config.SUPABASE_REST_URL}/profiles?id=eq.{user_id}",
+                    json={k: v for k, v in profile.items() if k != "id"},
+                    headers=patch_headers,
+                )
+                if resp.status_code in [200, 204]:
+                    print(
+                        f"{Fore.GREEN}✓ Updated incomplete profile for {profile_data['display_name']}{Style.RESET_ALL}"
+                    )
+                    self.existing_profile_ids.add(user_id)
+                    self.incomplete_profile_ids.discard(user_id)
+                    self.stats["created"] += 1
+                    return True
+                else:
+                    print(
+                        f"{Fore.RED}✗ PATCH failed ({resp.status_code}) for {profile_data['display_name']}: {resp.text[:200]}{Style.RESET_ALL}"
+                    )
+                    self.stats["failed"] += 1
+                    return False
+
+            # Already complete profile — skip
+            if user_id in self.existing_profile_ids:
+                print(
+                    f"{Fore.YELLOW}  ⚠️  Complete profile exists, skipping: {profile_data['display_name']}{Style.RESET_ALL}"
+                )
+                self.stats["skipped_profile_exists"] += 1
+                return False
+
+            # New profile — try insert, fallback to patch on conflict
+            patch_headers = dict(config.API_HEADERS)
+            patch_headers["Prefer"] = "return=minimal"
+            # Use upsert via on_conflict if supported, then patch
+            upsert_headers = dict(config.API_HEADERS)
+            upsert_headers["Prefer"] = "resolution=merge-duplicates"
             response = self.http.post(
                 f"{config.SUPABASE_REST_URL}/profiles",
                 json=profile,
-                headers=config.API_HEADERS,
+                headers=upsert_headers,
             )
 
             if response.status_code in [200, 201]:
@@ -217,13 +252,25 @@ class ProfilesSeeder:
                 self.stats["created"] += 1
                 return True
             elif response.status_code == 409:
-                # Profile already exists - skip (don't update for incremental seeding)
-                print(
-                    f"{Fore.YELLOW}  ⚠️  Profile exists, skipping: {profile_data['display_name']}{Style.RESET_ALL}"
+                # Fallback: update the existing (incomplete) profile
+                resp = self.http.patch(
+                    f"{config.SUPABASE_REST_URL}/profiles?id=eq.{user_id}",
+                    json={k: v for k, v in profile.items() if k != "id"},
+                    headers=patch_headers,
                 )
-                self.stats["skipped_profile_exists"] += 1
-                self.existing_profile_ids.add(user_id)
-                return False
+                if resp.status_code in [200, 204]:
+                    print(
+                        f"{Fore.GREEN}✓ Updated profile for {profile_data['display_name']}{Style.RESET_ALL}"
+                    )
+                    self.existing_profile_ids.add(user_id)
+                    self.stats["created"] += 1
+                    return True
+                else:
+                    print(
+                        f"{Fore.RED}✗ PATCH fallback failed ({resp.status_code}) for {profile_data['display_name']}{Style.RESET_ALL}"
+                    )
+                    self.stats["failed"] += 1
+                    return False
             elif response.status_code == 400:
                 print(
                     f"{Fore.RED}✗ Bad request for {profile_data['display_name']}: {response.text[:200]}{Style.RESET_ALL}"
@@ -236,7 +283,7 @@ class ProfilesSeeder:
 
         except Exception as e:
             print(
-                f"{Fore.RED}✗ Failed to create profile: {type(e).__name__}: {e}{Style.RESET_ALL}"
+                f"{Fore.RED}✗ Failed to create/update profile: {type(e).__name__}: {e}{Style.RESET_ALL}"
             )
             self.stats["failed"] += 1
             return False
@@ -364,30 +411,51 @@ class ProfilesSeeder:
     def seed_profile(
         self, profile_data: Dict[str, Any], password: str = None
     ) -> Optional[str]:
-        """Seed a complete profile with all related data (incremental - skips existing)
-
-        Args:
-            profile_data: Complete profile data dictionary
-            password: Optional password, defaults to SEED_USER_PASSWORD from ENV
-
-        Returns:
-            User ID if created, None if skipped or failed
-        """
-        # Use ENV password if not provided
+        """Seed a complete profile. Creates auth user if needed, updates incomplete profiles."""
         if password is None:
             password = config.SEED_USER_PASSWORD
 
-        # Step 1: Check if email already exists (quick check before auth API call)
-        if self.email_exists(profile_data["email"]):
-            print(
-                f"{Fore.YELLOW}  ⚠️  Email exists, skipping: {profile_data['email']}{Style.RESET_ALL}"
+        email = profile_data["email"]
+
+        # Check if this email has an existing INCOMPLETE profile that needs updating
+        if email in self.existing_emails:
+            # Find the existing user_id for this email
+            existing = self.http.get(
+                f"{config.SUPABASE_REST_URL}/profiles?select=id,onboarding_completed&email=eq.{email}",
+                headers=config.API_HEADERS,
             )
+            existing_data = (existing.json() or [])
+            if existing_data:
+                existing_id = existing_data[0]["id"]
+                is_complete = existing_data[0].get("onboarding_completed", False)
+
+                if not is_complete:
+                    # Incomplete profile — update it with full data, no new auth user needed
+                    print(f"{Fore.CYAN}  → Updating incomplete profile: {email}{Style.RESET_ALL}")
+                    profile_ok = self.create_profile(existing_id, profile_data)
+                    if profile_ok:
+                        self.create_skills(existing_id, profile_data["skills"])
+                        self.create_interests(existing_id, profile_data["interests"])
+                        self.create_experiences(existing_id, profile_data["experiences"])
+                        self.create_projects(existing_id, profile_data["projects"])
+                        self.created_user_ids.append(existing_id)
+                        return existing_id
+                    return None
+                else:
+                    # Already complete — skip
+                    print(
+                        f"{Fore.YELLOW}  ⚠️  Complete profile exists, skipping: {email}{Style.RESET_ALL}"
+                    )
+                    self.stats["skipped_email_exists"] += 1
+                    return None
+
+            # Email in our cache but profile not found (deleted?) — skip
             self.stats["skipped_email_exists"] += 1
             return None
 
-        # Step 2: Create auth user
+        # Brand new user — create auth user first
         user_id = self.create_auth_user(
-            email=profile_data["email"],
+            email=email,
             password=password,
             full_name=profile_data["full_name"],
         )
@@ -395,14 +463,11 @@ class ProfilesSeeder:
         if not user_id:
             return None
 
-        # Step 3: Create profile (skip if exists)
+        # Create/update profile
         profile_ok = self.create_profile(user_id, profile_data)
-
-        # If profile already existed, skip related data (incremental seeding)
         if not profile_ok:
             return None
 
-        # Step 4-7: Create related data (skip if exists - 409 is OK)
         self.create_skills(user_id, profile_data["skills"])
         self.create_interests(user_id, profile_data["interests"])
         self.create_experiences(user_id, profile_data["experiences"])

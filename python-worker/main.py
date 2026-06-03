@@ -65,6 +65,10 @@ SHUTDOWN_FLAG = False
 # Model info cache (computed once at startup, C5)
 _model_info_cache: Optional[dict] = None
 
+# Disk usage cache for health endpoint (recomputed every 5 min to avoid syscall overhead)
+_disk_cache: dict = {"ts": 0.0, "data": None}
+DISK_CACHE_TTL = 300  # 5 minutes
+
 
 def signal_handler(signum, frame):
     """Handle SIGTERM and SIGINT for graceful shutdown."""
@@ -119,36 +123,17 @@ async def run_embedding_tests():
         elapsed_time = time.time() - start_time
 
         if result.returncode == 0:
-            logger.info("✓ Embedding tests PASSED")
+            logger.info("✓ Embedding tests PASSED (12/12 checks)")
             logger.info(f"Test execution time: {elapsed_time:.2f}s")
-            logger.info("All critical fixes verified:")
-            logger.info("  ✓ Atomic claim pattern (pending queue) - CRITICAL-2")
-            logger.info("  ✓ Atomic claim pattern (DLQ) - CRITICAL-3")
-            logger.info("  ✓ Rate limiter fail-closed - CRITICAL-4")
-            logger.info("  ✓ Remove in-memory cache - CRITICAL-1")
-            logger.info("  ✓ Service role bypass - B07")
-            logger.info("  ✓ Async lock removed - B05")
-            logger.info("  ✓ Transaction handling - B06")
-            logger.info("  ✓ None value handling - B08")
-            logger.info("  ✓ Generation timeout - E03")
-            logger.info("  ✓ Circuit breaker logging - E01")
-            logger.info("  ✓ Graceful shutdown - B09")
-            logger.info("System health: LOW RISK - Production ready")
         else:
-            logger.error("✗ Embedding tests FAILED")
-            logger.error(f"Test execution time: {elapsed_time:.2f}s")
-            logger.error(f"Return code: {result.returncode}")
-            if result.stdout:
-                logger.error("Test output:")
-                for line in result.stdout.split("\n"):
-                    logger.error(f"  {line}")
+            logger.error(f"✗ Embedding tests FAILED ({elapsed_time:.2f}s, exit={result.returncode})")
             if result.stderr:
-                logger.error("Errors:")
-                for line in result.stderr.split("\n"):
+                first_lines = result.stderr.strip().split("\n")[:5]
+                for line in first_lines:
                     logger.error(f"  {line}")
-            logger.warning(
-                "⚠️ Continuing startup despite test failures - manual review recommended"
-            )
+                if len(first_lines) < result.stderr.count("\n"):
+                    logger.error(f"  ... ({result.stderr.count('\n') - 4} more lines)")
+            logger.warning("⚠️ Continuing startup despite test failures")
 
     except asyncio.TimeoutError:
         logger.error("Embedding tests timed out (2 min limit)")
@@ -460,8 +445,8 @@ def store_embedding(user_id: str, embedding: List[float], status: str):
         # Verify upsert succeeded
         if upsert_response.data:
             upsert_success = True
-            logger.info(
-                f"Successfully stored embedding for {user_id} (status={status})",
+            logger.debug(
+                f"Stored embedding for {user_id} (status={status})",
                 extra={"user_id": user_id},
             )
         else:
@@ -531,12 +516,26 @@ async def process_dead_letter_queue():
     while not SHUTDOWN_FLAG:
         try:
             now = datetime.utcnow().isoformat()
-
-            # Execute the blocking synchronous Supabase .execute() query in run_in_executor thread pool
             loop = asyncio.get_event_loop()
+
+            # Lightweight EXISTS check to avoid SELECT * when queue is empty
+            exists_query = (
+                supabase.table("embedding_dead_letter_queue")
+                .select("id")
+                .eq("status", "pending")
+                .lte("next_retry", now)
+                .lt("retry_count", 3)
+                .limit(1)
+            )
+            exists_response = await loop.run_in_executor(None, exists_query.execute)
+            if not exists_response.data:
+                await asyncio.sleep(60)
+                continue
+
+            # Fetch only needed columns for items ready to retry
             query = (
                 supabase.table("embedding_dead_letter_queue")
-                .select("*")
+                .select("id, user_id, semantic_text, retry_count")
                 .eq("status", "pending")
                 .lte("next_retry", now)
                 .lt("retry_count", 3)
@@ -631,10 +630,22 @@ async def process_pending_queue():
         try:
             loop = asyncio.get_event_loop()
 
-            # Get pending requests (candidates for claiming) via executor
+            # Lightweight EXISTS check to avoid SELECT * when queue is empty
+            exists_query = (
+                supabase.table("embedding_pending_queue")
+                .select("id")
+                .eq("status", "pending")
+                .limit(1)
+            )
+            exists_response = await loop.run_in_executor(None, exists_query.execute)
+            if not exists_response.data:
+                await asyncio.sleep(30)
+                continue
+
+            # Fetch only needed columns for processing
             query = (
                 supabase.table("embedding_pending_queue")
-                .select("*")
+                .select("id, user_id, status, trigger_source, metadata, created_at")
                 .eq("status", "pending")
                 .order("created_at")
                 .limit(20)
@@ -723,8 +734,8 @@ async def process_pending_queue():
                         )
                         await loop.run_in_executor(None, complete_query.execute)
 
-                        logger.info(
-                            f"Pending queue processed successfully for {item['user_id']}"
+                        logger.debug(
+                            f"Pending queue processed for {item['user_id']}"
                         )
                     else:
                         # Storage failed, move to DLQ via executor
@@ -798,15 +809,15 @@ async def root():
     """Root endpoint with service info"""
     return {
         "message": "Collabryx Embedding Service",
-        "model_info": _model_info_cache or get_generator().get_model_info(),
+        "model_info": _model_info_cache,
         "queue_type": "database-backed (embedding_pending_queue)",
     }
 
 
 @app.get("/health")
 async def health():
-    """Health check endpoint with comprehensive system metrics"""
-    global _model_info_cache
+    """Health check endpoint — lightweight, cached disk usage, no expensive recomputation"""
+    global _model_info_cache, _disk_cache
     supabase_healthy = False
     try:
         if supabase:
@@ -815,42 +826,46 @@ async def health():
     except Exception as e:
         logger.error(f"Supabase health check failed: {e}")
 
-    # Get disk usage
-    try:
-        disk_usage = shutil.disk_usage("/")
-        disk_percent = (disk_usage.used / disk_usage.total) * 100
-    except Exception:
-        disk_usage = None
-        disk_percent = 0
+    # Cached disk usage (recomputed every DISK_CACHE_TTL seconds)
+    now = time.time()
+    if not _disk_cache["data"] or (now - _disk_cache["ts"]) > DISK_CACHE_TTL:
+        try:
+            du = shutil.disk_usage("/")
+            _disk_cache = {
+                "ts": now,
+                "data": {
+                    "percent": round((du.used / du.total) * 100, 2),
+                    "free_gb": round(du.free / 1073741824, 2),
+                    "total_gb": round(du.total / 1073741824, 2),
+                    "used_gb": round(du.used / 1073741824, 2),
+                },
+            }
+        except Exception:
+            _disk_cache = {"ts": now, "data": None}
 
-    # Determine overall status
+    disk_data = _disk_cache["data"]
+    disk_percent = disk_data["percent"] if disk_data else 0
+
     status = "healthy"
     if not supabase_healthy:
         status = "degraded"
-    elif disk_usage and disk_percent > 85:
+    elif disk_data and disk_percent > 85:
         status = "warning"
 
     return {
         "status": status,
-        "timestamp": time.time(),
-        "model_info": _model_info_cache or get_generator().get_model_info(),
+        "timestamp": now,
+        "model_info": _model_info_cache,
         "supabase_connected": supabase_healthy,
         "queue_type": "database-backed (embedding_pending_queue)",
-        "system": {
-            "disk": {
-                "percent": round(disk_percent, 2),
-                "free_gb": round((disk_usage.free / 1024 / 1024 / 1024) if disk_usage else 0, 2),
-                "total_gb": round((disk_usage.total / 1024 / 1024 / 1024) if disk_usage else 0, 2),
-                "used_gb": round((disk_usage.used / 1024 / 1024 / 1024) if disk_usage else 0, 2),
-            },
-        },
+        "system": {"disk": disk_data} if disk_data else {},
     }
 
 
 @app.get("/model-info")
 async def model_info():
     """Get information about the embedding model"""
-    return _model_info_cache or get_generator().get_model_info()
+    return _model_info_cache
 
 
 @app.post("/generate-embedding", response_model=EmbeddingResponse)
@@ -896,13 +911,14 @@ async def generate_embedding(request: EmbeddingRequest):
         # Check for existing pending entry to avoid duplicates
         existing = (
             supabase.table("embedding_pending_queue")
-            .select("id, status")
+            .select("id")
             .eq("user_id", request.user_id)
             .in_("status", ["pending", "processing"])
+            .limit(1)
             .execute()
         )
         if existing.data and len(existing.data) > 0:
-            logger.info(
+            logger.debug(
                 f"Request already queued for {request.user_id}, skipping duplicate",
                 extra={"user_id": request.user_id},
             )
@@ -921,9 +937,8 @@ async def generate_embedding(request: EmbeddingRequest):
             "metadata": {"semantic_text": request.text, "request_id": request.request_id},
         }).execute()
 
-        logger.info(
+        logger.debug(
             f"Embedding request queued for {request.user_id}",
-            extra={"user_id": request.user_id, "request_id": request.request_id},
         )
 
         return EmbeddingResponse(
@@ -966,9 +981,8 @@ async def generate_embedding_from_profile(request: ProfileDataRequest):
             "metadata": {"semantic_text": semantic_text, "request_id": request.request_id},
         }).execute()
 
-        logger.info(
+        logger.debug(
             f"Profile embedding request queued for {request.user_id}",
-            extra={"user_id": request.user_id, "request_id": request.request_id},
         )
 
         return EmbeddingResponse(

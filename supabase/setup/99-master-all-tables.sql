@@ -663,13 +663,6 @@ CREATE INDEX IF NOT EXISTS idx_feed_thompson_params_post ON public.feed_thompson
 ALTER TABLE public.post_impressions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.feed_thompson_params ENABLE ROW LEVEL SECURITY;
 
--- RLS policies for post_impressions
-CREATE POLICY "Users can view own impressions" ON public.post_impressions FOR SELECT USING (user_id = auth.uid());
-CREATE POLICY "Service role can manage impressions" ON public.post_impressions FOR ALL USING ((auth.jwt() ->> 'role') = 'service_role');
-
--- RLS policies for feed_thompson_params
-CREATE POLICY "Service role can manage thompson params" ON public.feed_thompson_params FOR ALL USING ((auth.jwt() ->> 'role') = 'service_role');
-
 -- Add to realtime
 DO $$
 BEGIN
@@ -2440,6 +2433,22 @@ CREATE POLICY "Service role can manage platform analytics" ON public.platform_an
 CREATE POLICY "Service role can manage moderation logs" ON public.content_moderation_logs FOR ALL USING ((SELECT auth.jwt() ->> 'role') = 'service_role');
 
 CREATE POLICY "Admin users can view moderation logs" ON public.content_moderation_logs FOR SELECT USING ((SELECT auth.jwt() ->> 'role') IN ('service_role', 'admin'));
+
+-- ============================================================================
+-- SECTION 6.X: THOMPSON SAMPLING & MISSING TABLE RLS POLICIES
+-- ============================================================================
+-- NOTE: These tables are defined in Section 2.5 with inline RLS enablement,
+-- but their policies must be recreated here AFTER the DROP ALL loop at line 2086.
+
+-- post_impressions RLS
+CREATE POLICY "Users can view own impressions" ON public.post_impressions 
+  FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Service role can manage impressions" ON public.post_impressions 
+  FOR ALL USING ((auth.jwt() ->> 'role') = 'service_role');
+
+-- feed_thompson_params RLS
+CREATE POLICY "Service role can manage thompson params" ON public.feed_thompson_params 
+  FOR ALL USING ((auth.jwt() ->> 'role') = 'service_role');
 
 -- ============================================================================
 -- SECTION 7: REALTIME

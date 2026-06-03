@@ -80,7 +80,7 @@ class RateLimiter:
                     retry_after=self._calculate_retry_after(result["reset_at"]),
                 )
 
-                logger.info(
+                logger.debug(
                     f"Rate limit check for user {user_id}: allowed={rate_limit_result.allowed}, remaining={rate_limit_result.remaining}"
                 )
 
