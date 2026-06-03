@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { motion } from "framer-motion"
 import { UserPlus, Sparkles, MapPin, MessageSquare } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { startConversationAction } from "@/lib/actions/conversations.server"
 import { WhyMatchModal } from "./why-match-modal"
 import { GlassCard } from "@/components/shared/glass-card"
 import { MatchReasonBadge } from "@/components/ui/match-reason-badge"
@@ -68,6 +69,26 @@ export const MatchCard = React.memo(function MatchCard({ match, index = 0 }: Mat
     const [whyModalOpen, setWhyModalOpen] = useState(false)
     const [requestSent, setRequestSent] = useState(false)
     const [isSaved, setIsSaved] = useState(false)
+    const [messageLoading, setMessageLoading] = useState(false)
+
+    const handleMessage = async (e: React.MouseEvent) => {
+        e.stopPropagation()
+        if (messageLoading) return
+        setMessageLoading(true)
+        try {
+            const formData = new FormData()
+            formData.append("participant_id", match.profileId)
+            const result = await startConversationAction(formData)
+            if (result?.data?.id) {
+                router.push(`/messages/${result.data.id}`)
+            }
+        } catch {
+            // fallback: navigate to messages page if action fails
+            router.push(`/messages`)
+        } finally {
+            setMessageLoading(false)
+        }
+    }
 
     const isStrongMatch = match.compatibility >= 90
     const scoreColors = getScoreColorClasses(match.compatibility)
@@ -254,12 +275,10 @@ export const MatchCard = React.memo(function MatchCard({ match, index = 0 }: Mat
                                     variant="outline"
                                     size="icon"
                                     className="h-9 w-9 shrink-0"
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        router.push(`/messages`)
-                                    }}
+                                    onClick={handleMessage}
+                                    disabled={messageLoading}
                                 >
-                                    <MessageSquare className="h-3.5 w-3.5" />
+                                    <MessageSquare className={cn("h-3.5 w-3.5", messageLoading && "animate-pulse")} />
                                 </Button>
 
                                 <div className="shrink-0" onClick={(e) => e.stopPropagation()}>
