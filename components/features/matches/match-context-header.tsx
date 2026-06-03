@@ -1,28 +1,22 @@
 "use client"
 
-import { Sparkles } from "lucide-react"
+import { Sparkles, RefreshCw } from "lucide-react"
 import { motion } from "framer-motion"
-import { UpdatePreferencesDialog } from "./update-preferences-dialog"
+import { Button } from "@/components/ui/button"
 import { GlassCard } from "@/components/shared/glass-card"
+import { cn } from "@/lib/utils"
+import { glass } from "@/lib/utils/glass-variants"
 
 interface MatchContextHeaderProps {
-    preferences?: {
-        role?: string
-        industry?: string
-        type?: string
-    }
-    onUpdatePreferences?: (prefs: { role: string; industry: string; type: string }) => void
-    matchCount?: number
+    matchCount: number
+    isGenerating?: boolean
+    onGenerateMatches?: () => void
 }
 
 export function MatchContextHeader({
-    preferences = {
-        role: "CTO",
-        industry: "Fintech",
-        type: "Startup"
-    },
-    onUpdatePreferences,
-    matchCount = 0
+    matchCount = 0,
+    isGenerating = false,
+    onGenerateMatches
 }: MatchContextHeaderProps) {
     return (
         <motion.div
@@ -36,10 +30,7 @@ export function MatchContextHeader({
                     {/* Title and Match Count */}
                     <div className="flex items-center gap-3 sm:gap-4 min-w-0">
                         <h1 className="text-lg sm:text-xl md:text-2xl font-bold tracking-tight text-foreground shrink-0">
-                            <span className="hidden sm:inline">Matches for </span>
-                            <span className="text-primary">{preferences.role}</span>
-                            <span className="hidden sm:inline text-muted-foreground font-medium"> · </span>
-                            <span className="hidden sm:inline text-primary">{preferences.industry}</span>
+                            Matches
                         </h1>
                         <div className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary shrink-0">
                             <Sparkles className="mr-1.5 h-3 w-3" />
@@ -47,12 +38,22 @@ export function MatchContextHeader({
                         </div>
                     </div>
 
-                    {/* Update Preferences Icon Button */}
-                    <UpdatePreferencesDialog
-                        currentPreferences={preferences}
-                        onUpdate={(newPrefs) => onUpdatePreferences?.(newPrefs)}
-                        variant="icon"
-                    />
+                    {/* Generate More Matches Button */}
+                    {onGenerateMatches && (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className={cn(
+                                "h-9 text-xs font-medium shrink-0",
+                                glass("buttonPrimary")
+                            )}
+                            onClick={onGenerateMatches}
+                            disabled={isGenerating}
+                        >
+                            <RefreshCw className={cn("mr-1.5 h-3.5 w-3.5", isGenerating && "animate-spin")} />
+                            {isGenerating ? "Generating..." : "Generate More"}
+                        </Button>
+                    )}
                 </div>
             </GlassCard>
         </motion.div>
