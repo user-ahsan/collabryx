@@ -73,6 +73,11 @@ export default function BookmarksPage() {
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
 
+      // FIX: The original code typed `posts` as `BookmarkedPost[]` (array), but the
+      // Supabase join returns a SINGLE object (not an array). Spreading an array into
+      // an object literal produces `{0: elem0, 1: elem1, bookmark_created_at: ...}` which
+      // doesn't match `BookmarkedPost`. Changed the type to `BookmarkedPost` (singular)
+      // and added `as BookmarkedPost` to suppress the type widening from the spread.
       const mapped: BookmarkedPost[] = ((bookmarkData ?? []) as unknown as Array<{
         created_at: string
         posts: BookmarkedPost
