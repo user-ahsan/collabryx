@@ -77,8 +77,29 @@ export function AIMentorPreview() {
                     transition={{ duration: 0.6, delay: 0.3 }}
                     className="relative mx-auto max-w-3xl"
                 >
+                    {/*
+                        GLASS GLOW RESTORATION:
+                        This landing page chat preview previously used:
+                        "rounded-2xl border border-border bg-card shadow-2xl
+                        overflow-hidden"
+                        
+                        This rendered a plain card with no glass aesthetic —
+                        just a solid bg-card surface with a border. For a
+                        hero/demo section on the landing page, the chat
+                        preview should showcase the premium Collabryx glass
+                        aesthetic to set visual expectations for new users.
+                        
+                        Replaced with "glass-glow rounded-2xl" which:
+                        - Provides the full frosted glass background
+                        - Adds ambient blue glow shadow (more premium than
+                          generic shadow-2xl)
+                        - Renders decorative edge highlights via CSS ::after
+                        - Shows the dark-mode optimized variant
+                        - Creates visual continuity between the landing page
+                          demo and the actual app experience
+                    */}
                     {/* Chat Window */}
-                    <div className="rounded-2xl border border-border bg-card shadow-2xl overflow-hidden">
+                    <div className="glass-glow rounded-2xl">
                         {/* Chat Header */}
                         <div className="border-b border-border bg-muted/30 px-6 py-4">
                             <div className="flex items-center gap-3">

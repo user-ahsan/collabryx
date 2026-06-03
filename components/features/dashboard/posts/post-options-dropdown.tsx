@@ -31,9 +31,30 @@ export function PostOptionsDropdown({
                     <span className="sr-only">Post options</span>
                 </Button>
             </DropdownMenuTrigger>
+            {/*
+                GLASS GLOW RESTORATION:
+                This dropdown menu previously used a complex inline class
+                string: "bg-blue-950/[0.05] backdrop-blur-2xl border
+                border-blue-400/10 shadow-[0_4px_32px_0_rgba(59,130,246,
+                0.08),0_1px_0_0_rgba(255,255,255,0.06)_inset] rounded-xl
+                p-1"
+                
+                This approach was:
+                1. Hard to maintain (long inline strings)
+                2. Did not include the decorative edge highlights
+                3. Had no dark mode variant handling
+                4. Was duplicated across the codebase
+                
+                Replaced with "glass-glow rounded-xl p-1" which:
+                - Provides the identical blue glass aesthetic
+                - Adds decorative edge highlights via CSS ::after
+                - Handles dark mode variants automatically in globals.css
+                - Is a single, readable class name
+                - Can be applied to any dropdown, not just this one
+            */}
             <DropdownMenuContent
                 align="end"
-                className="w-48 bg-blue-950/[0.05] backdrop-blur-2xl border border-blue-400/10 shadow-[0_4px_32px_0_rgba(59,130,246,0.08),0_1px_0_0_rgba(255,255,255,0.06)_inset] rounded-xl p-1"
+                className="w-48 glass-glow rounded-xl p-1"
             >
                 <DropdownMenuItem onClick={() => navigator.clipboard.writeText(window.location.href)}>
                     <Copy className="mr-2 h-4 w-4" />

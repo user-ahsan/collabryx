@@ -255,13 +255,24 @@ export function RequestReminderModal({ className }: RequestReminderModalProps) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
+                {/* 
+                    GLASS GLOW RESTORATION:
+                    Previously rendered three separate <div> elements for:
+                    1. Top highlight streak (blue gradient line)
+                    2. Left edge highlight (blue gradient line)  
+                    3. Blue ambient tint overlay
+                    Plus inline classes: bg-blue-950/[0.05] backdrop-blur-2xl
+                    border border-blue-400/10
+                    
+                    These were deleted during a refactor. The glass-glow class
+                    now handles ALL of these via CSS ::before/::after pseudo-
+                    elements, eliminating the extra DOM nodes while restoring
+                    the full signature Collabryx glass aesthetic.
+                */}
                 <div className={cn(
-                    "relative rounded-xl md:rounded-2xl overflow-hidden bg-blue-950/[0.05] border border-blue-400/10 transition-all duration-500 cursor-pointer",
+                    "glass-glow glass-glow-hover rounded-xl md:rounded-2xl",
                     className
                 )}>
-                    <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-blue-300/30 to-transparent pointer-events-none" />
-                    <div className="absolute inset-y-0 left-0 w-px bg-gradient-to-b from-blue-300/20 via-transparent to-transparent pointer-events-none" />
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/[0.04] via-transparent to-indigo-500/[0.03] pointer-events-none" />
                     <CardContent className="p-3 md:p-5 relative z-10">
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                             <div className="flex items-center gap-3">

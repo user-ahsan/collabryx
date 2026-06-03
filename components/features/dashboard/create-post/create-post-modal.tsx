@@ -113,10 +113,29 @@ export function CreatePostModal() {
                     </div>
                 </div>
             </DialogTrigger>
+            {/*
+                GLASS GLOW RESTORATION:
+                This DialogContent previously used inline glass styling:
+                "bg-blue-950/[0.05] backdrop-blur-2xl"
+                which provided the frosted glass background but lacked the
+                decorative edge highlights and ambient tint overlay that
+                define the Collabryx glass aesthetic. Additionally, the
+                backdrop-blur-2xl on a dialog could cause visual artifacts
+                depending on what's behind it.
+                
+                Replaced with the "glass-glow" CSS class which:
+                - Provides the same blue-tinted frosted background
+                - Adds ::before ambient tint overlay
+                - Adds ::after top/left edge highlight streaks
+                - Uses backdrop-blur(24px) saturate(120%) for optimal
+                  glass depth without over-blurring dialog content
+                - Handles dark mode variants automatically
+                - Pairs with showDecorations for additional polish
+            */}
             <DialogContent 
                 className={cn(
                     "sm:max-w-[600px] p-0 gap-0 overflow-hidden sm:rounded-2xl",
-                    "bg-blue-950/[0.05] backdrop-blur-2xl"
+                    "glass-glow"
                 )}
                 showDecorations={true}
             >
