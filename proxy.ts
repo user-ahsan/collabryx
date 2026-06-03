@@ -112,42 +112,52 @@ export async function proxy(request: NextRequest) {
     // Tier 2: getUser() makes a network call — only call when we
     // need actual user data (email, profile checks). Avoid at all
     // costs for simple auth guards.
+    //
+    // NOTE: `user` is hoisted to function scope (let) so it's available
+    // for the public-auth-route redirect below (/login, /register).
+    // Those routes aren't in protectedRoutes, so isAuthRoute=false for them
+    // and the getUser() call here wouldn't fire without this guard.
     // ===========================================
-    if (isAuthenticated && isAuthRoute) {
-        const { data: { user } } = await supabase.auth.getUser()
+    let user: import("@supabase/supabase-js").User | null = null
 
-        // Email verification gate
-        const skipEmailVerification = process.env.SKIP_EMAIL_VERIFICATION === "true"
-        const emailNotConfirmed = user && !user.email_confirmed_at
+    if (isAuthenticated) {
+        const { data: { user: userData } } = await supabase.auth.getUser()
+        user = userData
 
-        if (!skipEmailVerification && emailNotConfirmed) {
-            if (!request.nextUrl.pathname.startsWith("/verify-email") && !request.nextUrl.pathname.startsWith("/auth-sync")) {
-                const url = request.nextUrl.clone()
-                url.pathname = "/verify-email"
-                const redirectResponse = NextResponse.redirect(url)
-                supabaseResponse.cookies.getAll().forEach(cookie => {
-                    redirectResponse.cookies.set(cookie.name, cookie.value)
-                })
-                return redirectResponse
+        if (isAuthRoute) {
+            // Email verification gate
+            const skipEmailVerification = process.env.SKIP_EMAIL_VERIFICATION === "true"
+            const emailNotConfirmed = user && !user.email_confirmed_at
+
+            if (!skipEmailVerification && emailNotConfirmed) {
+                if (!request.nextUrl.pathname.startsWith("/verify-email") && !request.nextUrl.pathname.startsWith("/auth-sync")) {
+                    const url = request.nextUrl.clone()
+                    url.pathname = "/verify-email"
+                    const redirectResponse = NextResponse.redirect(url)
+                    supabaseResponse.cookies.getAll().forEach(cookie => {
+                        redirectResponse.cookies.set(cookie.name, cookie.value)
+                    })
+                    return redirectResponse
+                }
             }
-        }
 
-        // Onboarding check (dev mode only — auth-sync handles production)
-        if (user && !request.nextUrl.pathname.startsWith("/onboarding") && !request.nextUrl.pathname.startsWith("/auth-sync") && isDevMode()) {
-            const { data: profile } = await supabase
-                .from("profiles")
-                .select("onboarding_completed")
-                .eq("id", user.id)
-                .single()
+            // Onboarding check (dev mode only — auth-sync handles production)
+            if (user && !request.nextUrl.pathname.startsWith("/onboarding") && !request.nextUrl.pathname.startsWith("/auth-sync") && isDevMode()) {
+                const { data: profile } = await supabase
+                    .from("profiles")
+                    .select("onboarding_completed")
+                    .eq("id", user.id)
+                    .single()
 
-            if (!profile || profile.onboarding_completed !== true) {
-                const url = request.nextUrl.clone()
-                url.pathname = "/onboarding"
-                const redirectResponse = NextResponse.redirect(url)
-                supabaseResponse.cookies.getAll().forEach(cookie => {
-                    redirectResponse.cookies.set(cookie.name, cookie.value)
-                })
-                return redirectResponse
+                if (!profile || profile.onboarding_completed !== true) {
+                    const url = request.nextUrl.clone()
+                    url.pathname = "/onboarding"
+                    const redirectResponse = NextResponse.redirect(url)
+                    supabaseResponse.cookies.getAll().forEach(cookie => {
+                        redirectResponse.cookies.set(cookie.name, cookie.value)
+                    })
+                    return redirectResponse
+                }
             }
         }
     }
