@@ -60,7 +60,7 @@
  */
 'use client'
 
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react'
 import { useAIStream } from '@/hooks/use-ai-stream'
 import { useAuth } from '@/hooks/use-auth'
 import { ChatList } from '@/components/features/assistant/chat-list'
@@ -68,24 +68,44 @@ import { ChatInput } from '@/components/features/assistant/chat-input'
 import { SessionSidebar } from '@/components/features/ai-mentor/session-sidebar'
 import { cn } from '@/lib/utils'
 import { glass } from '@/lib/utils/glass-variants'
-import { Lightbulb, Menu, X } from 'lucide-react'
+import { Lightbulb, Menu, X, Users } from 'lucide-react'
 import type { AIStructuredResponse, StartupIdeaAction } from '@/types/ai-responses'
 import { isAIStructuredResponse } from '@/types/ai-responses'
 
-export default function AIMentorContent() {
+interface AIMentorContentProps {
+  collaborateUserId?: string
+  startupContextParam?: string
+}
+
+export default function AIMentorContent({ collaborateUserId, startupContextParam }: AIMentorContentProps) {
   const { user } = useAuth()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
   const [refreshKey, setRefreshKey] = useState(0)
+  const [otherUserIds, setOtherUserIds] = useState<string[] | undefined>(
+    collaborateUserId ? [collaborateUserId] : undefined
+  )
+  const collabMessageSent = useRef(false)
 
   const { messages, isStreaming, sendMessage, error, sessionId } = useAIStream({
     userId: user?.id ?? '',
     sessionId: activeSessionId ?? undefined,
+    otherUserIds,
+    startupContext: startupContextParam ? JSON.parse(startupContextParam) : undefined,
     onSessionReady: (sid) => {
       setActiveSessionId(sid)
       setRefreshKey((k) => k + 1)
     },
   })
+
+  // Auto-send collaboration message when page loads with ?collaborate=userId
+  useEffect(() => {
+    if (collaborateUserId && user?.id && !collabMessageSent.current) {
+      collabMessageSent.current = true
+      const collaborationMessage = `I want to collaborate with this person. Give me 3 detailed startup ideas we could build together based on our combined skills and interests. For each idea, include a niche_score breakdown with overall, market_fit, skill_match, feasibility, and uniqueness scores. Make each idea a proper startup plan with problem, solution, target market, and why_you_two sections.`
+      sendMessage(collaborationMessage)
+    }
+  }, [collaborateUserId, user?.id, sendMessage])
 
   // Session switching — reset when user picks a different session
   const handleSessionSelect = useCallback((sid: string) => {
@@ -165,12 +185,21 @@ export default function AIMentorContent() {
               {sidebarOpen ? <X className='h-4 w-4' /> : <Menu className='h-4 w-4' />}
             </button>
             <div className='rounded-full bg-primary/10 p-1.5'>
-              <Lightbulb className='h-4 w-4 text-primary' />
+              {collaborateUserId ? (
+                <Users className='h-4 w-4 text-primary' />
+              ) : (
+                <Lightbulb className='h-4 w-4 text-primary' />
+              )}
             </div>
-            <h1 className='text-lg font-semibold'>AI Mentor</h1>
+            <h1 className='text-lg font-semibold'>
+              {collaborateUserId ? 'Collaboration Studio' : 'AI Mentor'}
+            </h1>
           </div>
           <p className='text-xs md:text-sm text-muted-foreground mt-0.5'>
-            Get personalized startup ideas, collaboration advice, and general mentorship
+            {collaborateUserId
+              ? 'Brainstorming startup ideas to build together'
+              : 'Get personalized startup ideas, collaboration advice, and general mentorship'
+            }
           </p>
         </div>
 

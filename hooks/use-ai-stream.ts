@@ -50,6 +50,8 @@ import type { AIMessage } from '@/lib/rag/types'
 interface UseAIStreamOptions {
   userId: string
   sessionId?: string
+  otherUserIds?: string[]
+  startupContext?: Record<string, unknown>
   onChunk?: (chunk: string) => void
   onComplete?: (fullContent: string) => void
   onError?: (error: Error) => void
@@ -104,7 +106,9 @@ export function useAIStream(options: UseAIStreamOptions) {
           userId: options.userId,
           sessionId: sessionId || undefined,
           messages: [...messagesRef.current, userMessage],
-          query: content
+          query: content,
+          otherUserIds: options.otherUserIds,
+          startupContext: options.startupContext
         })
       })
 
