@@ -4,8 +4,6 @@ import { Sparkles, RefreshCw } from "lucide-react"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { GlassCard } from "@/components/shared/glass-card"
-import { cn } from "@/lib/utils"
-import { glass } from "@/lib/utils/glass-variants"
 
 interface MatchContextHeaderProps {
     matchCount: number
@@ -41,16 +39,13 @@ export function MatchContextHeader({
                     {/* Generate More Matches Button */}
                     {onGenerateMatches && (
                         <Button
-                            variant="outline"
+                            variant="default"
                             size="sm"
-                            className={cn(
-                                "h-9 text-xs font-medium shrink-0",
-                                glass("buttonPrimary")
-                            )}
+                            className="h-9 text-xs font-medium shrink-0 shadow-sm"
                             onClick={onGenerateMatches}
                             disabled={isGenerating}
                         >
-                            <RefreshCw className={cn("mr-1.5 h-3.5 w-3.5", isGenerating && "animate-spin")} />
+                            <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${isGenerating ? "animate-spin" : ""}`} />
                             {isGenerating ? "Generating..." : "Generate More"}
                         </Button>
                     )}
