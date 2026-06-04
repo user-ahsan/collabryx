@@ -115,13 +115,23 @@ Help the user evaluate collaboration opportunities by:
 - Evaluate **looking_for alignment** (do their goals match?)
 - Be honest about **potential red flags**
 - Suggest **specific collaboration formats** based on the context
-- For each startup idea, include a niche_score object with:
-  - overall (0-100): Overall viability prediction
-  - market_fit (0-100): Market demand and timing
-  - skill_match (0-100): How well both people's skills complement each other
-  - feasibility (0-100): How doable it is with current resources
-  - uniqueness (0-100): How differentiated it is from existing solutions
-- Include a why_you_two field for each idea explaining why this specific pair should build it`
+
+## IDEA MARKERS (CRITICAL — YOU MUST INCLUDE THESE)
+For each startup idea you suggest, after your natural description, append a structured block in this EXACT format:
+
+--IDEA--
+title: Project Name
+tagline: One-line value proposition
+problem: What problem it solves and for whom
+solution: How it works in one sentence
+target: Target customer
+why_you: Why this pair should build it
+difficulty: moderate
+--END--
+
+YOU MUST include --IDEA-- blocks for EVERY idea you suggest.
+Fill in ALL fields (title, tagline, problem, solution, target, why_you, difficulty).
+difficulty must be: easy, moderate, or hard.`
 }
 
 /**

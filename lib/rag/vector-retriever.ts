@@ -81,11 +81,18 @@ export async function retrieveContextFromVectorStore(
 
   const contexts = combineResults(vectorResults, keywordResults, vectorWeight, keywordWeight)
 
-  if (contexts.length === 0 && warnings.length === 0) {
+  // Filter out the current user from results to prevent profile duplication:
+  // - Vector search already excludes the current user via exclusion_user_id
+  // - Keyword search (BM25) indexes ALL profiles including the current user
+  // - Without this filter, the user's own profile appears in BOTH `profile`
+  //   and `retrieved_contexts`, creating duplicate context in the system prompt
+  const filtered = contexts.filter(ctx => ctx.metadata?.user_id !== userId)
+
+  if (filtered.length === 0 && warnings.length === 0) {
     warnings.push('No relevant context found for query')
   }
 
-  return { contexts, warnings }
+  return { contexts: filtered, warnings }
 }
 
 async function generateQueryEmbedding(query: string): Promise<number[]> {
