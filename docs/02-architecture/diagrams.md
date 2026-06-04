@@ -1,8 +1,8 @@
 # Architecture Diagrams
 
-**Last Updated:** 2026-06-03  
-**Version:** 1.1.0  
-**Changes:** Removed stale `Edge Functions` reference (replaced with `Server Actions`), fixed feature component list (removed `activity/`, added `search/`)
+**Last Updated:** 2026-06-05  
+**Version:** 1.2.0  
+**Changes:** Updated database schemas to align with 38-table production schema (added profile_visits and user_bookmarks; removed legacy connection_requests).
 
 Visual diagrams illustrating Collabryx system architecture, data flows, and component relationships.
 
@@ -346,19 +346,37 @@ erDiagram
     profiles ||--o{ conversations: participates
     profiles ||--o{ messages: sends
     profiles ||--o{ notifications: receives
+    profiles ||--o{ ai_mentor_sessions: has
+    profiles ||--o{ feed_scores: scored
+    profiles ||--o{ events: generates
+    profiles ||--o{ privacy_settings: configures
+    profiles ||--o{ theme_preferences: configures
+    profiles ||--o{ audit_logs: logs
+    profiles ||--o{ match_preferences: configures
+    profiles ||--o{ embedding_rate_limits: "rate limited"
+    profiles ||--o{ blocked_users: blocks
+    profiles ||--o{ profile_visits: viewer
+    profiles ||--o{ profile_visits: viewed
+    profiles ||--o{ user_bookmarks: bookmarks
     
+    posts ||--o{ post_attachments: has
     posts ||--o{ post_reactions: receives
     posts ||--o{ comments: contains
-    posts ||--o{ post_attachments: contains
+    posts ||--o{ feed_scores: "scored in"
+    posts ||--o{ feed_thompson_params: tracks
+    posts ||--o{ post_impressions: has
+    posts ||--o{ user_bookmarks: "referenced in"
     
     comments ||--o{ comment_likes: receives
+    comments ||--o{ comments: "replies (parent_id)"
     
-    connections }|--|| profiles : user_1
-    connections }|--|| profiles : user_2
+    connections }|--|| profiles : requester
+    connections }|--|| profiles : receiver
+    blocked_users }|--|| profiles : blocker
+    blocked_users }|--|| profiles : blocked
     
     conversations ||--o{ messages: contains
-    conversations }|--|| profiles : participant_1
-    conversations }|--|| profiles : participant_2
+    ai_mentor_sessions ||--o{ ai_mentor_messages: contains
     
     profile_embeddings ||--|| profiles : belongs_to
     embedding_dead_letter_queue ||--|| profiles : retry_for
@@ -374,17 +392,20 @@ graph TD
         embeddings[profile_embeddings]
     end
     
-    subgraph UserContent["User Content"]
+    subgraph UserContent["User Content & Extensions"]
         skills[user_skills]
         interests[user_interests]
         experiences[user_experiences]
         projects[user_projects]
+        visits[profile_visits]
+        bookmarks[user_bookmarks]
     end
     
     subgraph Social["Social Features"]
         posts[posts]
         comments[comments]
         connections[connections]
+        blocked[blocked_users]
     end
     
     subgraph Messaging["Messaging"]
@@ -394,11 +415,23 @@ graph TD
     
     subgraph Matching["Matching System"]
         scores[match_scores]
+        preferences[match_preferences]
+        activity[match_activity]
     end
     
     subgraph Reliability["Embedding Reliability"]
         dlq[embedding_dead_letter_queue]
         pending[embedding_pending_queue]
+        ratelimits[embedding_rate_limits]
+    end
+
+    subgraph Analytics["Analytics & ML"]
+        feedscores[feed_scores]
+        thompson[feed_thompson_params]
+        impressions[post_impressions]
+        events[events]
+        useranal[user_analytics]
+        platanal[platform_analytics]
     end
     
     profiles --> embeddings
@@ -407,6 +440,7 @@ graph TD
     profiles --> Messaging
     profiles --> Matching
     profiles --> Reliability
+    profiles --> Analytics
 ```
 
 ---

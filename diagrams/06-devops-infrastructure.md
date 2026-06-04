@@ -1,6 +1,6 @@
 # 🛠️ DevOps, Infrastructure & Local DX Diagrams
 
-> **Last Updated:** 2026-06-02  
+> **Last Updated:** 2026-06-05  
 > **Scope:** Local development environment, data seeding pipeline, and production deployment topology.
 
 ---
@@ -31,7 +31,7 @@ graph TB
         subgraph DenoRuntime["🔵 Runtime 2: Deno (Supabase CLI)"]
             D_Process["supabase start<br/>— Local Supabase stack"]
             D_Services["Services Emulated:<br/>• PostgreSQL 15 (port 54322)<br/>• Auth service (port 54321)<br/>• Realtime engine<br/>• Storage API (S3-compatible)<br/>• Edge Functions runtime"]
-            D_Migrations["supabase migration up<br/>• Applies 31 table schemas<br/>• Runs all RLS policies<br/>• Seeds test data"]
+            D_Migrations["supabase migration up<br/>• Applies 38 table schemas<br/>• Runs all RLS policies<br/>• Seeds test data"]
             D_Studio["supabase studio<br/>— Web UI at port 54323<br/>• Table browser<br/>• SQL editor<br/>• Auth user management"]
         end
 
@@ -91,7 +91,7 @@ graph TB
 
 The **Node.js runtime** runs Next.js 16 in development mode via `bun run dev`. It connects to the local Supabase instance (started by the Supabase CLI) and the Python worker (running in Docker). Hot Module Replacement (HMR) provides instant feedback on React component changes. Environment variables are loaded from `.env.local` using the `@/lib/config/env.ts` module which validates all required vars at startup.
 
-The **Deno runtime** (Supabase CLI) emulates the entire Supabase stack locally: PostgreSQL 15 on port 54322, Auth service on port 54321, Realtime engine, Storage API, and the Studio web UI on port 54323. Migrations are applied via `supabase migration up`, which runs the 31-table schema, 46+ functions, 100+ RLS policies, and trigger definitions.
+The **Deno runtime** (Supabase CLI) emulates the entire Supabase stack locally: PostgreSQL 15 on port 54322, Auth service on port 54321, Realtime engine, Storage API, and the Studio web UI on port 54323. Migrations are applied via `supabase migration up`, which runs the 38-table schema, 46+ functions, 100+ RLS policies, and trigger definitions.
 
 The **Python runtime** runs inside a Docker container built from `python-worker/Dockerfile`. The developer starts it via `bun run docker-up.mjs` (one of 8 Docker management scripts in `scripts/`), which builds the image if needed, starts the container, waits for the health check to pass, and prints the container status. The container connects to the local Supabase PostgreSQL instance using the `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` environment variables.
 
@@ -155,7 +155,7 @@ graph TB
 
 ### Seeding Architecture
 
-The seeder is a Python CLI (`scripts/seed-data/main.py`) that coordinates seeding across all 34 database tables. Its key architectural detail is the **dependency graph**: users must exist before embeddings (which reference profiles), profiles must exist before posts, posts before comments, users before connections, connections before messages.
+The seeder is a Python CLI (`scripts/seed-data/main.py`) that coordinates seeding across all 38 database tables. Its key architectural detail is the **dependency graph**: users must exist before embeddings (which reference profiles), profiles must exist before posts, posts before comments, users before connections, connections before messages.
 
 The embedding generation in Phase 3 is unique — rather than going through the asynchronous pending queue (which would require the Docker worker to be running), the seeder calls `SentenceTransformer.encode()` **directly** from the Python process. It constructs the same `semantic_text` format as the production pipeline, generates the 384-dimensional vector, and UPSERTs directly into `profile_embeddings`. This bypasses the queue system entirely, making seeding orders of magnitude faster while producing exactly the same vector quality.
 

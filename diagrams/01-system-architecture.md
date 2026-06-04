@@ -1,6 +1,6 @@
 # 🏗️ High-Level & System Architecture Diagrams
 
-> **Last Updated:** 2026-06-02  
+> **Last Updated:** 2026-06-05  
 > **Scope:** Macro-level architecture showing how Collabryx's multi-runtime stack interacts across presentation, logic, and data layers.
 
 ---
