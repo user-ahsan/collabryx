@@ -58,24 +58,28 @@ import type { Message } from '@/lib/ai/providers/base'
 import type { StartupContext } from '@/lib/rag/types'
 
 /**
- * Get or create a persistent AI mentor session for the authenticated user.
+ * Resolve the session for this request.
+ * - If clientSessionId is provided → verify it exists and belongs to user, return it
+ * - If clientSessionId is NOT provided → create a BRAND NEW session
+ *   (never reuse an old active session, as that causes history bleed)
  */
-async function getOrCreateSession(userId: string): Promise<{ id: string; title: string }> {
+async function resolveSession(userId: string, clientSessionId?: string): Promise<{ id: string; title: string }> {
   const supabase = await createClient()
 
-  // Try to get existing active session
-  const { data: existing } = await supabase
-    .from('ai_mentor_sessions')
-    .select('id, title')
-    .eq('user_id', userId)
-    .eq('status', 'active')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single()
+  // If client explicitly provided a session ID, use that session
+  if (clientSessionId) {
+    const { data: session } = await supabase
+      .from('ai_mentor_sessions')
+      .select('id, title')
+      .eq('id', clientSessionId)
+      .eq('user_id', userId)
+      .single()
 
-  if (existing) return existing
+    if (session) return session
+    // Session not found (invalid/expired) → fall through to create new
+  }
 
-  // Create new session
+  // No session ID provided → always create a new session
   const { data: created, error } = await supabase
     .from('ai_mentor_sessions')
     .insert({
@@ -125,7 +129,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { userId, sessionId: clientSessionId, messages, query, preferredProvider, otherUserIds, startupContext } = body
+    const { userId, sessionId: clientSessionId, messages, query, preferredProvider, otherUserIds, startupContext, files, mentionedUserIds } = body
 
     if (!userId) {
       return NextResponse.json({ error: 'userId is required' }, { status: 400 })
@@ -138,12 +142,38 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // === SESSION MANAGEMENT ===
-    // Get or create a real DB-backed session (ignore client-side random UUID)
-    const dbSession = await getOrCreateSession(userId)
+    // === FILE ATTACHMENT HANDLING ===
+    // If files are attached and the model doesn't support multimodal input,
+    // include them as text descriptions so the AI knows about them.
+    let fileContext = ''
+    if (files && Array.isArray(files) && files.length > 0) {
+      fileContext = files.map((f: { filename?: string; mediaType: string; url?: string }) => {
+        const filename = f.filename || 'unnamed file'
+        const type = f.mediaType || 'unknown'
+        const isImage = type.startsWith('image/')
+        const isText = type.startsWith('text/') || type === 'application/json'
+        if (isImage) {
+          return `[Attached Image: ${filename}]`
+        } else if (isText) {
+          return `[Attached File: ${filename} (${type})]`
+        } else {
+          return `[Attached File: ${filename} (${type})]`
+        }
+      }).join('\n')
+      console.log(`📎 ${files.length} file(s) attached in session`)
+    }
 
-      // Save the user message to DB
-    const userContent = query || messages?.[messages.length - 1]?.content || ''
+    // === SESSION MANAGEMENT ===
+    // Resolve session: use client-provided ID or create a new one
+    const dbSession = await resolveSession(userId, clientSessionId || undefined)
+
+      // Save the user message to DB (include file context if present)
+    let userContent = query || messages?.[messages.length - 1]?.content || ''
+    if (fileContext) {
+      userContent = userContent
+        ? `${userContent}\n\n${fileContext}`
+        : fileContext
+    }
     const savedUserMsg = await saveMessage(dbSession.id, 'user', userContent)
 
     // Auto-title from first user message (truncated to 60 chars)
@@ -178,13 +208,22 @@ export async function POST(request: NextRequest) {
       created_at: new Date().toISOString(),
     }))
 
+    // Merge explicitly passed otherUserIds with @mentioned user IDs
+    const allOtherUserIds: string[] = []
+    if (otherUserIds && Array.isArray(otherUserIds)) allOtherUserIds.push(...otherUserIds)
+    if (mentionedUserIds && Array.isArray(mentionedUserIds)) {
+      for (const id of mentionedUserIds) {
+        if (!allOtherUserIds.includes(id)) allOtherUserIds.push(id)
+      }
+    }
+
     // === RAG CONTEXT ASSEMBLY ===
     const { systemPrompt, warnings } = await assembleAndBuildPrompt({
       userId,
       query: query || '',
       sessionId: dbSession.id,
       messages: ragMessages,
-      otherUserIds: otherUserIds as string[] | undefined,
+      otherUserIds: allOtherUserIds.length > 0 ? allOtherUserIds : undefined,
       startupContext: startupContext as StartupContext | null | undefined,
     })
 
@@ -234,6 +273,40 @@ export async function POST(request: NextRequest) {
           if (fullResponse.trim()) {
             await saveMessage(dbSession.id, 'assistant', fullResponse)
           }
+
+          // === POST-STREAM ACTIONS (fire-and-forget) ===
+          // Send mention notifications to @mentioned users
+          if (mentionedUserIds && Array.isArray(mentionedUserIds) && mentionedUserIds.length > 0) {
+            const { data: sender } = await supabase
+              .from('profiles')
+              .select('display_name')
+              .eq('id', userId)
+              .single()
+
+            const senderName = sender?.display_name || 'Someone'
+            const sessionTitle = `ai-mentor-${dbSession.id}`
+
+            for (const mentionedId of mentionedUserIds) {
+              if (mentionedId === userId) continue // Don't notify self
+              // Fire notification (async, don't block)
+              fetch(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/notifications/send`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-csrf-token': 'internal' },
+                body: JSON.stringify({
+                  user_id: mentionedId,
+                  type: 'mention',
+                  content: `${senderName} mentioned you in a collaboration session`,
+                  actor_id: userId,
+                  actor_name: senderName,
+                  resource_type: 'conversation',
+                  resource_id: dbSession.id,
+                }),
+              }).catch(() => {})
+            }
+          }
+
+          // Fire-and-forget analytics heartbeat
+          supabase.rpc('record_heartbeat', { p_user_id: userId, p_ip_address: null }).then(() => {}, () => {})
 
           controller.enqueue(encoder.encode('data: [DONE]\n\n'))
           controller.close()
