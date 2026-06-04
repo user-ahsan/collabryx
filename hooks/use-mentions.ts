@@ -202,7 +202,7 @@ export function useMentions({ currentUserId }: UseMentionsOptions = {}) {
     }, 200) // 200ms debounce
 
     return newState
-  }, [mentionState.users])
+  }, [mentionState.users, currentUserId])
 
   /**
    * Insert a selected user mention into the textarea.

@@ -13,7 +13,7 @@
  */
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { cn } from '@/lib/utils'
 import { glass } from '@/lib/utils/glass-variants'
@@ -29,11 +29,6 @@ interface MentionPopoverProps {
 export function MentionPopover({ mentionState, onSelect, onDismiss }: MentionPopoverProps) {
   const [selectedIndex, setSelectedIndex] = useState(0)
   const listRef = useRef<HTMLDivElement>(null)
-
-  // Reset selection when results change
-  useEffect(() => {
-    setSelectedIndex(0)
-  }, [mentionState.users])
 
   // Handle keyboard events via a global listener
   useEffect(() => {
@@ -83,6 +78,12 @@ export function MentionPopover({ mentionState, onSelect, onDismiss }: MentionPop
   if (!mentionState.active) return null
   if (!mentionState.loading && mentionState.users.length === 0) return null
 
+  // Clamp selectedIndex to valid range at render time (pure computation, no side effects)
+  // Handles the edge case where users list shrinks and selectedIndex would be out of bounds
+  const validSelectedIndex = mentionState.users.length > 0
+    ? Math.min(selectedIndex, mentionState.users.length - 1)
+    : 0
+
   return (
     <div
       className={cn(
@@ -115,7 +116,7 @@ export function MentionPopover({ mentionState, onSelect, onDismiss }: MentionPop
               className={cn(
                 'w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors',
                 'hover:bg-accent/50',
-                index === selectedIndex && 'bg-accent'
+                index === validSelectedIndex && 'bg-accent'
               )}
               onMouseDown={(e) => {
                 e.preventDefault() // Prevent textarea blur

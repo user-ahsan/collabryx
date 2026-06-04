@@ -38,22 +38,26 @@ export default function AssistantContent() {
     const { user } = useAuth()
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
+    const [showStarters, setShowStarters] = useState(true)
 
     const { messages, isStreaming, sendMessage, error, sessionId, status, abort } = useAIStream({
         userId: user?.id ?? '',
         sessionId: activeSessionId ?? undefined,
         onSessionReady: (sid) => {
             setActiveSessionId(sid)
+            setShowStarters(false)
         },
     })
 
     const handleSessionSelect = (sid: string) => {
         setActiveSessionId(sid)
         setSidebarOpen(false)
+        setShowStarters(false)
     }
 
     const handleNewSession = () => {
         setActiveSessionId(null)
+        setShowStarters(true)
     }
 
     const effectiveSessionId = activeSessionId || sessionId
@@ -65,9 +69,10 @@ export default function AssistantContent() {
 
     const handleStarterClick = (desc: string) => {
         sendMessage(desc)
+        setShowStarters(false)
     }
 
-    const showStarterCards = messages.length === 0 && !activeSessionId && !isStreaming
+    const showStarterCards = showStarters && messages.length === 0 && !isStreaming
 
     return (
         <div className="flex flex-1 min-h-0">
@@ -131,8 +136,6 @@ export default function AssistantContent() {
                     sessionId={effectiveSessionId}
                     externalMessages={externalMessages}
                     isLoadingExternal={isStreaming}
-                    hasStarters={messages.length > 0}
-                    onToggleStarters={undefined}
                 />
 
                 {/* Bottom area: starter cards + input */}
@@ -165,7 +168,7 @@ export default function AssistantContent() {
 
                     <div className="p-4 md:p-5 max-w-3xl mx-auto">
                         <ChatErrorBoundary>
-                            <ChatInput isStreaming={isStreaming} onSend={sendMessage} status={status} onStop={abort} />
+                            <ChatInput onSend={sendMessage} status={status} onStop={abort} />
                         </ChatErrorBoundary>
                         <p className="text-[11px] text-center text-muted-foreground/60 mt-2.5 px-2">
                             AI can make mistakes. Consider checking important information.

@@ -31,7 +31,6 @@ import { cn } from '@/lib/utils'
 import { glass } from '@/lib/utils/glass-variants'
 
 interface ChatInputProps {
-  isStreaming?: boolean
   onSend: (
     content: string,
     files?: Array<{ url: string; mediaType: string; filename?: string }>,
@@ -42,7 +41,6 @@ interface ChatInputProps {
 }
 
 export function ChatInput({
-  isStreaming = false,
   onSend,
   status,
   onStop,
@@ -94,7 +92,7 @@ export function ChatInput({
 
   // Handle mention selection
   const handleMentionSelect = useCallback((user: { id: string; name: string; headline: string | null; avatar_url: string | null }) => {
-    const textarea = textareaRef.current || document.querySelector<HTMLTextAreaElement>('textarea[name="message"]')
+    const textarea = document.querySelector<HTMLTextAreaElement>('textarea[name="message"]')
     if (!textarea) return
 
     const { newText, newCursorPos } = insertMention(textarea.value, textarea.selectionStart, user)

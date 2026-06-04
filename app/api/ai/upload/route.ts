@@ -15,7 +15,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { sanitizeFileName, generateSecureFileName, FILE_SIZE_LIMITS } from '@/lib/utils/file-validation'
+import { sanitizeFileName, generateSecureFileName } from '@/lib/utils/file-validation'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30 // 30 seconds for uploads
@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
     const path = `chat/${user.id}/${secureName}`
 
     // Upload to post-media bucket
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from('post-media')
       .upload(path, buffer, {
         contentType: file.type,

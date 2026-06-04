@@ -47,7 +47,7 @@ export default function AIMentorContent({ collaborateUserId, startupContextParam
   const collabMessageSent = useRef(false)
   const sendMessageRef = useRef<((content: string) => Promise<void>) | null>(null)
 
-  const { messages, isStreaming, sendMessage, error, sessionId, status, abort } = useAIStream({
+  const { messages, isStreaming, sendMessage, error, sessionId } = useAIStream({
     userId: user?.id ?? '',
     sessionId: activeSessionId ?? undefined,
     otherUserIds,
@@ -59,13 +59,14 @@ export default function AIMentorContent({ collaborateUserId, startupContextParam
   })
 
   // Keep ref in sync so auto-send effect doesn't depend on sendMessage identity
-  sendMessageRef.current = sendMessage
+  useEffect(() => {
+    sendMessageRef.current = sendMessage
+  }, [sendMessage])
 
   // Auto-send collaboration message ONCE when page loads with ?collaborate=userId
   // This effect intentionally omits sendMessage from deps to avoid re-triggering
   // when the streaming hook recreates sendMessage after getting a session_id.
   // Using sendMessageRef.current ensures we always call the latest sendMessage.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (collaborateUserId && user?.id && !collabMessageSent.current) {
       collabMessageSent.current = true
@@ -82,6 +83,16 @@ export default function AIMentorContent({ collaborateUserId, startupContextParam
       trySend()
     }
   }, [collaborateUserId, user?.id])
+
+  // Manual re-extraction: forces the AI's last assistant response through
+  // the startup idea parser. Useful when --IDEA-- markers weren't generated.
+  const [manualExtractText, setManualExtractText] = useState<string | null>(null)
+
+  // Ideas-focused view mode — when active, hides chat and shows full-width cards
+  // Users can manually click "Extract ideas" to view parsed startup ideas.
+  // Auto-detection from --IDEA-- markers was intentionally removed (avoids setState-in-effect).
+  const [ideasMode, setIdeasMode] = useState(false)
+  const [ideasModeText, setIdeasModeText] = useState<string | null>(null)
 
   // Session switching — load messages for the selected session
   const handleSessionSelect = useCallback((sid: string) => {
@@ -117,15 +128,13 @@ export default function AIMentorContent({ collaborateUserId, startupContextParam
   }, [messages])
 
   const handleSuggestionClick = useCallback((s: string) => sendMessage(s), [sendMessage])
-  // Manual re-extraction: forces the AI's last assistant response through
-  // the startup idea parser. Useful when --IDEA-- markers weren't generated.
-  const [manualExtractText, setManualExtractText] = useState<string | null>(null)
   const handleExtractIdeas = useCallback(async () => {
     // First check streaming messages (from current session)
     const lastAssistant = [...messages].reverse().find(m => m.role === 'assistant')
     if (lastAssistant) {
       setManualExtractText(lastAssistant.content)
       setIdeasMode(true)
+      setIdeasModeText(lastAssistant.content)
       return
     }
     // Fallback: check DB-loaded messages if streaming hasn't happened yet
@@ -138,8 +147,10 @@ export default function AIMentorContent({ collaborateUserId, startupContextParam
             (m: { role: string }) => m.role === 'assistant'
           )
           if (lastDbAssistant) {
-            setManualExtractText((lastDbAssistant as { content: string }).content)
+            const content = (lastDbAssistant as { content: string }).content
+            setManualExtractText(content)
             setIdeasMode(true)
+            setIdeasModeText(content)
           }
         }
       } catch {
@@ -147,21 +158,6 @@ export default function AIMentorContent({ collaborateUserId, startupContextParam
       }
     }
   }, [messages, effectiveSessionId])
-
-  // Ideas-focused view mode — when active, hides chat and shows full-width cards
-  const [ideasMode, setIdeasMode] = useState(false)
-  const [ideasModeText, setIdeasModeText] = useState<string | null>(null)
-
-  // Detect --IDEA-- markers in the streaming response and switch to ideas mode
-  useEffect(() => {
-    if (!isStreaming && messages.length > 0) {
-      const lastMsg = messages[messages.length - 1]
-      if (lastMsg.role === 'assistant' && lastMsg.content.includes('--IDEA--')) {
-        setIdeasModeText(lastMsg.content)
-        setIdeasMode(true)
-      }
-    }
-  }, [isStreaming, messages])
 
   const handleIdeaAction = useCallback((ideaId: number, action: StartupIdeaAction) => {
     const m: Record<StartupIdeaAction, string> = {
@@ -320,7 +316,7 @@ export default function AIMentorContent({ collaborateUserId, startupContextParam
 
         <div className='border-t border-border/40 p-2 sm:p-3 md:p-4 bg-background/80 backdrop-blur-xl shrink-0'>
           <ChatErrorBoundary>
-            <ChatInput isStreaming={isStreaming} onSend={sendMessage} />
+            <ChatInput onSend={sendMessage} />
           </ChatErrorBoundary>
         </div>
       </div>

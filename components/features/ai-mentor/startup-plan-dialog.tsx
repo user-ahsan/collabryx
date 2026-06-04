@@ -20,12 +20,11 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { GlassCard } from '@/components/shared/glass-card'
 import { cn } from '@/lib/utils'
 import { glass } from '@/lib/utils/glass-variants'
-import { Loader2, X, Download, Copy, Sparkles, Lightbulb, TrendingUp, Target, Rocket, Users, BarChart3, ChevronRight, Check } from 'lucide-react'
+import { Loader2, X, Download, Copy, Sparkles, Lightbulb, Target, Rocket, Users, BarChart3, Check } from 'lucide-react'
 import type { StartupIdea } from '@/types/ai-responses'
 import { EnterprisePlanRenderer } from './enterprise-plan-renderer'
 

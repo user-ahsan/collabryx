@@ -38,10 +38,6 @@ interface ChatListProps {
   onRefresh?: () => void
   /** Increment to force a DB history reload */
   refreshKey?: number
-  /** Show toggle for starter cards when messages exist */
-  hasStarters?: boolean
-  /** Called when user toggles starter cards visibility */
-  onToggleStarters?: () => void
   userId?: string
 }
 
@@ -59,8 +55,6 @@ export function ChatList({
   onIdeaAction,
   onRefresh,
   refreshKey = 0,
-  hasStarters,
-  onToggleStarters,
   userId,
 }: ChatListProps) {
   const [messages, setMessages] = useState<AIMessage[]>([])
@@ -136,7 +130,6 @@ export function ChatList({
     load()
 
     return () => { cancelled = true }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, refreshKey])
 
   // Trigger a DB history reload when streaming completes, so streamed messages
@@ -180,7 +173,6 @@ export function ChatList({
   // Uses ref-based comparison (no deps array) because the dependency would
   // be a changing object value that React forbids in deps arrays.
   // The ref short-circuit prevents redundant scrolls on unrelated re-renders.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!isAtBottom || !scrollRef.current) return
     const lastMsg = combinedMessages[combinedMessages.length - 1]
@@ -249,15 +241,15 @@ export function ChatList({
                 <div className="grid grid-cols-1 gap-2 w-full pt-2">
                   <div className="flex items-center gap-2.5 rounded-lg bg-muted/30 px-3.5 py-2.5 text-left text-xs md:text-sm">
                     <Target className="h-4 w-4 text-primary shrink-0" />
-                    <span className="text-muted-foreground">"Find a co-founder for my startup"</span>
+                    <span className="text-muted-foreground">&ldquo;Find a co-founder for my startup&rdquo;</span>
                   </div>
                   <div className="flex items-center gap-2.5 rounded-lg bg-muted/30 px-3.5 py-2.5 text-left text-xs md:text-sm">
                     <Lightbulb className="h-4 w-4 text-primary shrink-0" />
-                    <span className="text-muted-foreground">"Give me startup ideas based on my skills"</span>
+                    <span className="text-muted-foreground">&ldquo;Give me startup ideas based on my skills&rdquo;</span>
                   </div>
                   <div className="flex items-center gap-2.5 rounded-lg bg-muted/30 px-3.5 py-2.5 text-left text-xs md:text-sm">
                     <Sparkles className="h-4 w-4 text-primary shrink-0" />
-                    <span className="text-muted-foreground">"Review my profile for improvements"</span>
+                    <span className="text-muted-foreground">&ldquo;Review my profile for improvements&rdquo;</span>
                   </div>
                 </div>
               </div>

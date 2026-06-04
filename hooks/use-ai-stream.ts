@@ -63,12 +63,6 @@ interface UseAIStreamOptions {
   onSessionReady?: (sessionId: string) => void
 }
 
-interface FileAttachment {
-  url: string
-  mediaType: string
-  filename?: string
-}
-
 /** Upload a file blob to the AI chat upload endpoint and return the public URL */
 export async function uploadChatFile(
   blobUrl: string,

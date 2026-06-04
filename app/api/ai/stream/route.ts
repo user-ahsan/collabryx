@@ -409,7 +409,6 @@ export async function POST(request: NextRequest) {
               .single()
 
             const senderName = sender?.display_name || 'Someone'
-            const sessionTitle = `ai-mentor-${dbSession.id}`
 
             for (const mentionedId of sanitizedMentionedIds) {
               if (mentionedId === userId) continue // Don't notify self
