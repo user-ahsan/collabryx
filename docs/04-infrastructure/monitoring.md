@@ -2,7 +2,7 @@
 
 Comprehensive monitoring strategy for Collabryx — covering frontend, backend, Python worker, database, and infrastructure.
 
-**Last Updated:** 2026-06-02
+**Last Updated:** 2026-06-05
 
 ---
 
@@ -28,10 +28,10 @@ The Collabryx monitoring stack observes five key systems:
 | System | Tech Stack | What We Monitor |
 |---|---|---|
 | **Frontend** | Next.js 16, React 19, Tailwind CSS v4 | Core Web Vitals, error boundaries, console errors |
-| **Backend** | Next.js API routes, Server Actions | Route errors, action failures, rate limit breaches |
-| **Python Worker** | FastAPI, Sentence Transformers | Health endpoint, queue depth, embedding success rate |
+| **Backend** | Next.js API routes, Server Actions | Route errors, action failures |
+| **Python Worker** | FastAPI, Sentence Transformers | Health endpoint, embedding success rate |
 | **Database** | PostgreSQL (Supabase) | Connection pool, slow queries, RLS performance |
-| **Infrastructure** | Vercel + Render + Docker | Deployment status, service uptime, container metrics |
+| **Infrastructure** | Docker | Container health, resource usage |
 
 ### Monitoring Philosophy
 
@@ -99,7 +99,6 @@ public componentDidCatch(error: Error, errorInfo: { componentStack: string }) {
 **Recommended:**
 - Replace direct `console.error` calls with a centralized `logger.error()` wrapper
 - Instrument the `window.onerror` and `window.onunhandledrejection` handlers
-- Integrate with Sentry or Datadog RUM (see [Error Tracking](#error-tracking))
 
 ```typescript
 // lib/utils/logger.ts
@@ -123,10 +122,7 @@ export const logger = {
 
 ### API Route Monitoring
 
-Next.js API routes are serverless functions on Vercel. Monitor via:
-
-- **Vercel Analytics** — request volume, duration, error rate (built-in with Vercel)
-- **Custom instrumentation** — wrap routes with timing middleware
+Monitor API routes via custom instrumentation to wrap with timing middleware:
 
 ```typescript
 // lib/utils/api-monitor.ts
@@ -199,8 +195,6 @@ The embedding service runs as a FastAPI application. It exposes a comprehensive 
     "device": "cpu"
   },
   "supabase_connected": true,
-  "queue_size": 3,
-  "queue_capacity": 100,
   "system": {
     "disk": {
       "percent": 45.2,
@@ -216,20 +210,6 @@ The embedding service runs as a FastAPI application. It exposes a comprehensive 
 - `healthy` — all systems operational
 - `degraded` — Supabase connection failed (core feature may still work)
 - `warning` — disk usage > 85%
-
-### Queue Size Monitoring
-
-The service uses an in-memory `asyncio.Queue` (max size 100):
-
-```python
-MAX_QUEUE_SIZE = 100
-request_queue = asyncio.Queue(maxsize=MAX_QUEUE_SIZE)
-```
-
-**Key metrics to track:**
-- **Current queue depth** — exposed via `/health` and `/`
-- **Queue full rate** — how often `503 Service Unavailable` is returned
-- **Average wait time** — time from queue entry to processing start
 
 ### Embedding Generation Success Rate
 
@@ -334,25 +314,10 @@ WHERE id = 'some-user-id';
 
 ## Infrastructure Monitoring
 
-### Vercel Deployment Status
+### Python Worker Health
 
-Monitor Vercel deployments for:
+The Python worker runs locally or via Docker. Key metrics:
 
-- **Build failures** — TypeScript errors, ESLint failures, build timeout
-- **Deployment duration** — should be < 3 minutes
-- **Preview deployments** — verify branch deployments succeed
-
-```bash
-# Check deployment status via CLI
-vercel list --all
-vercel inspect <deployment-url>
-```
-
-### Render Service Health (Python Worker)
-
-The Python worker deploys on Render. Key metrics:
-
-- **Service status** — `UP` / `DEGRADED` / `DOWN`
 - **Response time** — health endpoint should respond in < 500ms
 - **Memory usage** — model loading can spike memory; ensure < 80% of available
 - **CPU usage** — sustained > 90% indicates under-provisioning
@@ -379,13 +344,12 @@ docker logs embedding-service --tail 100
 
 ### Uptime Monitoring
 
-Use an external uptime checker (e.g., UptimeRobot, Better Uptime, or Vercel Status):
+Use an external uptime checker (e.g., UptimeRobot, Better Uptime):
 
 | Endpoint | Frequency | Expected Status |
 |---|---|---|
 | `https://collabryx.com` | 1 min | 200 |
 | `https://collabryx.com/api/health` | 1 min | 200 |
-| `https://embedding.collabryx.com/health` | 5 min | 200 (JSON) |
 
 ---
 
@@ -410,60 +374,6 @@ class ErrorBoundaryClass extends Component<Props, State> {
 - No user identification attached
 - No breadcrumbs or context
 
-### Suggested Sentry Integration Points
-
-If adding Sentry to the project:
-
-```typescript
-// components/shared/error-boundary.tsx (extended)
-import * as Sentry from '@sentry/nextjs'
-
-public componentDidCatch(error: Error, errorInfo: { componentStack: string }) {
-  Sentry.withScope(scope => {
-    scope.setExtras({ componentStack: errorInfo.componentStack })
-    scope.setUser({ id: currentUserId })
-    Sentry.captureException(error)
-  })
-}
-```
-
-**Files to instrument:**
-
-| File | What to Capture | Priority |
-|---|---|---|
-| `components/shared/error-boundary.tsx` | React render errors | High |
-| `lib/services/embeddings.ts` | Embedding API failures | High |
-| `lib/services/matches.ts` | Match generation errors | Medium |
-| `hooks/use-auth.ts` | Auth failures | High |
-| Server Actions (`app/*/actions.ts`) | Action failures | Medium |
-
-### Suggested Datadog Integration Points
-
-If using Datadog instead:
-
-1. **Datadog RUM** — frontend performance + errors
-2. **Datadog APM** — API route tracing
-3. **Datadog Logs** — centralized structured logging
-
-```typescript
-// lib/utils/datadog.ts (future)
-import { datadogRum } from '@datadog/browser-rum'
-
-datadogRum.init({
-  applicationId: process.env.NEXT_PUBLIC_DD_APPLICATION_ID!,
-  clientToken: process.env.NEXT_PUBLIC_DD_CLIENT_TOKEN!,
-  site: 'datadoghq.com',
-  service: 'collabryx',
-  env: process.env.NEXT_PUBLIC_VERCEL_ENV || 'development',
-  version: process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA,
-  sessionSampleRate: 100,
-  sessionReplaySampleRate: 20,
-  trackUserInteractions: true,
-  trackResources: true,
-  trackLongTasks: true,
-})
-```
-
 ---
 
 ## Alerting
@@ -472,9 +382,7 @@ datadogRum.init({
 
 | Alert | Condition | Severity | Response |
 |---|---|---|---|
-| **Embedding failure rate > 5%** | > 5% of generation requests fail in 5 min window | Critical | Check worker logs, DLQ |
-| **Queue backlog > 50 items** | Queue depth > 50 for > 2 minutes | Critical | Scale worker, check model |
-| **API error rate > 3%** | > 3% of API responses are 5xx in 5 min window | High | Check Vercel, Supabase |
+| **API error rate > 3%** | > 3% of API responses are 5xx in 5 min window | High | Check application, Supabase |
 | **Supabase connection failure** | Health check fails 3 consecutive times | Critical | Check Supabase status |
 | **Slow queries > 5s** | Any query takes > 5s to execute | Medium | Optimize with DBA review |
 | **Service downtime** | External uptime check fails > 2 min | Critical | Incident response |
@@ -483,12 +391,7 @@ datadogRum.init({
 
 ### Alert Channels
 
-| Severity | Channel | Example |
-|---|---|---|
-| Critical | Slack #alerts + PagerDuty | Embedding service down |
-| High | Slack #alerts | API error rate spike |
-| Medium | Slack #monitoring | DLQ needs review |
-| Low | Dashboard only | Bundle size increase |
+Currently, alerts are output to console and application logs. For production deployment, configure external notification channels (e.g., Slack, email) as needed.
 
 ### Runbook Links
 
@@ -572,7 +475,7 @@ class Logger {
       ...context,
     }
     
-    // Always output to console (Vercel captures stdout)
+    // Always output to console
     if (level === 'error') {
       console.error(JSON.stringify(entry))
     } else {
@@ -588,8 +491,7 @@ export const logger = new Logger('collabryx')
 
 **Currently:** Logs are visible through:
 
-- **Vercel Dashboard** — frontend and API route logs
-- **Render Dashboard** — Python worker logs
+- **Application logs** — frontend and API route logs
 - **`docker logs`** — if running locally
 
 **Recommended next step:** Use a log aggregation service:
@@ -615,59 +517,6 @@ The worker uses standard Python logging levels consistently:
 ---
 
 ## Performance Monitoring
-
-### Lighthouse CI
-
-Run Lighthouse as part of CI to prevent performance regressions:
-
-```bash
-# Install
-bun install -g @lhci/cli
-
-# Configure lighthouserc.js
-module.exports = {
-  ci: {
-    collect: {
-      url: ['https://collabryx.com'],
-      numberOfRuns: 3,
-    },
-    assert: {
-      assertions: {
-        'categories:performance': ['error', { minScore: 0.9 }],
-        'categories:accessibility': ['error', { minScore: 0.9 }],
-        'categories:best-practices': ['error', { minScore: 0.9 }],
-        'categories:seo': ['error', { minScore: 0.9 }],
-      },
-    },
-    upload: {
-      target: 'temporary-public-storage',
-    },
-  },
-}
-```
-
-```bash
-# Run in CI
-lhci autorun
-```
-
-### Bundle Size Tracking
-
-Track bundle size over time to catch regressions:
-
-```bash
-# Analyze bundle
-ANALYZE=true bun run build
-```
-
-**Key files to watch:**
-
-| Chunk | Current Target | Alert Threshold |
-|---|---|---|
-| `_app.js` (framework) | < 150 KB | > 200 KB |
-| Home page | < 100 KB | > 150 KB |
-| Dashboard page | < 200 KB | > 300 KB |
-| Vendor chunks | < 100 KB | > 150 KB |
 
 ### API Response Time Monitoring
 
@@ -712,9 +561,8 @@ FROM pg_statio_user_tables;
 
 | Metric | Budget | Measured By |
 |---|---|---|
-| Bundle size (initial) | < 150 KB | `next-bundle-analyzer` |
 | LCP | < 2.5s | Web Vitals |
-| TTFB | < 800ms | Vercel Analytics |
+| TTFB | < 800ms | Application logs |
 | API p95 response | < 1s | Application logs |
 | Embedding generation | < 5s | Worker logs |
 | Database query p95 | < 200ms | pg_stat_statements |
@@ -726,17 +574,14 @@ FROM pg_statio_user_tables;
 ### Pre-Launch
 
 - [ ] Core Web Vitals reporting initialized
-- [ ] Error boundary logs to external service
 - [ ] Python worker `/health` endpoint accessible externally
 - [ ] Uptime monitor configured for all services
-- [ ] Alert channels configured (Slack/PagerDuty)
 - [ ] Log aggregation service connected
 - [ ] Performance budgets documented and shared
 
 ### Ongoing
 
 - [ ] Review DLQ exhausted items weekly
-- [ ] Check bundle size on each PR via CI
 - [ ] Rotate alert on-call schedule
 - [ ] Update runbooks after each incident
 - [ ] Review slow query log monthly

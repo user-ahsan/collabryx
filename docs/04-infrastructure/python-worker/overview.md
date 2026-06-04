@@ -97,32 +97,6 @@ curl -X POST http://localhost:8000/generate-embedding \
 
 ## Deployment
 
-### Railway
-
-```bash
-# Install Railway CLI
-npm install -g @railway/cli
-
-# Login
-railway login
-
-# Initialize and deploy
-railway init
-railway up
-```
-
-**Environment Variables:**
-- `PORT`: 8000 (auto-set by Railway)
-- `PYTHON_VERSION`: 3.10
-
-### Render
-
-1. Create new **Web Service**
-2. Connect repository
-3. **Build Command**: `pip install -r requirements.txt`
-4. **Start Command**: `uvicorn main:app --host 0.0.0.0 --port $PORT`
-5. Set environment variables
-
 ### Docker
 
 ```bash
@@ -180,7 +154,7 @@ Model information.
 
 ### `POST /generate-embedding`
 
-Queue embedding generation. Rate limited to 3 requests per hour per user.
+Queue embedding generation.
 
 **Request:**
 ```json

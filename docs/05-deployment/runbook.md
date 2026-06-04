@@ -23,7 +23,6 @@ Step-by-step deployment procedures for Collabryx production and staging environm
 - [ ] `bun run build` passes with no errors
 - [ ] `bun run lint` passes with no errors
 - [ ] `bun run typecheck` passes
-- [ ] `bun run test` passes (all 750+ tests)
 - [ ] No `console.log` or debug statements in production code
 - [ ] No hardcoded secrets or API keys
 
@@ -105,7 +104,6 @@ Step-by-step deployment procedures for Collabryx production and staging environm
 - [ ] User login works
 - [ ] User registration works
 - [ ] Profile creation works
-- [ ] Match suggestions appear
 - [ ] Messaging works
 - [ ] AI mentor responds
 

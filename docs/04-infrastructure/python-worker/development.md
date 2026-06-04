@@ -1,7 +1,9 @@
 # Python Worker Development Guide
 
-**For:** Local development and testing  
+**For:** Local development  
 **Last Updated:** 2026-06-02
+
+> **Note:** The Python Worker is now focused exclusively on embedding generation using Sentence Transformers. All other worker services have been removed.
 
 ---
 
@@ -296,5 +298,5 @@ docker system prune -a --volumes
 
 ## Next Steps
 
-- [Deployment Guide](./deployment.md) - Deploy to Render or Railway
+- [Deployment Guide](./deployment.md) - Deploy with Docker
 - [Overview](./overview.md) - Service overview and API reference

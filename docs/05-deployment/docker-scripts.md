@@ -167,8 +167,7 @@ bun run docker:rebuild
 - ✅ HTTP health endpoint validation
 - ✅ JSON response parsing
 - ✅ Detailed service info display
-- ✅ Continuous monitoring mode
-- ✅ Success rate tracking
+
 
 ### docker-status.js
 
@@ -232,21 +231,6 @@ bun run docker:logs -- --timestamps
 
 # Check environment variables
 # Ensure .env file exists in python-worker/ directory
-```
-
-## 📊 Monitoring Dashboard
-
-For comprehensive monitoring, use these commands together:
-
-```bash
-# Terminal 1: Stream logs
-bun run docker:logs
-
-# Terminal 2: Monitor health
-bun run docker:health
-
-# Terminal 3: Check status periodically
-bun run docker:status
 ```
 
 ## 🔐 Environment Variables

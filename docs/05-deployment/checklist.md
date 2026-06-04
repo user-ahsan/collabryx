@@ -108,10 +108,6 @@ Complete checklist for deploying Collabryx to production.
   - [ ] Error boundaries working
   - [ ] Error logging configured
 
-- [ ] **Performance**
-  - [ ] Core Web Vitals monitoring
-  - [ ] Uptime monitoring configured
-
 ---
 
 ## Python Worker Deployment
@@ -193,13 +189,7 @@ Complete checklist for deploying Collabryx to production.
   - [ ] Strict-Transport-Security
   - [ ] Referrer-Policy
 
-- [ ] **Rate Limiting**
-  - [ ] API rate limits configured
-  - [ ] Server action limits active
-  - [ ] DDoS protection enabled
-
 - [ ] **Authentication**
-  - [ ] RLS policies tested
   - [ ] Session security verified
   - [ ] CSRF protection active
 
@@ -245,7 +235,6 @@ Complete checklist for deploying Collabryx to production.
 ### Go-Live Checklist
 
 - [ ] **Final Tests**
-  - [ ] All E2E tests passing
   - [ ] Lighthouse score > 90
   - [ ] No critical bugs
   - [ ] Team notified

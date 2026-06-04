@@ -28,7 +28,6 @@ Before deploying to production, ensure:
 - [ ] All hardcoded values moved to environment variables
 
 ### Testing
-- [ ] Manual testing completed on all major features
 - [ ] Tested on multiple browsers (Chrome, Firefox, Safari)
 - [ ] Mobile responsiveness verified
 - [ ] Error boundaries functional
@@ -36,7 +35,6 @@ Before deploying to production, ensure:
 ### Security
 - [ ] Environment variables properly configured
 - [ ] No secrets committed to Git
-- [ ] Supabase RLS policies enabled and tested
 - [ ] CORS configured correctly
 - [ ] Rate limiting implemented on API routes
 
@@ -47,7 +45,7 @@ Before deploying to production, ensure:
 - [ ] Core Web Vitals passing
 
 ### Database
-- [ ] All migrations tested
+
 - [ ] Backup strategy in place
 - [ ] RLS policies verified
 
@@ -101,7 +99,7 @@ The embeddings system requires:
 **Quick Deploy:**
 
 ```bash
-# Deploy Python Worker to Render/Railway
+# Deploy Python Worker
 cd python-worker
 docker-compose build
 docker push your-registry/collabryx-worker:latest
@@ -177,31 +175,7 @@ Vercel is built by the creators of Next.js and offers the best Next.js deploymen
 
 ---
 
-### Option 2: Render (for Python Worker)
-
-```yaml
-# render.yaml (project root)
-services:
-  - type: web
-    name: collabryx-worker
-    env: docker
-    dockerContext: ./python-worker
-    dockerfilePath: ./python-worker/Dockerfile
-    region: oregon
-    plan: standard
-    healthCheckPath: /health
-    envVars:
-      - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_SERVICE_ROLE_KEY
-        sync: false
-      - key: ALLOWED_ORIGINS
-        value: https://collabryx.com
-```
-
----
-
-### Option 3: Self-Hosted (VPS/Docker)
+### Option 2: Self-Hosted (VPS/Docker)
 
 #### Using Docker
 
@@ -346,9 +320,6 @@ Settings → Environment Variables → Add
 #### Docker
 Pass via `-e` flag or `.env` file with `docker-compose`
 
-#### Render
-Dashboard → Environment → Add Environment Variable
-
 ### Production Environment Variables
 
 ```env
@@ -395,7 +366,6 @@ The Python worker generates vector embeddings for semantic matching. Deploy befo
    ```
 
 2. **Deploy to platform:**
-   - **Render:** Push to container registry, deploy as web service
    - **Railway:** Connect GitHub, deploy from `python-worker/` directory
    - **VPS:** Run `docker-compose up -d`
 
@@ -459,7 +429,6 @@ sudo certbot --nginx -d yourdomain.com -d www.yourdomain.com
 
 Actual CI/CD configurations are in `.github/workflows/`:
 
-- `ci.yml` - Continuous integration (lint, typecheck, test)
 - `security.yml` - Security scanning
 
 These are automatically triggered on push and pull request events.
@@ -546,7 +515,6 @@ pm2 logs collabryx
 ### Checklist
 
 - [ ] Test all major features in production
-- [ ] Set up uptime monitoring
 - [ ] Configure backups
 - [ ] Document deployment process
 - [ ] Share deployment URLs with team
