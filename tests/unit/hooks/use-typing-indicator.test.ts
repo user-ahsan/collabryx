@@ -13,7 +13,10 @@ describe('useTypingIndicator (TC-069)', () => {
     on: ReturnType<typeof vi.fn>
     subscribe: ReturnType<typeof vi.fn>
     send: ReturnType<typeof vi.fn>
+    httpSend: ReturnType<typeof vi.fn>
     unsubscribe: ReturnType<typeof vi.fn>
+    finally: ReturnType<typeof vi.fn>
+    catch: ReturnType<typeof vi.fn>
   }
 
   beforeEach(() => {
@@ -30,7 +33,10 @@ describe('useTypingIndicator (TC-069)', () => {
         return mockChannel
       }),
       send: vi.fn(),
+      httpSend: vi.fn().mockResolvedValue({ success: true }),
       unsubscribe: vi.fn(),
+      finally: vi.fn((cb: () => void) => { cb(); return mockChannel }),
+      catch: vi.fn((cb: () => void) => { cb(); return mockChannel }),
     }
 
     mockSupabaseClient.channel = vi.fn().mockReturnValue(mockChannel)
@@ -64,12 +70,11 @@ describe('useTypingIndicator (TC-069)', () => {
         result.current.sendTypingEvent('conv-123')
       })
 
-      // Assert - channel.send should have been called with broadcast type
-      expect(mockChannel.send).toHaveBeenCalled()
-      const sendCallArgs = mockChannel.send.mock.calls[0][0]
-      expect(sendCallArgs.type).toBe('broadcast')
-      expect(sendCallArgs.event).toBe('typing')
-      expect(sendCallArgs.payload).toMatchObject({
+      // Assert - channel.httpSend should have been called with typing payload
+      expect(mockChannel.httpSend).toHaveBeenCalled()
+      const sendCallArgs = mockChannel.httpSend.mock.calls[0]
+      expect(sendCallArgs[0]).toBe('typing')
+      expect(sendCallArgs[1]).toMatchObject({
         conversation_id: 'conv-123',
         user_id: 'user-1',
         is_typing: true,
