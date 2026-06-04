@@ -22,7 +22,8 @@ import { GlassCard } from '@/components/shared/glass-card'
 import { cn } from '@/lib/utils'
 import type { AIStructuredResponse, StartupIdeaAction } from '@/types/ai-responses'
 import { getSessionHistory } from '@/lib/actions/ai-mentor'
-import type { AIMessage } from '@/lib/actions/ai-mentor'
+import type { AIMessage } from '@/lib/rag/types'
+import { getCache, setCache, CACHE_KEYS } from '@/lib/dashboard-cache'
 
 interface ChatListProps {
   sessionId: string | null
@@ -41,6 +42,7 @@ interface ChatListProps {
   hasStarters?: boolean
   /** Called when user toggles starter cards visibility */
   onToggleStarters?: () => void
+  userId?: string
 }
 
 const SUGGESTIONS = [
@@ -59,29 +61,93 @@ export function ChatList({
   refreshKey = 0,
   hasStarters,
   onToggleStarters,
+  userId,
 }: ChatListProps) {
   const [messages, setMessages] = useState<AIMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [isAtBottom, setIsAtBottom] = useState(true)
   const scrollRef = useRef<HTMLDivElement>(null)
   const lastStreamingContentRef = useRef<string>('')
+  /** Tracks session switches so old messages are cleared immediately */
+  const prevSessionIdRef = useRef(sessionId)
+  /** Tracks loading transitions (streaming complete → trigger DB refresh) */
+  const prevLoadingRef = useRef(isLoadingExternal)
 
   const lastExtIndex = externalMessages.length - 1
   const isStreamingLast = isLoadingExternal && lastExtIndex >= 0 && externalMessages[lastExtIndex].role === 'assistant'
 
-  // Load history from DB when session ID is available or refresh is triggered
+  // Load history from DB when session ID is available or refresh is triggered.
+  // When sessionId changes, immediately clear old messages to prevent flashing
+  // the previous session's content during async load (fixes session switch race).
   useEffect(() => {
-    if (!sessionId) { setMessages([]); return }
+    if (!sessionId) {
+      setMessages([])
+      setError(null)
+      prevSessionIdRef.current = null
+      return
+    }
+
+    const isSwitching = prevSessionIdRef.current !== sessionId
+    prevSessionIdRef.current = sessionId
+
+    if (isSwitching) {
+      setMessages([])
+      setError(null)
+    }
+
+    let cancelled = false
+    const sessionIdForLoad = sessionId
+    const cacheKey = `${CACHE_KEYS.SESSION_HISTORY_PREFIX}${sessionIdForLoad}`
+
+    // Load cached messages instantly (before server responds)
+    const cachedMessages = getCache<AIMessage[]>(cacheKey)
+    if (cachedMessages && cachedMessages.length > 0) {
+      setMessages(cachedMessages)
+      // Still show loading so user knows fresh data is coming
+    }
+
     const load = async () => {
       setIsLoading(true)
       try {
-        const r = await getSessionHistory(sessionId)
-        if (!r.error) { setMessages(r.data || []); onRefresh?.() }
-      } catch { /* fail silently */ } finally { setIsLoading(false) }
+        const r = await getSessionHistory(sessionIdForLoad)
+        if (cancelled) return // Stale response after session switch
+        if (!r.error) {
+          const serverData = r.data || []
+          setMessages(serverData)
+          // Update cache with fresh server data
+          setCache(cacheKey, serverData)
+        } else {
+          // If we have cached data, keep showing it (don't error)
+          if (!cachedMessages || cachedMessages.length === 0) {
+            setError('Failed to load chat history')
+          }
+        }
+      } catch {
+        if (cancelled) return
+        // If we have cached data, keep showing it (don't error)
+        if (!cachedMessages || cachedMessages.length === 0) {
+          setError('Failed to load chat history')
+        }
+      } finally {
+        if (!cancelled) setIsLoading(false)
+      }
     }
     load()
+
+    return () => { cancelled = true }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sessionId, refreshKey])
+
+  // Trigger a DB history reload when streaming completes, so streamed messages
+  // that have been persisted to the database are loaded with real IDs instead of
+  // remaining as transient "ext-" dedup entries.
+  useEffect(() => {
+    if (prevLoadingRef.current && !isLoadingExternal && onRefresh && sessionId) {
+      onRefresh()
+    }
+    prevLoadingRef.current = isLoadingExternal
+  }, [isLoadingExternal, onRefresh, sessionId])
 
   // Deduplicated merge of DB history + streaming messages
   // Strategy: DB messages are the source of truth. External messages that
@@ -157,6 +223,15 @@ export function ChatList({
           </div>
         )}
 
+        {/* Error state — failed to load history */}
+        {error && !isLoading && (
+          <div className="flex items-center justify-center h-full p-6">
+            <GlassCard className="max-w-md w-full p-6">
+              <p className="text-sm text-destructive text-center">{error}</p>
+            </GlassCard>
+          </div>
+        )}
+
         {/* Empty state — welcome card */}
         {!sessionId && !isLoadingExternal && !isLoading && !hasMessages && (
           <div className="flex items-center justify-center h-full p-6">
@@ -208,10 +283,13 @@ export function ChatList({
                 onSuggestionClick={onSuggestionClick}
                 onIdeaAction={onIdeaAction}
                 sessionId={sessionId || undefined}
+                userId={userId}
               />
             ))}
 
-            {/* Suggestion chips after messages (when not streaming) */}
+            {/* Suggestion chips after messages. Only when NOT streaming:
+                showing suggestions over an incomplete AI response would
+                confuse users — the AI needs to finish before offering actions. */}
             {!isLoadingExternal && onSuggestionClick && (
               <div className="pt-4">
                 <Suggestions>

@@ -49,6 +49,7 @@ import {
 } from '@/components/ai-elements/plan'
 import { Suggestions, Suggestion } from '@/components/ai-elements/suggestion'
 import { StartupPlanGenerator } from '@/components/features/ai-mentor/startup-plan-generator'
+import { MarkdownRenderer } from '@/components/shared/markdown-renderer'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -62,6 +63,7 @@ interface MessageBubbleProps {
   onSuggestionClick?: (suggestion: string) => void
   onIdeaAction?: (ideaId: number, action: StartupIdeaAction) => void
   sessionId?: string
+  userId?: string
 }
 
 /** Get a preview of reasoning steps from structured data */
@@ -80,7 +82,7 @@ function isPlanContent(steps: string[]): boolean {
   return steps.length >= 3
 }
 
-export function MessageBubble({ message, isStreaming, onSuggestionClick, onIdeaAction, sessionId }: MessageBubbleProps) {
+export function MessageBubble({ message, isStreaming, onSuggestionClick, onIdeaAction, sessionId, userId }: MessageBubbleProps) {
   const isAssistant = message.role === 'assistant'
   const [reasoningOpen, setReasoningOpen] = useState(isStreaming)
 
@@ -99,8 +101,9 @@ export function MessageBubble({ message, isStreaming, onSuggestionClick, onIdeaA
   const reasoningSteps = getReasoningSteps(structuredData)
   const hasReasoning = reasoningSteps.length > 0 && isStreaming
 
-  // Extract source URLs from content if present (simulated for demo)
-  const sourceUrls = displayContent.match(/https?:\/\/[^\s)]+/g)?.slice(0, 5) ?? []
+  // Extract source URLs from content, filtering out URLs inside code blocks to avoid false positives
+  const displayWithoutCodeBlocks = displayContent.replace(/```[\s\S]*?```/g, '')
+  const sourceUrls = displayWithoutCodeBlocks.match(/https?:\/\/[^\s)]+/g)?.slice(0, 5) ?? []
 
   return (
     <div className={cn(
@@ -179,15 +182,29 @@ export function MessageBubble({ message, isStreaming, onSuggestionClick, onIdeaA
             ? cn('bg-card/90 border border-border/40 text-card-foreground shadow-sm rounded-bl-md', glass('bubble'))
             : 'bg-primary/10 border border-primary/20 text-foreground rounded-br-md',
         )}>
-          <div className="whitespace-pre-wrap break-words overflow-x-auto">
-            {displayContent || (isStreaming ? '' : '...')}
-            {isStreaming && (
-              <span className="inline-block ml-0.5 w-1.5 h-3.5 bg-foreground/60 animate-pulse rounded-sm align-text-bottom" />
-            )}
-          </div>
+          {isAssistant ? (
+            <div className="break-words overflow-x-auto">
+              {isStreaming && !displayContent ? (
+                <span className="text-muted-foreground italic">Thinking...</span>
+              ) : displayContent ? (
+                <MarkdownRenderer content={displayContent} />
+              ) : (
+                <span className="text-muted-foreground/50 italic">...</span>
+              )}
+              {isStreaming && displayContent && (
+                <span className="inline-block ml-0.5 w-1.5 h-3.5 bg-foreground/60 animate-pulse rounded-sm align-text-bottom" />
+              )}
+            </div>
+          ) : (
+            /* User messages stay as plain text (no markdown) */
+            <div className="whitespace-pre-wrap break-words">
+              {displayContent}
+            </div>
+          )}
         </div>
 
-        {/* SOURCES — Citation links when URLs are detected */}
+        {/* SOURCES — Citation links for non-structured responses with detected URLs */}
+        {/* Only shown for plain-text responses (no structured data) and excludes URLs inside code blocks */}
         {isAssistant && sourceUrls.length > 0 && !structuredData && (
           <Sources>
             <SourcesTrigger count={sourceUrls.length} />
@@ -199,9 +216,16 @@ export function MessageBubble({ message, isStreaming, onSuggestionClick, onIdeaA
           </Sources>
         )}
 
-        {/* Startup idea cards — auto-detected from natural text via --IDEA-- markers or heuristics */}
-        {isAssistant && !isStreaming && displayContent.length > 20 && (
-          <StartupPlanGenerator text={displayContent} sessionId={sessionId} />
+        {/* Startup idea cards — shown for --IDEA-- markers in plain text or structuredData with ideas */}
+        {isAssistant && (
+          displayContent.includes('--IDEA--') || (structuredData?.ideas && structuredData.ideas.length > 0)
+        ) && (
+          <StartupPlanGenerator
+            text={displayContent}
+            sessionId={sessionId}
+            isStreaming={isStreaming}
+            userId={userId}
+          />
         )}
 
         {/* Structured data (idea cards, suggestions) rendered below assistant bubbles */}

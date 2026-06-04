@@ -26,7 +26,7 @@ import { MentionPopover } from '@/components/features/assistant/mention-popover'
 import { useMentions } from '@/hooks/use-mentions'
 import type { ChatStatus } from 'ai'
 import { Sparkles } from 'lucide-react'
-import { useCallback, useRef, useEffect, type ClipboardEventHandler } from 'react'
+import { useCallback, useRef, type ClipboardEventHandler } from 'react'
 import { cn } from '@/lib/utils'
 import { glass } from '@/lib/utils/glass-variants'
 
@@ -58,28 +58,9 @@ export function ChatInput({
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null)
 
-  // Suppress all file drag-and-drop on the nearest form (current model doesn't support images)
-  useEffect(() => {
-    const preventFileDrop = (e: DragEvent) => {
-      if (e.dataTransfer?.types?.includes('Files')) {
-        e.preventDefault()
-        e.stopPropagation()
-      }
-    }
-    // Target the form rendered by PromptInput inside this component tree
-    const form = document.querySelector('form')
-    if (!form) return
-    form.addEventListener('dragover', preventFileDrop, true)
-    form.addEventListener('drop', preventFileDrop, true)
-    return () => {
-      form.removeEventListener('dragover', preventFileDrop, true)
-      form.removeEventListener('drop', preventFileDrop, true)
-    }
-  }, [])
-
-  // Quick-fill button handler
+  // Quick-fill button handler — uses ref instead of DOM querySelector
   const handleQuickFill = useCallback(() => {
-    const textarea = document.querySelector<HTMLTextAreaElement>('textarea[name="message"]')
+    const textarea = textareaRef.current
     if (textarea) {
       const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
         window.HTMLTextAreaElement.prototype,
@@ -98,13 +79,16 @@ export function ChatInput({
   }, [checkForMention])
 
   // Textarea keydown handler
+  // NOTE: MentionPopover uses a document-level keydown listener (non-capture phase).
+  // This handler fires first (on the textarea), then the event bubbles to document
+  // where MentionPopover handles Enter to confirm the selected mention.
   const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     textareaRef.current = e.currentTarget
-    if (mentionState.active) {
-      if (e.key === 'Enter' && !e.shiftKey && mentionState.active && mentionState.users.length > 0) {
-        e.preventDefault()
-        return
-      }
+    if (mentionState.active && e.key === 'Enter' && !e.shiftKey) {
+      // Prevent form submission so MentionPopover can handle the Enter key
+      // to select the highlighted mention (via its document-level listener)
+      e.preventDefault()
+      return
     }
   }, [mentionState])
 
@@ -126,12 +110,14 @@ export function ChatInput({
     textarea.selectionEnd = newCursorPos
   }, [insertMention])
 
-  // Block file pastes (Ctrl+V of images) — current model doesn't support multimodal input
+  // Block image pastes (Ctrl+V of images) — current model doesn't support multimodal input
+  // Non-image file pastes (text, JSON, etc.) are allowed through
+  // TODO: Remove this limitation once AI model supports image input
   const handlePaste: ClipboardEventHandler<HTMLTextAreaElement> = useCallback((e) => {
     const items = e.clipboardData?.items
     if (!items) return
     for (const item of items) {
-      if (item.kind === 'file') {
+      if (item.kind === 'file' && item.type.startsWith('image/')) {
         e.preventDefault()
         return
       }

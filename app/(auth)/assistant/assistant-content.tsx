@@ -19,6 +19,7 @@
 import { useState, useMemo } from "react"
 import { ChatInput } from "@/components/features/assistant/chat-input"
 import { ChatList } from "@/components/features/assistant/chat-list"
+import { ChatErrorBoundary } from "@/components/features/assistant/chat-error-boundary"
 import { SessionSidebar } from "@/components/features/ai-mentor/session-sidebar"
 import { GlassCard } from "@/components/shared/glass-card"
 import { cn } from "@/lib/utils"
@@ -37,7 +38,6 @@ export default function AssistantContent() {
     const { user } = useAuth()
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const [activeSessionId, setActiveSessionId] = useState<string | null>(null)
-    const [showStarters, setShowStarters] = useState(true)
 
     const { messages, isStreaming, sendMessage, error, sessionId, status, abort } = useAIStream({
         userId: user?.id ?? '',
@@ -59,6 +59,13 @@ export default function AssistantContent() {
         setShowStarters(true)
     }
 
+    // Reset starters when user is in a fresh session (no messages, no active session)
+    useEffect(() => {
+        if (messages.length === 0 && !activeSessionId) {
+            setShowStarters(true)
+        }
+    }, [messages.length, activeSessionId])
+
     const effectiveSessionId = activeSessionId || sessionId
 
     const externalMessages = useMemo(() => messages.map((msg) => ({
@@ -77,12 +84,19 @@ export default function AssistantContent() {
         <div className="flex flex-1 min-h-0">
             {/* Session Sidebar */}
             {sidebarOpen && (
-                <SessionSidebar
-                    activeSessionId={effectiveSessionId}
-                    onSessionSelect={handleSessionSelect}
-                    onNewSession={handleNewSession}
-                    onClose={() => setSidebarOpen(false)}
-                />
+                <>
+                    {/* Mobile backdrop overlay */}
+                    <div
+                        className="fixed inset-0 z-20 bg-black/20 backdrop-blur-sm md:hidden"
+                        onClick={() => setSidebarOpen(false)}
+                    />
+                    <SessionSidebar
+                        activeSessionId={effectiveSessionId}
+                        onSessionSelect={handleSessionSelect}
+                        onNewSession={handleNewSession}
+                        onClose={() => setSidebarOpen(false)}
+                    />
+                </>
             )}
 
             {/* Main Chat Area */}
@@ -135,8 +149,8 @@ export default function AssistantContent() {
                 {/* Bottom area: starter cards + input */}
                 <div className="border-t border-border/40 bg-background/80 backdrop-blur-xl shrink-0">
                     {showStarterCards && (
-                        <div className="px-4 md:px-6 pt-4 md:pt-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-3xl mx-auto">
+                        <div className="px-3 sm:px-4 md:px-6 pt-3 sm:pt-4 md:pt-5 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 md:gap-3 max-w-3xl mx-auto">
                                 {STARTERS.map((s) => (
                                     <GlassCard
                                         key={s.title}
@@ -161,7 +175,9 @@ export default function AssistantContent() {
                     )}
 
                     <div className="p-4 md:p-5 max-w-3xl mx-auto">
-                        <ChatInput isStreaming={isStreaming} onSend={sendMessage} status={status} onStop={abort} />
+                        <ChatErrorBoundary>
+                            <ChatInput isStreaming={isStreaming} onSend={sendMessage} status={status} onStop={abort} />
+                        </ChatErrorBoundary>
                         <p className="text-[11px] text-center text-muted-foreground/60 mt-2.5 px-2">
                             AI can make mistakes. Consider checking important information.
                         </p>
