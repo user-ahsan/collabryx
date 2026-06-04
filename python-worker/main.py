@@ -106,6 +106,7 @@ from contextlib import asynccontextmanager
 
 
 from dotenv import load_dotenv
+from pathlib import Path
 from supabase import create_client, Client
 import httpx
 import ssl
@@ -114,7 +115,13 @@ from embedding_generator import get_generator, construct_semantic_text
 from rate_limiter import RateLimiter
 from embedding_validator import EmbeddingValidator
 
-load_dotenv()
+# Load root .env FIRST (always exists, has NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, etc.)
+# Then python-worker/.env SECOND (overrides for worker-specific values like SUPABASE_URL)
+# This ensures the worker can find ALL env vars regardless of working directory.
+_root_env = Path(__file__).resolve().parent.parent / ".env"
+if _root_env.exists():
+    load_dotenv(dotenv_path=_root_env, override=False)
+load_dotenv(override=False)  # python-worker/.env overrides
 
 # Configure structured JSON logging with explicit date format
 # Using a fixed format avoids locale-dependent date strings and ensures
@@ -154,7 +161,10 @@ logging.getLogger("httpcore").setLevel(logging.WARNING)
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 
 # Environment variables
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
+# SUPABASE_URL from python-worker/.env takes precedence.
+# Falls back to NEXT_PUBLIC_SUPABASE_URL from root .env (Next.js convention)
+# so the worker works correctly regardless of which working directory it starts from.
+SUPABASE_URL = os.environ.get("SUPABASE_URL") or os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
 SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(",")
 WORKER_API_KEY = os.getenv("WORKER_API_KEY")
