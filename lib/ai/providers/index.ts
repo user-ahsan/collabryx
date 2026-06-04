@@ -77,7 +77,7 @@ if (process.env.OPENAI_API_KEY && !registry.getAvailableProviders().includes('op
       apiKey: process.env.OPENAI_API_KEY,
       baseURL: 'https://api.openai.com/v1',
       model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
-      maxTokens: 4096,
+      maxTokens: parseInt(process.env.OPENAI_MAX_TOKENS || '8192', 10),
       temperature: 0.7,
       timeout: 60000,
     }),
@@ -92,7 +92,7 @@ if (process.env.ANTHROPIC_API_KEY && !registry.getAvailableProviders().includes(
     provider: new AnthropicNativeProvider({
       apiKey: process.env.ANTHROPIC_API_KEY,
       model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514',
-      maxTokens: 4096,
+      maxTokens: parseInt(process.env.ANTHROPIC_MAX_TOKENS || '8192', 10),
       temperature: 0.7,
       timeout: 60000,
     }),
