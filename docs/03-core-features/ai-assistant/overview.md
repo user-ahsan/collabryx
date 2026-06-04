@@ -90,7 +90,7 @@ The AI Mentor uses the **Universal AI Provider System** with priority-based fail
 }
 ```
 
-If the primary provider fails (timeout, rate limit, network error), the system automatically tries the next available provider in priority order. All providers are exhausted before returning an error.
+If the primary provider fails (timeout, network error), the system automatically tries the next available provider in priority order. All providers are exhausted before returning an error.
 
 ---
 

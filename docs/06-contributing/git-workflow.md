@@ -30,7 +30,6 @@ Git branching, committing, and pull request guidelines for Collabryx.
 | `docs/` | Documentation changes |
 | `refactor/` | Code refactoring |
 | `perf/` | Performance improvements |
-| `test/` | Adding or updating tests |
 | `chore/` | Build/config changes |
 
 ### Examples
@@ -42,7 +41,6 @@ fix/login-redirect-issue
 docs/update-readme
 refactor/component-structure
 perf/optimize-images
-test/add-unit-tests
 chore/update-dependencies
 
 # Bad
@@ -73,7 +71,6 @@ my-feature
 - `style` - Formatting (no code change)
 - `refactor` - Code refactoring
 - `perf` - Performance improvement
-- `test` - Adding tests
 - `chore` - Build/config changes
 
 ### Examples
@@ -85,7 +82,6 @@ fix(dashboard): resolve data loading race condition
 docs(readme): update installation instructions
 refactor(components): migrate to feature-based structure
 perf(images): implement lazy loading and WebP format
-test(hooks): add unit tests for useChat hook
 
 # Bad
 update stuff
@@ -212,7 +208,6 @@ git merge origin/main
 - Don't commit large files
 - Don't commit `.env` or secrets
 - Don't use vague commit messages
-- Don't skip testing
 - Don't force push to shared branches
 
 ---

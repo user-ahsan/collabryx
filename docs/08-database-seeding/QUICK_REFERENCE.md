@@ -17,7 +17,6 @@ python main.py --all
 python main.py --profiles
 python main.py --posts
 python main.py --connections
-python main.py --matches
 python main.py --conversations
 python main.py --messages
 python main.py --notifications
@@ -36,7 +35,6 @@ python main.py --list
 | `--profiles` | Seed user profiles |
 | `--posts` | Seed posts, comments, reactions |
 | `--connections` | Seed user connections |
-| `--matches` | Seed match suggestions |
 | `--conversations` | Seed conversations |
 | `--messages` | Seed messages in conversations |
 | `--notifications` | Seed notifications |

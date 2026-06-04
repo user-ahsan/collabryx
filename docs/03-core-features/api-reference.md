@@ -271,7 +271,6 @@ Streaming response with Server-Sent Events. Warnings about context assembly are 
 | 400 | `ValidationError` | Missing `userId` or invalid input |
 | 500 | `AllProvidersFailedError` | All registered providers failed |
 | 500 | `ProviderTimeoutError` | Provider request timed out |
-| 500 | `RateLimitError` | Provider rate limited |
 | 500 | `StreamingError` | Streaming-specific failure |
 
 #### `POST /api/chat`
@@ -364,23 +363,8 @@ All server actions follow consistent error format:
 | `AllProvidersFailedError` | All registered AI providers failed |
 | `ProviderConfigError` | Invalid provider configuration |
 | `StreamingError` | Streaming-specific failure |
-| `RateLimitError` | Provider rate limited (includes retry delay) |
 | `ProviderTimeoutError` | Provider request timed out |
 | `AIProviderError` | Generic provider error with provider name |
-
----
-
-## Rate Limiting
-
-Server actions are rate limited:
-
-- **Posts:** 10/hour
-- **Comments:** 30/hour
-- **Connections:** 20/hour
-- **Messages:** 60/hour
-- **AI Chat:** 10/minute
-
----
 
 ## Caching
 
@@ -482,7 +466,6 @@ For complete database schema, see:
 | `comments` | Post comments |
 | `connections` | User connections |
 | `notifications` | User notifications |
-| `match_suggestions` | AI match suggestions |
 | `ai_mentor_sessions` | AI chat sessions |
 | `ai_mentor_messages` | AI chat messages |
 

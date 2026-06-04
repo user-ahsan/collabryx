@@ -11,7 +11,7 @@ The Collabryx database seeder is a **modular, environment-driven system** that c
 - **Connections** between users (social graph)
 - **Match Suggestions** powered by AI matching
 - **Conversations & Messages** (real-time chat)
-- **Notifications** (activity feed)
+- **Notifications**
 - **AI Mentor Sessions** (mentoring conversations)
 - **Vector Embeddings** (semantic search via Python worker)
 
@@ -105,7 +105,6 @@ python main.py --posts
 | `SEED_PROFILES` | `true` | Enable/disable profile seeding |
 | `SEED_POSTS` | `true` | Enable/disable posts seeding |
 | `SEED_CONNECTIONS` | `true` | Enable/disable connections |
-| `SEED_MATCHES` | `true` | Enable/disable match suggestions |
 | `SEED_CONVERSATIONS` | `true` | Enable/disable conversations |
 | `SEED_MESSAGES` | `true` | Enable/disable messages |
 | `SEED_NOTIFICATIONS` | `true` | Enable/disable notifications |
@@ -119,7 +118,6 @@ python main.py --posts
 | `LIMIT_PROFILES` | `100` | Number of profiles to create |
 | `LIMIT_POSTS` | `300` | Number of posts to create |
 | `LIMIT_CONNECTIONS` | `500` | Number of connections |
-| `LIMIT_MATCHES_PER_USER` | `5` | Match suggestions per user |
 | `LIMIT_CONVERSATIONS` | `150` | Number of conversations |
 | `LIMIT_MESSAGES_PER_CONVERSATION` | `5,20` | Messages per conversation (min,max) |
 | `LIMIT_COMMENTS_PER_POST` | `3,8` | Comments per post (min,max) |
@@ -435,7 +433,6 @@ curl http://localhost:8000/health  # Verify
 SEED_PROFILES=true
 SEED_POSTS=true
 SEED_CONNECTIONS=true
-SEED_MATCHES=true
 SEED_CONVERSATIONS=true
 SEED_MESSAGES=true
 SEED_NOTIFICATIONS=true
@@ -449,7 +446,6 @@ SEED_EMBEDDINGS=true
 LIMIT_PROFILES=100
 LIMIT_POSTS=300
 LIMIT_CONNECTIONS=500
-LIMIT_MATCHES_PER_USER=5
 LIMIT_CONVERSATIONS=150
 LIMIT_MESSAGES_PER_CONVERSATION=5,20
 LIMIT_COMMENTS_PER_POST=3,8

@@ -8,7 +8,6 @@ Complete reference for all bun scripts and commands in Collabryx.
 
 - [Core Commands](#core-commands)
 - [Development Commands](#development-commands)
-- [Testing Commands](#testing-commands)
 - [Build Commands](#build-commands)
 - [Utility Commands](#utility-commands)
 - [Git Commands](#git-commands)
@@ -141,95 +140,6 @@ bun run perf:budget:ci
 - Used in CI pipelines
 - Fails the pipeline if budget is exceeded
 
----
-
-## Testing Commands
-
-**118 test files | 750+ test cases | 10 modules (TC-001→TC-100)**
-
-### `bun run test`
-
-Run the full Vitest test suite (unit + component + integration).
-
-```bash
-bun run test
-```
-
-**Details:**
-- Runs all `*.test.ts` and `*.test.tsx` files
-- Excludes E2E tests
-- Outputs results to console
-- Exits with error code on failure
-
-### `bun run test:e2e`
-
-Run Playwright E2E browser tests.
-
-```bash
-bun run test:e2e
-```
-
-**Details:**
-- Chromium browser
-- Auto-starts dev server
-- Screenshots on failure
-- CI retries (2x)
-
----
-
-### Module-Specific Commands
-
-```bash
-# Module 1: Environment & CLI (TC-001→010)
-bun run test -- --run tests/scripts/ tests/unit/lib/env-validation.test.ts tests/integration/environment/ tests/integration/seeder/
-
-# Module 2: Auth & Security (TC-011→020)
-bun run test -- --run tests/unit/auth/ tests/unit/lib/auth-rate-limit.test.ts tests/components/features/auth/ tests/integration/auth/
-
-# Module 3: User Profiling (TC-021→030)
-bun run test -- --run tests/unit/actions/profile-actions.test.ts tests/unit/settings-validation.test.ts tests/integration/profile/ tests/components/features/onboarding/ tests/components/features/profile/ tests/components/features/dashboard/profile-card.test.tsx
-
-# Module 4: UI & Accessibility (TC-031→040)
-bun run test -- --run tests/components/ui/ tests/components/shared/ tests/integration/ui/
-
-# Module 5: Vector Embedding (TC-041→050)
-bun run test -- --run tests/unit/lib/embedding-* tests/integration/embeddings/
-
-# Module 6: Semantic Matching (TC-051→060)
-bun run test -- --run tests/unit/services/match-* tests/unit/services/feed-scorer.ts (native TS scoring) tests/components/features/matches/ tests/integration/matches/
-
-# Module 7: Real-Time Networking (TC-061→075)
-bun run test -- --run tests/unit/hooks/use-connection* tests/unit/hooks/use-messages* tests/unit/hooks/use-conversations* tests/unit/hooks/use-typing* tests/components/features/connections/ tests/components/features/messages/ tests/integration/realtime/ tests/integration/messaging/
-
-# Module 8: AI Mentor (TC-076→085)
-bun run test -- --run tests/unit/lib/prompt-injection.test.ts tests/unit/lib/ai/ tests/components/features/ai-mentor/ tests/integration/ai-mentor/
-
-# Module 9: Notifications & Moderation (TC-086→095)
-bun run test -- --run tests/unit/services/notification-engine (native TS) tests/unit/services/content-moderator* tests/components/shared/notification-item* tests/components/features/dashboard/posts/ tests/integration/notifications/ tests/integration/moderation/ tests/integration/analytics/
-
-# Module 10: System Integration (TC-096→100)
-bun run test -- --run tests/integration/edge-functions/ tests/integration/analytics/aggregator.test.ts && bun run test:e2e
-```
-
----
-
-### Watch & Coverage
-
-```bash
-# Watch mode (re-runs on file changes)
-bun run test -- --watch
-
-# Coverage report (text + HTML + JSON)
-bun run test -- --coverage
-
-# Run specific test file
-bun run test -- tests/unit/lib/sanitize.test.ts
-
-# Run specific test case by name pattern
-bun run test -- -t "RLS blocks"
-```
-
----
 
 ## Build Commands
 
@@ -282,7 +192,6 @@ git push origin feature/your-feature-name
 | `style` | Formatting, no code change |
 | `refactor` | Code refactoring |
 | `perf` | Performance improvement |
-| `test` | Adding tests |
 | `chore` | Build/config changes |
 
 ---
@@ -328,13 +237,6 @@ supabase gen types typescript --project-id your-project-id > types/database.type
 ```bash
 cd python-worker
 uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-### Run Tests
-
-```bash
-cd python-worker
-python test_embeddings.py
 ```
 
 ### Install Dependencies
@@ -410,7 +312,6 @@ Add to your shell config for convenience:
 # Add to ~/.bashrc or ~/.zshrc
 alias dev='bun run dev'
 alias build='bun run build'
-alias test='bun run test'
 alias lint='bun run lint'
 ```
 
@@ -420,7 +321,6 @@ alias lint='bun run lint'
 # Add to profile
 Set-Alias dev "bun run dev"
 Set-Alias build "bun run build"
-Set-Alias test "bun run test"
 ```
 
 ---
@@ -432,8 +332,6 @@ Set-Alias test "bun run test"
 | Start development | `bun run dev` |
 | Skip Docker check | `bun run dev:skip-docker` |
 | Build for production | `bun run build` |
-| Run tests | `bun run test` |
-| Run tests (CI) | `bun run test:ci` |
 | Type check | `bun run typecheck` |
 | Check code quality | `bun run lint` |
 | Docker up | `bun run docker:up` |
@@ -444,7 +342,7 @@ Set-Alias test "bun run test"
 
 ---
 
-**Last Updated**: 2026-06-02  
-**Version**: 2.0.0
+**Last Updated**: 2026-06-05  
+**Version**: 2.1.0
 
 [← Back to Docs](../README.md) | [Environment Variables →](./environment-variables.md)

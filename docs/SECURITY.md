@@ -9,7 +9,6 @@ Comprehensive security implementation across Collabryx platform.
 - [Security Layers](#security-layers)
 - [Bot Detection](#bot-detection)
 - [CSRF Protection](#csrf-protection)
-- [Rate Limiting](#rate-limiting)
 - [Input Validation](#input-validation)
 - [Database Security](#database-security)
 - [Best Practices](#best-practices)
@@ -24,7 +23,7 @@ Collabryx implements **5 layers of security**:
 |-------|------------|----------|
 | **1. Bot Detection** | Automated traffic filtering | `lib/bot-detection.ts` |
 | **2. CSRF Protection** | Cross-site request forgery prevention | `lib/csrf.ts` |
-| **3. Rate Limiting** | Request throttling | `lib/rate-limit.ts` |
+| **3. Rate Limiting** | Request throttling | Middleware |
 | **4. Input Validation** | Zod schemas + sanitization | `lib/validations/`, `lib/utils/sanitize.ts` |
 | **5. Database Security** | Row Level Security (RLS) | Supabase policies |
 
@@ -121,7 +120,7 @@ headers.set('Secure', 'true');
 
 ## Rate Limiting
 
-**File:** `lib/rate-limit.ts`
+Simple request-based throttling using middleware.
 
 ### Limits
 
@@ -130,40 +129,6 @@ headers.set('Secure', 'true');
 | **General API** | 100 requests | 15 minutes |
 | **Authentication** | 10 requests | 15 minutes |
 | **File Upload** | 5 requests | 1 minute |
-| **Embedding Generation** | 3 requests | 1 minute |
-
-### Implementation
-
-```typescript
-import { rateLimitMiddleware } from "@/lib/rate-limit";
-
-export async function POST(request: NextRequest) {
-  const limit = rateLimitMiddleware(request, {
-    limit: 100,
-    window: 15 * 60, // 15 minutes
-    identifier: request.ip // or user ID
-  });
-  
-  if (limit.exceeded) {
-    return NextResponse.json(
-      { 
-        error: "Rate limit exceeded",
-        retryAfter: limit.retryAfter
-      },
-      { status: 429 }
-    );
-  }
-  
-  // Process request
-  ...
-}
-```
-
-### Storage
-
-- **Backend:** Supabase `embedding_rate_limits` table
-- **Cleanup:** Automatic expiration
-- **Persistence:** Survives server restarts
 
 ---
 
@@ -339,7 +304,6 @@ headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 
 - [ ] No secrets in code
 - [ ] Environment variables configured
-- [ ] RLS policies tested
 - [ ] Input validation on all forms
 - [ ] Error messages don't leak info
 
@@ -349,7 +313,6 @@ headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 - [ ] Service role keys rotated regularly
 - [ ] Rate limiting active
 - [ ] Bot detection enabled
-- [ ] Monitoring configured
 
 ### Regular Audits
 
@@ -361,31 +324,16 @@ headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 
 ---
 
-## Monitoring & Alerts
+## Monitoring
 
 ### What to Monitor
 
 | Metric | Alert Threshold |
 |--------|-----------------|
 | Failed login attempts | >10/hour per IP |
-| Rate limit hits | >100/hour per IP |
 | Bot detection triggers | >50/hour |
 | CSRF validation failures | >20/hour |
 | Database errors | >10/hour |
-
-### Logging
-
-```typescript
-import { logger } from "@/lib/logger";
-
-// Security events
-logger.warn("security", {
-  event: "rate_limit_exceeded",
-  ip: request.ip,
-  endpoint: "/api/profile",
-  timestamp: new Date().toISOString()
-});
-```
 
 ---
 

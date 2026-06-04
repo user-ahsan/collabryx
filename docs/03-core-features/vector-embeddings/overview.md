@@ -424,27 +424,17 @@ WHERE created_at > NOW() - INTERVAL '30 days'
 
 ## Testing
 
-### Local Testing
-
-```bash
-# Test Python worker
-cd python-worker
-python test_embeddings.py
-
-# Expected output:
-# ✓ Model loaded successfully
-# ✓ Generated embedding: 384 dimensions
-# ✓ Similarity test passed
-```
-
 ### Integration Testing
 
 ```typescript
-// Test embedding generation
-const { data, error } = await supabase.functions.invoke('generate-embedding', {
-  body: { profile: testProfile }
+// Test embedding generation via API route
+const response = await fetch('/api/embeddings/generate', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ userId: testUserId })
 })
 
+const { data, error } = await response.json()
 expect(error).toBeNull()
 expect(data.embedding).toHaveLength(384)
 ```

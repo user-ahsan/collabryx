@@ -12,7 +12,7 @@
 | [🏗️ Getting Started](./01-getting-started/installation.md) | Installation, setup, and development workflow |
 | [🏛️ Architecture](./02-architecture/overview.md) | System design, tech stack, data flow |
 | [🎯 Core Features](./03-core-features/) | Matching, messaging, auth, AI assistant, embeddings |
-| [⚙️ Infrastructure](./04-infrastructure/) | Database, Python worker, monitoring, performance |
+| [⚙️ Infrastructure](./04-infrastructure/) | Database, Python worker, performance |
 | [🚀 Deployment](./05-deployment/overview.md) | Production deployment, runbook, docker |
 | [🤝 Contributing](./06-contributing/guide.md) | How to contribute, code standards, git workflow |
 | [📖 Reference](./07-reference/) | Environment variables, commands, troubleshooting |
@@ -48,7 +48,6 @@ docs/
 │   └── vector-embeddings/
 │       └── overview.md              # Vector similarity search & embeddings
 ├── 04-infrastructure/
-│   ├── monitoring.md                 # Monitoring strategy & alert rules
 │   ├── performance.md                # Performance optimization guide
 │   ├── database/
 │   │   ├── schema.md                # DB schema reference (38 tables)

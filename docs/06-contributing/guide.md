@@ -109,7 +109,6 @@ Branch naming conventions:
 - `docs/` - Documentation changes
 - `refactor/` - Code refactoring
 - `perf/` - Performance improvements
-- `test/` - Test additions or updates
 
 ### 3. Make Changes
 
@@ -132,7 +131,6 @@ bun run lint
 - [ ] Feature works as expected
 - [ ] No console errors
 - [ ] Responsive on mobile, tablet, desktop
-- [ ] Works in Chrome, Firefox, Safari
 - [ ] No TypeScript errors
 - [ ] Existing features still work
 
@@ -248,7 +246,6 @@ export const NoTypes = ({ title, onClose }) => {  // Missing types!
 components/features/
 ├── dashboard/
 │   ├── stats-card.tsx
-│   ├── recent-activity.tsx
 │   ├── quick-links.tsx
 │   └── index.ts
 ```
@@ -259,8 +256,6 @@ components/features/
 components/
 ├── cards/
 │   └── stats-card.tsx
-├── lists/
-│   └── recent-activity.tsx
 └── links/
     └── quick-links.tsx
 ```
@@ -324,7 +319,6 @@ We follow the [Conventional Commits](https://www.conventionalcommits.org/) speci
 - `style`: Formatting, missing semi-colons, etc. (no code change)
 - `refactor`: Code refactoring
 - `perf`: Performance improvement
-- `test`: Adding tests
 - `chore`: Updating build tasks, package manager configs, etc.
 
 ### Examples
@@ -372,7 +366,6 @@ update stuff
 Ensure your PR:
 - [ ] Follows coding standards
 - [ ] Includes descriptive commit messages
-- [ ] Has been tested manually
 - [ ] Builds successfully (`bun run build`)
 - [ ] Passes linting (`bun run lint`)
 - [ ] Updates documentation if needed
@@ -394,9 +387,7 @@ Brief description of what this PR does
 - Be specific and clear
 
 ## Testing
-- [ ] Tested on Chrome
-- [ ] Tested on Firefox
-- [ ] Tested on Safari
+- [ ] Tested on major browsers
 - [ ] Tested on mobile devices
 - [ ] Verified no console errors
 - [ ] Verified TypeScript compiles
@@ -562,7 +553,6 @@ bun outdated
    - Add comments for complex logic
 
 3. **Test thoroughly**
-   - Manual testing on multiple browsers
    - Consider edge cases
 
 4. **Ask for help**
