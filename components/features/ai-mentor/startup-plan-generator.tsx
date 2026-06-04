@@ -23,7 +23,7 @@
 import { useMemo } from 'react'
 import { StartupPlanCard } from './startup-plan-card'
 import { cn } from '@/lib/utils'
-import { Sparkles } from 'lucide-react'
+import { Sparkles, Loader2 } from 'lucide-react'
 
 interface ExtractedIdea {
   title: string
@@ -40,6 +40,10 @@ interface StartupPlanGeneratorProps {
   text: string
   sessionId?: string
   className?: string
+  /** When true, shows streaming indicator on the section header */
+  isStreaming?: boolean
+  /** Real authenticated user ID — passed down for enterprise plan generation */
+  userId?: string
 }
 
 /** Parse --IDEA-- markers from the AI response text */
@@ -132,7 +136,7 @@ function heuristicDetect(text: string): ExtractedIdea[] {
   return ideas
 }
 
-export function StartupPlanGenerator({ text, sessionId, className }: StartupPlanGeneratorProps) {
+export function StartupPlanGenerator({ text, sessionId, className, isStreaming, userId }: StartupPlanGeneratorProps) {
   const ideas = useMemo(() => {
     // First try structured markers
     const fromMarkers = extractIdeas(text)
@@ -142,20 +146,42 @@ export function StartupPlanGenerator({ text, sessionId, className }: StartupPlan
     return heuristicDetect(text)
   }, [text])
 
-  if (ideas.length === 0) return null
+  if (ideas.length === 0) {
+    // During streaming, show a loading hint that ideas are being extracted
+    if (isStreaming && text.length > 200) {
+      return (
+        <div className={cn('mt-3 flex items-center gap-2 text-xs text-muted-foreground/50', className)}>
+          <Loader2 className="h-3 w-3 animate-spin" />
+          <span>Extracting startup ideas...</span>
+        </div>
+      )
+    }
+    return null
+  }
 
   return (
     <div className={cn('mt-3 space-y-2', className)}>
       <div className="flex items-center gap-2 text-xs text-muted-foreground/70">
-        <Sparkles className="h-3.5 w-3.5 text-primary" />
-        <span>Startup Ideas — click to view full enterprise plan</span>
+        {isStreaming ? (
+          <>
+            <Loader2 className="h-3.5 w-3.5 text-primary animate-spin" />
+            <span>Startup Ideas — generating...</span>
+          </>
+        ) : (
+          <>
+            <Sparkles className="h-3.5 w-3.5 text-primary" />
+            <span>Startup Ideas — click to view full enterprise plan</span>
+          </>
+        )}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {ideas.map((idea, i) => (
           <StartupPlanCard
             key={`${idea.title}-${i}`}
-            idea={{ id: i + 1, ...idea }}
+            idea={{ id: i + 1, ...idea, actions: [] }}
             sessionId={sessionId}
+            isStreaming={isStreaming}
+            userId={userId}
           />
         ))}
       </div>

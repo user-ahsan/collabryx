@@ -20,20 +20,22 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from '@/components/ui/dialog'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { GlassCard } from '@/components/shared/glass-card'
 import { cn } from '@/lib/utils'
 import { glass } from '@/lib/utils/glass-variants'
 import { Loader2, X, Download, Copy, Sparkles, Lightbulb, TrendingUp, Target, Rocket, Users, BarChart3, ChevronRight, Check } from 'lucide-react'
 import type { StartupIdea } from '@/types/ai-responses'
+import { EnterprisePlanRenderer } from './enterprise-plan-renderer'
 
 interface StartupPlanDialogProps {
   idea: Omit<StartupIdea, 'id'> & { id?: number }
   open: boolean
   onOpenChange: (open: boolean) => void
   sessionId?: string
+  /** Real authenticated user ID — required for the streaming endpoint to pass auth */
+  userId?: string
 }
 
 const TEMPLATE_SECTIONS = [
@@ -44,17 +46,24 @@ const TEMPLATE_SECTIONS = [
   { id: 'gtm', icon: Rocket, label: 'Go-To-Market', color: 'text-rose-500' },
 ]
 
-export function StartupPlanDialog({ idea, open, onOpenChange, sessionId }: StartupPlanDialogProps) {
+export function StartupPlanDialog({ idea, open, onOpenChange, sessionId, userId }: StartupPlanDialogProps) {
   const [planContent, setPlanContent] = useState('')
   const [isStreaming, setIsStreaming] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const abortRef = useRef<AbortController | null>(null)
-  const contentRef = useRef<HTMLDivElement>(null)
-
   // Generate the full plan when dialog opens
   useEffect(() => {
     if (!open || !idea.title) return
+
+    // Reset all state
+    if (!userId) {
+      // userId not loaded yet — stay in loading state until it arrives
+      setIsStreaming(true)
+      setError(null)
+      setPlanContent('')
+      return
+    }
 
     setPlanContent('')
     setError(null)
@@ -73,11 +82,10 @@ export function StartupPlanDialog({ idea, open, onOpenChange, sessionId }: Start
           headers: { 'Content-Type': 'application/json' },
           signal,
           body: JSON.stringify({
-            userId: 'plan-generation', // System-level, not user-specific
+            userId,
             sessionId: sessionId || undefined,
             query: prompt,
             messages: [{ role: 'user', content: prompt }],
-            preferredProvider: 'openrouter',
             startupContext: {
               idea: idea.title,
               stage: 'idea',
@@ -132,18 +140,27 @@ export function StartupPlanDialog({ idea, open, onOpenChange, sessionId }: Start
 
     return () => {
       abortRef.current?.abort()
+      // Clear content immediately when dialog closes to prevent showing partial content briefly
+      setPlanContent('')
+      setError(null)
     }
-  }, [open, idea.title, sessionId])
-
-  // Auto-scroll to bottom as content streams
-  useEffect(() => {
-    if (contentRef.current && isStreaming) {
-      contentRef.current.scrollTop = contentRef.current.scrollHeight
-    }
-  }, [planContent, isStreaming])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, idea.title, sessionId, userId])
 
   const handleCopy = useCallback(async () => {
-    await navigator.clipboard.writeText(planContent)
+    try {
+      await navigator.clipboard.writeText(planContent)
+    } catch {
+      // Fallback for insecure contexts (HTTP) or older browsers
+      const textarea = document.createElement('textarea')
+      textarea.value = planContent
+      textarea.style.position = 'fixed'
+      textarea.style.opacity = '0'
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand('copy')
+      document.body.removeChild(textarea)
+    }
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }, [planContent])
@@ -161,7 +178,8 @@ export function StartupPlanDialog({ idea, open, onOpenChange, sessionId }: Start
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={cn(
-        'max-w-4xl w-[95vw] h-[85vh] max-h-[900px] p-0 gap-0',
+        'max-w-6xl w-[95vw] h-[90vh] max-h-[1000px] p-0 gap-0',
+        'pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]',
         glass('card'),
       )}>
         {/* Header */}
@@ -177,6 +195,9 @@ export function StartupPlanDialog({ idea, open, onOpenChange, sessionId }: Start
               <p className="text-xs text-muted-foreground truncate">
                 {idea.tagline || 'Enterprise-grade investment proposal'}
               </p>
+              <DialogDescription className="sr-only">
+                {idea.tagline || `Full enterprise plan for ${idea.title}`}
+              </DialogDescription>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -195,24 +216,8 @@ export function StartupPlanDialog({ idea, open, onOpenChange, sessionId }: Start
           </div>
         </div>
 
-        {/* Section navigation tabs */}
-        <div className="flex items-center gap-1 px-4 py-2 border-b border-border/20 bg-muted/10 overflow-x-auto shrink-0">
-          {TEMPLATE_SECTIONS.map((section) => (
-            <span
-              key={section.id}
-              className={cn(
-                'flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[10px] font-medium',
-                'text-muted-foreground/70 whitespace-nowrap',
-              )}
-            >
-              <section.icon className={cn('h-3 w-3', section.color)} />
-              {section.label}
-            </span>
-          ))}
-        </div>
-
-        {/* Content area */}
-        <ScrollArea ref={contentRef} className="flex-1 p-6">
+        {/* Content area — EnterprisePlanRenderer handles its own nav tabs + scrolling */}
+        <div className="flex-1 flex flex-col min-h-0">
           {isStreaming && !planContent && (
             <div className="flex flex-col items-center justify-center h-full gap-3">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -236,35 +241,15 @@ export function StartupPlanDialog({ idea, open, onOpenChange, sessionId }: Start
             </div>
           )}
 
-          {planContent && (
-            <div className="prose prose-sm dark:prose-invert max-w-none">
-              {planContent.split('\n').map((line, i) => {
-                if (line.startsWith('# ')) return <h1 key={i} className="text-xl font-bold mt-6 mb-2">{line.slice(2)}</h1>
-                if (line.startsWith('## ')) return <h2 key={i} className="text-lg font-semibold mt-5 mb-2 text-primary">{line.slice(3)}</h2>
-                if (line.startsWith('### ')) return <h3 key={i} className="text-base font-medium mt-4 mb-1">{line.slice(4)}</h3>
-                if (line.startsWith('---')) return <hr key={i} className="my-4 border-border/40" />
-                if (line.startsWith('- ')) return <li key={i} className="text-sm text-muted-foreground ml-4">{line.slice(2)}</li>
-                if (line.startsWith('> ')) return (
-                  <blockquote key={i} className="border-l-2 border-primary/30 pl-4 my-2 text-sm italic text-muted-foreground">
-                    {line.slice(2)}
-                  </blockquote>
-                )
-                if (line.startsWith('| ')) return (
-                  <pre key={i} className="text-xs font-mono text-muted-foreground/70 my-0.5">{line}</pre>
-                )
-                if (line.trim() === '') return <div key={i} className="h-2" />
-                return <p key={i} className="text-sm leading-relaxed text-foreground/90 my-1.5">{line}</p>
-              })}
-            </div>
-          )}
+          {planContent && <EnterprisePlanRenderer content={planContent} />}
 
           {isStreaming && planContent && (
-            <div className="flex items-center gap-2 mt-4 text-xs text-muted-foreground/60">
+            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 text-xs text-muted-foreground/60 bg-background/80 backdrop-blur-sm px-3 py-1.5 rounded-full border border-border/40">
               <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
               Generating...
             </div>
           )}
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   )

@@ -27,9 +27,11 @@ const difficultyConfig = {
 interface StartupPlanCardProps {
   idea: Omit<StartupIdea, 'id'> & { id?: number }
   sessionId?: string
+  isStreaming?: boolean
+  userId?: string
 }
 
-export function StartupPlanCard({ idea, sessionId }: StartupPlanCardProps) {
+export function StartupPlanCard({ idea, sessionId, isStreaming, userId }: StartupPlanCardProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const diff = difficultyConfig[idea.difficulty || 'moderate']
 
@@ -38,7 +40,10 @@ export function StartupPlanCard({ idea, sessionId }: StartupPlanCardProps) {
       <GlassCard
         hoverable
         glow
-        className="group cursor-pointer transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+        className={cn(
+          'group cursor-pointer transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]',
+          isStreaming && 'animate-pulse',
+        )}
         innerClassName="p-4 space-y-3"
         onClick={() => setDialogOpen(true)}
       >
@@ -69,7 +74,7 @@ export function StartupPlanCard({ idea, sessionId }: StartupPlanCardProps) {
         <div className="flex items-center justify-between pt-1">
           <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/60">
             <Sparkles className="h-3 w-3" />
-            Click for full plan
+            Click to generate full plan
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-primary/60 transition-colors" />
         </div>
@@ -81,6 +86,7 @@ export function StartupPlanCard({ idea, sessionId }: StartupPlanCardProps) {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         sessionId={sessionId}
+        userId={userId}
       />
     </>
   )
