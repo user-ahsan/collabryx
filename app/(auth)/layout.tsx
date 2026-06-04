@@ -5,6 +5,7 @@ import { SidebarNav } from "@/components/shared/sidebar-nav"
 import { MobileNav } from "@/components/shared/mobile-nav"
 import { GlobalSearchDialog } from "@/components/features/search/global-search-dialog"
 import { SettingsDialog } from "@/components/features/settings/settings-dialog"
+import { SessionHeartbeat } from "@/components/features/analytics/session-heartbeat"
 import { cn } from "@/lib/utils"
 import { useLoginData } from "@/hooks/use-login-data"
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -90,12 +91,13 @@ function AuthLayoutContent({ children }: { children: React.ReactNode }) {
 
                 {/* Main Content */}
                 <main className={cn(
-                    "flex-1 transition-all duration-300 ease-in-out pt-0 md:pt-0 min-h-screen pb-6 md:pb-0",
+                    "flex-1 flex flex-col transition-all duration-300 ease-in-out pt-0 md:pt-0 min-h-screen pb-6 md:pb-0",
                     isCollapsed ? "md:ml-[80px]" : "md:ml-[280px]"
                 )}>
                     {children}
                 </main>
             </div>
+            <SessionHeartbeat />
             <SettingsDialog />
             <GlobalSearchDialog open={searchOpen} onOpenChange={setSearchOpen} />
         </>

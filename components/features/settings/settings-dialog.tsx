@@ -74,7 +74,6 @@ export function SettingsDialog() {
                     glass("overlay"),
                     glass("dialogHighlights")
                 )}
-                showDecorations={false}
             >
                 <div className="relative z-20 flex flex-col h-full w-full">
                     <DialogTitle className="sr-only">Account Settings</DialogTitle>

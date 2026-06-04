@@ -117,7 +117,7 @@ export const LandingHeader: React.FC = () => {
                 <div className="hidden lg:flex lg:gap-x-8">
                     {isMounted && dynamicNav.map((item) => (
                         <Link
-                            key={item.name}
+                            key={`desktop-${item.name}`}
                             href={item.href}
                             scroll={false}
                             onClick={(e) => {
@@ -159,7 +159,7 @@ export const LandingHeader: React.FC = () => {
                     <div className="space-y-2 px-6 pb-6 pt-2">
                         {isMounted && dynamicNav.map((item) => (
                             <Link
-                                key={item.name}
+                                key={`mobile-${item.name}`}
                                 href={item.href}
                                 scroll={false}
                                 className="block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-foreground hover:bg-accent cursor-pointer"
