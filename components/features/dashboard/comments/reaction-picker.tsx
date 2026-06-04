@@ -22,7 +22,7 @@ export function ReactionPicker({ onSelect, isOpen }: ReactionPickerProps) {
     if (!isOpen) return null
 
     return (
-        <div className={cn("absolute -top-12 left-0 rounded-full p-1.5 flex gap-1 z-50 animate-in fade-in zoom-in-95 duration-200 origin-bottom-left", glass("dropdown"))}>
+        <div className={cn("relative rounded-full p-1.5 flex gap-1 z-50 animate-in fade-in zoom-in-95 duration-200 origin-top-left", glass("dropdown"))}>
             {REACTIONS.map((r) => (
                 <button
                     key={r.id}

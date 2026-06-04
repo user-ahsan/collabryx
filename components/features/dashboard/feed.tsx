@@ -31,7 +31,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
 import { useReducedMotion } from "@/hooks/use-reduced-motion"
 import { Button } from "@/components/ui/button"
-import { Bot, Inbox, Sparkles, Loader2 } from "lucide-react"
+import { Bot, Inbox, Sparkles, Loader2, RefreshCw } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getInitials } from "@/lib/utils/format-initials"
 import { getCache, setCache, CACHE_KEYS } from "@/lib/dashboard-cache"
@@ -49,6 +49,7 @@ import { PostContent } from "./posts/post-content"
 import { PostActions } from "./posts/post-actions"
 import { CreatePostModal } from "./create-post/create-post-modal"
 import { PostSkeleton, PostSkeletonList } from "./posts/post-skeleton"
+import { PullToRefresh } from "./posts/pull-to-refresh"
 import { NewPostsIndicator } from "./posts/new-posts-indicator"
 import { InfiniteScrollTrigger } from "./posts/infinite-scroll-trigger"
 import { CommentSection } from "./comments/comment-section"
@@ -181,39 +182,39 @@ export function Feed() {
         checkEmbeddingStatus()
     }, [])
 
-    // Fetch bookmark status for current user when posts are loaded
+    /** Fetch bookmark status for a set of posts and update state */
+    const fetchBookmarkStatus = useCallback(async (targetPosts: PostUI[]) => {
+        if (targetPosts.length === 0) return
+        try {
+            const supabase = createClient()
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user) return
+
+            const postIds = targetPosts.map(p => p.id)
+            const { data: bookmarks } = await supabase
+                .from("user_bookmarks")
+                .select("post_id")
+                .eq("user_id", user.id)
+                .in("post_id", postIds)
+
+            if (bookmarks) {
+                const ids = new Set(bookmarks.map(b => b.post_id))
+                setBookmarkedPostIds(ids)
+                setPosts(prev => prev.map(p => ({
+                    ...p,
+                    isBookmarked: ids.has(p.id)
+                })))
+            }
+        } catch (err) {
+            console.error("Error fetching bookmarks:", err)
+        }
+    }, [])
+
+    // Fetch bookmarks when the posts list changes
     useEffect(() => {
         if (posts.length === 0) return
-
-        const fetchBookmarks = async () => {
-            try {
-                const supabase = createClient()
-                const { data: { user } } = await supabase.auth.getUser()
-                if (!user) return
-
-                const postIds = posts.map(p => p.id)
-                const { data: bookmarks } = await supabase
-                    .from("user_bookmarks")
-                    .select("post_id")
-                    .eq("user_id", user.id)
-                    .in("post_id", postIds)
-
-                if (bookmarks) {
-                    const ids = new Set(bookmarks.map(b => b.post_id))
-                    setBookmarkedPostIds(ids)
-                    // Update posts with bookmark status
-                    setPosts(prev => prev.map(p => ({
-                        ...p,
-                        isBookmarked: ids.has(p.id)
-                    })))
-                }
-            } catch (err) {
-                console.error("Error fetching bookmarks:", err)
-            }
-        }
-
-        fetchBookmarks()
-    }, [posts.length])
+        fetchBookmarkStatus(posts)
+    }, [posts.length, fetchBookmarkStatus])
 
     // â”€â”€ Ecosystem States â”€â”€
     const [expandedComments, setExpandedComments] = useState<Set<string>>(new Set())
@@ -319,6 +320,61 @@ export function Feed() {
             }
         }
     }
+
+    /** Refresh the feed from scratch — resets pagination and re-fetches */
+    const handleRefresh = useCallback(async () => {
+        // Reset pagination state
+        setOffset(0)
+        setHasMore(true)
+        setNewPostsCount(0)
+        hasCheckedNewPosts.current = false
+        setSelectedPostId(null)
+
+        // Re-fetch from the beginning
+        setIsInitialLoading(true)
+        try {
+            const result = hasEmbedding
+                ? await fetchPersonalizedFeed({ limit: 20 })
+                : await fetchPosts({ limit: 20, random: false })
+
+            if (result.error) {
+                console.warn("Feed: refresh fallback, personalization not ready:", result.error.message)
+            }
+
+            const data = result.data
+            let mapped: PostUI[] = []
+            if (data && data.length > 0) {
+                mapped = data.map(mapPostToUI)
+                setPosts(mapped)
+                setCache(CACHE_KEYS.FEED_POSTS, mapped)
+                setHasMore(data.length === 20)
+
+                // Update latest timestamp for new-post detection
+                const withDates = mapped.filter(p => p.created_at)
+                if (withDates.length > 0) {
+                    latestCreatedAtRef.current = withDates.sort(
+                        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+                    )[0].created_at
+                }
+            } else {
+                setHasMore(false)
+            }
+
+            // Re-fetch bookmark status
+            await fetchBookmarkStatus(mapped)
+        } catch (error) {
+            console.error('Error refreshing feed:', error)
+            const cached = getCache<PostUI[]>(CACHE_KEYS.FEED_POSTS)
+            if (cached) {
+                setPosts(cached)
+                toast.info("Couldn't refresh. Showing cached data.", {
+                    id: "feed-refresh-fallback",
+                })
+            }
+        } finally {
+            setIsInitialLoading(false)
+        }
+    }, [mapPostToUI, hasEmbedding])
 
     /** Show a collaborate toast when reacting to someone else's post */
     const showCollaborateToast = useCallback((post: PostUI) => {
@@ -441,13 +497,38 @@ export function Feed() {
         }
     }
 
+    const [isRefreshing, setIsRefreshing] = useState(false)
+
+    const triggerRefresh = useCallback(async () => {
+        setIsRefreshing(true)
+        try {
+            await handleRefresh()
+        } finally {
+            setIsRefreshing(false)
+        }
+    }, [handleRefresh])
+
     return (
+        <PullToRefresh onRefresh={triggerRefresh}>
         <div className="mx-auto max-w-2xl space-y-4 md:space-y-6 lg:space-y-8 pb-6 md:pb-8">
             <NewPostsIndicator
                 count={newPostsCount}
                 visible={newPostsCount > 0}
                 onClick={handleNewPostsClick}
             />
+
+            {/* Refresh button for desktop users */}
+            <div className="flex items-center justify-end -mb-2 md:-mb-4">
+                <button
+                    onClick={triggerRefresh}
+                    disabled={isRefreshing}
+                    className="inline-flex items-center justify-center rounded-full p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors disabled:opacity-50"
+                    aria-label="Refresh feed"
+                    title="Refresh feed"
+                >
+                    <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
+                </button>
+            </div>
 
             <CreatePostModal />
 
@@ -599,7 +680,10 @@ export function Feed() {
 
 {/* Collapsible Comments */}
 {expandedComments.has(post.id) && (
-    <div className="animate-in slide-in-from-top-2 duration-200 px-4 max-h-[500px] overflow-y-auto overscroll-contain">
+    <div
+        className="animate-in slide-in-from-top-2 duration-200 px-4 max-h-[500px] overflow-y-auto overscroll-contain"
+        onWheel={(e) => e.stopPropagation()}
+    >
         <CommentSection postId={post.id} />
     </div>
 )}
@@ -641,5 +725,6 @@ export function Feed() {
                 }}
             />
         </div>
+        </PullToRefresh>
     )
 }

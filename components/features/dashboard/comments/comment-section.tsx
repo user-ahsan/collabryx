@@ -260,7 +260,10 @@ export function CommentSection({ postId }: CommentSectionProps) {
     }
 
     return (
-        <div className="pt-2 flex flex-col h-full max-h-full">
+        <div
+            className="pt-2 flex flex-col h-full max-h-full"
+            onWheel={(e) => e.stopPropagation()}
+        >
             {/* aria-live region for announcing new comments */}
             <div aria-live="polite" aria-atomic="true" className="sr-only">
                 {comments?.length || 0} comments loaded

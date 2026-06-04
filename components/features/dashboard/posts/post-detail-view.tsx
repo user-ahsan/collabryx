@@ -158,7 +158,7 @@ export function PostDetailView({ post }: PostDetailViewProps) {
                         </Button>
                         {reactionPickerOpen && (
                             <div
-                                className="absolute bottom-full left-0 mb-2"
+                                className="absolute top-full left-0 mt-1"
                                 onMouseEnter={() => setReactionPickerOpen(true)}
                                 onMouseLeave={() => setReactionPickerOpen(false)}
                             >

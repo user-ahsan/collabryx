@@ -79,7 +79,7 @@ export function PostActions({ postId, myReaction, isBookmarked, onLike, onReacti
 
                 {reactionPickerOpen && (
                     <div
-                        className="absolute bottom-full left-0 mb-2 z-20"
+                        className="absolute top-full left-0 mt-1 z-20"
                         onMouseEnter={handleMouseEnter}
                         onMouseLeave={handleMouseLeave}
                     >
