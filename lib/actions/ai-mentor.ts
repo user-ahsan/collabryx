@@ -1,4 +1,4 @@
-﻿'use server'
+'use server'
 
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
@@ -6,6 +6,7 @@ import OpenAI from 'openai'
 import Anthropic from '@anthropic-ai/sdk'
 import { revalidatePath } from 'next/cache'
 import { assembleAndBuildPrompt } from '@/lib/rag/context-assembler'
+import type { AIMessage } from '@/lib/rag/types'
 
 // ===========================================
 // ZOD VALIDATION SCHEMAS
@@ -63,15 +64,6 @@ function getDashScopeConfig() {
     apiKey: process.env.DASHSCOPE_API_KEY,
     baseURL: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1'
   }
-}
-
-
-
-export interface AIMessage {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-  created_at: string
 }
 
 export interface AISession {
@@ -136,18 +128,54 @@ const circuitBreakers = {
 
 /**
  * Get AI provider based on environment config
+ *
+ * Provider resolution order:
+ *   LLM_PROVIDER=anthropic + ANTHROPIC_API_KEY → Anthropic
+ *   LLM_PROVIDER=qwen     + DASHSCOPE_API_KEY  → Qwen (DashScope)
+ *   OPENROUTER_API_KEY present                  → OpenRouter (OpenAI-compatible)
+ *   OPENAI_API_KEY present                      → OpenAI
+ *
+ * If an LLM_PROVIDER is set but its corresponding key is missing, an informative
+ * error is thrown listing exactly which env var needs to be configured.
  */
 function getProvider(): 'openai' | 'anthropic' | 'qwen' {
   const provider = process.env.LLM_PROVIDER || 'openai'
-  if (provider === 'anthropic' && process.env.ANTHROPIC_API_KEY) return 'anthropic'
-  if (provider === 'qwen' && process.env.DASHSCOPE_API_KEY) return 'qwen'
+
+  if (provider === 'anthropic') {
+    if (process.env.ANTHROPIC_API_KEY) return 'anthropic'
+    throw new Error(
+      `LLM_PROVIDER is set to 'anthropic' but ANTHROPIC_API_KEY is not configured. ` +
+      `Set the ANTHROPIC_API_KEY environment variable, or change LLM_PROVIDER to 'openai' or 'qwen'.`
+    )
+  }
+
+  if (provider === 'qwen') {
+    if (process.env.DASHSCOPE_API_KEY) return 'qwen'
+    throw new Error(
+      `LLM_PROVIDER is set to 'qwen' but DASHSCOPE_API_KEY is not configured. ` +
+      `Set the DASHSCOPE_API_KEY environment variable, or change LLM_PROVIDER to 'openai' or 'anthropic'.`
+    )
+  }
+
   if (process.env.OPENROUTER_API_KEY) return 'openai'  // OpenRouter uses OpenAI-compatible API
   if (process.env.OPENAI_API_KEY) return 'openai'
-  throw new Error('No AI provider configured (set OPENROUTER_API_KEY or OPENAI_API_KEY)')
+
+  throw new Error(
+    'No AI provider credentials found. Set one of:\n' +
+    '  - OPENAI_API_KEY (OpenAI)\n' +
+    '  - OPENROUTER_API_KEY (OpenRouter, OpenAI-compatible)\n' +
+    '  - ANTHROPIC_API_KEY with LLM_PROVIDER=anthropic\n' +
+    '  - DASHSCOPE_API_KEY with LLM_PROVIDER=qwen'
+  )
 }
 
 /**
  * Call AI API with circuit breaker
+ *
+ * Model selection uses env vars with sensible defaults:
+ *   ANTHROPIC_MODEL   → default 'claude-3-haiku-20240307'
+ *   QWEN_MODEL        → default 'qwen-plus'
+ *   OPENROUTER_MODEL  → default 'gpt-4-turbo-preview' (also used for native OpenAI)
  */
 async function callAI(messages: Array<{ role: string; content: string }>, systemPrompt: string): Promise<string> {
   const provider = getProvider()
@@ -161,8 +189,8 @@ async function callAI(messages: Array<{ role: string; content: string }>, system
       }))
       const anthropicClient = getAnthropicClient()
       const response = await anthropicClient.messages.create({
-        model: 'claude-3-haiku-20240307',
-        max_tokens: 500,
+        model: process.env.ANTHROPIC_MODEL || 'claude-3-haiku-20240307',
+        max_tokens: 4000,
         messages: anthropicMessages,
         system: systemPrompt,
       })
@@ -181,12 +209,12 @@ async function callAI(messages: Array<{ role: string; content: string }>, system
           'Authorization': `Bearer ${dashscopeKey}`,
         },
         body: JSON.stringify({
-          model: 'qwen-plus',
+          model: process.env.QWEN_MODEL || 'qwen-plus',
           messages: [
             { role: 'system', content: systemPrompt },
             ...messages,
           ],
-          max_tokens: 500,
+          max_tokens: 4000,
           temperature: 0.7,
         }),
       })
@@ -199,7 +227,7 @@ async function callAI(messages: Array<{ role: string; content: string }>, system
       return data.choices?.[0]?.message?.content || 'Sorry, I could not generate a response.'
     }
 
-    // Default: OpenAI
+    // Default: OpenAI (native or OpenRouter)
     const openaiMessages = [
       { role: 'system' as const, content: systemPrompt },
       ...messages.map(m => ({
@@ -211,7 +239,7 @@ async function callAI(messages: Array<{ role: string; content: string }>, system
     const response = await openaiClient.chat.completions.create({
       model: process.env.OPENROUTER_MODEL || 'gpt-4-turbo-preview',
       messages: openaiMessages,
-      max_tokens: 500,
+      max_tokens: 4000,
       temperature: 0.7,
     })
 
@@ -287,6 +315,13 @@ export async function getOrCreateActiveSession() {
 
 /**
  * Send message to AI mentor and get response
+ *
+ * NOTE: This server action saves messages to the database directly. The streaming
+ * endpoint (`/api/ai/stream`) ALSO saves messages. The ChatInput component uses
+ * `useAIStream` → `/api/ai/stream`, NOT this action. Therefore this function
+ * serves as a **fallback for server-side / non-streaming contexts only**.
+ * Do NOT call this from client components that also use the streaming endpoint,
+ * or messages will be duplicated.
  */
 export async function sendMessage(sessionId: string, content: string) {
   const validation = SendMessageSchema.safeParse({ sessionId, content })
@@ -326,13 +361,13 @@ export async function sendMessage(sessionId: string, content: string) {
     return { error: userMsgError }
   }
 
-  // Get conversation history (last 10 messages)
+  // Get conversation history (last 20 messages — increased from 10 for richer context)
   const { data: messages } = await supabase
     .from('ai_mentor_messages')
     .select('role, content')
     .eq('session_id', sessionId)
     .order('created_at', { ascending: true })
-    .limit(10)
+    .limit(20)
 
   const ragMessages: AIMessage[] = (messages || []).map((m, i) => ({
     id: `msg-${i}`,
@@ -390,8 +425,11 @@ export async function sendMessage(sessionId: string, content: string) {
 
 /**
  * Get session history
+ *
+ * @param sessionId - The session UUID
+ * @param limit     - Max messages to return (default 100). Prevents slow queries on large sessions.
  */
-export async function getSessionHistory(sessionId: string) {
+export async function getSessionHistory(sessionId: string, limit = 100) {
   const validation = SessionIdSchema.safeParse({ sessionId })
   if (!validation.success) {
     return { error: new Error('Invalid session ID') }
@@ -422,6 +460,7 @@ export async function getSessionHistory(sessionId: string) {
     .select('id, session_id, role, content, is_saved_to_profile, created_at')
     .eq('session_id', sessionId)
     .order('created_at', { ascending: true })
+    .limit(limit)
 
   if (error) {
     return { error }
@@ -450,6 +489,9 @@ export async function getSessionHistory(sessionId: string) {
  * sorted by recency. The sidebar uses updated_at (not created_at) so that
  * sessions recent activity bubbles to the top even if they were created
  * weeks ago.
+ *
+ * PAGINATION NOTE: Limited to 50 results. If users routinely exceed this,
+ * add offset-based or cursor-based pagination (e.g. pass a `page` param).
  */
 export async function getUserSessions() {
   const supabase = await createClient()
@@ -476,6 +518,10 @@ export async function getUserSessions() {
 
 /**
  * Archive session
+ *
+ * Archives are non-destructive: all messages and context are preserved and
+ * the session remains visible in the sidebar (filtered to 'archived').
+ * Returns the archived session info so callers can show a confirmation.
  */
 export async function archiveSession(sessionId: string) {
   const validation = SessionIdSchema.safeParse({ sessionId })
@@ -490,9 +536,48 @@ export async function archiveSession(sessionId: string) {
     return { error: new Error('Unauthorized') }
   }
 
-  const { error } = await supabase
+  const { data: session, error } = await supabase
     .from('ai_mentor_sessions')
     .update({ status: 'archived' })
+    .eq('id', sessionId)
+    .eq('user_id', user.id)
+    .select('id, title, status')
+    .single()
+
+  if (error) {
+    return { error }
+  }
+
+  revalidatePath('/(auth)/ai-mentor')
+
+  return {
+    success: true,
+    data: session,
+    message: `Session "${session.title}" archived. All messages preserved.`,
+  }
+}
+
+/**
+ * Delete session
+ *
+ * Deletes the session permanently. This will cascade delete all associated messages.
+ */
+export async function deleteSession(sessionId: string) {
+  const validation = SessionIdSchema.safeParse({ sessionId })
+  if (!validation.success) {
+    return { error: new Error('Invalid session ID') }
+  }
+
+  const supabase = await createClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+  if (authError || !user) {
+    return { error: new Error('Unauthorized') }
+  }
+
+  const { error } = await supabase
+    .from('ai_mentor_sessions')
+    .delete()
     .eq('id', sessionId)
     .eq('user_id', user.id)
 
@@ -501,12 +586,21 @@ export async function archiveSession(sessionId: string) {
   }
 
   revalidatePath('/(auth)/ai-mentor')
+  revalidatePath('/(auth)/assistant')
 
-  return { success: true }
+  return {
+    success: true,
+  }
 }
 
 /**
  * Save message to profile (user insights)
+ *
+ * NOTE: This appends AI-generated insights directly to the user's `bio` field,
+ * which is destructive — if the user later edits their bio, the AI content
+ * remains and can appear out of place. A future improvement should store
+ * insights in a separate `ai_insights` column or a dedicated table so they
+ * are rendered independently of user-authored bio text.
  */
 export async function saveMessageToProfile(messageId: string, insight: string) {
   const validation = SaveMessageToProfileSchema.safeParse({ messageId, insight })
