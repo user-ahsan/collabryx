@@ -63,7 +63,23 @@ const INITIAL_STATE: MentionState = {
   loading: false,
 }
 
-export function useMentions() {
+/**
+ * Strip HTML tags and truncate query for safe API usage
+ */
+function sanitizeQuery(query: string): string {
+  return query
+    .replace(/<[^>]*>/g, '')   // Strip HTML tags
+    .replace(/[<>"'`]/g, '')   // Strip injection characters
+    .trim()
+    .slice(0, 50)              // Limit to 50 chars
+}
+
+interface UseMentionsOptions {
+  /** Current user ID to filter out from mention results (prevents self-mention) */
+  currentUserId?: string
+}
+
+export function useMentions({ currentUserId }: UseMentionsOptions = {}) {
   const [mentionState, setMentionState] = useState<MentionState>(INITIAL_STATE)
   const [resolvedMentions, setResolvedMentions] = useState<ResolvedMention[]>([])
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -128,19 +144,48 @@ export function useMentions() {
       const controller = new AbortController()
       abortRef.current = controller
 
+      // Sanitize query before sending (strip HTML, limit length)
+      const sanitized = sanitizeQuery(query)
+
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`, {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(sanitized)}`, {
           signal: controller.signal,
         })
         if (!res.ok) throw new Error('Search failed')
         const data = await res.json()
         
-        const users: MentionUser[] = (data.people || []).map((p: { id: string; name: string; headline: string | null; avatar_url: string | null }) => ({
+        let users: MentionUser[] = (data.people || []).map((p: { id: string; name: string; headline: string | null; avatar_url: string | null }) => ({
           id: p.id,
           name: p.name,
           headline: p.headline,
           avatar_url: p.avatar_url,
         }))
+
+        // Filter out current user to prevent self-mention
+        if (currentUserId) {
+          users = users.filter((u) => u.id !== currentUserId)
+        }
+
+        // Show "No users found" briefly when search completes with zero results
+        if (users.length === 0) {
+          const noResultsState: MentionState = {
+            active: true,
+            query,
+            startPos: lastAtIndex,
+            users: [],
+            loading: false,
+          }
+          setMentionState(noResultsState)
+          // Auto-dismiss empty results after 1 second
+          setTimeout(() => {
+            setMentionState((prev) =>
+              prev.active && prev.users.length === 0 && !prev.loading
+                ? INITIAL_STATE
+                : prev
+            )
+          }, 1000)
+          return
+        }
 
         const updatedState: MentionState = {
           active: true,

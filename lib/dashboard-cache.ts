@@ -25,6 +25,8 @@ export const CACHE_KEYS = {
     FEED_POSTS: "collabryx_feed_posts",
     MATCHES: "collabryx_matches",
     MATCH_ACTIVITY: "collabryx_match_activity",
+    SESSION_HISTORY_PREFIX: "collabryx_session_messages_",  // + sessionId
+    SESSION_LIST: "collabryx_session_list",
     // Removed: AI_CONTEXTS
 } as const
 

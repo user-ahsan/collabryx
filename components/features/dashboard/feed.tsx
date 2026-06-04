@@ -517,20 +517,23 @@ export function Feed() {
                 onClick={handleNewPostsClick}
             />
 
-            {/* Refresh button for desktop users */}
-            <div className="flex items-center justify-end -mb-2 md:-mb-4">
+            <CreatePostModal />
+
+            {/* Feed header with refresh button */}
+            <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-muted-foreground/70 uppercase tracking-wider">
+                    Feed
+                </h2>
                 <button
                     onClick={triggerRefresh}
                     disabled={isRefreshing}
-                    className="inline-flex items-center justify-center rounded-full p-2 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors disabled:opacity-50"
+                    className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors disabled:opacity-50"
                     aria-label="Refresh feed"
-                    title="Refresh feed"
                 >
-                    <RefreshCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
+                    <RefreshCw className={cn("h-3.5 w-3.5", isRefreshing && "animate-spin")} />
+                    Refresh
                 </button>
             </div>
-
-            <CreatePostModal />
 
             {/* Embedding Status Banner */}
             {hasEmbedding === false && (
