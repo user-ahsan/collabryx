@@ -1,15 +1,14 @@
 /**
  * SessionHeartbeat
  *
- * Invisible Client Component that fires a periodic heartbeat
- * to track user sessions and update last_active.
- *
- * Renders nothing — purely a side-effect hook.
+ * Invisible Client Component that fires heartbeat events based on page
+ * visibility changes instead of continuous polling.
  *
  * Behavior:
- *   - Fires immediately on mount
- *   - Re-fires every 60 seconds while the component is mounted
- *   - Silently swallows errors (non-critical)
+ *   - Fires immediately on component mount
+ *   - Fires when the page becomes visible (user returns to tab)
+ *   - Fires when the page is about to be hidden/unloaded
+ *   - Swallows errors gracefully (non-critical analytics)
  *   - Automatically cleans up on unmount
  *
  * Usage (inside a layout or page):
@@ -20,44 +19,57 @@
 
 import { useEffect, useRef } from "react"
 
-const HEARTBEAT_INTERVAL_MS = 60_000 // 60 seconds
-
 export function SessionHeartbeat() {
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const lastBeatRef = useRef(0)
+  const minIntervalMs = 30_000 // Don't fire more often than every 30s
 
   useEffect(() => {
     const sendHeartbeat = async () => {
+      const now = Date.now()
+      if (now - lastBeatRef.current < minIntervalMs) return
+      lastBeatRef.current = now
+
       try {
         const res = await fetch("/api/analytics/heartbeat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
         })
 
-        if (!res.ok) {
-          // 401 is expected when user logs out — stop heartbeats
-          if (res.status === 401) {
-            if (intervalRef.current) {
-              clearInterval(intervalRef.current)
-              intervalRef.current = null
-            }
-          }
+        if (!res.ok && res.status === 401) {
+          // User logged out — nothing to do, component will unmount
         }
       } catch {
         // Silently ignore — heartbeat is best-effort
       }
     }
 
-    // Fire immediately on mount
+    // Fire on mount
     sendHeartbeat()
 
-    // Then every 60 seconds
-    intervalRef.current = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL_MS)
+    // Fire when tab becomes visible (user returns)
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        sendHeartbeat()
+      }
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange)
+
+    // Fire on beforeunload (user leaves page)
+    const onBeforeUnload = () => {
+      // Use sendBeacon for reliable delivery during page unload
+      try {
+        navigator.sendBeacon("/api/analytics/heartbeat")
+      } catch {
+        // Best-effort
+      }
+    }
+    window.addEventListener("beforeunload", onBeforeUnload)
 
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-        intervalRef.current = null
-      }
+      document.removeEventListener("visibilitychange", onVisibilityChange)
+      window.removeEventListener("beforeunload", onBeforeUnload)
+      // Send final heartbeat on unmount
+      sendHeartbeat()
     }
   }, [])
 

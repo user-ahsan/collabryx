@@ -49,7 +49,10 @@ export function useNotifications(options?: FetchNotificationsOptions) {
     queryFn: async () => {
       const { data, error } = await fetchNotifications(options)
       if (error) {
-        console.error('[useNotifications] Fetch error:', error.message)
+        // "Not authenticated" is a normal state during page transitions
+        if (error.message !== "Not authenticated") {
+          console.error('[useNotifications] Fetch error:', error.message)
+        }
         throw error
       }
       return data
@@ -74,6 +77,11 @@ export function useUnreadCount() {
     queryFn: async () => {
       const { count, error } = await getUnreadCount()
       if (error) {
+        // "Not authenticated" is a normal state during page transitions / auth load
+        // Don't log as error — just return 0 gracefully
+        if (error.message === "Not authenticated") {
+          return 0
+        }
         console.error('[useUnreadCount] Fetch error:', error.message)
         throw error
       }

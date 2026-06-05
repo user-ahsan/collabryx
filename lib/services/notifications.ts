@@ -325,6 +325,10 @@ export async function getUnreadCount(): Promise<{
 
     return { count: count || 0, error: null }
   } catch (error) {
+    // Don't log "Not authenticated" as an error — it's a normal state during page transitions
+    if (error instanceof Error && error.message === "Not authenticated") {
+      return { count: 0, error }
+    }
     log.error("Error getting unread count:", error)
     return { count: 0, error: error instanceof Error ? error : new Error("[Notifications] Failed to get unread count") }
   }
