@@ -366,21 +366,37 @@ async def lifespan(app: FastAPI):
             # "SSL: EOF occurred in violation of protocol" when the system
             # CA bundle is missing. We configure the internal httpx clients
             # with a proper SSL context to avoid this.
-            try:
-                ssl_context = ssl.create_default_context()
-                # Relax SSL fingerprint checking for Windows compatibility
-                ssl_context.check_hostname = True
-                ssl_context.verify_mode = ssl.CERT_REQUIRED
-                custom_client = httpx.Client(verify=ssl_context, timeout=httpx.Timeout(30.0))
-                # Patch the internal postgrest HTTP client if accessible
-                if hasattr(supabase, "postgrest") and hasattr(supabase.postgrest, "session"):
-                    supabase.postgrest.session = custom_client
-                # Patch storage client
-                if hasattr(supabase, "storage") and hasattr(supabase.storage, "_client"):
-                    supabase.storage._client = custom_client
-            except Exception as ssl_err:
-                # SSL config failed — continue with default (will retry on DB ops)
-                logger.warning(f"SSL configuration note (non-fatal): {ssl_err}")
+            if os.name == 'nt':
+                try:
+                    ssl_context = ssl.create_default_context()
+                    # Relax SSL fingerprint checking for Windows compatibility
+                    ssl_context.check_hostname = True
+                    ssl_context.verify_mode = ssl.CERT_REQUIRED
+                    
+                    # Patch the internal postgrest HTTP client if accessible, preserving base_url and headers
+                    if hasattr(supabase, "postgrest") and hasattr(supabase.postgrest, "session"):
+                        orig_session = supabase.postgrest.session
+                        custom_client = httpx.Client(
+                            base_url=orig_session.base_url,
+                            headers=orig_session.headers,
+                            verify=ssl_context,
+                            timeout=httpx.Timeout(30.0)
+                        )
+                        supabase.postgrest.session = custom_client
+                    
+                    # Patch storage client preserving base_url and headers
+                    if hasattr(supabase, "storage") and hasattr(supabase.storage, "_client"):
+                        orig_storage = supabase.storage._client
+                        custom_storage = httpx.Client(
+                            base_url=orig_storage.base_url,
+                            headers=orig_storage.headers,
+                            verify=ssl_context,
+                            timeout=httpx.Timeout(30.0)
+                        )
+                        supabase.storage._client = custom_storage
+                except Exception as ssl_err:
+                    # SSL config failed — continue with default (will retry on DB ops)
+                    logger.warning(f"SSL configuration note (non-fatal): {ssl_err}")
 
             rate_limiter = RateLimiter(supabase)
             logger.info("Supabase client initialized successfully")

@@ -1,6 +1,6 @@
 # 🗄️ Database, Storage & Security Diagrams
 
-> **Last Updated:** 2026-06-02  
+> **Last Updated:** 2026-06-05  
 > **Scope:** Relational schema design, multi-layer enterprise security, and frontend state architecture.
 
 ---
@@ -15,7 +15,7 @@
 
 ## 1. Complete Entity-Relationship Diagram (ERD)
 
-Collabryx's database contains **34 tables** across 6 functional domains: core identity, user content, social features, messaging, matching system, embedding reliability, ML feature engineering, and privacy/security. This ERD captures the full relational landscape with accurate relationships, indexing keys, and the vector(384) data type.
+Collabryx's database contains **38 tables** across functional domains: core identity, user extensions, social features, messaging, matching system, embedding reliability, ML feature engineering, privacy/security, notifications, and analytics. This ERD captures the full relational landscape with accurate relationships, indexing keys, and the vector(384) data type.
 
 ```mermaid
 erDiagram
@@ -23,18 +23,21 @@ erDiagram
     profiles {
         uuid id PK
         text email "Synced from Auth"
+        text display_name
         text full_name
-        text role "student | founder | professional"
         text headline "Max 140 chars"
         text bio "Max 1000 chars"
-        jsonb skills "Legacy array field"
-        text[] interests
-        text experience_level
-        text goals
-        int2 availability_hours
-        int2 profile_completion_score
-        bool onboarding_completed
         text avatar_url
+        text banner_url
+        text location
+        text website_url
+        text collaboration_readiness "available | open | not-available"
+        boolean is_verified
+        text verification_type "student | faculty | alumni"
+        text university
+        integer profile_completion
+        text[] looking_for
+        boolean onboarding_completed
         timestamptz created_at
         timestamptz updated_at
     }
@@ -128,16 +131,20 @@ erDiagram
     %% ===== SOCIAL =====
     posts {
         uuid id PK
-        uuid user_id FK
+        uuid author_id FK
         text content
-        text type "post | update | milestone"
-        text[] media_urls
-        jsonb metadata
-        int like_count
+        text post_type "project-launch | teammate-request | announcement | general"
+        text intent "cofounder | teammate | mvp | fyp"
+        text link_url
+        boolean is_pinned
+        boolean is_archived
+        int reaction_count
         int comment_count
+        int share_count
+        int bookmark_count
+        int version "Optimistic concurrency"
         timestamptz created_at
         timestamptz updated_at
-        int version "Optimistic concurrency"
     }
 
     post_attachments {
@@ -181,24 +188,19 @@ erDiagram
     %% ===== CONNECTIONS =====
     connections {
         uuid id PK
-        uuid user_a FK "Constraint: user_a < user_b"
-        uuid user_b FK
-        text status "active | blocked"
+        uuid requester_id FK
+        uuid receiver_id FK
+        text status "pending | accepted | declined | blocked"
+        text message
         timestamptz created_at
+        timestamptz updated_at
     }
 
     blocked_users {
         uuid id PK
         uuid blocker_id FK
         uuid blocked_id FK
-        timestamptz created_at
-    }
-
-    connection_requests {
-        uuid id PK
-        uuid sender_id FK
-        uuid receiver_id FK
-        text status "pending | accepted | rejected | ignored"
+        text reason
         timestamptz created_at
     }
 
@@ -258,8 +260,10 @@ erDiagram
         uuid id PK
         uuid conversation_id FK
         uuid sender_id FK
-        text content
-        text message_type "text | image | system"
+        text text
+        boolean is_read
+        text attachment_url
+        text attachment_type "image | file"
         timestamptz read_at "null = unread"
         timestamptz created_at
     }
@@ -400,6 +404,23 @@ erDiagram
         timestamptz updated_at
     }
 
+    profile_visits {
+        uuid id PK
+        uuid viewer_id FK
+        uuid viewed_id FK
+        timestamptz viewed_at
+        timestamptz expires_at
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    user_bookmarks {
+        uuid id PK
+        uuid post_id FK
+        uuid user_id FK
+        timestamptz created_at
+    }
+
     %% ===== RELATIONSHIPS =====
     profiles ||--o{ user_skills : "has"
     profiles ||--o{ user_interests : "has"
@@ -410,8 +431,6 @@ erDiagram
     profiles ||--o{ comments : "writes"
     profiles ||--o{ post_reactions : "reacts"
     profiles ||--o{ connections : "initiates"
-    profiles ||--o{ connection_requests : "sends"
-    profiles ||--o{ connection_requests : "receives"
     profiles ||--o{ conversations : "participates"
     profiles ||--o{ messages : "sends"
     profiles ||--o{ notifications : "receives"
@@ -424,6 +443,9 @@ erDiagram
     profiles ||--o{ match_preferences : "configures"
     profiles ||--o{ embedding_rate_limits : "rate limited"
     profiles ||--o{ blocked_users : "blocks"
+    profiles ||--o{ profile_visits : "viewer"
+    profiles ||--o{ profile_visits : "viewed"
+    profiles ||--o{ user_bookmarks : "bookmarks"
 
     posts ||--o{ post_attachments : "has"
     posts ||--o{ post_reactions : "receives"
@@ -431,6 +453,7 @@ erDiagram
     posts ||--o{ feed_scores : "scored in"
     posts ||--o{ feed_thompson_params : "tracks"
     posts ||--o{ post_impressions : "has"
+    posts ||--o{ user_bookmarks : "referenced in"
 
     comments ||--o{ comment_likes : "receives"
     comments ||--o{ comments : "replies" "self-ref parent_id"
@@ -446,15 +469,15 @@ erDiagram
     profiles ||--o{ embedding_pending_queue : "queued for"
     profiles ||--o{ embedding_dead_letter_queue : "failed for"
 
-    connections }|--|| profiles : "user_a"
-    connections }|--|| profiles : "user_b"
+    connections }|--|| profiles : "requester"
+    connections }|--|| profiles : "receiver"
     blocked_users }|--|| profiles : "blocker"
     blocked_users }|--|| profiles : "blocked"
 ```
 
 ### Schema Design Patterns
 
-**34 tables** organized into 8 functional groups. Every table uses UUID primary keys. The `profiles` table is the central hub, connected to all user-owned data. The vector embedding is stored as `vector(384)` in `profile_embeddings` with an HNSW index (`vector_cosine_ops, M=32, ef_construction=128`) for efficient similarity search. Queue tables (`embedding_pending_queue`, `embedding_dead_letter_queue`) use a `user_id` unique constraint to prevent duplicate entries per user and employ atomic claim patterns (`UPDATE ... WHERE status = 'pending'`) for multi-worker safety. The `feed_thompson_params` table stores alpha/beta parameters for the Thompson Sampling bandit algorithm, updated on each user engagement action.
+**38 tables** organized into 10 functional groups. Every table uses UUID primary keys. The `profiles` table is the central hub, connected to all user-owned data. The vector embedding is stored as `vector(384)` in `profile_embeddings` with an HNSW index (`vector_cosine_ops, M=32, ef_construction=128`) for efficient similarity search. Queue tables (`embedding_pending_queue`, `embedding_dead_letter_queue`) use a `user_id` unique constraint to prevent duplicate entries per user and employ atomic claim patterns (`UPDATE ... WHERE status = 'pending'`) for multi-worker safety. The `feed_thompson_params` table stores alpha/beta parameters for the Thompson Sampling bandit algorithm, updated on each user engagement action.
 
 ---
 
@@ -496,7 +519,7 @@ graph TB
     end
 
     subgraph L5["🗄️ Layer 5: Database Security — Row Level Security"]
-        RLS["Supabase RLS Policies<br/>(100+ policies across all 34 tables)"]
+        RLS["Supabase RLS Policies<br/>(100+ policies across all 38 tables)"]
         Policies["Policy Categories:<br/>• SELECT: User reads own data<br/>• INSERT: User creates own<br/>• UPDATE: User modifies own<br/>• DELETE: Owner or admin only"]
         ServiceRole["Service Role Client<br/>• Used ONLY in:<br/>  - Python worker (background jobs)<br/>  - Server Actions (admin operations)<br/>  - Cleanup tasks<br/>• Never in client-side code"]
         RLS_Examples["Example Policies:<br/>• 'Users can view own profile'<br/>  USING (auth.uid() = id)<br/>• 'Users can update own profile'<br/>  USING (auth.uid() = id)<br/>• 'Admins can view all'<br/>  USING (is_admin(auth.uid()))"]
@@ -540,7 +563,7 @@ graph TB
 
 **Layer 4 (Input Validation)** — Every API endpoint validates with a dedicated Zod schema. Server Actions use schema validation before any database operation. File uploads are limited by both size and MIME type. The content moderation pipeline acts as a secondary filter, scanning for toxicity, spam, and PII.
 
-**Layer 5 (Database RLS)** — All 34 tables have Row-Level Security enabled with over 100 policies. The pattern is consistent: `SELECT` policies allow users to read their own data, `INSERT` policies verify the user is creating their own record (using `auth.uid()` = user_id), `UPDATE` policies check ownership, and `DELETE` policies require ownership or admin role. The service role key is used exclusively by the Python worker (for background embedding operations) and by server-side admin actions — it is **never** exposed to client-side code.
+**Layer 5 (Database RLS)** — All 38 tables have Row-Level Security enabled with over 100 policies. The pattern is consistent: `SELECT` policies allow users to read their own data, `INSERT` policies verify the user is creating their own record (using `auth.uid()` = user_id), `UPDATE` policies check ownership, and `DELETE` policies require ownership or admin role. The service role key is used exclusively by the Python worker (for background embedding operations) and by server-side admin actions — it is **never** exposed to client-side code.
 
 ---
 

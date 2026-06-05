@@ -1,6 +1,6 @@
 # 📡 Behavioral & Event-Driven Communication Diagrams
 
-> **Last Updated:** 2026-06-02  
+> **Last Updated:** 2026-06-05  
 > **Scope:** Real-time synchronization, rendering timelines, and cron-driven maintenance.
 
 ---

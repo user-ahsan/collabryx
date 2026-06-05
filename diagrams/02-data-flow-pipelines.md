@@ -1,6 +1,6 @@
 # 🔀 Data Flow & Processing Pipeline Diagrams
 
-> **Last Updated:** 2026-06-02  
+> **Last Updated:** 2026-06-05  
 > **Scope:** Asynchronous workflows, queue management, systemic fallbacks, and content processing pipelines.
 
 ---
@@ -11,6 +11,9 @@
 2. [Fault-Tolerant Dead Letter Queue (DLQ) Flow](#2-fault-tolerant-dead-letter-queue-dlq-flow)
 3. [Thompson Sampling Feed Scorer Workflow](#3-thompson-sampling-feed-scorer-workflow)
 4. [Dual-Chain Content Moderation Sequence](#4-dual-chain-content-moderation-sequence)
+5. [Event-Driven Analytics Pipeline](#5-event-driven-analytics-pipeline)
+6. [Deduplicated Profile Visits Flow](#6-deduplicated-profile-visits-flow)
+7. [Dedicated Bookmarking Flow](#7-dedicated-bookmarking-flow)
 
 ---
 
@@ -326,3 +329,121 @@ The moderation pipeline is implemented in `/app/api/moderate/route.ts`. It first
 The **aggregation logic** is conservative: if either chain suggests rejection, the content is rejected. If either chain suggests flagging, it's flagged for human admin review. Only if both chains approve is the content published immediately. All decisions are logged to `content_moderation_logs` with both results for audit trail.
 
 If the Python worker is completely offline, the system degrades gracefully: the fallback moderator runs independently and the content is accepted with a lower confidence score. The API response includes the `risk_score` and `action` fields so the frontend can display appropriate messaging.
+
+---
+
+## 5. Event-Driven Analytics Pipeline
+
+The analytics engine processes platform activity asynchronously. When users perform core actions, database-level triggers write record changes to the central `events` table. An event insert trigger automatically fires the analytics processing pipeline to update counters and recalculate metrics.
+
+```mermaid
+sequenceDiagram
+    participant User as User / Client
+    participant API as Next.js API / Action
+    participant SrcDB as Source Table (e.g. post_reactions)
+    participant EvtDB as events table
+    participant EvtTrig as Trigger: capture_event()
+    participant ProcFunc as process_event_to_analytics()
+    participant ScoreFunc as calculate_engagement_score()
+    participant AnalDB as user_analytics table
+
+    User->>API: Like a Post
+    API->>SrcDB: INSERT INTO post_reactions
+    
+    SrcDB->>EvtTrig: AFTER INSERT
+    EvtTrig->>EvtDB: INSERT INTO events (event_type='post_reaction', actor_id, target_id)
+    
+    EvtDB->>ProcFunc: AFTER INSERT
+    Note over ProcFunc: Reads event_type and maps actor<br/>or target owner for scoring
+    
+    ProcFunc->>AnalDB: SELECT current analytics fields
+    AnalDB-->>ProcFunc: profile_views, connections, reactions, matches
+    
+    ProcFunc->>ScoreFunc: calculate_engagement_score(views, matches, conns, reactions + 1)
+    Note over ScoreFunc: Computes weighted 0-100 score:<br/>25% profile views + 25% matches<br/>+ 25% connections + 25% reactions
+    ScoreFunc-->>ProcFunc: New engagement_score (integer)
+
+    ProcFunc->>ProcFunc: calculate_influence_score()
+    Note over ProcFunc: Computes 0-100 influence score:<br/>25% views + 25% conns + 15% posts<br/>+ 15% reactions + 20% matches
+
+    ProcFunc->>AnalDB: UPDATE user_analytics<br/>SET post_reactions_received = post_reactions_received + 1,<br/>engagement_score = new_eng_score,<br/>influence_score = new_inf_score,<br/>last_active = NOW()
+    AnalDB-->>ProcFunc: Updated ✓
+    
+    Note over User,AnalDB: Periodic Session Heartbeat (Client-side)
+    User->>API: record_heartbeat(user_id) RPC
+    API->>AnalDB: record_heartbeat() updates sessions_count,<br/>total_time_spent_minutes + 1, last_active,<br/>and recalculates activity_streak_days
+```
+
+### Analytics Pipeline Design
+
+The analytics architecture decouples action recording from metric computation. API routes focus on mutating state, while triggers capture those mutations into the `events` table. The `process_event_to_analytics()` function centralizes processing, updating the `user_analytics` table atomically.
+
+Mathematical scoring functions (`calculate_engagement_score()` and `calculate_influence_score()`) are implemented as pure SQL functions with `IMMUTABLE` logic, ensuring consistent performance. The client triggers a session heartbeat every minute (`record_heartbeat()`), allowing the system to update active status, track daily active streaks, and increment total session minutes.
+
+---
+
+## 6. Deduplicated Profile Visits Flow
+
+To prevent spam and skewing of metrics, profile views are deduplicated over a sliding 7-day window. When a user views another user's profile, a `profile_visits` record is upserted. If they view the same profile within 7 days, the view is deduplicated; after 7 days, it registers as a new view.
+
+```mermaid
+sequenceDiagram
+    participant Client as Viewer Browser
+    participant API as /api/profile/[id]/view
+    participant VisitDB as profile_visits table
+    participant AnalDB as user_analytics table
+    participant Func as increment_profile_views()
+
+    Client->>API: GET /profile/X (view profile)
+    API->>VisitDB: INSERT INTO profile_visits (viewer_id, viewed_id)<br/>ON CONFLICT (viewer_id, viewed_id) DO UPDATE<br/>SET expires_at = NOW() + INTERVAL '7 days', updated_at = NOW()<br/>WHERE expires_at <= NOW()
+    
+    alt If Fresh View (No Conflict or Expired)
+        VisitDB-->>API: Row Created / Confirmed
+        API->>Func: CALL increment_profile_views(viewed_id)
+        Func->>AnalDB: UPDATE user_analytics<br/>SET profile_views_count = count + 1,<br/>profile_views_last_7_days = count_7 + 1,<br/>profile_views_last_30_days = count_30 + 1
+        Func-->>API: Analytics Updated
+    else If Deduplicated (Within 7-Day Window)
+        VisitDB-->>API: Row Exists (Update condition not met)
+        Note over API: Deduplicated — skips incrementing analytics
+    end
+
+    API-->>Client: Load profile page
+```
+
+### Deduplication Mechanics
+
+The deduplication is enforced by a compound unique index on the `profile_visits` table: `UNIQUE(viewer_id, viewed_id)`. The query utilizes the `ON CONFLICT` clause to only perform updates if the previous visit record has expired (`expires_at <= NOW()`). When a fresh view is recorded, the security definer function `increment_profile_views()` updates the target user's `user_analytics` counters without granting the viewer direct write access to the analytics table.
+
+---
+
+## 7. Dedicated Bookmarking Flow
+
+Bookmarking was migrated from an emoji reaction hack (`post_reactions` using the `🔖` emoji) to a dedicated `user_bookmarks` table. This improves indexing, security, and enables precise user-facing bookmark tracking.
+
+```mermaid
+sequenceDiagram
+    participant User as User / Client
+    participant API as /api/posts/[id]/bookmark (POST/DELETE)
+    participant BookDB as user_bookmarks table
+    participant PostDB as posts table
+    participant Trig as Trigger: increment_post_bookmark_count()
+
+    alt User Bookmarks Post
+        User->>API: Click Bookmark Button
+        API->>BookDB: INSERT INTO user_bookmarks (post_id, user_id)
+        BookDB->>Trig: AFTER INSERT
+        Trig->>PostDB: UPDATE posts SET bookmark_count = bookmark_count + 1
+        API-->>User: Bookmark saved ✓ (Active state)
+    else User Unbookmarks Post
+        User->>API: Click Unbookmark Button
+        API->>BookDB: DELETE FROM user_bookmarks WHERE post_id=X AND user_id=Y
+        BookDB->>Trig: AFTER DELETE
+        Trig->>PostDB: UPDATE posts SET bookmark_count = GREATEST(bookmark_count - 1, 0)
+        API-->>User: Bookmark removed ✓ (Inactive state)
+    end
+```
+
+### Migration and Count Triggers
+
+The dedicated table `user_bookmarks` includes a `UNIQUE(post_id, user_id)` constraint to prevent duplicate bookmarks. The `posts` table includes a `bookmark_count` integer column, which is atomically updated via database-level triggers on insert/delete. In addition, the `increment_post_counter()` RPC function was updated to support atomic `bookmark_count` mutations. Stale emoji reactions (`emoji = '🔖'`) were migrated from `post_reactions` into `user_bookmarks` and deleted from reactions.
+
