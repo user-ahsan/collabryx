@@ -5,8 +5,6 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { validateEnv } from "@/lib/validate-env";
-import { cn } from "@/lib/utils";
-
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
