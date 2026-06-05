@@ -214,6 +214,16 @@ export default function OnboardingPage() {
         if (currentStep > 0) {
             const timer = setTimeout(() => {
                 mainContentRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+                const globalWindow = window as Window & {
+                    lenis?: {
+                        scrollTo: (target: number | string | HTMLElement, options?: { immediate?: boolean }) => void
+                    }
+                }
+                if (globalWindow.lenis) {
+                    globalWindow.lenis.scrollTo(0, { immediate: true })
+                } else {
+                    window.scrollTo(0, 0)
+                }
                 // Focus the step heading for screen readers
                 const heading = document.getElementById('step-heading')
                 if (heading) {

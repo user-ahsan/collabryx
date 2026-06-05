@@ -172,6 +172,7 @@ SkillsList.displayName = 'SkillsList'
 export function StepSkills() {
   const { control, formState: { errors }, watch } = useFormContext()
   const [search, setSearch] = React.useState("")
+  const [showAddSection, setShowAddSection] = React.useState(false)
   
   // Get role from form context
     const headline = watch("headline") || ""
@@ -244,7 +245,7 @@ export function StepSkills() {
               {/* Progress Badge */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <Label className="text-sm font-semibold text-foreground">
-                  Your Skills <span className="text-xs text-muted-foreground font-normal">(min. {skills.length}/5)</span>
+                  Your Skills <span className="text-xs text-muted-foreground font-normal">({skills.length} selected · min. 5)</span>
                 </Label>
                 <div className={cn(
                   "px-3 py-1.5 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-semibold transition-colors duration-200 shrink-0",
@@ -319,86 +320,118 @@ export function StepSkills() {
                 </div>
               )}
 
-              {/* Add Skills - Card-based selector on right, input + badges on left */}
-              <div className="grid gap-2" style={{ contain: 'layout', willChange: 'auto' }}>
-                <Label htmlFor="skills-combobox" className="text-sm md:text-base font-semibold text-foreground">
-                  {skills.length > 0 ? "Add more skills" : "Add Skills"} <span className="text-destructive" aria-hidden="true">*</span>
-                  <span className="sr-only">(required)</span>
-                </Label>
-                
-                {/* Two-column layout: left = input+tags, right = selector card */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                  {/* Left column: Search input + selected skills display */}
-                  <div className="space-y-3 min-w-0">
-                    <Input
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      placeholder="Search skills (e.g., React, Python, Plumbing)..."
-                      className={cn("h-12 text-base", glass("input"))}
-                      aria-label="Search skills"
-                      aria-controls="skills-tag-card"
-                    />
-                    
-                    {/* Selected skills as badges */}
-                    {skills.length > 0 && (
-                      <div className={cn("flex flex-wrap gap-2 p-3 rounded-lg min-h-[48px]", glass("subtle"))} role="list" aria-label="Selected skills">
-                        {skills.map((skill, idx) => (
-                          <Badge
-                            key={skill.id}
-                            variant="secondary"
-                            className="px-3 py-1.5 text-sm gap-2 bg-primary/10 hover:bg-primary/20 text-primary border-none group"
-                            role="listitem"
-                          >
-                            <span className="text-xs text-muted-foreground font-mono mr-1">{idx + 1}.</span>
-                            {skill.label}
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveSkill(skill.id)}
-                              className="p-0.5 rounded-full hover:bg-primary/20 transition-colors"
-                              aria-label={`Remove ${skill.label}`}
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+              {/* Validation errors for skills */}
+              {typeof errors.skills?.message === "string" && (
+                <p className="text-xs md:text-sm text-destructive font-medium" role="alert">
+                  {errors.skills.message}
+                </p>
+              )}
 
-                  {/* Right column: Tag selector card */}
-                  <div id="skills-tag-card" className="min-h-[300px] lg:min-h-[400px]">
-                    <TagSelectorCard
-                      options={skillOptions}
-                      selected={skills.map(s => s.id)}
-                      onChange={(selectedIds) => {
-                        const newSkills = selectedIds.map((id) => {
-                          const existing = skills.find(s => s.id === id)
-                          const option = skillOptions.find(opt => opt.id === id)
-                          return {
-                            id,
-                            label: option?.label || id,
-                            proficiency: existing?.proficiency || "intermediate",
-                          }
-                        })
-                        field.onChange(newSkills)
-                      }}
-                      searchValue={search}
-                      onSearchChange={setSearch}
-                      searchPlaceholder="Search skills..."
-                      emptyMessage="No skills found. Check the database or type to add custom."
-                      title="Available Skills"
-                      showCategories={true}
-                      maxHeight={400}
-                    />
+              {/* Add Skill Toggle Button */}
+              {!showAddSection && (
+                <div className="flex justify-center pt-2">
+                  <Button
+                    type="button"
+                    onClick={() => setShowAddSection(true)}
+                    className={cn(
+                      "w-full sm:w-auto px-6 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2",
+                      glass("buttonPrimary"),
+                      glass("buttonPrimaryGlow")
+                    )}
+                  >
+                    <Plus className="w-4 h-4" />
+                    {skills.length > 0 ? "Add More Skills" : "Add Skills"}
+                  </Button>
+                </div>
+              )}
+
+              {/* Add Skills - Card-based selector on right, input + badges on left */}
+              {showAddSection && (
+                <div className="grid gap-2 border border-border/20 rounded-2xl p-4 bg-card/25 backdrop-blur-md transition-all duration-300" style={{ contain: 'layout', willChange: 'auto' }}>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="skills-combobox" className="text-sm md:text-base font-semibold text-foreground">
+                      {skills.length > 0 ? "Add more skills" : "Add Skills"} <span className="text-destructive" aria-hidden="true">*</span>
+                      <span className="sr-only">(required)</span>
+                    </Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowAddSection(false)}
+                      className="text-xs text-muted-foreground hover:text-foreground h-8 px-3"
+                    >
+                      Done Adding
+                    </Button>
+                  </div>
+                  
+                  {/* Vertical stack layout to expand available skill box to full desktop width */}
+                  <div className="flex flex-col gap-4">
+                    {/* Left column: Search input + selected skills display */}
+                    <div className="space-y-3 min-w-0">
+                      <Input
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Search skills (e.g., React, Python, Plumbing)..."
+                        className={cn("h-12 text-base", glass("input"))}
+                        aria-label="Search skills"
+                        aria-controls="skills-tag-card"
+                      />
+                      
+                      {/* Selected skills as badges */}
+                      {skills.length > 0 && (
+                        <div className={cn("flex flex-wrap gap-2 p-3 rounded-lg min-h-[48px]", glass("subtle"))} role="list" aria-label="Selected skills">
+                          {skills.map((skill, idx) => (
+                            <Badge
+                              key={skill.id}
+                              variant="secondary"
+                              className="px-3 py-1.5 text-sm gap-2 bg-primary/10 hover:bg-primary/20 text-primary border-none group"
+                              role="listitem"
+                            >
+                              <span className="text-xs text-muted-foreground font-mono mr-1">{idx + 1}.</span>
+                              {skill.label}
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveSkill(skill.id)}
+                                className="p-0.5 rounded-full hover:bg-primary/20 transition-colors"
+                                aria-label={`Remove ${skill.label}`}
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Right column: Tag selector card */}
+                    <div id="skills-tag-card" className="min-h-[300px] lg:min-h-[400px]">
+                      <TagSelectorCard
+                        options={skillOptions}
+                        selected={skills.map(s => s.id)}
+                        onChange={(selectedIds) => {
+                          const newSkills = selectedIds.map((id) => {
+                            const existing = skills.find(s => s.id === id)
+                            const option = skillOptions.find(opt => opt.id === id)
+                            return {
+                              id,
+                              label: option?.label || id,
+                              proficiency: existing?.proficiency || "intermediate",
+                            }
+                          })
+                          field.onChange(newSkills)
+                        }}
+                        searchValue={search}
+                        onSearchChange={setSearch}
+                        searchPlaceholder="Search skills..."
+                        emptyMessage="No skills found. Check the database or type to add custom."
+                        title="Available Skills"
+                        showCategories={true}
+                        maxHeight={400}
+                      />
+                    </div>
                   </div>
                 </div>
-
-                {typeof errors.skills?.message === "string" && (
-                  <p className="text-xs md:text-sm text-destructive font-medium" role="alert">
-                    {errors.skills.message}
-                  </p>
-                )}
-              </div>
+              )}
 
               {/* Role-based Suggestions - shown when 1-2 skills, empty state has quick-adds */}
               {skills.length > 0 && skills.length < 3 && suggestedSkills.length > 0 && (
@@ -436,8 +469,8 @@ export function StepSkills() {
                 </div>
               )}
 
-              {/* Enhanced Empty State - Show when no skills added */}
-              {skills.length === 0 && (
+              {/* Enhanced Empty State - Show when no skills added and search is closed */}
+              {skills.length === 0 && !showAddSection && (
                 <div className="p-6 md:p-8 rounded-xl bg-gradient-to-b from-muted/30 to-muted/20 border border-border/30 text-center space-y-4 md:space-y-6">
                   {/* Icon */}
                   <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">

@@ -153,6 +153,8 @@ export function TagSelectorCard({
 
       {/* Scrollable Options List */}
       <div
+        data-lenis-prevent
+        onWheel={(e) => e.stopPropagation()}
         className="flex-1 overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border/50"
         style={{ maxHeight: `min(${maxHeight}px, 50vh)` }}
       >
