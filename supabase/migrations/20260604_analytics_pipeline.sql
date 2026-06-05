@@ -578,7 +578,7 @@ BEGIN
     NEW.matched_user_id,       -- The user they were matched with
     'profile',
     jsonb_build_object(
-      'match_score', NEW.score,
+      'match_score', NEW.match_percentage,
       'status', NEW.status
     )
   );
@@ -605,7 +605,7 @@ BEGIN
       NEW.user_id,               -- The user who accepted
       NEW.matched_user_id,       -- The matched user
       'profile',
-      jsonb_build_object('match_score', NEW.score)
+      jsonb_build_object('match_score', NEW.match_percentage)
     );
   END IF;
   

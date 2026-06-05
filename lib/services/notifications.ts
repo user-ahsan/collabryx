@@ -88,7 +88,7 @@ export async function fetchNotifications(
         is_read,
         is_actioned,
         created_at,
-        actor:profiles (
+        actor:profiles!notifications_actor_id_fkey (
           full_name,
           display_name,
           avatar_url

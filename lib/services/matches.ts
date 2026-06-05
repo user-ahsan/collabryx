@@ -126,10 +126,13 @@ export async function fetchMatches(
     }
   )
 
-  // If there's an actual error, log and return it
+  // If there's an actual error, log the FULL details and return it
   if (queryError) {
     logger.app.error("Failed to fetch matches", {
-      error: queryError.message,
+      errorMessage: queryError.message,
+      errorCode: (queryError as unknown as Record<string, unknown>).code,
+      errorDetails: (queryError as unknown as Record<string, unknown>).details,
+      errorHint: (queryError as unknown as Record<string, unknown>).hint,
       userId: user.id,
     })
     trackDatabaseOperation(false, queryError)
@@ -138,9 +141,11 @@ export async function fetchMatches(
   
   trackDatabaseOperation(true)
   
-  // If no data but no error, it's not an error - just no matches
+  // If no data but no error, it's expected for new users — log at info, not warn
   if (!queryData || queryData.length === 0) {
-    logger.app.warn("No matches found", { userId: user.id })
+    logger.app.info("No matches found — new user or no compatible matches yet", {
+      userId: user.id,
+    })
     return { data: [], error: null }
   }
 

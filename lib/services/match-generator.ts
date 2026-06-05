@@ -399,9 +399,14 @@ export async function generateMatchesForUser(
     );
 
     if (insertError) {
+      const err = insertError as unknown as Record<string, unknown>;
       logger.app.error("Error inserting match suggestions", {
-        message: insertError.message,
-        code: (insertError as unknown as Record<string, unknown>).code,
+        errorMessage: insertError.message,
+        errorCode: err.code,
+        errorDetails: err.details,
+        errorHint: err.hint,
+        userId,
+        suggestionCount: topSuggestions.length,
       });
     }
 

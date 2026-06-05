@@ -161,6 +161,7 @@ export function useDeleteNotification() {
 /**
  * Real-time notification subscription hook
  * Automatically listens for new notifications via Supabase Realtime
+ * Falls back to polling if WebSocket is unavailable
  * 
  * @example
  * ```tsx
@@ -175,8 +176,33 @@ export function useRealtimeNotifications() {
     let isMounted = true
     const supabase = createClient()
     let channel: ReturnType<typeof supabase.channel> | null = null
+    let pollInterval: ReturnType<typeof setInterval> | null = null
+
+    /** Polling fallback: invalidate notification queries on an interval */
+    const startPolling = () => {
+      if (pollInterval) return
+      pollInterval = setInterval(() => {
+        if (!isMounted) return
+        queryClient.invalidateQueries({ queryKey: NOTIFICATION_QUERY_KEYS.all })
+        queryClient.invalidateQueries({ queryKey: NOTIFICATION_QUERY_KEYS.unread() })
+      }, 30_000) // Poll every 30 seconds
+    }
+
+    const stopPolling = () => {
+      if (pollInterval) {
+        clearInterval(pollInterval)
+        pollInterval = null
+      }
+    }
 
     const setup = async () => {
+      // Check WebSocket availability
+      if (typeof window !== 'undefined' && !window.WebSocket) {
+        console.warn('[useRealtimeNotifications] WebSocket not available in this browser — falling back to polling')
+        startPolling()
+        return
+      }
+
       const { data: { user } } = await supabase.auth.getUser()
       if (!isMounted || !user) return
 
@@ -195,22 +221,38 @@ export function useRealtimeNotifications() {
             queryClient.invalidateQueries({ queryKey: NOTIFICATION_QUERY_KEYS.unread() })
           }
         )
-        .subscribe()
+        .subscribe((status) => {
+          if (!isMounted) return
+
+          if (status === 'SUBSCRIBED') {
+            // Connected via WebSocket — stop any polling fallback
+            stopPolling()
+            console.debug('[useRealtimeNotifications] Realtime channel subscribed')
+          } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.warn(`[useRealtimeNotifications] Realtime channel ${status} — falling back to polling`)
+            // Fall back to polling when WebSocket fails
+            startPolling()
+          }
+        })
     }
 
-    setup().catch((err) => console.error("[useRealtimeNotifications] Failed to set up channel:", err))
+    setup().catch((err) => {
+      console.error('[useRealtimeNotifications] Failed to set up channel:', err)
+      // Start polling fallback on any setup error
+      startPolling()
+    })
 
     return () => {
       isMounted = false
-      const currentChannel = channel
-      if (currentChannel) {
+      stopPolling()
+      if (channel) {
         try {
-          supabase.removeChannel(currentChannel)
+          supabase.removeChannel(channel)
         } catch (cleanupErr) {
           console.error('[useRealtimeNotifications] Error removing channel:', cleanupErr)
         }
+        channel = null
       }
-      channel = null
     }
   }, [queryClient])
 }

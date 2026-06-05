@@ -17,16 +17,22 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import dynamic from "next/dynamic"
 import { ChatInput } from "@/components/features/assistant/chat-input"
 import { ChatList } from "@/components/features/assistant/chat-list"
 import { ChatErrorBoundary } from "@/components/features/assistant/chat-error-boundary"
-import { SessionSidebar } from "@/components/features/ai-mentor/session-sidebar"
 import { GlassCard } from "@/components/shared/glass-card"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
 import { Sparkles, Target, Zap, Menu, X } from "lucide-react"
 import { useAIStream } from "@/hooks/use-ai-stream"
 import { useAuth } from "@/hooks/use-auth"
+
+// Lazy-load SessionSidebar — it has heavy dependencies and only renders on toggle
+const SessionSidebar = dynamic(
+  () => import("@/components/features/ai-mentor/session-sidebar").then((m) => ({ default: m.SessionSidebar })),
+  { ssr: false }
+)
 
 const STARTERS = [
     { icon: Target, title: "Find a Co-founder", desc: "Help me find a technical co-founder for my fintech startup." },

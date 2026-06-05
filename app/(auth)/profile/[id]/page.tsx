@@ -54,7 +54,7 @@ import { ProfileHeader } from "@/components/features/profile/profile-header"
 import { ProfileTabs } from "@/components/features/profile/profile-tabs"
 import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
-import { ConnectionButton } from '@/components/features/connections/connection-button'
+import { ConnectionButton, MessageButton } from '@/components/features/connections'
 import { MatchScore } from '@/components/shared/match-score'
 import { GlassCard } from '@/components/shared/glass-card'
 import { ProfileVisitTracker } from '@/components/features/profile/profile-visit-tracker'
@@ -275,7 +275,10 @@ export default async function ProfilePage({
         // ACTION SLOT: Connection button + MatchScore embedded in header top-right
         actionSlot={!isOwnProfile && user ? (
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-            <ConnectionButton userId={profileId} variant="default" size="default" />
+            <div className="flex items-stretch gap-2">
+              <ConnectionButton userId={profileId} variant="default" size="default" />
+              <MessageButton userId={profileId} variant="outline" size="default" />
+            </div>
             <Suspense fallback={<MatchScoreSkeleton />}>
               <MatchScoreSection profileId={profileId} userId={user.id} />
             </Suspense>

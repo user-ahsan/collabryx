@@ -395,12 +395,24 @@ export async function fetchPersonalizedFeed(options: PostsQueryOptions = {}): Pr
     return { data: mappedPosts, error: null, queryCount, duration }
   } catch (error) {
     const queryDuration = Date.now() - queryStartTime
-    // Only log as warning for new users / transient failures — the fallback works
-    logger.api.warn("Personalized feed unavailable — falling back to chronological", { 
-      error: error instanceof Error ? error.message : String(error),
-      queryCount, 
-      duration: queryDuration 
-    })
+    // Log the FULL error details for debugging, not just a generic message
+    if (error instanceof Error) {
+      const supaError = error as unknown as Record<string, unknown>
+      logger.api.error("Personalized feed computation failed — falling back to chronological", {
+        errorMessage: error.message,
+        errorCode: supaError.code as string,
+        errorDetails: supaError.details as string,
+        errorHint: supaError.hint as string,
+        queryCount,
+        duration: queryDuration,
+      })
+    } else {
+      logger.api.error("Personalized feed computation failed (non-Error) — falling back to chronological", {
+        rawError: String(error),
+        queryCount,
+        duration: queryDuration,
+      })
+    }
     // Fall back to chronological on any error
     return fetchPosts(options)
   }

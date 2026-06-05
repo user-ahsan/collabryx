@@ -2,14 +2,9 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { useCheckConnectionStatus, useSendConnectionRequest } from "@/hooks/use-connections"
 import { cn } from "@/lib/utils"
+import { UserPlus, UserCheck, Clock, Loader2 } from "lucide-react"
 
 interface ConnectionButtonProps {
   userId: string
@@ -22,10 +17,9 @@ export function ConnectionButton({
   variant = "default",
   size = "default",
 }: ConnectionButtonProps) {
-  const { data: status, isLoading } = useCheckConnectionStatus(userId)
+  const { data: status, isLoading: statusLoading } = useCheckConnectionStatus(userId)
   const sendRequest = useSendConnectionRequest()
   const [isPending, setIsPending] = useState(false)
-  const [showMenu, setShowMenu] = useState(false)
 
   const handleConnect = async () => {
     setIsPending(true)
@@ -39,9 +33,10 @@ export function ConnectionButton({
     }
   }
 
-  if (isLoading) {
+  if (statusLoading) {
     return (
       <Button variant={variant} size={size} disabled aria-label="Loading connection status">
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
         Loading...
       </Button>
     )
@@ -51,15 +46,27 @@ export function ConnectionButton({
   switch (status) {
     case "accepted":
       return (
-        <Button variant={variant} size={size} disabled className="bg-green-600 hover:bg-green-700">
-          ✓ Connected
+        <Button
+          variant="outline"
+          size={size}
+          disabled
+          className="border-green-500/30 bg-green-500/10 text-green-600 dark:text-green-400 cursor-default"
+        >
+          <UserCheck className="mr-2 h-4 w-4" />
+          Connected
         </Button>
       )
 
     case "pending":
       return (
-        <Button variant={variant} size={size} disabled className="bg-yellow-600 hover:bg-yellow-700">
-          ⏳ Pending
+        <Button
+          variant="outline"
+          size={size}
+          disabled
+          className="border-yellow-500/30 bg-yellow-500/10 text-yellow-600 dark:text-yellow-400 cursor-default"
+        >
+          <Clock className="mr-2 h-4 w-4" />
+          Pending
         </Button>
       )
 
@@ -69,27 +76,28 @@ export function ConnectionButton({
     case "not_connected":
     default:
       return (
-        <DropdownMenu open={showMenu} onOpenChange={setShowMenu}>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant={variant}
-              size={size}
-              onClick={handleConnect}
-              disabled={isPending}
-              className={cn(
-                "transition-colors",
-                !isPending && "hover:bg-primary/90"
-              )}
-            >
-              {isPending ? "Sending..." : "Connect"}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleConnect}>
-              Send connection request
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Button
+          variant={variant}
+          size={size}
+          onClick={handleConnect}
+          disabled={isPending}
+          className={cn(
+            "transition-colors",
+            !isPending && "hover:bg-primary/90"
+          )}
+        >
+          {isPending ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Sending...
+            </>
+          ) : (
+            <>
+              <UserPlus className="mr-2 h-4 w-4" />
+              Connect
+            </>
+          )}
+        </Button>
       )
   }
 }

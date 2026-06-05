@@ -6,7 +6,9 @@ export const metadata: Metadata = {
   description: "AI-powered assistant for collaboration and project management",
 }
 
-export const dynamic = "force-dynamic"
+// Allow ISR caching — the page content is user-specific on the client but
+// the shell can be cached. Avoids recompiling massive module trees every request.
+export const revalidate = 30
 
 const AssistantContent = NextDynamic(
   () => import("./assistant-content"),
