@@ -115,9 +115,9 @@ export const LandingHeader: React.FC = () => {
 
                 {/* Desktop navigation */}
                 <div className="hidden lg:flex lg:gap-x-8">
-                    {isMounted && dynamicNav.map((item) => (
+                    {isMounted && dynamicNav.map((item, index) => (
                         <Link
-                            key={`desktop-${item.name}`}
+                            key={`desktop-${item.name}-${index}`}
                             href={item.href}
                             scroll={false}
                             onClick={(e) => {
@@ -157,9 +157,9 @@ export const LandingHeader: React.FC = () => {
             {mobileMenuOpen && (
                 <div className="lg:hidden">
                     <div className="space-y-2 px-6 pb-6 pt-2">
-                        {isMounted && dynamicNav.map((item) => (
+                        {isMounted && dynamicNav.map((item, index) => (
                             <Link
-                                key={`mobile-${item.name}`}
+                                key={`mobile-${item.name}-${index}`}
                                 href={item.href}
                                 scroll={false}
                                 className="block rounded-lg px-3 py-2 text-base font-semibold leading-7 text-foreground hover:bg-accent cursor-pointer"
