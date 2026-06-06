@@ -44,8 +44,9 @@ export default function Error({
 						</p>
 					</div>
 					<div className="flex gap-2">
-						<Button onClick={handleTryAgain}>Try Again</Button>
+						<Button type="button" onClick={handleTryAgain}>Try Again</Button>
 						<Button
+							type="button"
 							variant="outline"
 							onClick={() => window.history.back()}
 						>

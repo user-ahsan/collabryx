@@ -505,6 +505,11 @@ export default function OnboardingPage() {
     const onSubmit = useCallback(async (data: OnboardingData) => {
         // Prevent double submission
         if (isSubmitting) return
+        // Only allow submission from the last step (Experience)
+        if (!isLastStep) {
+            setIsSubmitting(false)
+            return
+        }
         
         setIsSubmitting(true)
 
@@ -628,7 +633,7 @@ export default function OnboardingPage() {
             }
             setIsSubmitting(false)
         }
-    }, [isSubmitting, router])
+    }, [isSubmitting, isLastStep, router])
 
     return (
         <div className="min-h-screen bg-background relative flex items-center justify-center overflow-hidden">

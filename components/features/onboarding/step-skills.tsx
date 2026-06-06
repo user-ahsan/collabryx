@@ -449,6 +449,7 @@ export function StepSkills() {
                     {suggestedSkills.slice(0, 4).map((skill) => (
                       <Button
                         key={skill}
+                        type="button"
                         variant="outline"
                         size="sm"
                         onClick={() => {
@@ -527,6 +528,7 @@ export function StepSkills() {
                       {["React", "TypeScript", "Python", "Node.js"].map((skill) => (
                         <Button
                           key={skill}
+                          type="button"
                           variant="outline"
                           size="sm"
                           onClick={() => {

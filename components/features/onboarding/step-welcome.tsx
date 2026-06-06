@@ -26,6 +26,7 @@ export function StepWelcome({ onNext }: StepWelcomeProps) {
             {/* CTA Button */}
             <div className="pt-4">
                 <Button 
+                    type="button"
                     onClick={onNext}
                     className="w-full h-14 text-lg font-semibold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all duration-300"
                     size="lg"

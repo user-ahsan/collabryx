@@ -26,7 +26,8 @@ export const onboardingDataSchema = z.object({
     .string()
     .min(2, "Display name must be at least 2 characters")
     .max(50, "Display name must be less than 50 characters")
-    .optional(),
+    .optional()
+    .or(z.literal("")),
 
   headline: z
     .string()
