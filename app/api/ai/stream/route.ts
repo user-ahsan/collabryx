@@ -441,6 +441,7 @@ export async function POST(request: NextRequest) {
           controller.close()
           revalidatePath('/(auth)/ai-mentor')
         } catch (error) {
+          console.error('[stream] Error in SSE stream loop:', error)
           // Save whatever we got on error
           if (fullResponse.trim()) {
             await saveMessage(dbSession.id, 'assistant', fullResponse).catch(() => {})

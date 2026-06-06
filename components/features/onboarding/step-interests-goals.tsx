@@ -31,7 +31,7 @@ import type { ComboboxOption } from "@/components/ui/searchable-combobox"
  *    instead of vague "Or add custom industries."
  */
 export function StepInterestsAndGoals() {
-  const { control, watch, setValue, formState: { errors } } = useFormContext()
+  const { control, formState: { errors } } = useFormContext()
   const [goalsSearch, setGoalsSearch] = React.useState("")
   const [interestsSearch, setInterestsSearch] = React.useState("")
   const [showAddGoals, setShowAddGoals] = React.useState(false)
@@ -168,15 +168,6 @@ export function StepInterestsAndGoals() {
                   </div>
                 </div>
               )}
-
-                  <div className={cn(
-                    "p-4 rounded-lg",
-                    glass("subtle")
-                  )}>
-                    <p className="text-sm text-muted-foreground">
-                      <strong>Tip:</strong> Select goals that match what you&apos;re looking for — from finding co-founders to networking, mentorship, freelance work, and more.
-                    </p>
-                  </div>
             </div>
           )
         }}
@@ -281,15 +272,6 @@ export function StepInterestsAndGoals() {
                   </div>
                 </div>
               )}
-
-                  <div className={cn(
-                    "p-4 rounded-lg",
-                    glass("subtle")
-                  )}>
-                    <p className="text-sm text-muted-foreground">
-                      <strong>Tip:</strong> Choose from 500+ industries — tech, healthcare, trades, services, and more. Your interests help us match you with relevant opportunities.
-                    </p>
-                  </div>
             </div>
           )
         }}
@@ -297,9 +279,15 @@ export function StepInterestsAndGoals() {
 
       {/* Collaboration Readiness - NEW */}
       <div className="pt-6 border-t border-border/20">
-        <CollaborationSelector
-          value={watch("collaborationReadiness") || "available"}
-          onChange={(val) => setValue("collaborationReadiness", val, { shouldDirty: true, shouldValidate: true })}
+        <Controller
+          control={control}
+          name="collaborationReadiness"
+          render={({ field }) => (
+            <CollaborationSelector
+              value={field.value || "available"}
+              onChange={field.onChange}
+            />
+          )}
         />
       </div>
     </div>
