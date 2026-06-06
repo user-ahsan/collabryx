@@ -18,6 +18,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useSidebar } from "@/components/shared/sidebar-context"
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler"
 import { useConnectionRequests } from "@/hooks/use-connections"
 import { GlobalSearch } from "@/components/features/search/global-search"
 import {
@@ -247,7 +248,17 @@ export function SidebarNav({ className, isMobile, ...props }: SidebarNavProps) {
             </ScrollArea>
 
             {/* ── Compact Profile Footer with three-dot menu ── */}
-            <div className={cn("shrink-0 border-t border-border/20", isCollapsed ? "p-3" : "p-3")}>
+            <div className={cn("shrink-0 border-t border-border/20 flex flex-col gap-2", isCollapsed ? "p-3" : "p-3")}>
+                <div className={cn(
+                    "flex items-center rounded-xl transition-all duration-200",
+                    isCollapsed ? "justify-center py-2" : "justify-between px-3.5 py-2 hover:bg-muted/30"
+                )}>
+                    {!isCollapsed && (
+                        <span className="text-sm font-medium text-muted-foreground">Theme</span>
+                    )}
+                    <AnimatedThemeToggler variant={isCollapsed ? "icon" : "slider"} className="shrink-0" />
+                </div>
+
                 <div className={cn(
                     "flex items-center rounded-xl transition-colors group",
                     isCollapsed ? "justify-center" : "gap-2"
