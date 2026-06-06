@@ -247,14 +247,6 @@ export function StepSkills() {
                 <Label className="text-sm font-semibold text-foreground">
                   Your Skills <span className="text-xs text-muted-foreground font-normal">({skills.length} selected · min. 5)</span>
                 </Label>
-                <div className={cn(
-                  "px-3 py-1.5 md:px-4 md:py-2 rounded-full text-xs md:text-sm font-semibold transition-colors duration-200 shrink-0",
-                  skills.length >= 5 
-                    ? "bg-green-500/20 text-green-500 border border-green-500/30" 
-                    : "bg-amber-500/20 text-amber-500 border border-amber-500/30"
-                )}>
-                  {skills.length >= 5 ? '✓ Complete' : `${skills.length}/5 needed`}
-                </div>
               </div>
 
               {/* Progress Bar */}
@@ -484,76 +476,9 @@ export function StepSkills() {
                       Start by adding your top 5 skills. This helps us match you with the right opportunities and collaborators.
                     </p>
                   </div>
-                  
-                  {/* Guidance Cards */}
-                  <div className="grid gap-3 max-w-md mx-auto">
-                    <div className="p-3 md:p-4 rounded-lg bg-background/30 border border-border/30 text-left flex items-start gap-3">
-                      <div className="w-6 h-6 rounded-full bg-blue-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-xs font-bold text-blue-500">1</span>
-                      </div>
-                      <div>
-                        <p className="text-sm md:text-base font-medium text-foreground">What do you use most often?</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Your daily tools and technologies</p>
-                      </div>
-                    </div>
-                    
-                    <div className="p-3 md:p-4 rounded-lg bg-background/30 border border-border/30 text-left flex items-start gap-3">
-                      <div className="w-6 h-6 rounded-full bg-green-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-xs font-bold text-green-500">2</span>
-                      </div>
-                      <div>
-                        <p className="text-sm md:text-base font-medium text-foreground">What are you best at?</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Your strongest expertise areas</p>
-                      </div>
-                    </div>
-                    
-                    <div className="p-3 md:p-4 rounded-lg bg-background/30 border border-border/30 text-left flex items-start gap-3">
-                      <div className="w-6 h-6 rounded-full bg-purple-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                        <span className="text-xs font-bold text-purple-500">3</span>
-                      </div>
-                      <div>
-                        <p className="text-sm md:text-base font-medium text-foreground">What do you want to be hired for?</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">Your target role or projects</p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  {/* Quick Start CTA */}
-                  <div className="pt-2">
-                    <p className="text-xs text-muted-foreground mb-3">
-                      Or start with popular skills:
-                    </p>
-                    <div className="flex flex-wrap justify-center gap-2 max-w-full">
-                      {["React", "TypeScript", "Python", "Node.js"].map((skill) => (
-                        <Button
-                          key={skill}
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            const newSkill = {
-                              id: `quick-${skill.toLowerCase()}`,
-                              label: skill,
-                              proficiency: "intermediate"
-                            }
-                            field.onChange([newSkill])
-                          }}
-                          className="text-xs md:text-sm h-9 md:h-8 min-h-[44px]"
-                        >
-                          <Plus className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1" />
-                          <span className="truncate max-w-[120px] md:max-w-none">{skill}</span>
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
                 </div>
               )}
 
-              {/* Helper Text */}
-              <div className={cn("p-3 md:p-4 rounded-lg", glass("subtle"))}>
-                <p className="text-xs md:text-sm text-muted-foreground">
-                  💡 <strong>Tip:</strong> Select from 1000\+ skills or type to add custom skills. Set proficiency levels to help us match you better.
-                </p>
-              </div>
             </div>
           )
         }}

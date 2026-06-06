@@ -146,13 +146,7 @@ export function StepExperience() {
               {errors.bio.message as string}
             </p>
           )}
-          <div className="flex justify-between items-center mt-1.5">
-            <div className="flex items-start gap-2 p-2.5 rounded-lg bg-primary/10 border border-primary/20 max-w-md">
-              <Sparkles className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                <span className="font-semibold text-foreground">AI Tip:</span> A detailed bio increases profile views by 3x and helps us match you with the right collaborators.
-              </p>
-            </div>
+          <div className="flex justify-end mt-1.5">
             <span className={cn(
               "text-xs tabular-nums",
               (bioValue?.length || 0) > 1800 ? "text-amber-500" : "text-muted-foreground"
