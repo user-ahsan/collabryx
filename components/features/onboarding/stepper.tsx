@@ -52,6 +52,24 @@ export function Stepper({ steps, currentStep }: StepperProps) {
             role="navigation" 
             aria-label="Progress through onboarding steps"
         >
+            {/* Connecting lines - spans between the first and last dot centers */}
+            <div 
+                className="absolute top-7 md:top-8 -translate-y-1/2 z-10"
+                style={{
+                    left: `${50 / stepCount}%`,
+                    right: `${50 / stepCount}%`
+                }}
+            >
+                <div className={cn("w-full h-1 rounded-full", glass("divider"))} />
+                <div
+                    className={cn(
+                        "absolute left-0 top-0 h-1 rounded-full transition-all duration-500 ease-in-out",
+                        "bg-primary"
+                    )}
+                    style={{ width: `${stepCount > 1 ? (adjustedStep / (stepCount - 1)) * 100 : 0}%` }}
+                />
+            </div>
+
             {/* Stepper items - higher z-index to appear above lines */}
             <div className="flex items-start justify-between relative z-20 gap-0" role="list">
                 {visibleSteps.map((step, index) => {
@@ -72,9 +90,9 @@ export function Stepper({ steps, currentStep }: StepperProps) {
                                 }}
                                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
                                 className={cn(
-                                    "flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-full border-2 text-sm font-semibold transition-all duration-300 backdrop-blur-md bg-background shrink-0",
+                                    "relative z-20 flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-full border-2 text-sm font-semibold transition-all duration-300 backdrop-blur-md bg-background shrink-0",
                                     isCompleted
-                                        ? "border-primary bg-primary/10 text-primary"
+                                        ? "border-primary bg-background text-primary"
                                         : isCurrent
                                             ? "border-primary text-primary shadow-[0_0_20px_rgba(59,130,246,0.5)]"
                                             : glass("subtle") + " text-muted-foreground border-border/40"
@@ -97,20 +115,6 @@ export function Stepper({ steps, currentStep }: StepperProps) {
                         </div>
                     )
                 })}
-            </div>
-
-            {/* Connecting lines - spans between the first and last dot centers */}
-            <div 
-                className="absolute top-6 -translate-y-1/2 z-10 left-6 right-6 md:left-7 md:right-7"
-            >
-                <div className={cn("w-full h-1 rounded-full", glass("divider"))} />
-                <div
-                    className={cn(
-                        "absolute left-0 top-0 h-1 rounded-full transition-all duration-500 ease-in-out",
-                        "bg-primary/30"
-                    )}
-                    style={{ width: `${stepCount > 1 ? (adjustedStep / (stepCount - 1)) * 100 : 0}%` }}
-                />
             </div>
         </div>
     )

@@ -5,7 +5,8 @@ import { useFormContext, Controller } from "react-hook-form"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { X } from "lucide-react"
+import { X, Plus } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { collaborationGoals } from "@/lib/data/collaboration-goals"
 import { industriesDatabase } from "@/lib/data/industries-database"
 import { cn } from "@/lib/utils"
@@ -33,8 +34,10 @@ export function StepInterestsAndGoals() {
   const { control, watch, setValue, formState: { errors } } = useFormContext()
   const [goalsSearch, setGoalsSearch] = React.useState("")
   const [interestsSearch, setInterestsSearch] = React.useState("")
+  const [showAddGoals, setShowAddGoals] = React.useState(false)
+  const [showAddInterests, setShowAddInterests] = React.useState(false)
 
-  const collaborationValue = watch("collaborationReadiness")
+
 
   // Convert goals database to combobox options
   const goalOptions: ComboboxOption[] = React.useMemo(() => 
@@ -88,8 +91,59 @@ export function StepInterestsAndGoals() {
                 <p id="goals-error" className="text-xs text-destructive font-medium" role="alert">{errors.goals.message}</p>
               )}
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div className="space-y-3 min-w-0">
+              {/* Selected goals as badges outside search, always visible */}
+              {currentGoals.length > 0 && (
+                <div className={cn("flex flex-wrap gap-2 p-3 rounded-lg min-h-[48px]", glass("subtle"))} role="list" aria-label="Selected goals">
+                  {currentGoals.map((goalId) => {
+                    const goal = goalOptions.find(g => g.id === goalId)
+                    return (
+                      <Badge key={goalId} variant="secondary" className="px-3 py-1.5 text-sm gap-2 bg-primary/10 hover:bg-primary/20 text-primary border-none" role="listitem">
+                        {goal?.label || goalId}
+                        <button type="button" onClick={() => handleRemoveGoal(goalId)} className="p-0.5 rounded-full hover:bg-primary/20 transition-colors" aria-label={`Remove goal`}>
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </Badge>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Add Goal Toggle Button */}
+              {!showAddGoals && (
+                <div className="flex justify-center pt-1">
+                  <Button
+                    type="button"
+                    onClick={() => setShowAddGoals(true)}
+                    className={cn(
+                      "w-full sm:w-auto px-6 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2",
+                      glass("buttonPrimary"),
+                      glass("buttonPrimaryGlow")
+                    )}
+                  >
+                    <Plus className="w-4 h-4" />
+                    {currentGoals.length > 0 ? "Add More Goals" : "Add Goals"}
+                  </Button>
+                </div>
+              )}
+
+              {/* Add Goals Panel */}
+              {showAddGoals && (
+                <div className="flex flex-col gap-4 border border-border/20 rounded-2xl p-4 bg-card/25 backdrop-blur-md transition-all duration-300">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="goals-input" className="text-sm font-semibold text-foreground">
+                      Search & Select Goals
+                    </Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowAddGoals(false)}
+                      className="text-xs text-muted-foreground hover:text-foreground h-8 px-3"
+                    >
+                      Done Adding
+                    </Button>
+                  </div>
+
                   <Input
                     id="goals-input"
                     value={goalsSearch}
@@ -97,38 +151,23 @@ export function StepInterestsAndGoals() {
                     placeholder="Search goals (e.g., Find Co-Founder, Networking)..."
                     className={cn("h-12 text-base", glass("input"))}
                   />
-                  {currentGoals.length > 0 && (
-                    <div className={cn("flex flex-wrap gap-2 p-3 rounded-lg min-h-[48px]", glass("subtle"))} role="list" aria-label="Selected goals">
-                      {currentGoals.map((goalId) => {
-                        const goal = goalOptions.find(g => g.id === goalId)
-                        return (
-                          <Badge key={goalId} variant="secondary" className="px-3 py-1.5 text-sm gap-2 bg-primary/10 hover:bg-primary/20 text-primary border-none" role="listitem">
-                            {goal?.label || goalId}
-                            <button type="button" onClick={() => handleRemoveGoal(goalId)} className="p-0.5 rounded-full hover:bg-primary/20 transition-colors" aria-label={`Remove goal`}>
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </Badge>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
 
-                <div className="min-h-[250px] lg:min-h-[350px]">
-                  <TagSelectorCard
-                    options={goalOptions}
-                    selected={currentGoals}
-                    onChange={(selected) => field.onChange(selected)}
-                    searchValue={goalsSearch}
-                    onSearchChange={setGoalsSearch}
-                    searchPlaceholder="Search goals..."
-                    emptyMessage="No goals match your search."
-                    title="Collaboration Goals"
-                    showCategories={true}
-                    maxHeight={350}
-                  />
+                  <div className="min-h-[250px] lg:min-h-[350px]">
+                      <TagSelectorCard
+                        options={goalOptions}
+                        selected={currentGoals}
+                        onChange={(selected) => field.onChange(selected)}
+                        searchValue={goalsSearch}
+                        onSearchChange={setGoalsSearch}
+                        searchPlaceholder="Search goals..."
+                        emptyMessage="No goals match your search."
+                        title="Collaboration Goals"
+                        showCategories={true}
+                        maxHeight={350}
+                      />
+                  </div>
                 </div>
-              </div>
+              )}
 
                   <div className={cn(
                     "p-4 rounded-lg",
@@ -164,8 +203,59 @@ export function StepInterestsAndGoals() {
                 <p id="interests-hint" className="text-sm text-muted-foreground">Pick industries you care about — search or browse categories below.</p>
               </div>
               
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <div className="space-y-3 min-w-0">
+              {/* Selected interests as badges outside search, always visible */}
+              {currentInterests.length > 0 && (
+                <div className={cn("flex flex-wrap gap-2 p-3 rounded-lg min-h-[48px]", glass("subtle"))} role="list" aria-label="Selected interests">
+                  {currentInterests.map((interestId) => {
+                    const industry = industryOptions.find(i => i.id === interestId)
+                    return (
+                      <Badge key={interestId} variant="secondary" className="px-3 py-1.5 text-sm gap-2 bg-primary/10 hover:bg-primary/20 text-primary border-none" role="listitem">
+                        {industry?.label || interestId}
+                        <button type="button" onClick={() => handleRemoveInterest(interestId)} className="p-0.5 rounded-full hover:bg-primary/20 transition-colors" aria-label={`Remove interest`}>
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </Badge>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Add Interest Toggle Button */}
+              {!showAddInterests && (
+                <div className="flex justify-center pt-1">
+                  <Button
+                    type="button"
+                    onClick={() => setShowAddInterests(true)}
+                    className={cn(
+                      "w-full sm:w-auto px-6 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2",
+                      glass("buttonPrimary"),
+                      glass("buttonPrimaryGlow")
+                    )}
+                  >
+                    <Plus className="w-4 h-4" />
+                    {currentInterests.length > 0 ? "Add More Interests" : "Add Interests"}
+                  </Button>
+                </div>
+              )}
+
+              {/* Add Interests Panel */}
+              {showAddInterests && (
+                <div className="flex flex-col gap-4 border border-border/20 rounded-2xl p-4 bg-card/25 backdrop-blur-md transition-all duration-300">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="interests-input" className="text-sm font-semibold text-foreground">
+                      Search & Select Industries
+                    </Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowAddInterests(false)}
+                      className="text-xs text-muted-foreground hover:text-foreground h-8 px-3"
+                    >
+                      Done Adding
+                    </Button>
+                  </div>
+
                   <Input
                     id="interests-input"
                     value={interestsSearch}
@@ -174,38 +264,23 @@ export function StepInterestsAndGoals() {
                     className={cn("h-12 text-base", glass("input"))}
                     aria-required="true"
                   />
-                  {currentInterests.length > 0 && (
-                    <div className={cn("flex flex-wrap gap-2 p-3 rounded-lg min-h-[48px]", glass("subtle"))} role="list" aria-label="Selected interests">
-                      {currentInterests.map((interestId) => {
-                        const industry = industryOptions.find(i => i.id === interestId)
-                        return (
-                          <Badge key={interestId} variant="secondary" className="px-3 py-1.5 text-sm gap-2 bg-primary/10 hover:bg-primary/20 text-primary border-none" role="listitem">
-                            {industry?.label || interestId}
-                            <button type="button" onClick={() => handleRemoveInterest(interestId)} className="p-0.5 rounded-full hover:bg-primary/20 transition-colors" aria-label={`Remove interest`}>
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </Badge>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
 
-                <div className="min-h-[250px] lg:min-h-[400px]">
-                  <TagSelectorCard
-                    options={industryOptions}
-                    selected={currentInterests}
-                    onChange={(selected) => field.onChange(selected)}
-                    searchValue={interestsSearch}
-                    onSearchChange={setInterestsSearch}
-                    searchPlaceholder="Search industries..."
-                    emptyMessage="No industries match your search."
-                    title="Industries & Interests"
-                    showCategories={true}
-                    maxHeight={400}
-                  />
+                  <div className="min-h-[250px] lg:min-h-[400px]">
+                    <TagSelectorCard
+                      options={industryOptions}
+                      selected={currentInterests}
+                      onChange={(selected) => field.onChange(selected)}
+                      searchValue={interestsSearch}
+                      onSearchChange={setInterestsSearch}
+                      searchPlaceholder="Search industries..."
+                      emptyMessage="No industries match your search."
+                      title="Industries & Interests"
+                      showCategories={true}
+                      maxHeight={400}
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
 
                   <div className={cn(
                     "p-4 rounded-lg",
@@ -223,8 +298,8 @@ export function StepInterestsAndGoals() {
       {/* Collaboration Readiness - NEW */}
       <div className="pt-6 border-t border-border/20">
         <CollaborationSelector
-          value={collaborationValue || "available"}
-          onChange={(val) => setValue("collaborationReadiness", val, { shouldDirty: true })}
+          value={watch("collaborationReadiness") || "available"}
+          onChange={(val) => setValue("collaborationReadiness", val, { shouldDirty: true, shouldValidate: true })}
         />
       </div>
     </div>

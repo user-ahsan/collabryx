@@ -64,7 +64,7 @@ export const onboardingDataSchema = z.object({
     id: z.string(),
     label: z.string(),
     proficiency: z.enum(["beginner", "intermediate", "advanced", "expert"])
-  })).min(1, "At least one skill is required").max(20, "Maximum 20 skills allowed"),
+  })).min(5, "At least 5 skills are required").max(20, "Maximum 20 skills allowed"),
 
   interests: z
     .array(z.string().min(1).max(50))
