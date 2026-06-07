@@ -1,7 +1,7 @@
 # Collabryx Database Setup
 
-**Last Updated:** 2026-03-21  
-**Version:** 4.1.0 (Final Boss - Self-Contained)
+**Last Updated:** 2026-06-06  
+**Version:** 4.3.0 (Production)
 
 ---
 
@@ -47,7 +47,7 @@
 |------|---------|----------|
 | `00-complete-database-wipe.sql` | ⚠️ Deletes ALL data - use for resets | Production resets |
 | `01-profiles.sql` through `23-profile-embeddings.sql` | ❌ Reference only - DO NOT RUN | Documentation |
-| `99-master-all-tables.sql` | ✅ Complete schema (34 tables) | **RUN THIS FILE ONLY** |
+| `99-master-all-tables.sql` | ✅ Complete schema (37 tables, 39 total with migrations) | **RUN THIS FILE ONLY** |
 
 ---
 

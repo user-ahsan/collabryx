@@ -33,7 +33,7 @@ Complete checklist for deploying Collabryx to production.
 
 - [ ] **Database Setup**
   - [ ] Run `supabase/setup/99-master-all-tables.sql` (v4.2.0)
-  - [ ] Verify all 36+ tables created
+  - [ ] Verify all 39 tables created
   - [ ] Test RLS policies (100+ total)
   - [ ] Verify optimistic locking functions exist
   - [ ] Verify messages.read_at column exists
@@ -162,7 +162,7 @@ Complete checklist for deploying Collabryx to production.
   ```
 
 - [ ] **Verification**
-  - [ ] All tables exist (36+ in master, 38 total with migrations)
+  - [ ] All tables exist (37 in master, 39 total with migrations)
   - [ ] Indexes created (100+ total)
   - [ ] RLS policies active (100+ total)
   - [ ] Triggers working (39+ total)

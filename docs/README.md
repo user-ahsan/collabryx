@@ -1,7 +1,7 @@
 # 📚 Collabryx Documentation
 
-**Last Updated:** 2026-06-03  
-**Version:** 4.2.0
+**Last Updated:** 2026-06-06  
+**Version:** 4.3.0
 
 ---
 
@@ -17,7 +17,6 @@
 | [🤝 Contributing](./06-contributing/guide.md) | How to contribute, code standards, git workflow |
 | [📖 Reference](./07-reference/) | Environment variables, commands, troubleshooting |
 | [🗄️ Database Seeding](./08-database-seeding/README.md) | Seed data for development |
-| [🎨 Design System](./DESIGN-SYSTEM.md) | UI design tokens, components, patterns |
 | [🔒 Security](./SECURITY.md) | Security architecture, RLS, rate limiting |
 
 ---
@@ -27,8 +26,6 @@
 ```
 docs/
 ├── README.md                         ← You are here
-├── DESIGN-SYSTEM.md                   # Design tokens, glass tiers, component standards
-├── FRONTEND-INTEGRATION-GUIDE.md      # Frontend API integration patterns (reference)
 ├── IMPLEMENTATION_PLAN.md             # AI Mentor enhancement plan (v1, partially implemented)
 ├── SECURITY.md                        # Security architecture & RLS
 ├── 01-getting-started/
@@ -50,7 +47,7 @@ docs/
 ├── 04-infrastructure/
 │   ├── performance.md                # Performance optimization guide
 │   ├── database/
-│   │   ├── schema.md                # DB schema reference (38 tables)
+│   │   ├── schema.md                # DB schema reference (39 tables)
 │   │   ├── setup-guide.md           # Database setup instructions
 │   │   └── embeddings.md            # Embedding system deep-dive
 │   └── python-worker/
@@ -74,14 +71,13 @@ docs/
     └── QUICK_REFERENCE.md           # Seeding cheat sheet
 ```
 
-**Total: 35 documentation files**
+**Total: 33 documentation files**
 
 ---
 
 ## Quick Links
 
 - [🔙 Main README](../README.md)
-- [🐛 Issue Tracker](../ISSUES.md)
 - [🤖 Agent Development Guide](../AGENTS.md)
 
 ---

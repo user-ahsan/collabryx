@@ -91,10 +91,9 @@ collabryx/
 │   └── not-found.tsx        # 404 page
 │
 ├── components/               # React components
-│   ├── features/            # Feature-specific (17 domains)
+│   ├── features/            # Feature-specific (16 domains)
 │   │   ├── ai-mentor/       # AI mentor streaming
 │   │   ├── analytics/       # Analytics charts
-│   │   ├── assistant/       # AI assistant (chat-input, chat-list, message-bubble)
 │   │   ├── auth/            # Auth forms (login, register, forgot-password, etc.)
 │   │   ├── connections/     # Connection button, list, request items
 │   │   ├── dashboard/       # Dashboard + posts (feed, post-card, comments)
@@ -108,16 +107,16 @@ collabryx/
 │   │   ├── requests/        # Requests client
 │   │   └── settings/        # Settings tabs (profile, skills, privacy, etc.)
 │   │
-│   ├── shared/              # Cross-feature components (18)
+│   ├── shared/              # Cross-feature components (23)
 │   │   ├── glass-card.tsx
 │   │   ├── sidebar-nav.tsx
 │   │   ├── mobile-nav.tsx
 │   │   ├── user-nav-dropdown.tsx
 │   │   ├── notification-bell.tsx
 │   │   ├── error-boundary.tsx
-│   │   └── ... (18 shared components)
+│   │   └── ... (23 shared components)
 │   │
-│   ├── ui/                  # shadcn/ui primitives (52 components)
+│   ├── ui/                  # shadcn/ui primitives (58 components)
 │   │   ├── button.tsx
 │   │   ├── card.tsx
 │   │   ├── dialog.tsx
@@ -127,7 +126,7 @@ collabryx/
 │       ├── query-provider.tsx
 │       └── smooth-scroll-provider.tsx
 │
-├── hooks/                   # Custom React hooks (28)
+├── hooks/                   # Custom React hooks (30)
 │   ├── use-auth.ts
 │   ├── use-messages.ts
 │   ├── use-matches-query.ts
@@ -136,7 +135,7 @@ collabryx/
 │   ├── use-settings.ts
 │   ├── use-posts.ts
 │   ├── use-analytics.ts
-│   └── ... (28 total)
+│   └── ... (30 total)
 │
 ├── lib/                     # Library code
 │   ├── actions/             # Server Actions (10)
@@ -148,7 +147,7 @@ collabryx/
 │   ├── errors/              # Error types
 │   ├── prompt/              # AI prompts
 │   ├── rag/                 # RAG pipeline
-│   ├── services/            # Business logic (18 services)
+│   ├── services/            # Business logic (21 services)
 │   ├── supabase/            # Supabase clients (browser + server)
 │   ├── utils/               # Utilities (15)
 │   └── validations/         # Zod schemas (5)
@@ -157,7 +156,7 @@ collabryx/
 │   ├── docker-*.mjs         # Docker management scripts
 │   └── seed-data/           # Database seeders
 │
-├── docs/                    # Documentation (33+ files)
+├── docs/                    # Documentation (33 files)
 ├── python-worker/           # FastAPI embedding service
 ├── supabase/                # Database setup
 ├── public/                  # Static assets

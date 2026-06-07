@@ -10,7 +10,7 @@ Complete guide to setting up the Collabryx database schema in Supabase.
 
 **DO NOT run individual SQL files (01-23).** They are reference-only.
 
-Run the master migration file that includes all 29 tables:
+Run the master migration file that includes all 37 tables (plus 2 more via migrations = 39 total):
 
 ```sql
 -- In Supabase SQL Editor:
@@ -20,20 +20,26 @@ Run the master migration file that includes all 29 tables:
 supabase/setup/99-master-all-tables.sql
 ```
 
-This creates all 29 tables including:
+This creates all 37 tables (39 total with migrations) including:
 - User management (profiles, user_skills, user_interests, user_experiences, user_projects)
-- Social features (posts, post_attachments, post_reactions, comments, comment_likes, connections)
+- Social features (posts, post_attachments, post_reactions, comments, comment_likes, connections, user_bookmarks)
 - Matching system (match_suggestions, match_scores, match_activity, match_preferences)
 - Messaging (conversations, messages with `read_at` for read receipts)
 - Notifications (notifications, notification_preferences)
 - AI features (ai_mentor_sessions, ai_mentor_messages)
-- Preferences (theme_preferences)
+- Preferences (theme_preferences, privacy_settings, blocked_users)
 - **Vector embeddings** (profile_embeddings, embedding_dead_letter_queue, embedding_rate_limits, embedding_pending_queue)
+- Analytics (user_analytics, platform_analytics, events, profile_visits)
+- Feed ranking (feed_scores, feed_thompson_params, post_impressions)
+- Audit & moderation (audit_logs, content_moderation_logs)
 
-**New in v4.1.0:**
+**New in v4.1.0+ (via migrations):**
 - Optimistic locking support for posts (version column + counter functions)
 - Message read tracking (read_at column)
 - 3 composite indexes for query optimization
+- profile_visits table for 7-day deduplicated visit tracking
+- user_bookmarks table with bookmark counters
+- Analytics pipeline RPC functions
 
 ---
 
@@ -334,5 +340,5 @@ Rate limiting functions use `SECURITY DEFINER`:
 
 ---
 
-**Last Updated:** 2026-06-05  
-**Version:** 4.2.0
+**Last Updated:** 2026-06-06  
+**Version:** 4.3.0

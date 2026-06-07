@@ -26,7 +26,7 @@ Violating any of these will result in immediate rejection:
 
 1. **NO NEW PACKAGES:** You are strictly forbidden from adding dependencies to `package.json`.
 2. **NO VERSION BUMPS:** Never modify package versions under any circumstances.
-3. **CONFIG IMMUTABILITY:** Configuration files (`tsconfig.json`, `next.config.ts`, `vitest.config.ts`) are strictly read-only. Adapt your code to the config, never the reverse.
+3. **CONFIG IMMUTABILITY:** Configuration files (`tsconfig.json`, `next.config.ts`) are strictly read-only. Adapt your code to the config, never the reverse.
 4. **NO CSS MODULES:** Tailwind CSS v4 is the only permitted styling solution.
 5. **NO `any` TYPES:** Strict TypeScript only. Use `unknown` and type narrowing.
 6. **NO FILE REWRITES:** Apply minimal, surgical, line-by-line modifications to solve the immediate problem. Never rewrite entire files.
@@ -59,10 +59,10 @@ Violating any of these will result in immediate rejection:
 - **Row Level Security (RLS) Compliance:** Assume all tables have RLS. Ensure queries account for authenticated user contexts and never attempt to bypass RLS policies in standard API routes.
 - **Environment-Strict Clients:** Use the server client (`@/lib/supabase/server`) for Server Components/Actions and the browser client (`@/lib/supabase/client`) for Client Components. Mixing them is a fatal error.
 
-## 🧪 TESTING MANDATES (VITEST & PLAYWRIGHT)
-- **AAA Pattern is Mandatory:** Every test must be visually structured into Arrange, Act, and Assert blocks with clear comments separating the phases.
-- **Mock Infrastructure:** Do not hit real databases in unit/component tests. Utilize the existing mock infrastructure (`mockSupabaseClient`, mock data factories) found in `tests/setup/`.
-- **Coverage for Failures:** Ensure unit tests handle both expected outcomes and specific edge-case error codes (e.g., PostgreSQL error 23505).
+## 🧪 TESTING (PYTHON EMBEDDING SERVICE)
+- **Python Worker Tests:** Test files live in `python-worker/tests/` (Pytest).
+- **Manual Testing:** Run `bun run dev` and verify features work end-to-end.
+- **Type Safety:** Ensure TypeScript remains strict — no `any`, no `@ts-ignore`.
 
 ## 📁 EXACT DIRECTORY STRUCTURE
 *Reference taken directly from README.md to ensure strict placement.*
@@ -78,12 +78,9 @@ collabryx/
 │   ├── (public)/              # Public routes (landing, login, register)
 │   └── api/                   # API routes (22+ endpoints)
 ├── components/
-│   ├── features/              # Domain-specific components (17 domains)
-│   │   ├── activity/          # Activity feed (LEGACY - migrated to analytics/)
-│   │   │                     # Note: directory may not exist in all branches
+│   ├── features/              # Domain-specific components (16 domains)
 │   │   ├── ai-mentor/         # AI mentor chat
 │   │   ├── analytics/         # Analytics dashboard
-│   │   ├── assistant/         # AI assistant
 │   │   ├── auth/              # Authentication forms
 │   │   ├── connections/       # User connections
 │   │   ├── dashboard/         # Dashboard (posts, comments, feed)
@@ -98,14 +95,13 @@ collabryx/
 │   │   ├── requests/          # Connection requests
 │   │   ├── search/            # Global search
 │   │   └── settings/          # User settings
-│   ├── shared/                # Cross-feature components (18)
+│   ├── shared/                # Cross-feature components (23)
 │   │   ├── glass-card.tsx     # Glassmorphism card
 │   │   ├── sidebar-nav.tsx    # Navigation
 │   │   └── user-nav-dropdown.tsx
-│   ├── ui/                    # shadcn/ui primitives (52 components)
+│   ├── ui/                    # shadcn/ui primitives (58 components)
 │   └── providers/             # React context providers
-├── e2e/                       # Root-level Playwright E2E tests
-├── hooks/                     # Custom React hooks (28)
+├── hooks/                     # Custom React hooks (30)
 │   ├── use-auth.ts            # Authentication
 │   ├── use-messages.ts        # Messaging
 │   ├── use-matches-query.ts   # Matching logic
@@ -120,21 +116,14 @@ collabryx/
 │   ├── errors/                # Error types
 │   ├── prompt/                # AI prompt templates
 │   ├── rag/                   # RAG pipeline
-│   ├── services/              # Business logic (18 services)
+│   ├── services/              # Business logic (21 services)
 │   ├── supabase/              # Supabase client setup
 │   ├── utils/                 # Utility functions
 │   └── validations/           # Zod schemas
 ├── scripts/                   # Automation scripts
 │   ├── *.mjs                  # Docker management scripts
 │   └── seed-data/             # Database seeding
-├── tests/                     # Test suite (120+ files, 750+ tests)
-│   ├── unit/                  # Unit tests (45+ files)
-│   ├── components/            # Component tests (25 files)
-│   ├── integration/           # Integration tests (30+ files)
-│   ├── e2e/                   # E2E Playwright tests (6 specs)
-│   ├── scripts/               # Shell infrastructure tests
-│   └── setup/                 # Global mocks & fixtures
-├── docs/                      # Documentation (33+ files)
+├── docs/                      # Documentation (33 files)
 │   ├── 01-getting-started/
 │   ├── 02-architecture/
 │   │   ├── diagrams.md
@@ -160,8 +149,6 @@ collabryx/
 │   ├── 06-contributing/
 │   ├── 07-reference/
 │   ├── 08-database-seeding/
-│   ├── DESIGN-SYSTEM.md
-│   ├── FRONTEND-INTEGRATION-GUIDE.md
 │   ├── IMPLEMENTATION_PLAN.md
 │   └── SECURITY.md
 ├── python-worker/             # Python embedding service (FastAPI)
@@ -173,14 +160,13 @@ collabryx/
 ├── supabase/                  # Database config
 │   ├── config.toml            # Supabase configuration
 │   ├── migrations/            # Migration files
-│   └── setup/                 # Schema setup (34 tables + RLS + triggers)
+│   └── setup/                 # Schema setup (39 tables + RLS + triggers)
 ├── public/                    # Static assets
-│   ├── icons/                 # ~140 Lucide icons
+│   ├── icons/                 # ~154 Lucide icons
 │   ├── images/                # SVG assets
 │   └── Models/                # 3D models (GLTF)
 ├── types/                     # TypeScript type definitions (6 files)
 ├── AGENTS.md                  # AI agent development guide (this file)
-├── ISSUES.md                  # Known issues tracker
 ├── proxy.ts                   # Auth middleware
 ├── render.yaml                # Render deployment config
 └── expected-objects/          # Backend schema specs

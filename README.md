@@ -8,7 +8,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-Enabled-green?style=flat-square&logo=supabase)](https://supabase.com/)
 [![React](https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react)](https://react.dev/)
-[![Testing](https://img.shields.io/badge/testing-vitest-yellow?style=flat-square)](https://vitest.dev/)
+[![Testing](https://img.shields.io/badge/testing-python-yellow?style=flat-square)](https://docs.pytest.org/)
 
 </div>
 
@@ -27,7 +27,7 @@
 - 🎨 **Premium UI/UX** - Radix UI, shadcn/ui, Tailwind CSS v4, Framer Motion
 - 📱 **Responsive Design** - Mobile-first, accessible across all devices
 - 🌙 **Dark Mode** - next-themes for seamless theme switching
-- 🧪 **Testing** - Vitest (unit), Playwright (E2E), React Testing Library (components)
+- 🧪 **Testing** - Pytest (Python embedding service)
 
 ---
 
@@ -44,9 +44,6 @@
 - **[React Query 5](https://tanstack.com/query/latest)** - Server state management
 
 ### Testing & Quality
-- **[Vitest](https://vitest.dev/)** - Unit testing
-- **[Playwright](https://playwright.dev/)** - E2E testing
-- **[React Testing Library](https://testing-library.com/react)** - Component testing
 - **ESLint** - Code quality (0 errors, 26 intentional warnings)
 - **TypeScript** - Strict mode, 100% type safety
 
@@ -127,31 +124,18 @@ Open [http://localhost:3000](http://localhost:3000) to view the application.
 
 ### Run Tests
 
-**117 test files + 6 E2E specs | 750+ test cases | 10 modules (TC-001 through TC-100)**
+**Python embedding service tests only (Pytest):**
 
 ```bash
-# Run all unit/component/integration tests (Vitest)
-bun run test
+# Run Python worker tests
+cd python-worker && python -m pytest
 
-# Run with coverage
-bun run test -- --coverage
+# Run with verbose output
+cd python-worker && python -m pytest -v
 
-# Run in watch mode
-bun run test -- --watch
-
-# Run E2E tests (Playwright)
-bun run test:e2e
-
-# Run specific module
-bun run test -- --run tests/unit/hooks/
-bun run test -- --run tests/integration/auth/
-bun run test -- --run tests/components/features/matches/
-
-# Run specific test case by name
-bun run test -- -t "RLS blocks"
+# Run specific test file
+cd python-worker && python -m pytest tests/test_embedding.py
 ```
-
-📖 **Full test documentation:** [tests/README.md](./tests/README.md)
 
 ---
 
@@ -168,10 +152,9 @@ collabryx/
 │   ├── (public)/              # Public routes (landing, login, register)
 │   └── api/                   # API routes (22+ endpoints)
 ├── components/
-│   ├── features/              # Domain-specific components (17 domains)
+│   ├── features/              # Domain-specific components (16 domains)
 │   │   ├── ai-mentor/         # AI mentor chat
 │   │   ├── analytics/         # Analytics dashboard
-│   │   ├── assistant/         # AI assistant
 │   │   ├── auth/              # Authentication forms
 │   │   ├── connections/       # User connections
 │   │   ├── dashboard/         # Dashboard (posts, comments, feed)
@@ -186,20 +169,20 @@ collabryx/
 │   │   ├── requests/          # Connection requests
 │   │   ├── search/            # Global search
 │   │   └── settings/          # User settings
-│   ├── shared/                # Cross-feature components (22)
+│   ├── shared/                # Cross-feature components (23)
 │   │   ├── glass-card.tsx     # Glassmorphism card
 │   │   ├── sidebar-nav.tsx    # Navigation
 │   │   └── user-nav-dropdown.tsx
-│   │   [+ 19 more shared components]
-│   ├── ui/                    # shadcn/ui primitives (52 components)
+│   ├── ui/                    # shadcn/ui primitives (58 components)
 │   └── providers/             # React context providers
-├── e2e/                       # Root-level Playwright E2E tests
-├── hooks/                     # Custom React hooks (28 hooks)
+├── hooks/                     # Custom React hooks (30 hooks)
 │   ├── use-auth.ts            # Authentication
 │   ├── use-messages.ts        # Messaging
 │   ├── use-matches-query.ts   # Matching logic
 │   ├── use-settings.ts        # User settings
 │   ├── use-ai-stream.ts       # AI streaming
+│   ├── use-profile.ts         # Profile management
+│   ├── use-connections.ts     # User connections
 │   └── use-analytics.ts       # Analytics tracking
 ├── lib/
 │   ├── actions/               # Server Actions (10)
@@ -213,20 +196,19 @@ collabryx/
 │   ├── errors/                # Error types
 │   ├── prompt/                # AI prompt templates
 │   ├── rag/                   # RAG pipeline (6 modules: context, retrieval, summarization)
-│   ├── services/              # Business logic (22 services)
+│   ├── services/              # Business logic (21 services)
 │   ├── supabase/              # Supabase client setup
 │   ├── utils/                 # Utility functions
 │   └── validations/           # Zod schemas
 ├── scripts/                   # Automation scripts
 │   ├── *.mjs                  # Docker management scripts
 │   └── seed-data/             # Database seeding
-├── tests/                     # Test suite (130+ files, 750+ tests)
-│   ├── unit/                  # Unit tests (55 files)
-│   ├── components/            # Component tests (27 files)
-│   ├── integration/           # Integration tests (34 files)
-│   ├── e2e/                   # E2E Playwright tests (6 specs)
-│   ├── scripts/               # Shell infrastructure tests
-│   └── setup/                 # Global mocks & fixtures
+├── python-worker/             # Python embedding service (FastAPI)
+│   ├── main.py                # FastAPI entry point
+│   ├── embedding_generator.py # Sentence Transformers logic
+│   ├── rate_limiter.py        # Database-backed rate limiting
+│   ├── embedding_validator.py # Validation & dimension normalization
+│   └── tests/                 # Pytest suite (3 files)
 ├── diagrams/                  # Exported diagram assets
 ├── docs/                      # Documentation (35 files)
 ├── python-worker/             # Python embedding service (FastAPI)
@@ -237,17 +219,16 @@ collabryx/
 │   └── tests/                 # Pytest suite
 ├── supabase/                  # Database config
 │   ├── config.toml            # Supabase configuration
-│   ├── migrations/            # Migration files (7)
-│   └── setup/                 # Schema setup (34 tables + RLS + triggers)
+│   ├── migrations/            # Migration files (9)
+│   └── setup/                 # Schema setup (39 tables + RLS + triggers)
 │       ├── 99-master-all-tables.sql  # Master schema (run this)
 │       └── README.md          # Database setup guide
 ├── public/                    # Static assets
-│   ├── icons/                 # ~140 Lucide icons
+│   ├── icons/                 # ~154 Lucide icons
 │   ├── images/                # SVG assets
 │   └── Models/                # 3D models (GLTF)
 ├── types/                     # TypeScript type definitions (6 files)
 ├── AGENTS.md                  # AI agent development guide
-├── ISSUES.md                  # Known issues tracker
 ├── proxy.ts                   # Auth middleware
 └── render.yaml                # Render deployment config
 ```
@@ -321,32 +302,20 @@ python main.py --posts --limit-posts 1000
 
 ## 🧪 Testing
 
-Collabryx includes a comprehensive test suite with unit, component, and E2E tests.
+Collabryx includes the Python embedding service test suite (Pytest).
 
 ### Test Coverage
 
-- **Unit Tests**: Hooks, services, utilities (Vitest)
-- **Component Tests**: UI components, feature components (React Testing Library)
-- **E2E Tests**: Critical user flows (Playwright)
+- **Python Worker Tests**: Embedding generation pipeline (Pytest)
 
 ### Running Tests
 
 ```bash
-# Run all tests
-bun run test
+# Run Python worker tests
+cd python-worker && python -m pytest
 
-# Run with UI
-bun run test:ui
-
-# Run with coverage
-bun run test:coverage
-
-# E2E tests
-bun run test:e2e
-bun run test:e2e:ui
-```
-
-📖 **Testing Guide**: [docs/06-contributing/guide.md](./docs/06-contributing/guide.md)
+# Run with verbose output
+cd python-worker && python -m pytest -v
 
 ---
 
@@ -362,7 +331,6 @@ bun run test:e2e:ui
 | **Database Seeding** | [Complete Guide](./docs/08-database-seeding/README.md) • [Quick Reference](./docs/08-database-seeding/QUICK_REFERENCE.md) |
 | **Contributing** | [Guide](./docs/06-contributing/guide.md) • [Git Workflow](./docs/06-contributing/git-workflow.md) |
 | **Reference** | [Environment Variables](./docs/07-reference/environment-variables.md) • [Commands](./docs/07-reference/commands.md) • [Troubleshooting](./docs/07-reference/troubleshooting.md) |
-| **Design** | [Design System](./docs/DESIGN-SYSTEM.md) • [Frontend Integration](./docs/FRONTEND-INTEGRATION-GUIDE.md) |
 | **Security** | [Security Guide](./docs/SECURITY.md) |
 
 ---
@@ -387,9 +355,8 @@ git clone https://github.com/your-username/collabryx.git
 # Create a branch
 git checkout -b feature/your-feature-name
 
-# Make changes and test
+# Make changes and verify
 bun run dev
-bun run test
 
 # Commit with conventional commits
 git commit -m "feat: add new feature"
@@ -445,7 +412,7 @@ DEBUG=false
 
 ## 📊 Database
 
-Collabryx uses **36+ tables** in Supabase (PostgreSQL) with:
+Collabryx uses **39 tables** in Supabase (PostgreSQL) with:
 
 - Row Level Security (RLS) on all tables
 - Realtime subscriptions enabled
