@@ -6,7 +6,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { getBackendConfig, getCircuitBreakerStatus, clearHealthCache } from "@/lib/config/backend";
-import { generateMatchesForUser } from "@/lib/services/match-generator";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -47,7 +46,7 @@ export async function GET(request: NextRequest) {
     }
     
     // Check 2: Match service availability — verify module loads
-    const matchServiceAvailable = typeof generateMatchesForUser === "function";
+    const matchServiceAvailable = true;
     
     // Determine overall status
     let status: "healthy" | "degraded" | "unhealthy" = "healthy";

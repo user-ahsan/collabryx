@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 
 /**
- * Docker Rebuild Script - Rebuild and restart with detailed logging
+ * Docker Rebuild Script - Rebuild and restart all microservices
  * 
  * Features:
  * - Stops existing containers gracefully
  * - Removes old images
- * - Builds fresh image with no cache
+ * - Builds fresh images with no cache (all 4 services in sequence)
  * - Starts new containers
- * - Monitors health check
- * - Provides detailed build logs
+ * - Monitors health checks on all endpoints
+ * - Provides detailed build logs per service
  */
 
 import { execSync } from 'child_process';
@@ -20,14 +20,16 @@ import http from 'http';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const SERVICES = [
+  { name: 'embedding-service',    port: 8000, healthEndpoint: 'http://localhost:8000/health' },
+  { name: 'notification-service', port: 8002, healthEndpoint: 'http://localhost:8002/health' },
+  { name: 'feed-service',         port: 8003, healthEndpoint: 'http://localhost:8003/health' },
+  { name: 'match-service',        port: 8004, healthEndpoint: 'http://localhost:8004/health' }
+];
+
 // Configuration
 const CONFIG = {
   workerDir: path.join(__dirname, '..', 'python-worker'),
-  serviceName: 'collabryx-worker',
-  imageName: 'python-worker-collabryx-worker',
-  port: 8000,
-  healthEndpoint: 'http://localhost:8000/health',
-  healthTimeout: 120000,
   healthInterval: 3000,
   maxRetries: 40
 };
@@ -99,39 +101,40 @@ function stopContainers() {
 function removeImages() {
   log('\n🗑️  Removing old images...', 'cyan');
   
-  try {
-    const images = exec(`docker images -q ${CONFIG.imageName}`);
-    if (images.trim()) {
-      execVerbose(`docker rmi -f ${images.trim()}`);
-      log('✅ Old images removed', 'green');
-      return true;
-    } else {
-      log('ℹ️  No old images to remove', 'blue');
-      return false;
+  SERVICES.forEach(service => {
+    const imageName = `python-worker_${service.name}`;
+    try {
+      const images = exec(`docker images -q ${imageName}`);
+      if (images.trim()) {
+        execVerbose(`docker rmi -f ${images.trim()}`);
+        log(`   ✅ Removed image: ${imageName}`, 'green');
+      }
+    } catch (_error) {
+      log(`   ⚠️  Could not remove image: ${imageName}`, 'yellow');
     }
-  } catch (_error) {
-    log('⚠️  Could not remove images', 'yellow');
-    return false;
-  }
+  });
+  
+  return true;
 }
 
-function buildImage() {
-  log('\n🔨 Building Docker image...', 'cyan');
-  log(`   Directory: ${CONFIG.workerDir}`, 'blue');
-  log(`   Image: ${CONFIG.imageName}`, 'blue');
-  log(`   No cache: true`, 'blue');
+function buildImages() {
+  log('\n🔨 Building Docker images...', 'cyan');
   
-  try {
+  SERVICES.forEach(service => {
+    log(`\n   Building ${service.name}...`, 'blue');
     const startTime = Date.now();
-    execVerbose(`cd "${CONFIG.workerDir}" && docker-compose build`);
-    const buildTime = ((Date.now() - startTime) / 1000).toFixed(1);
-    log(`✅ Image built successfully in ${buildTime}s`, 'green');
-    return true;
-  } catch (error) {
-    log('❌ Failed to build Docker image', 'red');
-    log(error.message, 'red');
-    process.exit(1);
-  }
+    try {
+      execVerbose(`cd "${CONFIG.workerDir}" && docker compose build ${service.name}`);
+      const buildTime = ((Date.now() - startTime) / 1000).toFixed(1);
+      log(`   ✅ ${service.name} built in ${buildTime}s`, 'green');
+    } catch (error) {
+      log(`   ❌ Failed to build ${service.name}`, 'red');
+      log(error.message, 'red');
+      process.exit(1);
+    }
+  });
+  
+  return true;
 }
 
 function startContainers() {
@@ -148,15 +151,10 @@ function startContainers() {
   }
 }
 
-function checkHealth() {
-  return new Promise((resolve, reject) => {
-    let retries = 0;
-    
+function checkServiceHealth(service) {
+  return new Promise((resolve) => {
     const interval = setInterval(() => {
-      retries++;
-      log(`⏳ Waiting for health check... (${retries}/${CONFIG.maxRetries})`, 'yellow');
-      
-      http.get(CONFIG.healthEndpoint, { timeout: 3000 }, (res) => {
+      http.get(service.healthEndpoint, { timeout: 3000 }, (res) => {
         if (res.statusCode === 200) {
           clearInterval(interval);
           resolve(true);
@@ -164,67 +162,67 @@ function checkHealth() {
       }).on('error', () => {
         // Continue retrying
       });
-      
-      if (retries >= CONFIG.maxRetries) {
-        clearInterval(interval);
-        reject(new Error('Health check timeout'));
-      }
     }, CONFIG.healthInterval);
+    
+    setTimeout(() => {
+      clearInterval(interval);
+      resolve(false);
+    }, CONFIG.healthInterval * CONFIG.maxRetries);
   });
 }
 
-async function getHealthDetails() {
-  return new Promise((resolve) => {
-    http.get(CONFIG.healthEndpoint, { timeout: 3000 }, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        try {
-          resolve(JSON.parse(data));
-  } catch (_error) {
-          resolve(null);
-        }
+async function checkAllHealth() {
+  log('\n⏳ Waiting for all services to become healthy...', 'yellow');
+  
+  const results = await Promise.all(
+    SERVICES.map(async (service) => {
+      const healthy = await checkServiceHealth(service);
+      if (healthy) {
+        log(`   ✅ ${service.name} is healthy`, 'green');
+      } else {
+        log(`   ❌ ${service.name} failed health check`, 'red');
+      }
+      return healthy;
+    })
+  );
+  
+  return results.every(r => r === true);
+}
+
+async function displayHealthTable() {
+  log('\n' + '='.repeat(55), 'cyan');
+  log('📊 MICROSERVICES HEALTH STATUS', 'cyan');
+  log('='.repeat(55), 'cyan');
+  log(`  ${'Service'.padEnd(25)} ${'Port'.padEnd(8)} ${'Status'}`, 'blue');
+  log('─'.repeat(55), 'cyan');
+  
+  for (const service of SERVICES) {
+    try {
+      const res = await new Promise((resolve, reject) => {
+        http.get(service.healthEndpoint, { timeout: 3000 }, (r) => {
+          let data = '';
+          r.on('data', d => data += d);
+          r.on('end', () => resolve({ statusCode: r.statusCode, data }));
+        }).on('error', reject);
       });
-    }).on('error', () => {
-      resolve(null);
-    });
-  });
-}
-
-async function displayHealthStatus() {
-  const health = await getHealthDetails();
-  if (!health) return;
-
-  log('\n' + '='.repeat(60), 'cyan');
-  log('📊 HEALTH STATUS', 'cyan');
-  log('='.repeat(60), 'cyan');
-  
-  log(`   Status: ${health.status === 'healthy' ? '✅ Healthy' : '⚠️  ' + health.status}`, health.status === 'healthy' ? 'green' : 'yellow');
-  log(`   Supabase: ${health.supabase_connected ? '✅ Connected' : '❌ Disconnected'}`, health.supabase_connected ? 'green' : 'red');
-  
-  if (health.model_info) {
-    log(`   Model: ${health.model_info.model_name}`, 'blue');
-    log(`   Dimensions: ${health.model_info.dimensions}`, 'blue');
-    log(`   Device: ${health.model_info.device}`, 'blue');
+      
+      if (res.statusCode === 200) {
+        try {
+          const body = JSON.parse(res.data);
+          const status = body.status === 'healthy' ? '✅ Healthy' : '⚠️ ' + body.status;
+          log(`  ${service.name.padEnd(25)} ${String(service.port).padEnd(8)} ${status}`, 'green');
+        } catch {
+          log(`  ${service.name.padEnd(25)} ${String(service.port).padEnd(8)} ✅ Running`, 'green');
+        }
+      } else {
+        log(`  ${service.name.padEnd(25)} ${String(service.port).padEnd(8)} ❌ Unhealthy`, 'red');
+      }
+    } catch {
+      log(`  ${service.name.padEnd(25)} ${String(service.port).padEnd(8)} ❌ Down`, 'red');
+    }
   }
   
-  if (health.queue_size !== undefined) {
-    const queueStatus = health.queue_size < 50 ? '✅' : health.queue_size < 80 ? '⚠️' : '❌';
-    log(`   Queue: ${queueStatus} ${health.queue_size}/${health.queue_capacity || 100}`, 
-      health.queue_size < 50 ? 'green' : health.queue_size < 80 ? 'yellow' : 'red');
-  }
-  
-  if (health.memory_usage) {
-    log(`   Memory: ${health.memory_usage.percent.toFixed(1)}% used`, 
-      health.memory_usage.percent < 80 ? 'green' : 'yellow');
-  }
-  
-  if (health.disk_usage) {
-    log(`   Disk: ${health.disk_usage.percent.toFixed(1)}% used`, 
-      health.disk_usage.percent < 80 ? 'green' : 'yellow');
-  }
-  
-  log('='.repeat(60), 'cyan');
+  log('='.repeat(55), 'cyan');
 }
 
 async function main() {
@@ -233,7 +231,7 @@ async function main() {
   const skipRemove = args.includes('--no-remove');
   
   log('\n' + '='.repeat(60), 'cyan');
-  log('🔨 Docker Rebuild - Complete Rebuild & Restart', 'cyan');
+  log('🔨 Docker Rebuild - Rebuild & Restart All Microservices', 'cyan');
   log('='.repeat(60) + '\n', 'cyan');
   
   // Check Docker
@@ -249,28 +247,30 @@ async function main() {
     removeImages();
   }
   
-  // Build image
-  buildImage();
+  // Build all images
+  buildImages();
   
   // Start containers
   startContainers();
   
-  // Wait for health check
+  // Wait for all health checks
   try {
-    await checkHealth();
-    log('\n✅ Service rebuilt and running!', 'green');
-    log(`🌐 Health endpoint: ${CONFIG.healthEndpoint}`, 'blue');
+    const allHealthy = await checkAllHealth();
+    await displayHealthTable();
     
-    // Display detailed health status
-    await displayHealthStatus();
+    if (allHealthy) {
+      log('\n✅ All microservices rebuilt and running!', 'green');
+    } else {
+      log('\n⚠️  Some services may not be healthy', 'yellow');
+    }
     
     log('\n📋 Useful commands:', 'cyan');
-    log('   View logs: bun run docker:logs', 'blue');
-    log('   Monitor health: bun run docker:health:monitor', 'blue');
+    log('   View logs:    bun run docker:logs', 'blue');
+    log('   Check health: bun run docker:health', 'blue');
     log('   Check status: bun run docker:status', 'blue');
     log('');
   } catch (_error) {
-    log('\n❌ Service failed to start properly', 'red');
+    log('\n❌ Services failed to start properly', 'red');
     log('Check logs with: bun run docker:logs', 'yellow');
     process.exit(1);
   }

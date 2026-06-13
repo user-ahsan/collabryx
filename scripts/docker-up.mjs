@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 /**
- * Docker Up - Start Python Worker Service
- * Simple, robust, with clear status messages
+ * Docker Up - Start Collabryx Microservices
+ * Starts all 4 microservices and waits for each health endpoint
  */
 
 import { execSync } from 'child_process';
@@ -13,10 +13,15 @@ import http from 'http';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const SERVICES = [
+  { name: 'embedding-service',    port: 8000, healthEndpoint: 'http://localhost:8000/health' },
+  { name: 'notification-service', port: 8002, healthEndpoint: 'http://localhost:8002/health' },
+  { name: 'feed-service',         port: 8003, healthEndpoint: 'http://localhost:8003/health' },
+  { name: 'match-service',        port: 8004, healthEndpoint: 'http://localhost:8004/health' }
+];
+
 const CONFIG = {
   workerDir: path.join(__dirname, '..', 'python-worker'),
-  port: 8000,
-  healthEndpoint: 'http://localhost:8000/health',
   maxRetries: 40,
   retryInterval: 3000
 };
@@ -61,69 +66,96 @@ function checkDocker() {
 }
 
 function isRunning() {
-  const containers = exec(`docker ps --filter "name=collabryx-worker" --filter "status=running" --format "{{.ID}}"`);
+  const containers = exec(`docker ps --filter "name=python-worker" --filter "status=running" --format "{{.ID}}"`);
   return containers.trim().length > 0;
 }
 
 function start() {
-  log('\n🚀 Starting Collabryx Worker...', 'cyan');
+  log('\n🚀 Starting Collabryx Microservices...', 'cyan');
   execVerbose(`cd "${CONFIG.workerDir}" && docker compose up -d`);
 }
 
-async function waitForHealth() {
-  log('⏳ Waiting for service...', 'yellow');
-  
-  for (let i = 1; i <= CONFIG.maxRetries; i++) {
+async function waitForService(service, retries) {
+  for (let i = 1; i <= retries; i++) {
     try {
       const res = await new Promise((resolve, reject) => {
-        http.get(CONFIG.healthEndpoint, { timeout: 2000 }, resolve).on('error', reject);
+        http.get(service.healthEndpoint, { timeout: 2000 }, resolve).on('error', reject);
       });
       
       if (res.statusCode === 200) {
-        log(`✅ Service running on port ${CONFIG.port}`, 'green');
+        log(`   ✅ ${service.name} running on port ${service.port}`, 'green');
         return true;
       }
-  } catch (_error) {
-      log(`   Attempt ${i}/${CONFIG.maxRetries}`, 'yellow');
+    } catch (_error) {
+      if (i % 5 === 0 || i === 1) {
+        log(`   ⏳ ${service.name} - attempt ${i}/${retries}`, 'yellow');
+      }
     }
     
     await new Promise(r => setTimeout(r, CONFIG.retryInterval));
   }
   
-  throw new Error('Service failed to start');
+  log(`   ❌ ${service.name} failed to start on port ${service.port}`, 'red');
+  return false;
 }
 
-async function showStatus() {
-  try {
-    const res = await new Promise((resolve, reject) => {
-      let data = '';
-      http.get(CONFIG.healthEndpoint, { timeout: 2000 }, (r) => {
-        r.on('data', d => data += d);
-        r.on('end', () => resolve(JSON.parse(data)));
-      }).on('error', reject);
-    });
-    
-    log('\n📊 Status:', 'cyan');
-    log(`   Health: ${res.status === 'healthy' ? '✅' : '⚠️'} ${res.status}`, res.status === 'healthy' ? 'green' : 'yellow');
-    log(`   Queue: ${res.queue_size || 0} items`, 'cyan');
-    if (res.model_info) {
-      log(`   Model: ${res.model_info.model_name}`, 'cyan');
+async function waitForAllHealth() {
+  log('\n⏳ Waiting for all services to become healthy...', 'yellow');
+  
+  const results = await Promise.all(
+    SERVICES.map(service => waitForService(service, CONFIG.maxRetries))
+  );
+  
+  return results.every(r => r === true);
+}
+
+async function showStatusTable() {
+  log('\n📊 Microservices Status:', 'cyan');
+  log('─'.repeat(55), 'cyan');
+  log(`  ${'Service'.padEnd(25)} ${'Port'.padEnd(8)} ${'Status'}`, 'blue');
+  log('─'.repeat(55), 'cyan');
+  
+  for (const service of SERVICES) {
+    try {
+      const res = await new Promise((resolve, reject) => {
+        http.get(service.healthEndpoint, { timeout: 2000 }, (r) => {
+          let data = '';
+          r.on('data', d => data += d);
+          r.on('end', () => resolve({ statusCode: r.statusCode, data }));
+        }).on('error', reject);
+      });
+      
+      if (res.statusCode === 200) {
+        try {
+          const body = JSON.parse(res.data);
+          const status = body.status === 'healthy' ? '✅ Healthy' : '⚠️ ' + body.status;
+          log(`  ${service.name.padEnd(25)} ${String(service.port).padEnd(8)} ${status}`, 'green');
+        } catch {
+          log(`  ${service.name.padEnd(25)} ${String(service.port).padEnd(8)} ✅ Running`, 'green');
+        }
+      } else {
+        log(`  ${service.name.padEnd(25)} ${String(service.port).padEnd(8)} ❌ Unhealthy`, 'red');
+      }
+    } catch {
+      log(`  ${service.name.padEnd(25)} ${String(service.port).padEnd(8)} ❌ Down`, 'red');
     }
-  } catch (_error) {
-    log('   (Status unavailable)', 'yellow');
   }
+  
+  log('─'.repeat(55), 'cyan');
 }
 
 async function main() {
-  log('\n' + '='.repeat(50), 'cyan');
-  log('🐳 Collabryx Worker - Docker Up', 'cyan');
-  log('='.repeat(50), 'cyan');
+  log('\n' + '='.repeat(55), 'cyan');
+  log('🐳 Collabryx Microservices - Docker Up', 'cyan');
+  log('='.repeat(55), 'cyan');
   
   checkDocker();
   
   if (isRunning()) {
-    log('✅ Service already running', 'green');
-    log(`   Port: ${CONFIG.port}`, 'cyan');
+    log('✅ Services already running', 'green');
+    for (const service of SERVICES) {
+      log(`   ${service.name}: port ${service.port}`, 'cyan');
+    }
     log('   Logs: bun run docker:logs', 'cyan');
     return;
   }
@@ -131,8 +163,16 @@ async function main() {
   start();
   
   try {
-    await waitForHealth();
-    await showStatus();
+    const allHealthy = await waitForAllHealth();
+    await showStatusTable();
+    
+    if (allHealthy) {
+      log('\n✅ All microservices are running!', 'green');
+    } else {
+      log('\n⚠️  Some services may not be healthy', 'yellow');
+      log('   Check logs: bun run docker:logs', 'yellow');
+    }
+    
     log('\n💡 Commands:', 'cyan');
     log('   Logs: bun run docker:logs', 'cyan');
     log('   Stop: bun run docker:down', 'cyan');

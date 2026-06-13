@@ -7,7 +7,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { generateBatchMatches } from "@/lib/services/match-generator";
+import { matchClient } from "@/lib/worker-client";
 import { validateCSRFRequest, requiresCSRF } from "@/lib/csrf";
 import { errorResponse } from '@/lib/utils/api-response';
 
@@ -88,9 +88,9 @@ export async function POST(request: NextRequest) {
       return errorResponse('INVALID_REQUEST', 'Invalid request body', 400)
     }
     
-    const { user_ids, limit, min_score } = validationResult.data;
+    const { user_ids, limit, min_score: _min_score } = validationResult.data;
 
-    const results = await generateBatchMatches(user_ids, { limit, minScore: min_score });
+    const results = await matchClient.generateBatch({ userIds: user_ids, limitPerUser: limit });
 
     return NextResponse.json({
       success: true,

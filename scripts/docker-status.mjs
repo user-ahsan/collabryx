@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 
 /**
- * Docker Status Script - Comprehensive service status
+ * Docker Status Script - Comprehensive microservices status
  * 
  * Features:
- * - Shows container status
+ * - Shows container status for all 4 microservices
  * - Displays resource usage
  * - Shows network configuration
  * - Lists volumes and images
@@ -18,11 +18,16 @@ import net from 'net';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const SERVICES = [
+  { name: 'embedding-service',    port: 8000 },
+  { name: 'notification-service', port: 8002 },
+  { name: 'feed-service',         port: 8003 },
+  { name: 'match-service',        port: 8004 }
+];
+
 // Configuration
 const CONFIG = {
-  workerDir: path.join(__dirname, '..', 'python-worker'),
-  serviceName: 'embedding-service',
-  imageName: 'python-worker-embedding-service'
+  workerDir: path.join(__dirname, '..', 'python-worker')
 };
 
 // Colors for console output
@@ -120,7 +125,7 @@ function _checkPort() {
 
 function main() {
   log('\n' + '='.repeat(60), 'cyan');
-  log('🐳 Docker Status - Python Worker Embedding Service', 'cyan');
+  log('🐳 Docker Status - Collabryx Microservices', 'cyan');
   log('='.repeat(60) + '\n', 'cyan');
   
   // Container Status
@@ -131,6 +136,28 @@ function main() {
   } else {
     log('   No containers running', 'yellow');
   }
+  
+  // Port status
+  log('\n🔌 Port Status:', 'blue');
+  SERVICES.forEach(service => {
+    const socket = new net.Socket();
+    let checked = false;
+    socket.setTimeout(1000);
+    socket.on('connect', () => {
+      if (!checked) {
+        checked = true;
+        log(`   ${service.name.padEnd(25)} ${String(service.port).padEnd(8)} ✅ Open`, 'green');
+        socket.destroy();
+      }
+    });
+    socket.on('error', () => {
+      if (!checked) {
+        checked = true;
+        log(`   ${service.name.padEnd(25)} ${String(service.port).padEnd(8)} ❌ Closed`, 'red');
+      }
+    });
+    socket.connect(service.port, 'localhost');
+  });
   
   log('\n' + '='.repeat(60) + '\n', 'cyan');
 }

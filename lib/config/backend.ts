@@ -354,3 +354,17 @@ export async function withBackendHealth<T>(
     return fallbackHandler()
   }
 }
+
+/**
+ * Microservice URL resolution
+ * Follows the BACKEND_URL_DOCKER pattern for consistent env var fallback
+ */
+
+export const NOTIFICATION_SERVICE_URL: string =
+  process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:8002'
+
+export const FEED_SERVICE_URL: string =
+  process.env.FEED_SERVICE_URL || 'http://localhost:8003'
+
+export const MATCH_SERVICE_URL: string =
+  process.env.MATCH_SERVICE_URL || 'http://localhost:8004'

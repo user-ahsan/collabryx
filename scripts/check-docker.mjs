@@ -1,33 +1,38 @@
 #!/usr/bin/env node
 
 /**
- * Pre-dev Docker backend check
+ * Pre-dev Docker backend check - All 4 microservices
  * Runs before `bun run dev` when BACKEND_MODE=auto or 'docker'
  */
 
 import { stdout, stderr } from 'process'
 
-const DOCKER_URL = process.env.BACKEND_URL_DOCKER || 'http://localhost:8000'
-const HEALTH_ENDPOINT = `${DOCKER_URL}/health`
 const TIMEOUT_MS = 3000
 
-async function checkHealth() {
+const SERVICES = [
+  { name: 'embedding-service',    port: 8000, url: 'http://localhost:8000' },
+  { name: 'notification-service', port: 8002, url: 'http://localhost:8002' },
+  { name: 'feed-service',         port: 8003, url: 'http://localhost:8003' },
+  { name: 'match-service',        port: 8004, url: 'http://localhost:8004' }
+]
+
+async function checkServiceHealth(service) {
   return new Promise((resolve) => {
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS)
     
-    fetch(HEALTH_ENDPOINT, {
+    fetch(`${service.url}/health`, {
       signal: controller.signal,
       method: 'GET',
     })
       .then((res) => res.json())
       .then((data) => {
         clearTimeout(timeoutId)
-        resolve(data.status === 'healthy')
+        resolve({ service, healthy: data.status === 'healthy' })
       })
       .catch(() => {
         clearTimeout(timeoutId)
-        resolve(false)
+        resolve({ service, healthy: false })
       })
   })
 }
@@ -39,23 +44,37 @@ async function main() {
     return
   }
   
-  stdout.write('🔍 Checking Docker backend health...\n')
+  stdout.write('🔍 Checking Docker microservices health...\n')
   
-  const isHealthy = await checkHealth()
+  const results = await Promise.all(SERVICES.map(checkServiceHealth))
+  const allHealthy = results.every(r => r.healthy)
+  const healthyCount = results.filter(r => r.healthy).length
+  const totalCount = results.length
   
-  if (isHealthy) {
-    stdout.write('✅ Docker backend is healthy at ' + DOCKER_URL + '\n')
+  if (allHealthy) {
+    stdout.write(`✅ All ${totalCount} microservices are healthy\n`)
+    results.forEach(r => {
+      stdout.write(`   ${r.service.name.padEnd(22)} ✅ Healthy (port ${r.service.port})\n`)
+    })
     stdout.write('🚀 Starting Next.js dev server...\n')
   } else {
     stderr.write('\n')
     stderr.write('⚠️  ┌─────────────────────────────────────────────────────────┐\n')
-    stderr.write('⚠️  │  Docker backend not responding                          │\n')
+    stderr.write(`⚠️  │  ${healthyCount}/${totalCount} microservices responding                           │\n`)
     stderr.write('⚠️  └─────────────────────────────────────────────────────────┘\n')
     stderr.write('\n')
-    stderr.write('📍 Backend URL: ' + DOCKER_URL + '\n')
+    
+    results.forEach(r => {
+      if (r.healthy) {
+        stdout.write(`   ${r.service.name.padEnd(22)} ✅ Healthy (port ${r.service.port})\n`)
+      } else {
+        stderr.write(`   ${r.service.name.padEnd(22)} ❌ Not responding (port ${r.service.port})\n`)
+      }
+    })
+    
     stderr.write('\n')
     stderr.write('🔧 Quick fix:\n')
-    stderr.write('   1. Start Docker backend:\n')
+    stderr.write('   1. Start Docker microservices:\n')
     stderr.write('      bun run docker:up\n')
     stderr.write('\n')
     stderr.write('   2. Or skip Docker check:\n')

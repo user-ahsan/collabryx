@@ -1,9 +1,52 @@
 import { createClient } from "@/lib/supabase/client"
 import { formatTimeAgo } from "@/lib/utils/time-ago"
 import { logger } from "@/lib/logger"
-import { cosineSimilarity } from "@/lib/services/match-generator"
-import { calculateHybridScore } from "@/lib/services/feed-scorer"
 import type { Post, PostWithAuthor, PostAttachment, PostReaction, PostUpdateInput } from "@/types/database.types"
+
+// Utility: Cosine similarity between two vectors (ported from match-generator.ts)
+function cosineSimilarity(a: number[], b: number[]): number {
+  const minLen = Math.min(a.length, b.length)
+  if (minLen === 0) return 0
+  let dot = 0, magA = 0, magB = 0
+  for (let i = 0; i < minLen; i++) {
+    dot += a[i] * b[i]
+    magA += a[i] * a[i]
+    magB += b[i] * b[i]
+  }
+  if (magA === 0 || magB === 0) return 0
+  return dot / (Math.sqrt(magA) * Math.sqrt(magB))
+}
+
+// Utility: Hybrid feed score (ported from feed-scorer.ts)
+function calculateHybridScore(params: {
+  semantic: number
+  engagementSuccesses: number
+  engagementFailures: number
+  hoursOld: number
+  isConnected: boolean
+  hasSharedInterests: boolean
+  intentMatch: boolean
+}): number {
+  const WEIGHTS = { semantic: 0.35, engagement: 0.30, recency: 0.20 }
+  const BOOSTS = { connection: 1.5, sharedInterests: 1.2, intentMatch: 1.1 }
+  
+  const semanticScore = params.semantic
+  const alpha = params.engagementSuccesses + 1
+  const beta = params.engagementFailures + 1
+  const engagementScore = alpha / (alpha + beta)
+  const recencyScore = Math.exp(-params.hoursOld / 24)
+  
+  let score = WEIGHTS.semantic * semanticScore +
+              WEIGHTS.engagement * engagementScore +
+              WEIGHTS.recency * recencyScore
+  
+  const baseScore = score
+  if (params.isConnected) score += baseScore * (BOOSTS.connection - 1)
+  if (params.hasSharedInterests) score += baseScore * (BOOSTS.sharedInterests - 1)
+  if (params.intentMatch) score += baseScore * (BOOSTS.intentMatch - 1)
+  
+  return Math.min(1.0, score)
+}
 
 // ===========================================
 // POSTS SERVICE

@@ -6,7 +6,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { scoreFeedForUser, persistFeedScores } from "@/lib/services/feed-scorer";
+import { feedClient } from "@/lib/worker-client";
 import { validateCSRFRequest, requiresCSRF } from "@/lib/csrf";
 import { rateLimit } from "@/lib/rate-limit";
 import { errorResponse } from '@/lib/utils/api-response';
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
 
     const { posts, persist } = validationResult.data;
 
-    const scoredPosts = scoreFeedForUser(
+    const scoredPosts = await feedClient.scoreFeed(
       posts.map(p => ({
         postId: p.post_id,
         params: {
@@ -87,14 +87,12 @@ export async function POST(request: NextRequest) {
           hasSharedInterests: p.has_shared_interests,
           intentMatch: p.intent_match,
         },
-      })),
-      user.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)
+      }))
     );
 
     let savedCount: number | undefined;
     if (persist) {
-      const adminClient = supabase;
-      const result = await persistFeedScores(adminClient, user.id, scoredPosts);
+      const result = await feedClient.persist(user.id, scoredPosts);
       savedCount = result.saved;
     }
 

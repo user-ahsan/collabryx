@@ -42,6 +42,26 @@ export const config = {
         (inDocker ? 'http://host.docker.internal:8000' : 'http://localhost:8000')) + '/health',
   },
 
+  notification: {
+    url: process.env.NOTIFICATION_SERVICE_URL ||
+        (inDocker ? 'http://host.docker.internal:8002' : 'http://localhost:8002'),
+    healthUrl: (process.env.NOTIFICATION_SERVICE_URL ||
+        (inDocker ? 'http://host.docker.internal:8002' : 'http://localhost:8002')) + '/health',
+  },
+
+  feed: {
+    url: process.env.FEED_SERVICE_URL ||
+        (inDocker ? 'http://host.docker.internal:8003' : 'http://localhost:8003'),
+    healthUrl: (process.env.FEED_SERVICE_URL ||
+        (inDocker ? 'http://host.docker.internal:8003' : 'http://localhost:8003')) + '/health',
+  },
+
+  match: {
+    url: process.env.MATCH_SERVICE_URL ||
+        (inDocker ? 'http://host.docker.internal:8004' : 'http://localhost:8004'),
+    healthUrl: (process.env.MATCH_SERVICE_URL ||
+        (inDocker ? 'http://host.docker.internal:8004' : 'http://localhost:8004')) + '/health',
+  },
 
   features: {
     enableRealtime: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),

@@ -1,6 +1,7 @@
 services:
-  # Main Multi-Service Worker (Embeddings + Match Generation + Notifications + Activity Tracking)
-  collabryx-worker:
+  # Collabryx Microservices — 4 services
+
+  embedding-service:
     build:
       context: .
       dockerfile: Dockerfile
@@ -47,7 +48,146 @@ services:
     networks:
       - collabryx-network
 
+  notification-service:
+    build:
+      context: .
+      dockerfile: notification-service/Dockerfile
+    ports:
+      - "8002:8000"
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=256m
+      - /home/appuser/.cache:noexec,nosuid,size=512m
+      - /app/.cache:noexec,nosuid,size=256m
+      - /app/.pytest_cache:noexec,nosuid,size=64m
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    networks:
+      - collabryx-network
 
+  feed-service:
+    build:
+      context: .
+      dockerfile: feed-service/Dockerfile
+    ports:
+      - "8003:8000"
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=256m
+      - /home/appuser/.cache:noexec,nosuid,size=512m
+      - /app/.cache:noexec,nosuid,size=256m
+      - /app/.pytest_cache:noexec,nosuid,size=64m
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    networks:
+      - collabryx-network
+
+  match-service:
+    build:
+      context: .
+      dockerfile: match-service/Dockerfile
+    ports:
+      - "8004:8000"
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=256m
+      - /home/appuser/.cache:noexec,nosuid,size=512m
+      - /app/.cache:noexec,nosuid,size=256m
+      - /app/.pytest_cache:noexec,nosuid,size=64m
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    networks:
+      - collabryx-network
 
 networks:
   collabryx-network:

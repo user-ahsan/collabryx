@@ -228,9 +228,9 @@ export function MatchesClient() {
             })
 
             // Mark newly generated matches using the API response
-            if (result?.data?.matches) {
+            if (result && result.length > 0) {
                 const newIds = new Set<string>()
-                for (const m of result.data.matches) {
+                for (const m of result) {
                     if (!preGenProfileIds.current.has(m.matched_user_id)) {
                         newIds.add(m.matched_user_id)
                     }

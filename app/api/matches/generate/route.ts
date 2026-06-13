@@ -6,7 +6,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { generateMatchesForUser } from "@/lib/services/match-generator";
+import { matchClient } from "@/lib/worker-client";
 import { validateCSRFRequest, requiresCSRF } from "@/lib/csrf";
 import { rateLimit } from "@/lib/rate-limit";
 import { errorResponse } from '@/lib/utils/api-response';
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate matches using native service
-    const matches = await generateMatchesForUser(userId, { limit, minScore: min_score });
+    const matches = await matchClient.generate({ user_id: userId, limit, min_score });
 
     return NextResponse.json({
       success: true,
@@ -120,10 +120,10 @@ export async function POST(request: NextRequest) {
         status: 'completed' as const,
         backend_mode: 'native',
         suggestions: matches.map(m => ({
-          matched_user_id: m.matchedUserId,
-          match_percentage: m.matchPercentage,
+          matched_user_id: m.matched_user_id,
+          match_percentage: m.match_percentage,
           reasons: m.reasons,
-          ai_confidence: m.aiConfidence,
+          ai_confidence: m.ai_confidence,
         })),
       },
     });

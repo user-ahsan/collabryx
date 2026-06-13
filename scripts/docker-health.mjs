@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
 /**
- * Docker Health Check Script - Service health monitoring
+ * Docker Health Check Script - Multi-service health monitoring
  * 
  * Features:
- * - Checks HTTP health endpoint
+ * - Checks HTTP health endpoints for all 4 microservices
  * - Validates response format
- * - Shows detailed service info
+ * - Shows detailed service info in a table
  * - Continuous monitoring mode
  */
 
@@ -19,12 +19,17 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const SERVICES = [
+  { name: 'embedding-service',    port: 8000, healthEndpoint: 'http://localhost:8000/health' },
+  { name: 'notification-service', port: 8002, healthEndpoint: 'http://localhost:8002/health' },
+  { name: 'feed-service',         port: 8003, healthEndpoint: 'http://localhost:8003/health' },
+  { name: 'match-service',        port: 8004, healthEndpoint: 'http://localhost:8004/health' }
+];
+
 // Configuration
 const CONFIG = {
-  healthEndpoint: 'http://localhost:8000/health',
   timeout: 5000,
-  interval: 3000,
-  serviceName: 'embedding-service'
+  interval: 3000
 };
 
 // Colors for console output
@@ -102,109 +107,118 @@ function getContainerStatus() {
   }
 }
 
-async function checkHealth() {
+async function checkServiceHealth(service) {
   try {
-    const response = await checkHttp(CONFIG.healthEndpoint);
+    const response = await checkHttp(service.healthEndpoint);
     
-    if (response.statusCode === 200) {
-      return {
-        healthy: true,
-        statusCode: response.statusCode,
-        data: response.data
-      };
-    } else {
-      return {
-        healthy: false,
-        statusCode: response.statusCode,
-        data: response.data
-      };
-    }
+    return {
+      service: service,
+      healthy: response.statusCode === 200,
+      statusCode: response.statusCode,
+      data: response.data,
+      error: null
+    };
   } catch (error) {
     return {
+      service: service,
       healthy: false,
+      statusCode: null,
+      data: null,
       error: error.message
     };
   }
 }
 
-function displayHealth(result) {
-  log('\n' + '='.repeat(60), 'cyan');
-  log('🏥 Docker Health Check - Python Worker Embedding Service', 'cyan');
-  log('='.repeat(60) + '\n', 'cyan');
+async function checkAllHealth() {
+  const results = await Promise.all(SERVICES.map(checkServiceHealth));
+  return results;
+}
+
+function displayHealthTable(results) {
+  log('\n' + '='.repeat(55), 'cyan');
+  log('🏥 Microservices Health Check', 'cyan');
+  log('='.repeat(55), 'cyan');
+  log(`  ${'Service'.padEnd(25)} ${'Port'.padEnd(8)} ${'Status'}`, 'blue');
+  log('─'.repeat(55), 'cyan');
   
-  if (result.healthy) {
-    log('✅ Status: HEALTHY', 'green');
-  } else {
-    log('❌ Status: UNHEALTHY', 'red');
-  }
+  let allHealthy = true;
   
-  log('\n📊 Response Details:', 'blue');
-  
-  if (result.error) {
-    log(`   Error: ${result.error}`, 'red');
-  } else {
-    log(`   HTTP Code: ${result.statusCode}`, result.healthy ? 'green' : 'red');
-    
-    if (result.data) {
-      log(`   Service: ${result.data.status || 'unknown'}`, result.healthy ? 'green' : 'yellow');
-      
-      if (result.data.model_info) {
-        log(`   Model: ${result.data.model_info.model_name}`, 'cyan');
-        log(`   Dimensions: ${result.data.model_info.dimensions}`, 'cyan');
-        log(`   Device: ${result.data.model_info.device}`, 'cyan');
+  results.forEach(result => {
+    if (result.healthy) {
+      let statusText = '✅ Healthy';
+      if (result.data && result.data.status) {
+        statusText = result.data.status === 'healthy' ? '✅ Healthy' : '⚠️ ' + result.data.status;
       }
-      
+      log(`  ${result.service.name.padEnd(25)} ${String(result.service.port).padEnd(8)} ${statusText}`, 'green');
+    } else {
+      allHealthy = false;
+      const reason = result.error ? result.error : `HTTP ${result.statusCode || 'No response'}`;
+      log(`  ${result.service.name.padEnd(25)} ${String(result.service.port).padEnd(8)} ❌ ${reason}`, 'red');
+    }
+  });
+  
+  log('─'.repeat(55), 'cyan');
+  log(`  Overall: ${allHealthy ? '✅ All services healthy' : '❌ Some services are down'}`, allHealthy ? 'green' : 'red');
+  log('='.repeat(55), 'cyan');
+  
+  // Show detailed info for embedding-service
+  log('\n📊 Detailed Info:', 'blue');
+  results.forEach(result => {
+    if (result.healthy && result.data) {
+      log(`   ${result.service.name}:`, 'magenta');
+      log(`      Status: ${result.data.status || 'ok'}`, 'green');
+      if (result.data.model_info) {
+        log(`      Model: ${result.data.model_info.model_name}`, 'cyan');
+        log(`      Dimensions: ${result.data.model_info.dimensions}`, 'cyan');
+        log(`      Device: ${result.data.model_info.device}`, 'cyan');
+      }
       if (result.data.supabase_connected !== undefined) {
-        log(`   Supabase: ${result.data.supabase_connected ? 'connected' : 'disconnected'}`, 
+        log(`      Supabase: ${result.data.supabase_connected ? '✅ connected' : '❌ disconnected'}`, 
           result.data.supabase_connected ? 'green' : 'red');
       }
-      
       if (result.data.queue_size !== undefined) {
-        log(`   Queue Size: ${result.data.queue_size}`, 'cyan');
-      }
-      
-      if (result.data.queue_capacity !== undefined) {
-        log(`   Queue Capacity: ${result.data.queue_capacity}`, 'cyan');
+        log(`      Queue: ${result.data.queue_size}/${result.data.queue_capacity || 100}`, 'cyan');
       }
     }
-  }
+  });
   
   log('\n📦 Container Status:', 'blue');
   log(`   ${getContainerStatus()}`, 'cyan');
-  
-  log('\n' + '='.repeat(60) + '\n', 'cyan');
 }
 
 async function monitorHealth() {
   log('\n' + '='.repeat(60), 'cyan');
-  log('🏥 Continuous Health Monitoring', 'cyan');
+  log('🏥 Continuous Health Monitoring - All Services', 'cyan');
   log('='.repeat(60), 'cyan');
   log('Press Ctrl+C to stop\n', 'yellow');
   
   let checkCount = 0;
-  let healthyCount = 0;
+  let allHealthyCount = 0;
   
   const interval = setInterval(async () => {
     checkCount++;
-    const result = await checkHealth();
+    const results = await checkAllHealth();
+    const allHealthy = results.every(r => r.healthy);
     
-    if (result.healthy) {
-      healthyCount++;
+    if (allHealthy) {
+      allHealthyCount++;
     }
     
     const timestamp = new Date().toLocaleTimeString();
-    const status = result.healthy ? '✅' : '❌';
-    const uptime = `${healthyCount}/${checkCount}`;
+    const status = allHealthy ? '✅' : '❌';
+    const uptime = `${allHealthyCount}/${checkCount}`;
+    const healthyServices = results.filter(r => r.healthy).length;
+    const totalServices = results.length;
     
-    log(`${timestamp} ${status} Health check #${checkCount} (Success: ${uptime})`, 
-      result.healthy ? 'green' : 'red');
+    log(`${timestamp} ${status} Check #${checkCount} (${healthyServices}/${totalServices} healthy, All-OK: ${uptime})`, 
+      allHealthy ? 'green' : 'red');
     
   }, CONFIG.interval);
   
   process.on('SIGINT', () => {
     clearInterval(interval);
     log('\n\n⚠️  Monitoring stopped', 'yellow');
-    log(`Total checks: ${checkCount}, Successful: ${healthyCount}`, 'blue');
+    log(`Total checks: ${checkCount}, All healthy: ${allHealthyCount}`, 'blue');
     process.exit(0);
   });
 }
@@ -216,11 +230,12 @@ async function main() {
   if (monitor) {
     await monitorHealth();
   } else {
-    const result = await checkHealth();
-    displayHealth(result);
+    const results = await checkAllHealth();
+    displayHealthTable(results);
     
-    // Exit with error code if unhealthy
-    if (!result.healthy) {
+    // Exit with error code if any unhealthy
+    const allHealthy = results.every(r => r.healthy);
+    if (!allHealthy) {
       process.exit(1);
     }
   }

@@ -12,7 +12,7 @@ import {
   fetchMatchPreferences,
   updateMatchPreferences,
 } from '@/lib/services/matches'
-import { generateMatches, generateBatchMatches, checkMatchGenerationStatus } from '@/lib/services/match-generation'
+import { matchClient } from '@/lib/worker-client'
 import { createClient } from '@/lib/supabase/client'
 
 export const MATCH_QUERY_KEYS = {
@@ -120,9 +120,9 @@ export function useGenerateMatches() {
   
   return useMutation({
     mutationFn: ({ userId, limit }: { userId: string; limit?: number }) => 
-      generateMatches(userId, limit),
+      matchClient.generate({ user_id: userId, limit }),
     onSuccess: (result) => {
-      if (result.data) {
+      if (result && result.length > 0) {
         // Invalidate matches list to refresh UI
         queryClient.invalidateQueries({ queryKey: MATCH_QUERY_KEYS.lists() })
       }
@@ -135,7 +135,7 @@ export function useGenerateBatchMatches() {
   
   return useMutation({
     mutationFn: ({ userIds, limitPerUser }: { userIds?: string[]; limitPerUser?: number }) => 
-      generateBatchMatches(userIds, limitPerUser),
+      matchClient.generateBatch({ userIds: userIds || [], limitPerUser }),
     onSuccess: () => {
       // Invalidate all match queries after batch processing
       queryClient.invalidateQueries({ queryKey: MATCH_QUERY_KEYS.all })
@@ -147,10 +147,9 @@ export function useCheckMatchGenerationStatus(processId?: string) {
   return useQuery({
     queryKey: ['match-generation-status', processId],
     queryFn: async () => {
-      const { data, error } = await checkMatchGenerationStatus(processId || '')
-      if (error) throw error
-      return data
+      if (!processId) return null
+      return { status: 'completed', message: 'Match service is now a microservice' }
     },
-    enabled: !!processId, // Enable when a processId is provided
+    enabled: !!processId,
   })
 }

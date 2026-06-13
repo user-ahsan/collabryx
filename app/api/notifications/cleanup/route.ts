@@ -7,7 +7,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { cleanupExpiredNotifications } from "@/lib/services/notification-engine";
+import { notificationClient } from "@/lib/worker-client";
 import { validateCSRFRequest, requiresCSRF } from "@/lib/csrf";
 import { rateLimit } from "@/lib/rate-limit";
 import { errorResponse } from '@/lib/utils/api-response';
@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
     };
 
     // Call notification-engine service directly
-    const result = await cleanupExpiredNotifications({
+    const result = await notificationClient.cleanupExpired({
       olderThanDays: older_than_days,
       batchSize: batch_size,
       dryRun: dry_run,

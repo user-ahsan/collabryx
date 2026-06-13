@@ -30,7 +30,7 @@ const CONFIG = {
   workerDir: path.join(__dirname, '..', 'python-worker'),
   projectName: 'python-worker',
   networkName: 'collabryx-network',
-  imagePrefix: 'python-worker-',
+  imagePrefix: 'python-worker',
   volumePrefix: 'collabryx-'
 };
 
@@ -99,7 +99,7 @@ function checkDocker() {
 }
 
 function getContainers() {
-  const output = exec('docker ps -a --filter "name=collabryx" --format "{{.ID}}"');
+  const output = exec('docker ps -a --filter "name=python-worker" --format "{{.ID}}"');
   return output.trim().split('\n').filter(id => id.length > 0);
 }
 

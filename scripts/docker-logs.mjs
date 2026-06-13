@@ -66,7 +66,7 @@ function streamLogs() {
   const options = parseArgs();
   
   log('\n' + '='.repeat(60), 'cyan');
-  log('📋 Docker Logs - Python Worker Embedding Service', 'cyan');
+  log('📋 Docker Logs - Collabryx Microservices', 'cyan');
   log('='.repeat(60), 'cyan');
   log(`📊 Service: ${options.service || 'all'}`, 'blue');
   log(`📝 Tail: last ${options.tail} lines`, 'blue');

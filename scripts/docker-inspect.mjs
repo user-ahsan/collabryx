@@ -207,25 +207,33 @@ async function showHealthChecks() {
     }
   });
   
-  // Try to fetch health endpoint
-  log('\n🌐 Health Endpoint:', 'magenta');
-  try {
-    const health = exec('curl -s http://localhost:8000/health');
-    if (health) {
-      try {
-        const parsed = JSON.parse(health);
-        log(`   Status: ${parsed.status}`, parsed.status === 'healthy' ? 'green' : 'yellow');
-        if (parsed.model_info) {
-          log(`   Model: ${parsed.model_info.model_name}`, 'blue');
-          log(`   Queue: ${parsed.queue_size}/${parsed.queue_capacity || 100}`, 'blue');
+  // Try to fetch all health endpoints
+  log('\n🌐 Health Endpoints:', 'magenta');
+  const healthServices = [
+    { name: 'embedding-service',    url: 'http://localhost:8000/health' },
+    { name: 'notification-service', url: 'http://localhost:8002/health' },
+    { name: 'feed-service',         url: 'http://localhost:8003/health' },
+    { name: 'match-service',        url: 'http://localhost:8004/health' }
+  ];
+  
+  healthServices.forEach(svc => {
+    try {
+      const health = exec(`curl -s ${svc.url}`);
+      if (health) {
+        try {
+          const parsed = JSON.parse(health);
+          const status = parsed.status === 'healthy' ? '✅' : '⚠️';
+          log(`   ${svc.name.padEnd(22)} ${status} ${parsed.status}`, parsed.status === 'healthy' ? 'green' : 'yellow');
+        } catch {
+          log(`   ${svc.name.padEnd(22)} ⚪ (no JSON)`, 'gray');
         }
-  } catch (_error) {
-        log(`   ${health}`, 'gray');
+      } else {
+        log(`   ${svc.name.padEnd(22)} ❌ Not responding`, 'red');
       }
+    } catch {
+      log(`   ${svc.name.padEnd(22)} ❌ Not responding`, 'red');
     }
-  } catch (_error) {
-    log('   Could not fetch health endpoint', 'yellow');
-  }
+  });
 }
 
 async function showEnvironment() {
@@ -255,7 +263,7 @@ async function showEnvironment() {
 
 async function main() {
   log('\n' + '='.repeat(70), 'cyan');
-  log('🔍 Docker Inspect - Complete Resource Overview', 'cyan');
+  log('🔍 Docker Inspect - Collabryx Microservices Overview', 'cyan');
   log('='.repeat(70), 'cyan');
   
   checkDocker();

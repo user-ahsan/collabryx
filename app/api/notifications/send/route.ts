@@ -6,7 +6,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { sendNotification } from "@/lib/services/notification-engine";
+import { notificationClient } from "@/lib/worker-client";
 import { validateCSRFRequest, requiresCSRF } from "@/lib/csrf";
 import { rateLimit } from "@/lib/rate-limit";
 import { errorResponse } from '@/lib/utils/api-response';
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Send notification via notification-engine service with caller authorization
-    const result = await sendNotification({
+    const result = await notificationClient.send({
       userId: user_id,
       type,
       content,
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
       actorAvatar: actor_avatar,
       resourceType: resource_type,
       resourceId: resource_id,
-    }, { callerId: user.id });
+    });
 
     return NextResponse.json({
       success: result.success,

@@ -57,7 +57,15 @@ cd scripts/seed-data && python main.py [--all | --profiles | --posts | ...]
 - **RLS**: Assume all 39 tables have Row Level Security.
 - **Server Actions**: `@/lib/actions/` (10 files). All inputs validated via Zod (`@/lib/validations/`).
 - **AI Provider system**: Multi-provider registry with priority-based failover (`@/lib/ai/providers/`). Supports OpenAI-compatible, Anthropic native, MiniMax.
-- **Python worker**: FastAPI on `:8000` for embeddings only. Docker Compose at `python-worker/docker-compose.yml`.
+- **Microservices**: 4 Python/FastAPI services run via `python-worker/docker-compose.yml`. All share `collabryx-network` bridge.
+  | Service | Port | Directory | Role |
+  |---------|------|-----------|------|
+  | embedding-service | :8000 | `python-worker/embedding-service/` | Sentence Transformers vector embeddings |
+  | notification-service | :8002 | `python-worker/notification-service/` | Send/digest/cleanup notifications |
+  | feed-service | :8003 | `python-worker/feed-service/` | Thompson Sampling feed scoring |
+  | match-service | :8004 | `python-worker/match-service/` | Cosine similarity + Jaccard match gen |
+- **Web → microservice**: `lib/worker-client.ts` has `NotificationClient`, `FeedClient`, `MatchClient` classes. Next.js API routes call them via HTTP instead of direct imports.
+- **Old TS services deleted**: `notification-engine.ts`, `feed-scorer.ts`, `match-generator.ts`, `match-generation.ts` were ported to Python. Backup at `.tmp/backup/services/`.
 
 ---
 
