@@ -148,5 +148,5 @@ services:
 databases:
   - name: collabryx-db
     region: oregon
-    plan: standard
+    plan: pro
     postgresMajorVersion: 15
