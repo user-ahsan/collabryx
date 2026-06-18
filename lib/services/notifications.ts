@@ -130,7 +130,7 @@ export async function fetchNotifications(
       .filter((n) => n.resource_type === 'post' && n.resource_id)
       .map((n) => n.resource_id!)
     
-    let postsMap = new Map<string, { id: string; title: string; content: string }>()
+    const postsMap = new Map<string, { id: string; title: string; content: string }>()
     if (postIds.length > 0) {
       const { data: posts } = await supabase
         .from('posts')
