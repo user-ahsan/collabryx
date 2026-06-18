@@ -28,7 +28,7 @@ export default async function AuthSyncPage() {
         // EMAIL VERIFICATION CHECK
         // Respect SKIP_EMAIL_VERIFICATION env var
         // ===========================================
-        const skipEmailVerification = process.env.SKIP_EMAIL_VERIFICATION === "true"
+        const skipEmailVerification = process.env.NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION === "true"
         if (!skipEmailVerification && !user.email_confirmed_at) {
             return redirect("/verify-email")
         }

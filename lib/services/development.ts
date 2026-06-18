@@ -20,11 +20,9 @@ import type { Profile, UserSkill, UserExperience, UserProject } from "@/types/da
 // In development: everything is ON (verbose logging, performance timers, dev UI).
 // In production: everything is OFF (no performance overhead, no dev UI exposed).
 const DEVELOPMENT_MODE = process.env.NODE_ENV !== 'production'
-// Support both SKIP_EMAIL_VERIFICATION (server-side) and
-// NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION (client-side) for cross-environment compatibility
-const SKIP_EMAIL_VERIFICATION =
-    process.env.SKIP_EMAIL_VERIFICATION === "true" ||
-    process.env.NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION === "true"
+// Single source of truth: NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION
+// Works on both server AND client (Next.js inlines NEXT_PUBLIC_ vars)
+const SKIP_EMAIL_VERIFICATION = process.env.NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION === "true"
 
 const TEST_USER_EMAIL = "test123@collabryx.com"
 const TEST_USER_PASSWORD = "test123"
@@ -65,12 +63,7 @@ function validateEnvironment(): void {
     warnings.push("NEXT_PUBLIC_SUPABASE_URL is not configured")
   }
   
-    // Check SKIP_EMAIL_VERIFICATION value
-    const skipEmailValue = process.env.SKIP_EMAIL_VERIFICATION
-    if (skipEmailValue && skipEmailValue !== "true" && skipEmailValue !== "false") {
-        warnings.push(`SKIP_EMAIL_VERIFICATION="${skipEmailValue}" is not a recognized value. Use: "true" or "false"`)
-    }
-    // Check NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION value (for client-side usage)
+    // Check NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION value
     const skipEmailPublicValue = process.env.NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION
     if (skipEmailPublicValue && skipEmailPublicValue !== "true" && skipEmailPublicValue !== "false") {
         warnings.push(`NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION="${skipEmailPublicValue}" is not a recognized value. Use: "true" or "false"`)
@@ -319,7 +312,6 @@ export function getDevelopmentConfig(): {
   isDebugEnabled: boolean
   isEmailVerificationSkipped: boolean
   nodeEnv: string | undefined
-  skipEmailVerificationValue: string | undefined
   skipEmailVerificationPublicValue: string | undefined
 } {
   return {
@@ -327,7 +319,6 @@ export function getDevelopmentConfig(): {
     isDebugEnabled: DEVELOPMENT_MODE,
     isEmailVerificationSkipped: SKIP_EMAIL_VERIFICATION,
     nodeEnv: process.env.NODE_ENV,
-    skipEmailVerificationValue: process.env.SKIP_EMAIL_VERIFICATION,
     skipEmailVerificationPublicValue: process.env.NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION,
   }
 }
