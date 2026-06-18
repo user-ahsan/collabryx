@@ -1,0 +1,54 @@
+# Collabryx Embedding Service — Hugging Face Spaces Dockerfile
+# Deploy on HF Spaces CPU (free tier, 16GB RAM)
+# HF Spaces sets PORT=7860 automatically
+#
+# To deploy:
+#   1. Go to huggingface.co/new-space
+#   2. Name: collabryx-embedding-service
+#   3. SDK: Docker, Hardware: CPU (free)
+#   4. Push contents of python-worker/ as the Space repo
+#   5. Set secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, ALLOWED_ORIGINS
+
+FROM python:3.11-slim-bookworm
+
+WORKDIR /app
+
+# Install build deps + curl
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc g++ curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Pre-download the Sentence Transformer model during build
+ENV TRANSFORMERS_CACHE=/app/.cache/huggingface
+ENV HF_HOME=/app/.cache/huggingface
+RUN mkdir -p /app/.cache/huggingface && \
+    python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')" && \
+    chmod -R 777 /app/.cache/huggingface
+
+# Copy application code
+COPY main.py .
+COPY embedding_generator.py .
+COPY embedding_validator.py .
+COPY rate_limiter.py .
+COPY shared/ ./shared/
+COPY tests/ ./tests/
+
+# Create non-root user
+RUN useradd --create-home --shell /bin/bash appuser
+RUN chown -R appuser:appuser /app
+USER appuser
+
+ENV PATH="/home/appuser/.local/bin:$PATH"
+ENV PYTHONUNBUFFERED=1
+ENV TRANSFORMERS_CACHE=/app/.cache/huggingface
+ENV HF_HOME=/app/.cache/huggingface
+
+# HF Spaces default port is 7860
+EXPOSE 7860
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860", "--workers", "1", "--limit-concurrency", "100"]

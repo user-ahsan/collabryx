@@ -1,3 +1,12 @@
+# Collabryx — Render Blueprint (Free Tier)
+# Deploy via Render Dashboard → New → Blueprint → Connect Repo
+#
+# Architecture:
+#   - Vercel (free):      Next.js frontend
+#   - HF Spaces (free):   Embedding service (Sentence Transformers)
+#   - Supabase (free):    PostgreSQL database
+#   - Render (3 free):    Notification, Feed, Match microservices
+
 services:
   # ─────────────────────────────────────────────
   # 1. Notification Service (lightweight)

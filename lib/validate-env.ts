@@ -8,7 +8,8 @@ const EnvSchema = z.object({
   PYTHON_WORKER_URL: z.string().url().optional(),
   BACKEND_MODE: z.enum(['auto', 'docker', 'render', 'edge-only']).optional(),
   BACKEND_URL_DOCKER: z.string().url().optional(),
-  BACKEND_URL_RENDER: z.string().url().optional(),
+  BACKEND_URL_RENDER: z.string().url().optional(), // deprecated — use EMBEDDING_SERVICE_URL
+  EMBEDDING_SERVICE_URL: z.string().url().optional(),
   OPENAI_API_KEY: z.string().optional(),
   ANTHROPIC_API_KEY: z.string().optional(),
 })
@@ -55,8 +56,8 @@ export function validateEnv() {
     if (backendMode === 'docker' && !process.env.BACKEND_URL_DOCKER) {
       console.warn('⚠️ BACKEND_MODE=docker but BACKEND_URL_DOCKER not set')
     }
-    if (backendMode === 'render' && !process.env.BACKEND_URL_RENDER) {
-      console.warn('⚠️ BACKEND_MODE=render but BACKEND_URL_RENDER not set')
+    if (backendMode === 'render' && !process.env.EMBEDDING_SERVICE_URL && !process.env.BACKEND_URL_RENDER) {
+      console.warn('⚠️ BACKEND_MODE=render but EMBEDDING_SERVICE_URL not set')
     }
   }
   

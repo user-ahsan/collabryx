@@ -5,7 +5,11 @@
 
 import { config } from '@/lib/config'
 
-const WORKER_BASE_URL = config.worker.url
+// Embedding service URL priority:
+// 1. EMBEDDING_SERVICE_URL (set on Vercel → HF Spaces)
+// 2. NEXT_PUBLIC_WORKER_API_URL (legacy, backward compat)
+// 3. config.embedding.url (Vercel/Docker/local auto-resolve)
+const WORKER_BASE_URL = process.env.EMBEDDING_SERVICE_URL || process.env.NEXT_PUBLIC_WORKER_API_URL || config.embedding.url
 
 interface WorkerHealthResponse {
   status: 'healthy' | 'unhealthy'

@@ -176,10 +176,12 @@ export async function getBackendConfig(): Promise<BackendConfig> {
   const mode = process.env.BACKEND_MODE as BackendMode || 'auto'
   
   // Case 2: Running on Vercel (production)
+  // Uses EMBEDDING_SERVICE_URL env var (points to HF Spaces)
+  // Falls back to legacy BACKEND_URL_RENDER for backward compat
   if (process.env.VERCEL) {
-    const renderUrl = process.env.BACKEND_URL_RENDER
-    if (!renderUrl) {
-      console.warn('⚠️ Vercel deployment detected but BACKEND_URL_RENDER not set')
+    const embeddingUrl = process.env.EMBEDDING_SERVICE_URL || process.env.BACKEND_URL_RENDER
+    if (!embeddingUrl) {
+      console.warn('⚠️ Vercel deployment detected but EMBEDDING_SERVICE_URL not set')
       return {
         endpoint: null,
         mode: 'render',
@@ -190,7 +192,7 @@ export async function getBackendConfig(): Promise<BackendConfig> {
     // Check circuit breaker state first
     const cbState = backendCircuitBreaker.getState()
     if (cbState === 'open') {
-      console.warn('⚠️ Circuit breaker OPEN for Render backend')
+      console.warn('⚠️ Circuit breaker OPEN for embedding service')
       return {
         endpoint: null,
         mode: 'render',
@@ -198,15 +200,15 @@ export async function getBackendConfig(): Promise<BackendConfig> {
       }
     }
     
-    // Health check for Render backend with circuit breaker
+    // Health check for embedding service with circuit breaker
     try {
-      const isHealthy = await backendCircuitBreaker.execute(() => checkHealth(renderUrl))
+      const isHealthy = await backendCircuitBreaker.execute(() => checkHealth(embeddingUrl))
       
       return {
-        endpoint: renderUrl,
+        endpoint: embeddingUrl,
         mode: 'render',
         isHealthy,
-        healthCheck: () => checkHealth(renderUrl),
+        healthCheck: () => checkHealth(embeddingUrl),
       }
     } catch (_error) {
       // Circuit breaker opened or request failed
@@ -253,14 +255,14 @@ export async function getBackendConfig(): Promise<BackendConfig> {
   
   // Case 4: Force Render mode (testing prod config locally)
   if (mode === 'render') {
-    const renderUrl = process.env.BACKEND_URL_RENDER
-    if (!renderUrl) {
-      throw new Error('BACKEND_MODE=render but BACKEND_URL_RENDER not set')
+    const embeddingUrl = process.env.EMBEDDING_SERVICE_URL || process.env.BACKEND_URL_RENDER
+    if (!embeddingUrl) {
+      throw new Error('BACKEND_MODE=render but EMBEDDING_SERVICE_URL not set')
     }
     
     const cbState = backendCircuitBreaker.getState()
     if (cbState === 'open') {
-      console.warn('⚠️ Circuit breaker OPEN for Render backend')
+      console.warn('⚠️ Circuit breaker OPEN for embedding service')
       return {
         endpoint: null,
         mode: 'render',
@@ -269,13 +271,13 @@ export async function getBackendConfig(): Promise<BackendConfig> {
     }
     
     try {
-      const isHealthy = await backendCircuitBreaker.execute(() => checkHealth(renderUrl))
+      const isHealthy = await backendCircuitBreaker.execute(() => checkHealth(embeddingUrl))
       
       return {
-        endpoint: renderUrl,
+        endpoint: embeddingUrl,
         mode: 'render',
         isHealthy,
-        healthCheck: () => checkHealth(renderUrl),
+        healthCheck: () => checkHealth(embeddingUrl),
       }
     } catch (_error) {
       return {
@@ -360,11 +362,25 @@ export async function withBackendHealth<T>(
  * Follows the BACKEND_URL_DOCKER pattern for consistent env var fallback
  */
 
+/**
+ * Per-microservice URL resolution.
+ * Priority: env var → Vercel → Docker → localhost
+ */
+function resolveServiceUrl(envVar: string | undefined, dockerPort: string, localPort: string): string {
+  if (envVar) return envVar
+  if (process.env.VERCEL === '1') return `http://localhost:${localPort}` // fallback — must set env var
+  if (process.env.IN_DOCKER_CONTAINER === 'true') return `http://host.docker.internal:${dockerPort}`
+  return `http://localhost:${localPort}`
+}
+
+export const EMBEDDING_SERVICE_URL: string =
+  resolveServiceUrl(process.env.EMBEDDING_SERVICE_URL || process.env.NEXT_PUBLIC_WORKER_API_URL, '8000', '8000')
+
 export const NOTIFICATION_SERVICE_URL: string =
-  process.env.NOTIFICATION_SERVICE_URL || 'http://localhost:8002'
+  resolveServiceUrl(process.env.NOTIFICATION_SERVICE_URL, '8002', '8002')
 
 export const FEED_SERVICE_URL: string =
-  process.env.FEED_SERVICE_URL || 'http://localhost:8003'
+  resolveServiceUrl(process.env.FEED_SERVICE_URL, '8003', '8003')
 
 export const MATCH_SERVICE_URL: string =
-  process.env.MATCH_SERVICE_URL || 'http://localhost:8004'
+  resolveServiceUrl(process.env.MATCH_SERVICE_URL, '8004', '8004')
