@@ -9,6 +9,7 @@ State: Production ready ✅ (Phase 5 complete)
 
 | Command | What it does | Note |
 |---------|-------------|------|
+| `python pdc/notification_fanout/main.py` | **Interactive terminal menu** for ALL project ops | Arrow keys, SPACE to select, ENTER to run |
 | `bun run dev` | Dev server on `:3000` | **Auto-checks Docker health** first (runs `scripts/check-docker.mjs`) |
 | `bun run dev:skip-docker` | Dev server, no Docker check | Use when Python worker isn't needed |
 | `bun run build` | Production build | Requires `typecheck` to pass first |

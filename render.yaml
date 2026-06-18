@@ -1,86 +1,12 @@
 services:
   # ─────────────────────────────────────────────
-  # 1. Next.js Frontend
-  # ─────────────────────────────────────────────
-  - type: web
-    name: collabryx-frontend
-    env: node
-    region: oregon
-    plan: standard
-    buildCommand: bun install --frozen-lockfile && bun run build
-    startCommand: bun run start
-    healthCheckPath: /api/health
-    branch: main
-    autoDeploy: true
-
-    envVars:
-      - key: NODE_ENV
-        value: production
-      - key: NEXT_PUBLIC_SUPABASE_URL
-        sync: false
-      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
-        sync: false
-      - key: SUPABASE_SERVICE_ROLE_KEY
-        sync: false
-      - key: NEXT_PUBLIC_APP_URL
-        value: https://collabryx-frontend.onrender.com
-      - key: BACKEND_MODE
-        value: render
-      - key: BACKEND_URL_RENDER
-        fromService:
-          name: collabryx-embedding-worker
-          type: web
-          property: host
-      - key: OPENROUTER_API_KEY
-        sync: false
-      - key: OPENROUTER_MODEL
-        value: deepseek/deepseek-v4-flash
-      - key: OPENROUTER_MAX_TOKENS
-        value: "8192"
-      - key: OPENROUTER_TEMPERATURE
-        value: "0.7"
-      - key: LOG_LEVEL
-        value: info
-
-  # ─────────────────────────────────────────────
-  # 2. Embedding Service (Sentence Transformers)
-  # ─────────────────────────────────────────────
-  - type: web
-    name: collabryx-embedding-worker
-    env: docker
-    region: oregon
-    plan: standard
-    dockerfilePath: ./python-worker/Dockerfile
-    rootDir: .
-    branch: main
-    healthCheckPath: /health
-    autoDeploy: true
-
-    envVars:
-      - key: PYTHONUNBUFFERED
-        value: "1"
-      - key: SUPABASE_URL
-        sync: false
-      - key: SUPABASE_SERVICE_ROLE_KEY
-        sync: false
-      - key: ALLOWED_ORIGINS
-        value: https://collabryx-frontend.onrender.com
-      - key: LOG_LEVEL
-        value: INFO
-
-    disk:
-      name: model-cache
-      mountPath: /root/.cache
-      sizeGB: 2
-
-  # ─────────────────────────────────────────────
-  # 3. Notification Service
+  # 1. Notification Service (lightweight)
   # ─────────────────────────────────────────────
   - type: web
     name: collabryx-notification-service
     env: docker
     region: oregon
-    plan: starter
+    plan: free
     dockerfilePath: ./python-worker/notification-service/Dockerfile
     rootDir: .
     branch: main
@@ -95,16 +21,16 @@ services:
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
       - key: ALLOWED_ORIGINS
-        value: https://collabryx-frontend.onrender.com
+        value: https://collabryx.vercel.app
 
   # ─────────────────────────────────────────────
-  # 4. Feed Scoring Service (Thompson Sampling)
+  # 2. Feed Scoring Service (Thompson Sampling)
   # ─────────────────────────────────────────────
   - type: web
     name: collabryx-feed-service
     env: docker
     region: oregon
-    plan: starter
+    plan: free
     dockerfilePath: ./python-worker/feed-service/Dockerfile
     rootDir: .
     branch: main
@@ -119,16 +45,16 @@ services:
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
       - key: ALLOWED_ORIGINS
-        value: https://collabryx-frontend.onrender.com
+        value: https://collabryx.vercel.app
 
   # ─────────────────────────────────────────────
-  # 5. Match Generation Service
+  # 3. Match Generation Service
   # ─────────────────────────────────────────────
   - type: web
     name: collabryx-match-service
     env: docker
     region: oregon
-    plan: starter
+    plan: free
     dockerfilePath: ./python-worker/match-service/Dockerfile
     rootDir: .
     branch: main
@@ -143,10 +69,4 @@ services:
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
       - key: ALLOWED_ORIGINS
-        value: https://collabryx-frontend.onrender.com
-
-databases:
-  - name: collabryx-db
-    region: oregon
-    plan: basic-4gb
-    postgresMajorVersion: 15
+        value: https://collabryx.vercel.app
