@@ -16,10 +16,10 @@ import type { Profile, UserSkill, UserExperience, UserProject } from "@/types/da
 // - DEBUG and SKIP_EMAIL_VERIFICATION remain separate toggles
 //   (DEBUG for logging verbosity, SKIP_EMAIL_VERIFICATION for CI/testing)
 
+// All debug/performance features are derived from NODE_ENV.
+// In development: everything is ON (verbose logging, performance timers, dev UI).
+// In production: everything is OFF (no performance overhead, no dev UI exposed).
 const DEVELOPMENT_MODE = process.env.NODE_ENV !== 'production'
-const DEBUG_ENABLED = process.env.DEBUG === "true" || process.env.DEBUG === "1"
-const ENABLE_PERFORMANCE_LOGS = process.env.ENABLE_PERFORMANCE_LOGS === "true"
-const LOG_LEVEL = process.env.LOG_LEVEL || "info"
 // Support both SKIP_EMAIL_VERIFICATION (server-side) and
 // NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION (client-side) for cross-environment compatibility
 const SKIP_EMAIL_VERIFICATION =
@@ -38,19 +38,13 @@ const TEST_USER_PASSWORD = "test123"
  * This helps developers understand the current environment setup
  * NOTE: Guarded to prevent module-level side effects on import (#138)
  */
-if (typeof window !== 'undefined' && (DEVELOPMENT_MODE || DEBUG_ENABLED)) {
+if (typeof window !== 'undefined' && DEVELOPMENT_MODE) {
   console.log(`
 ╔════════════════════════════════════════════════════════╗
 ║           ENVIRONMENT CONFIGURATION                    ║
 ╠════════════════════════════════════════════════════════╣
 ║  NODE_ENV:          ${process.env.NODE_ENV?.padEnd(30)}║
-║  DEBUG:             ${String(process.env.DEBUG)?.padEnd(30)}║
-║  LOG_LEVEL:         ${LOG_LEVEL.padEnd(30)}║
-║  PERF_LOGS:         ${String(ENABLE_PERFORMANCE_LOGS).padEnd(30)}║
-║  SKIP_EMAIL_VERIFY: ${String(SKIP_EMAIL_VERIFICATION).padEnd(30)}║
-║                                                          ║
-║  Dev Features:      ${String(DEVELOPMENT_MODE).padEnd(30)}║
-║  Debug Enabled:     ${String(DEBUG_ENABLED).padEnd(30)}║
+║  Dev Mode:          ${String(DEVELOPMENT_MODE).padEnd(30)}║
 ║  Skip Email Verify: ${String(SKIP_EMAIL_VERIFICATION).padEnd(30)}║
 ╚════════════════════════════════════════════════════════╝
   `.trim())
@@ -69,11 +63,6 @@ function validateEnvironment(): void {
   // Check for missing critical vars in development
   if (DEVELOPMENT_MODE && !process.env.NEXT_PUBLIC_SUPABASE_URL) {
     warnings.push("NEXT_PUBLIC_SUPABASE_URL is not configured")
-  }
-  
-  // Check DEBUG flag consistency
-  if (DEBUG_ENABLED && LOG_LEVEL === "error") {
-    warnings.push("DEBUG=true but LOG_LEVEL=error - debug logs will not appear")
   }
   
     // Check SKIP_EMAIL_VERIFICATION value
@@ -107,33 +96,30 @@ if (typeof window !== 'undefined' && DEVELOPMENT_MODE) {
 
 /**
  * Check if debug logging is enabled
- * Uses DEBUG environment variable
+ * Always true in development mode — no separate DEBUG toggle needed.
  */
 export function isDebugEnabled(): boolean {
-  return DEBUG_ENABLED
+  return DEVELOPMENT_MODE
 }
 
 /**
  * Check if performance logging is enabled
- * Uses ENABLE_PERFORMANCE_LOGS environment variable
+ * Always true in development mode.
  */
 export function isPerformanceLogEnabled(): boolean {
-  return ENABLE_PERFORMANCE_LOGS && DEBUG_ENABLED
+  return DEVELOPMENT_MODE
 }
 
 /**
  * Categorized debug logging function
- * Only logs when DEBUG=true and log level allows it
+ * Only active in development mode — no-op in production.
  * 
  * @param category - Log category (e.g., "auth", "database", "api")
  * @param message - Log message
  * @param data - Optional data to log
  */
 export function devLog(category: string, message: string, data?: unknown): void {
-  if (!DEBUG_ENABLED) return
-  
-  const shouldLog = LOG_LEVEL === "debug" || LOG_LEVEL === "info"
-  if (!shouldLog) return
+  if (!DEVELOPMENT_MODE) return
   
   const timestamp = new Date().toISOString().split("T")[1].slice(0, -1)
   const prefix = `[${timestamp}] [DEV:${category.toUpperCase()}]`
@@ -163,7 +149,7 @@ export function performanceLog(category: string, label: string): () => void {
   const timestamp = new Date().toISOString().split("T")[1].slice(0, -1)
   
   return () => {
-    if (!isPerformanceLogEnabled()) return
+    if (!DEVELOPMENT_MODE) return
     
     const duration = performance.now() - startTime
     const prefix = `[${timestamp}] [PERF:${category.toUpperCase()}]`
@@ -186,8 +172,6 @@ export function logEmailVerificationStatus(
   emailConfirmedAt: string | null | undefined,
   context: string = "email-verification"
 ): void {
-  if (!DEBUG_ENABLED) return
-  
   devLog(context, "Email verification status check", {
     userEmail,
     emailConfirmedAt,
@@ -209,8 +193,6 @@ export function logRedirectDecision(
   to: string,
   reason: string
 ): void {
-  if (!DEBUG_ENABLED) return
-  
   devLog("routing", `Redirect: ${from} → ${to}`, {
     reason,
     timestamp: new Date().toISOString(),
@@ -335,19 +317,15 @@ export function isUserEmailVerified(user: { email_confirmed_at?: string | null }
 export function getDevelopmentConfig(): {
   isDevelopmentMode: boolean
   isDebugEnabled: boolean
-  isPerformanceLogEnabled: boolean
   isEmailVerificationSkipped: boolean
-  logLevel: string
   nodeEnv: string | undefined
   skipEmailVerificationValue: string | undefined
   skipEmailVerificationPublicValue: string | undefined
 } {
   return {
     isDevelopmentMode: DEVELOPMENT_MODE,
-    isDebugEnabled: DEBUG_ENABLED,
-    isPerformanceLogEnabled: ENABLE_PERFORMANCE_LOGS,
+    isDebugEnabled: DEVELOPMENT_MODE,
     isEmailVerificationSkipped: SKIP_EMAIL_VERIFICATION,
-    logLevel: LOG_LEVEL,
     nodeEnv: process.env.NODE_ENV,
     skipEmailVerificationValue: process.env.SKIP_EMAIL_VERIFICATION,
     skipEmailVerificationPublicValue: process.env.NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION,
