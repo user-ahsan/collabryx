@@ -1,0 +1,271 @@
+# =============================================================================
+# COLLABRYX — Dokploy Docker Compose
+# =============================================================================
+# Deploy via: Dokploy Dashboard → Create Service → Compose
+#
+# Source Type: Git (connect your repository)
+# Branch: main
+# Compose Type: docker-compose
+# Compose Path: deploy/dokploy/docker-compose.yml
+#
+# WHAT YOU NEED TO DO IN DOKPLOY UI:
+#   1. Create Compose service (git repo, path above)
+#   2. Paste ALL env vars in Environment tab (from env-template.dokploy)
+#   3. Set DOMAIN=yourdomain.com — that's it for domain config
+#      (Traefik auto-handles SSL via Let's Encrypt + dokploy-network)
+#   4. Click Deploy
+#
+# EVERYTHING ELSE IS AUTOMATIC:
+#   - ✅ Volume auto-created (collabryx-model-cache defined below)
+#   - ✅ Domain routing via ${DOMAIN} env var in Traefik labels
+#   - ✅ HTTPS/SSL auto via Let's Encrypt (websecure entrypoint)
+#   - ✅ All service URLs resolve via Docker internal DNS
+#   - ✅ Env vars injected via env_file: .env + environment: block
+# =============================================================================
+
+services:
+
+  # ===================================================
+  # NEXT.JS APPLICATION — main web app
+  # ===================================================
+  nextjs:
+    build:
+      context: .
+      dockerfile: deploy/dokploy/Dockerfile.nextjs
+      args:
+        # Build-time: Next.js inlines NEXT_PUBLIC_* vars at build time
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+        NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION: ${NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION:-false}
+    restart: always
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - IN_DOCKER_CONTAINER=true
+      # Internal service URLs (Docker DNS names — not host ports)
+      - EMBEDDING_SERVICE_URL=http://embedding:8000
+      - NOTIFICATION_SERVICE_URL=http://notification:8000
+      - FEED_SERVICE_URL=http://feed:8000
+      - MATCH_SERVICE_URL=http://match:8000
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/health', {timeout:5000}, r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error',()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - dokploy-network
+    labels:
+      - "traefik.enable=true"
+      # Domain comes from ${DOMAIN} env var — set once in Dokploy UI
+      - "traefik.http.routers.collabryx-nextjs.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.collabryx-nextjs.entrypoints=websecure"
+      - "traefik.http.routers.collabryx-nextjs.tls.certResolver=letsencrypt"
+      - "traefik.http.services.collabryx-nextjs.loadbalancer.server.port=3000"
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  # ===================================================
+  # EMBEDDING SERVICE — Sentence Transformers
+  # ~2.1GB image, pre-downloads HF model at build time
+  # ===================================================
+  embedding:
+    build:
+      context: ./python-worker
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - SUPABASE_URL=${SUPABASE_URL:-${NEXT_PUBLIC_SUPABASE_URL}}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+      - WORKER_API_KEY=${WORKER_API_KEY}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    # Volume auto-created by Docker — persists model across deployments
+    volumes:
+      - collabryx-model-cache:/app/.cache/huggingface
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=256m
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 120s
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 3G
+        reservations:
+          cpus: '0.5'
+          memory: 1G
+    networks:
+      - dokploy-network
+
+  # ===================================================
+  # NOTIFICATION SERVICE — lightweight FastAPI
+  # ~180MB image, no ML deps
+  # ===================================================
+  notification:
+    build:
+      context: ./python-worker
+      dockerfile: notification-service/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - SUPABASE_URL=${SUPABASE_URL:-${NEXT_PUBLIC_SUPABASE_URL}}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+      - WORKER_API_KEY=${WORKER_API_KEY}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=64m
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    networks:
+      - dokploy-network
+
+  # ===================================================
+  # FEED SERVICE — Thompson Sampling ranking
+  # ~180MB image, numpy only
+  # ===================================================
+  feed:
+    build:
+      context: ./python-worker
+      dockerfile: feed-service/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - SUPABASE_URL=${SUPABASE_URL:-${NEXT_PUBLIC_SUPABASE_URL}}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+      - WORKER_API_KEY=${WORKER_API_KEY}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=64m
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+    networks:
+      - dokploy-network
+
+  # ===================================================
+  # MATCH SERVICE — skill-gap matching algorithm
+  # ~180MB image, numpy + Supabase only
+  # ===================================================
+  match:
+    build:
+      context: ./python-worker
+      dockerfile: match-service/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - PYTHONUNBUFFERED=1
+      - SUPABASE_URL=${SUPABASE_URL:-${NEXT_PUBLIC_SUPABASE_URL}}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
+      - WORKER_API_KEY=${WORKER_API_KEY}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    read_only: true
+    tmpfs:
+      - /tmp:noexec,nosuid,size=64m
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+    networks:
+      - dokploy-network
+
+
+# ===================================================
+# VOLUMES — Docker auto-creates these on first deploy
+# No Dokploy UI setup needed
+# ===================================================
+volumes:
+  collabryx-model-cache:
+    driver: local
+
+
+# ===================================================
+# NETWORKS — dokploy-network is created by Dokploy itself
+# during installation. DO NOT create it manually.
+# ===================================================
+networks:
+  dokploy-network:
+    external: true

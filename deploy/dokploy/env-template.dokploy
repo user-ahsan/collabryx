@@ -1,0 +1,56 @@
+# =============================================================================
+# COLLABRYX — Dokploy Environment Variables Template
+# =============================================================================
+# INSTRUCTIONS:
+#   1. Copy this ENTIRE block
+#   2. Paste into Dokploy Dashboard → Your Compose App → Environment tab
+#   3. Change only: DOMAIN, SUPABASE_SERVICE_ROLE_KEY, WORKER_API_KEY
+#   4. Save + Deploy — everything is automatic
+#
+# Variables hardcoded in docker-compose.yml (don't add here):
+#   IN_DOCKER_CONTAINER, EMBEDDING_SERVICE_URL, NOTIFICATION_SERVICE_URL,
+#   FEED_SERVICE_URL, MATCH_SERVICE_URL
+# =============================================================================
+
+# ── DOMAIN (CHANGE THIS) ──────────────────────────────────────────────────────
+# Your domain with A record pointing to Dokploy server IP
+# Traefik auto-routes + Let's Encrypt SSL via this variable
+DOMAIN=collabryx.yourdomain.com
+
+# ── SUPABASE (same as local .env) ─────────────────────────────────────────────
+# Get these from: https://supabase.com/dashboard/project/_/settings/api
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key-here
+
+# ── APP URL (auto-derived from DOMAIN) ────────────────────────────────────────
+# Used for OAuth callbacks, magic links, CORS
+NEXT_PUBLIC_APP_URL=https://${DOMAIN}
+
+# ── ENVIRONMENT ────────────────────────────────────────────────────────────────
+NODE_ENV=production
+NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION=false
+
+# ── CORS (auto-derived from DOMAIN) ────────────────────────────────────────────
+# Space to add Vercel domain too during migration: https://collabryx.vercel.app
+ALLOWED_ORIGINS=https://${DOMAIN}
+
+# ── WORKER API KEY (GENERATE THIS) ─────────────────────────────────────────────
+# Shared secret between Next.js and Python microservices
+# Generate: openssl rand -base64 32
+WORKER_API_KEY=
+
+# ── AI PROVIDER: OpenRouter (same as local) ────────────────────────────────────
+# REPLACE with your actual key: https://openrouter.ai/settings/keys
+OPENROUTER_API_KEY=sk-or-v1-your-openrouter-key-here
+OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
+OPENROUTER_MODEL=deepseek/deepseek-v4-flash
+OPENROUTER_REFERER=https://${DOMAIN}
+OPENROUTER_TITLE=Collabryx
+OPENROUTER_MAX_TOKENS=8192
+OPENROUTER_TEMPERATURE=0.7
+OPENROUTER_TIMEOUT=120000
+
+# ── LOGGING ────────────────────────────────────────────────────────────────────
+PYTHONUNBUFFERED=1
+LOG_LEVEL=INFO

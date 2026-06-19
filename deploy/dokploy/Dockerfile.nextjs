@@ -1,0 +1,90 @@
+# =============================================================================
+# COLLABRYX — Next.js Production Dockerfile
+# =============================================================================
+# Multi-stage build:
+#   Stage 1 (builder) — Install deps, typecheck, build
+#   Stage 2 (runner)  — Minimal production image
+#
+# NOTE: Next.js config (next.config.ts) is READ-ONLY per AGENTS.md
+# so we do NOT add output: 'standalone'. Instead we run next start
+# directly with the built .next output directory.
+# =============================================================================
+
+# ── Stage 1: Builder ───────────────────────────────────────────────────────────
+FROM node:22-slim AS builder
+
+WORKDIR /app
+
+# Install Bun (required by project — "Bun only. Never npm/npx.")
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    unzip \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL https://bun.sh/install | bash
+ENV PATH="/root/.bun/bin:$PATH"
+
+# Copy dependency manifests first (Docker layer caching)
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
+
+# Copy source code
+COPY . .
+
+# Build-time args for NEXT_PUBLIC_* vars (inlined at build time)
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+ARG NEXT_PUBLIC_APP_URL
+ARG NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION=false
+
+ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
+ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+ENV NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION=$NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION
+ENV NODE_ENV=production
+
+# Build
+RUN bun run build
+
+# ── Stage 2: Runner ────────────────────────────────────────────────────────────
+FROM node:22-slim AS runner
+
+WORKDIR /app
+
+# Install curl for healthcheck
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN useradd --create-home --shell /bin/bash appuser
+
+# Copy built app + node_modules (needed for next start)
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/next.config.ts ./
+COPY --from=builder /app/tsconfig.json ./
+
+# Set ownership
+RUN chown -R appuser:appuser /app
+
+USER appuser
+
+# Environment
+ENV NODE_ENV=production
+ENV HOSTNAME=0.0.0.0
+ENV PORT=3000
+ENV BUN_INSTALL="/home/appuser/.bun"
+ENV PATH="/home/appuser/.bun/bin:$PATH"
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:3000/health', r => process.exit(r.statusCode === 200 ? 0 : 1))"
+
+# Start Next.js production server
+CMD ["node", "node_modules/next/dist/bin/next", "start"]
