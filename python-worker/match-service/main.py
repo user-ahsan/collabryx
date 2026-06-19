@@ -49,11 +49,13 @@ from shared.db import init_supabase, execute
 from shared.middleware import add_cors_middleware, api_key_auth
 
 from generator import generate_matches_for_user, generate_batch_matches
+from learner import refresh_learned_data
 
 
 # ── Module-level state ────────────────────────────────────────────────────────
 supabase = None
 SHUTDOWN_FLAG = False
+learner_task = None
 
 
 def signal_handler(signum: int, frame) -> None:  # type: ignore[type-arg]
@@ -95,6 +97,29 @@ async def lifespan(app: FastAPI):
     logger.info("MATCH SERVICE STARTED")
     logger.info("=" * 60)
 
+    # ── Start background learner refresh ──────────────────────────────────────
+    async def refresh_learner_periodically():
+        """Refresh learned algorithm data every hour."""
+        while not SHUTDOWN_FLAG:
+            try:
+                result = await refresh_learned_data(supabase)
+                logger.info(
+                    "Learner refresh complete: %d pairs learned, %d weights updated",
+                    result.get("pairs_learned", 0),
+                    result.get("weights_updated", 0),
+                )
+            except Exception as exc:
+                logger.warning("Learner refresh failed (will retry): %s", exc)
+            # Wait 1 hour before next refresh
+            for _ in range(60):
+                if SHUTDOWN_FLAG:
+                    break
+                await asyncio.sleep(60)
+
+    global learner_task
+    learner_task = asyncio.create_task(refresh_learner_periodically())
+    logger.info("Background learner refresh started (every 60 min)")
+
     yield  # ── Application runs here ──
 
     # ── Graceful shutdown ──────────────────────────────────────────────────
@@ -103,6 +128,11 @@ async def lifespan(app: FastAPI):
     logger.info("=" * 60)
     global SHUTDOWN_FLAG  # noqa: PLW0602 — Python 3.11 needs explicit global
     SHUTDOWN_FLAG = True
+
+    # Cancel background learner task
+    if learner_task:
+        learner_task.cancel()
+        logger.info("Background learner task cancelled")
 
     if supabase:
         supabase = None
@@ -113,7 +143,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Collabryx Match Service",
-    description="Generate match suggestions using vector similarity and weighted scoring",
+    description="Generate match suggestions using complementary skill-gap matching with data-learned weights",
     version="1.0.0",
     lifespan=lifespan,
 )

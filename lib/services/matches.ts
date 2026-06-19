@@ -56,6 +56,7 @@ export async function fetchMatches(
       bio?: string
       location?: string
       collaboration_readiness?: string
+      roles?: string[]
     }
   }
 
@@ -100,7 +101,8 @@ export async function fetchMatches(
             headline,
             bio,
             location,
-            collaboration_readiness
+            collaboration_readiness,
+            roles
           )
         `)
         .eq("user_id", user.id)
@@ -169,6 +171,7 @@ export async function fetchMatches(
     matched_user_collaboration: match.matched_user?.collaboration_readiness || "available",
     matched_user_skills: [],
     matched_user_interests: [],
+    matched_user_roles: match.matched_user?.roles || [],
   }))
 
   const matchedUserIds = mappedMatches.map((m) => m.matched_user_id)

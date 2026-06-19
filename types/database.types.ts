@@ -2,6 +2,11 @@
 // Types for the Collabryx database schema
 
 // ===========================================
+// ROLE TYPE
+// ===========================================
+export type Role = 'student' | 'investor' | 'founder' | 'professional' | 'mentor';
+
+// ===========================================
 // TABLE: profiles
 // ===========================================
 export interface Profile {
@@ -22,11 +27,37 @@ export interface Profile {
   profile_completion: number; // 0-100
   looking_for: string[];
   onboarding_completed: boolean;
-  // Social links
+  // --- Multi-role system (20260615) ---
+  roles?: Role[];
+  // Student fields
+  major?: string;
+  graduation_year?: number;
+  looking_for_team?: boolean;
+  project_interests?: string[];
+  // Investor fields
+  check_size_min?: number;
+  check_size_max?: number;
+  stage_focus?: string[];
+  sectors?: string[];
+  portfolio_url?: string;
+  investment_history_count?: number;
+  accredited_investor?: boolean;
+  // Founder / Professional fields
+  company_name?: string;
+  company_stage?: 'idea' | 'pre_seed' | 'seed' | 'early' | 'growth' | 'established';
+  company_role?: string;
+  team_size?: number;
+  fundraising_stage?: 'not_raising' | 'pre_seed' | 'seed' | 'series_a' | 'series_b' | 'series_c_plus';
+  hiring_needs?: string[];
+  open_to_mentoring?: boolean;
+  // Mentor fields
+  mentoring_areas?: string[];
+  mentoring_format?: 'one_on_one' | 'group' | 'async' | 'any';
+  mentoring_availability_hours?: number;
+  // Social links (portfolio_url is defined above with investor fields)
   github_url?: string;
   linkedin_url?: string;
   twitter_url?: string;
-  portfolio_url?: string;
   created_at: string; // TIMESTAMPTZ
   updated_at: string; // TIMESTAMPTZ
 }
@@ -38,6 +69,7 @@ export interface UserSkill {
   id: string; // UUID
   user_id: string; // UUID
   skill_name: string;
+  skill_category?: string;
   proficiency?: 'beginner' | 'intermediate' | 'advanced' | 'expert';
   is_primary: boolean;
   created_at: string; // TIMESTAMPTZ
@@ -208,6 +240,8 @@ export interface MatchScore {
   complementary_score: number; // 0-100
   shared_interests: number; // 0-100
   activity_match: number;
+  skill_gap_score?: number;
+  role_complementarity_score?: number;
   overall_score: number;
   model_version: string;
   model_config?: Record<string, unknown>; // JSONB
@@ -243,6 +277,7 @@ export interface MatchPreference {
   min_match_percentage: number; // 0-100
   interested_in_types: string[];
   availability_match?: 'any' | 'similar' | 'complementary';
+  role_matching_enabled?: boolean;
   created_at: string; // TIMESTAMPTZ
   updated_at: string; // TIMESTAMPTZ
 }
@@ -388,6 +423,15 @@ export interface MatchSuggestionWithProfile extends MatchSuggestion {
   matched_user_role?: string;
   matched_user_avatar?: string;
   matched_user_initials?: string;
+  matched_user_bio?: string;
+  matched_user_location?: string;
+  matched_user_collaboration?: string;
+  matched_user_skills?: string[];
+  matched_user_interests?: string[];
+  matched_user_roles?: string[];
+  role_boost?: number;
+  role_reason?: string;
+  role_match_label?: string;
 }
 
 // Extended MatchActivity type for UI components

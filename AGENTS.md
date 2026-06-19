@@ -65,7 +65,8 @@ cd scripts/seed-data && python main.py [--all | --profiles | --posts | ...]
   | embedding-service | :8000 | `python-worker/embedding-service/` | Sentence Transformers vector embeddings |
   | notification-service | :8002 | `python-worker/notification-service/` | Send/digest/cleanup notifications |
   | feed-service | :8003 | `python-worker/feed-service/` | Thompson Sampling feed scoring |
-  | match-service | :8004 | `python-worker/match-service/` | Cosine similarity + Jaccard match gen |
+  | match-service | :8004 | `python-worker/match-service/` | Complementary skill-gap matching algorithm |
+- **Match algorithm**: `python-worker/match-service/generator.py` uses a **complementary matching** algorithm (not similarity-based). Weights: skill_gap 35% (unique skills the other has), role_complementarity 25% (cross-domain synergy), complementary 20% (inverse Jaccard), semantic 10% (vector similarity), interests 10% (shared interests). Skill categories for 1000+ skills defined in `skill_categories.py`.
 - **Web → microservice**: `lib/worker-client.ts` has `WorkerClient`, `NotificationClient`, `FeedClient`, `MatchClient`. Next.js API routes call them via HTTP.
 - **Service URL resolution** (`lib/config/environment.ts`): Production (`NODE_ENV=production`) reads `EMBEDDING_SERVICE_URL`, `NOTIFICATION_SERVICE_URL`, etc. from env. Development uses Docker (`host.docker.internal:PORT`) or `localhost:PORT`. Remote URLs are **never** used outside production.
 - **Old TS services deleted**: Backups at `.tmp/backup/services/`.

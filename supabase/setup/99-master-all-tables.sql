@@ -67,6 +67,34 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     profile_completion INTEGER NOT NULL DEFAULT 0 CHECK (profile_completion >= 0 AND profile_completion <= 100),
     looking_for TEXT[] DEFAULT '{}',
     onboarding_completed BOOLEAN NOT NULL DEFAULT FALSE,
+    -- Multi-role system (2026-06-15)
+    roles TEXT[] DEFAULT '{}' CHECK (roles <@ ARRAY['student', 'investor', 'founder', 'professional', 'mentor']),
+    -- Student fields
+    major TEXT,
+    graduation_year INTEGER CHECK (graduation_year >= 1950 AND graduation_year <= 2040),
+    looking_for_team BOOLEAN NOT NULL DEFAULT FALSE,
+    project_interests TEXT[] DEFAULT '{}',
+    -- Investor fields
+    check_size_min NUMERIC(12, 2) CHECK (check_size_min >= 0),
+    check_size_max NUMERIC(12, 2) CHECK (check_size_max >= 0),
+    stage_focus TEXT[] DEFAULT '{}' CHECK (stage_focus <@ ARRAY['pre_seed', 'seed', 'series_a', 'series_b', 'growth', 'late_stage']),
+    sectors TEXT[] DEFAULT '{}',
+    portfolio_url TEXT,
+    investment_history_count INTEGER DEFAULT 0 CHECK (investment_history_count >= 0),
+    accredited_investor BOOLEAN NOT NULL DEFAULT FALSE,
+    -- Founder / Professional fields
+    company_name TEXT,
+    company_stage TEXT CHECK (company_stage IN ('idea', 'pre_seed', 'seed', 'early', 'growth', 'established')),
+    company_role TEXT,
+    team_size INTEGER CHECK (team_size >= 1),
+    fundraising_stage TEXT CHECK (fundraising_stage IN ('not_raising', 'pre_seed', 'seed', 'series_a', 'series_b', 'series_c_plus')),
+    hiring_needs TEXT[] DEFAULT '{}',
+    open_to_mentoring BOOLEAN NOT NULL DEFAULT FALSE,
+    -- Mentor fields
+    mentoring_areas TEXT[] DEFAULT '{}',
+    mentoring_format TEXT CHECK (mentoring_format IN ('one_on_one', 'group', 'async', 'any')),
+    mentoring_availability_hours INTEGER CHECK (mentoring_availability_hours >= 0 AND mentoring_availability_hours <= 168),
+    -- Social / misc
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -78,6 +106,7 @@ CREATE TABLE IF NOT EXISTS public.user_skills (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
     skill_name TEXT NOT NULL,
+    skill_category TEXT,
     proficiency TEXT CHECK (proficiency IN ('beginner', 'intermediate', 'advanced', 'expert')),
     is_primary BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -244,8 +273,10 @@ CREATE TABLE IF NOT EXISTS public.match_scores (
     complementary_score INTEGER NOT NULL DEFAULT 0 CHECK (complementary_score >= 0 AND complementary_score <= 100),
     shared_interests INTEGER NOT NULL DEFAULT 0 CHECK (shared_interests >= 0 AND shared_interests <= 100),
     activity_match REAL DEFAULT 0,
+    skill_gap_score REAL DEFAULT 0,
+    role_complementarity_score REAL DEFAULT 0,
     overall_score REAL DEFAULT 0,
-    model_version TEXT DEFAULT 'rule-based-v1',
+    model_version TEXT DEFAULT 'rule-based-v2-complementary',
     model_config JSONB DEFAULT '{}',
     overlapping_skills TEXT[] DEFAULT '{}',
     complementary_explanation TEXT,
@@ -257,7 +288,63 @@ CREATE TABLE IF NOT EXISTS public.match_scores (
 );
 
 -- --------------------------------------------
--- TABLE 14: match_activity
+-- TABLE 14: complementary_pairs (learning)
+-- --------------------------------------------
+-- Stores which skill category pairs actually lead to successful connections.
+-- Data is refreshed periodically by the learner module.
+CREATE TABLE IF NOT EXISTS public.complementary_pairs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    category_a TEXT NOT NULL,
+    category_b TEXT NOT NULL,
+    score REAL NOT NULL DEFAULT 0 CHECK (score >= 0 AND score <= 100),
+    co_occurrence_count INTEGER NOT NULL DEFAULT 0,
+    connection_count INTEGER NOT NULL DEFAULT 0,
+    last_updated TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(category_a, category_b)
+);
+
+CREATE INDEX IF NOT EXISTS idx_complementary_pairs_categories 
+    ON public.complementary_pairs(category_a, category_b);
+CREATE INDEX IF NOT EXISTS idx_complementary_pairs_score 
+    ON public.complementary_pairs(score DESC);
+
+COMMENT ON TABLE public.complementary_pairs IS 
+  'Learned complementary skill category pairs based on real user connection patterns. Refreshed periodically by the learner module.';
+COMMENT ON COLUMN public.complementary_pairs.score IS 
+  'Complementarity score 0-100. Higher = categories co-occur more often in successful connections.';
+
+-- --------------------------------------------
+-- TABLE 15: algorithm_weights (learning)
+-- --------------------------------------------
+-- Stores learned weights for each scoring dimension.
+-- Weights are auto-tuned based on which dimensions predict connections.
+CREATE TABLE IF NOT EXISTS public.algorithm_weights (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    dimension TEXT NOT NULL UNIQUE,
+    weight REAL NOT NULL DEFAULT 0 CHECK (weight >= 0 AND weight <= 1),
+    sample_size INTEGER NOT NULL DEFAULT 0,
+    connection_rate REAL DEFAULT 0,
+    last_updated TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    version TEXT NOT NULL DEFAULT 'v1',
+    description TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_algorithm_weights_version 
+    ON public.algorithm_weights(version);
+
+INSERT INTO public.algorithm_weights (dimension, weight, description) VALUES
+    ('skill_gap', 0.35, 'Skills the other person has that you lack'),
+    ('role_complementarity', 0.25, 'Cross-domain role synergy'),
+    ('complementary', 0.20, 'Inverse Jaccard of skill sets'),
+    ('semantic', 0.10, 'Vector embedding cosine similarity'),
+    ('interests', 0.10, 'Shared interest overlap')
+ON CONFLICT (dimension) DO NOTHING;
+
+COMMENT ON TABLE public.algorithm_weights IS 
+  'Auto-tuned scoring weights learned from user behavior data. Replaces static hardcoded weights.';
+
+-- --------------------------------------------
+-- TABLE 16: match_activity
 -- --------------------------------------------
 CREATE TABLE IF NOT EXISTS public.match_activity (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -271,7 +358,7 @@ CREATE TABLE IF NOT EXISTS public.match_activity (
 );
 
 -- --------------------------------------------
--- TABLE 15: match_preferences
+-- TABLE 17: match_preferences
 -- --------------------------------------------
 CREATE TABLE IF NOT EXISTS public.match_preferences (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -279,12 +366,13 @@ CREATE TABLE IF NOT EXISTS public.match_preferences (
     min_match_percentage INTEGER DEFAULT 0 CHECK (min_match_percentage >= 0 AND min_match_percentage <= 100),
     interested_in_types TEXT[] DEFAULT '{}',
     availability_match TEXT CHECK (availability_match IN ('any', 'similar', 'complementary')),
+    role_matching_enabled BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- --------------------------------------------
--- TABLE 16: conversations
+-- TABLE 18: conversations
 -- --------------------------------------------
 CREATE TABLE IF NOT EXISTS public.conversations (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -301,7 +389,7 @@ CREATE TABLE IF NOT EXISTS public.conversations (
 );
 
 -- --------------------------------------------
--- TABLE 17: messages
+-- TABLE 19: messages
 -- --------------------------------------------
 CREATE TABLE IF NOT EXISTS public.messages (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -316,7 +404,7 @@ CREATE TABLE IF NOT EXISTS public.messages (
 );
 
 -- --------------------------------------------
--- TABLE 18: notifications
+-- TABLE 20: notifications
 -- --------------------------------------------
 CREATE TABLE IF NOT EXISTS public.notifications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -334,7 +422,7 @@ CREATE TABLE IF NOT EXISTS public.notifications (
 );
 
 -- --------------------------------------------
--- TABLE 19: ai_mentor_sessions
+-- TABLE 21: ai_mentor_sessions
 -- --------------------------------------------
 CREATE TABLE IF NOT EXISTS public.ai_mentor_sessions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -346,7 +434,7 @@ CREATE TABLE IF NOT EXISTS public.ai_mentor_sessions (
 );
 
 -- --------------------------------------------
--- TABLE 20: ai_mentor_messages
+-- TABLE 22: ai_mentor_messages
 -- --------------------------------------------
 CREATE TABLE IF NOT EXISTS public.ai_mentor_messages (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -358,7 +446,7 @@ CREATE TABLE IF NOT EXISTS public.ai_mentor_messages (
 );
 
 -- --------------------------------------------
--- TABLE 21: notification_preferences
+-- TABLE 23: notification_preferences
 -- --------------------------------------------
 CREATE TABLE IF NOT EXISTS public.notification_preferences (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -397,7 +485,7 @@ CREATE TABLE IF NOT EXISTS public.notification_preferences (
 );
 
 -- --------------------------------------------
--- TABLE 22: theme_preferences
+-- TABLE 24: theme_preferences
 -- --------------------------------------------
 CREATE TABLE IF NOT EXISTS public.theme_preferences (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -411,7 +499,7 @@ CREATE TABLE IF NOT EXISTS public.theme_preferences (
 -- ============================================================================
 
 -- --------------------------------------------
--- TABLE 23: profile_embeddings
+-- TABLE 25: profile_embeddings
 -- --------------------------------------------
 -- Stores vector embeddings for semantic profile matching
 -- Uses pgvector extension with HNSW index for fast similarity search
@@ -440,7 +528,7 @@ BEGIN
 END $$;
 
 -- --------------------------------------------
--- TABLE 24: embedding_dead_letter_queue
+-- TABLE 26: embedding_dead_letter_queue
 -- --------------------------------------------
 -- Failed embedding retry queue with exponential backoff
 CREATE TABLE IF NOT EXISTS public.embedding_dead_letter_queue (
@@ -458,7 +546,7 @@ CREATE TABLE IF NOT EXISTS public.embedding_dead_letter_queue (
 );
 
 -- --------------------------------------------
--- TABLE 25: embedding_rate_limits
+-- TABLE 27: embedding_rate_limits
 -- --------------------------------------------
 -- Rate limiting for embedding generation (3 requests/hour/user)
 CREATE TABLE IF NOT EXISTS public.embedding_rate_limits (
@@ -472,7 +560,7 @@ CREATE TABLE IF NOT EXISTS public.embedding_rate_limits (
 );
 
 -- --------------------------------------------
--- TABLE 26: embedding_pending_queue
+-- TABLE 28: embedding_pending_queue
 -- --------------------------------------------
 -- Queue for pending embedding requests from onboarding
 CREATE TABLE IF NOT EXISTS public.embedding_pending_queue (
@@ -493,7 +581,7 @@ CREATE TABLE IF NOT EXISTS public.embedding_pending_queue (
 -- ============================================================================
 
 -- --------------------------------------------
--- TABLE 27: feed_scores
+-- TABLE 29: feed_scores
 -- --------------------------------------------
 -- Cached personalized feed ranking scores
 CREATE TABLE IF NOT EXISTS public.feed_scores (
@@ -512,7 +600,7 @@ CREATE TABLE IF NOT EXISTS public.feed_scores (
 );
 
 -- --------------------------------------------
--- TABLE 28: events
+-- TABLE 30: events
 -- --------------------------------------------
 -- Central event store for analytics and event processing
 CREATE TABLE IF NOT EXISTS public.events (
@@ -540,7 +628,7 @@ CREATE TABLE IF NOT EXISTS public.events (
 );
 
 -- --------------------------------------------
--- TABLE 29: user_analytics
+-- TABLE 31: user_analytics
 -- --------------------------------------------
 -- Per-user engagement metrics and activity tracking
 CREATE TABLE IF NOT EXISTS public.user_analytics (
@@ -579,7 +667,7 @@ CREATE TABLE IF NOT EXISTS public.user_analytics (
 );
 
 -- --------------------------------------------
--- TABLE 30: platform_analytics
+-- TABLE 32: platform_analytics
 -- --------------------------------------------
 -- Daily aggregated platform-wide metrics
 CREATE TABLE IF NOT EXISTS public.platform_analytics (
@@ -630,7 +718,7 @@ CREATE TABLE IF NOT EXISTS public.platform_analytics (
 );
 
 -- --------------------------------------------
--- TABLE 31: content_moderation_logs
+-- TABLE 33: content_moderation_logs
 -- --------------------------------------------
 -- Audit trail for content moderation decisions
 CREATE TABLE IF NOT EXISTS public.content_moderation_logs (
@@ -649,7 +737,7 @@ CREATE TABLE IF NOT EXISTS public.content_moderation_logs (
 );
 
 -- --------------------------------------------
--- TABLE 32: post_impressions (NEW for Thompson Sampling)
+-- TABLE 34: post_impressions (NEW for Thompson Sampling)
 -- --------------------------------------------
 -- Tracks post impressions for engagement rate calculation
 CREATE TABLE IF NOT EXISTS public.post_impressions (
@@ -665,7 +753,7 @@ CREATE INDEX IF NOT EXISTS idx_post_impressions_post ON public.post_impressions(
 CREATE INDEX IF NOT EXISTS idx_post_impressions_user ON public.post_impressions(user_id);
 
 -- --------------------------------------------
--- TABLE 33: feed_thompson_params (NEW for Thompson Sampling)
+-- TABLE 35: feed_thompson_params (NEW for Thompson Sampling)
 -- --------------------------------------------
 -- Stores alpha/beta distribution parameters for Thompson Sampling
 CREATE TABLE IF NOT EXISTS public.feed_thompson_params (

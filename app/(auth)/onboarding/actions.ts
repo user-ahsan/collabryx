@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server"
 import { completeTestUserOnboarding, isDevelopmentMode } from "@/lib/services/development"
 import { cookies } from "next/headers"
 
+type OnboardingRole = 'student' | 'investor' | 'founder' | 'professional' | 'mentor';
+
 interface OnboardingData {
     fullName: string;
     displayName?: string;
@@ -13,6 +15,7 @@ interface OnboardingData {
     avatarUrl?: string;
     bio?: string;
     collaborationReadiness?: "available" | "open" | "not-available";
+    roles: OnboardingRole[];
     skills: Array<{
         id: string;
         label: string;
@@ -29,6 +32,28 @@ interface OnboardingData {
         platform: string;
         url?: string;
     }[];
+    // Role-specific fields
+    major?: string;
+    graduation_year?: number | null;
+    looking_for_team?: boolean;
+    project_interests?: string[];
+    check_size_min?: number | null;
+    check_size_max?: number | null;
+    stage_focus?: string[];
+    sectors?: string[];
+    portfolio_url?: string;
+    investment_history_count?: number;
+    accredited_investor?: boolean;
+    company_name?: string;
+    company_stage?: string | null;
+    company_role?: string;
+    team_size?: number | null;
+    fundraising_stage?: string | null;
+    hiring_needs?: string[];
+    open_to_mentoring?: boolean;
+    mentoring_areas?: string[];
+    mentoring_format?: string | null;
+    mentoring_availability_hours?: number | null;
 }
 
 export async function completeOnboarding(data: OnboardingData, completionPercentage: number) {
@@ -192,6 +217,7 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
     // 2. Update Profile
     let profileError = null
     try {
+        const roles = data.roles || []
         const result = await supabase
             .from("profiles")
             .upsert({
@@ -212,7 +238,33 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
                 website_url: portfolioLink?.url || null,
                 looking_for: data.goals || [],
                 profile_completion: completionPercentage,
-                updated_at: new Date().toISOString()
+                updated_at: new Date().toISOString(),
+                // --- New role fields ---
+                roles: roles,
+                // Student fields
+                major: data.major || null,
+                graduation_year: data.graduation_year || null,
+                looking_for_team: data.looking_for_team || false,
+                project_interests: data.project_interests || [],
+                // Investor fields
+                check_size_min: data.check_size_min || null,
+                check_size_max: data.check_size_max || null,
+                stage_focus: data.stage_focus || [],
+                sectors: data.sectors || [],
+                investment_history_count: data.investment_history_count || 0,
+                accredited_investor: data.accredited_investor || false,
+                // Founder / Professional fields
+                company_name: data.company_name || null,
+                company_stage: data.company_stage || null,
+                company_role: data.company_role || null,
+                team_size: data.team_size || null,
+                fundraising_stage: data.fundraising_stage || null,
+                hiring_needs: data.hiring_needs || [],
+                open_to_mentoring: data.open_to_mentoring || false,
+                // Mentor fields
+                mentoring_areas: data.mentoring_areas || [],
+                mentoring_format: data.mentoring_format || null,
+                mentoring_availability_hours: data.mentoring_availability_hours || null,
             }, { onConflict: "id" })
         profileError = result.error
     } catch (error) {

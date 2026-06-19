@@ -109,12 +109,14 @@ const MatchPreferencesSchema = z.object({
   min_match_percentage: z.number().int().min(0).max(100).optional(),
   interested_in_types: z.array(z.string()).optional(),
   availability_match: z.enum(['any', 'similar', 'complementary']).optional(),
+  role_matching_enabled: z.boolean().optional(),
 })
 
 export async function updateMatchPreferences(preferences: {
   min_match_percentage?: number
   interested_in_types?: string[]
   availability_match?: 'any' | 'similar' | 'complementary'
+  role_matching_enabled?: boolean
 }) {
   const supabase = await createClient()
   

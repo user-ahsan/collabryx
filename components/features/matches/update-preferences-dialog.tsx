@@ -24,14 +24,27 @@ import { Settings2 } from "lucide-react"
 import { GlassCard } from "@/components/shared/glass-card"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
+import { Switch } from "@/components/ui/switch"
+import type { Role } from "@/types/database.types"
+
+const ALL_ROLES: { value: Role; label: string }[] = [
+    { value: 'student', label: 'Students' },
+    { value: 'investor', label: 'Investors' },
+    { value: 'founder', label: 'Founders' },
+    { value: 'professional', label: 'Professionals' },
+    { value: 'mentor', label: 'Mentors' },
+]
+
+interface PreferencesData {
+    minMatchPercentage: number
+    interestedInTypes: string[]
+    availabilityMatch: string
+    roleMatchingEnabled: boolean
+}
 
 interface UpdatePreferencesDialogProps {
-    currentPreferences: {
-        role?: string
-        industry?: string
-        type?: string
-    }
-    onUpdate: (prefs: { role: string; industry: string; type: string }) => void
+    currentPreferences: PreferencesData
+    onUpdate: (prefs: PreferencesData) => void
     variant?: "button" | "icon"
 }
 
@@ -41,12 +54,40 @@ export function UpdatePreferencesDialog({
     variant = "button",
 }: UpdatePreferencesDialogProps) {
     const [open, setOpen] = useState(false)
-    const [role, setRole] = useState(currentPreferences.role || "CTO")
-    const [industry, setIndustry] = useState(currentPreferences.industry || "Fintech")
-    const [type, setType] = useState(currentPreferences.type || "Startup")
+
+    const [interestedInTypes, setInterestedInTypes] = useState<string[]>(
+        currentPreferences.interestedInTypes.length > 0
+            ? currentPreferences.interestedInTypes
+            : ALL_ROLES.map(r => r.value)
+    )
+    const [minMatchPercentage, setMinMatchPercentage] = useState(
+        currentPreferences.minMatchPercentage || 50
+    )
+    const [availabilityMatch, setAvailabilityMatch] = useState(
+        currentPreferences.availabilityMatch || 'any'
+    )
+    const [roleMatchingEnabled, setRoleMatchingEnabled] = useState(
+        currentPreferences.roleMatchingEnabled !== false
+    )
+
+    const toggleRoleType = (role: string) => {
+        setInterestedInTypes(prev =>
+            prev.includes(role)
+                ? prev.filter(r => r !== role)
+                : [...prev, role]
+        )
+    }
 
     const handleSave = () => {
-        onUpdate({ role, industry, type })
+        onUpdate({
+            interestedInTypes:
+                interestedInTypes.length === ALL_ROLES.length
+                    ? []
+                    : interestedInTypes,
+            minMatchPercentage,
+            availabilityMatch,
+            roleMatchingEnabled,
+        })
         setOpen(false)
     }
 
@@ -67,57 +108,91 @@ export function UpdatePreferencesDialog({
             <DialogContent className={cn("w-[95vw] sm:w-full sm:max-w-[425px] sm:rounded-2xl", glass("overlay"))}>
                 <GlassCard innerClassName="p-6 pt-10 sm:pt-6 relative">
                     <DialogHeader>
-                        <DialogTitle>Update Match Preferences</DialogTitle>
+                        <DialogTitle>Match Preferences</DialogTitle>
                         <DialogDescription>
-                            Refine your search criteria to find the perfect matches for your project.
+                            Control who you match with and how matches are scored.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
-                            <Label htmlFor="role" className="sm:text-right">
-                                Role
-                            </Label>
-                            <Select value={role} onValueChange={setRole}>
-                                <SelectTrigger className="col-span-1 sm:col-span-3">
-                                    <SelectValue placeholder="Select role" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="CTO">CTO</SelectItem>
-                                    <SelectItem value="Co-Founder">Co-Founder</SelectItem>
-                                    <SelectItem value="Developer">Developer</SelectItem>
-                                    <SelectItem value="Designer">Designer</SelectItem>
-                                    <SelectItem value="Product Manager">Product Manager</SelectItem>
-                                    <SelectItem value="AI Researcher">AI Researcher</SelectItem>
-                                </SelectContent>
-                            </Select>
+                    <div className="grid gap-5 py-4">
+                        {/* Who do you want to match with? */}
+                        <div className="space-y-3">
+                            <Label className="text-sm font-medium">I want to match with</Label>
+                            <div className="grid grid-cols-2 gap-2">
+                                {ALL_ROLES.map(({ value, label }) => (
+                                    <Button
+                                        key={value}
+                                        type="button"
+                                        variant={interestedInTypes.includes(value) ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => toggleRoleType(value)}
+                                        className={`text-xs h-9 ${interestedInTypes.includes(value) ? '' : 'border-border/50'}`}
+                                    >
+                                        {label}
+                                    </Button>
+                                ))}
+                            </div>
+                            <p className="text-[10px] text-muted-foreground">
+                                {interestedInTypes.length === 0 || interestedInTypes.length === ALL_ROLES.length
+                                    ? "All role types (no filter)"
+                                    : `Only matching with: ${interestedInTypes.map(t => ALL_ROLES.find(r => r.value === t)?.label || t).join(', ')}`
+                                }
+                            </p>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
-                            <Label htmlFor="industry" className="sm:text-right">
-                                Industry
+
+                        {/* Minimum match percentage */}
+                        <div className="space-y-2">
+                            <Label htmlFor="minScore" className="text-sm font-medium">
+                                Minimum match score: {minMatchPercentage}%
                             </Label>
                             <Input
-                                id="industry"
-                                value={industry}
-                                onChange={(e) => setIndustry(e.target.value)}
-                                className="col-span-1 sm:col-span-3"
+                                id="minScore"
+                                type="range"
+                                min={0}
+                                max={100}
+                                step={5}
+                                value={minMatchPercentage}
+                                onChange={(e) => setMinMatchPercentage(parseInt(e.target.value))}
+                                className="h-2"
                             />
+                            <div className="flex justify-between text-[10px] text-muted-foreground">
+                                <span>0%</span>
+                                <span>50%</span>
+                                <span>100%</span>
+                            </div>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
-                            <Label htmlFor="type" className="sm:text-right">
-                                Type
+
+                        {/* Availability match */}
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="availability" className="text-sm font-medium col-span-4 sm:col-span-2">
+                                Availability matching
                             </Label>
-                            <Select value={type} onValueChange={setType}>
-                                <SelectTrigger className="col-span-1 sm:col-span-3">
-                                    <SelectValue placeholder="Select type" />
+                            <Select value={availabilityMatch} onValueChange={setAvailabilityMatch}>
+                                <SelectTrigger className="col-span-4 sm:col-span-2">
+                                    <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="Startup">Startup</SelectItem>
-                                    <SelectItem value="Scale-up">Scale-up</SelectItem>
-                                    <SelectItem value="Enterprise">Enterprise</SelectItem>
-                                    <SelectItem value="Consultancy">Consultancy</SelectItem>
-                                    <SelectItem value="Project">Project</SelectItem>
+                                    <SelectItem value="any">Any availability</SelectItem>
+                                    <SelectItem value="similar">Similar only</SelectItem>
+                                    <SelectItem value="complementary">Complementary only</SelectItem>
                                 </SelectContent>
                             </Select>
+                        </div>
+
+                        {/* Role-based matching toggle */}
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                                <Label htmlFor="roleMatching" className="text-sm font-medium">
+                                    Role-based matching
+                                </Label>
+                                <p className="text-[10px] text-muted-foreground">
+                                    Boosts matches between complementary roles (founder↔investor, etc.)
+                                </p>
+                            </div>
+                            <Switch
+                                id="roleMatching"
+                                checked={roleMatchingEnabled}
+                                onCheckedChange={setRoleMatchingEnabled}
+                            />
                         </div>
                     </div>
                     <DialogFooter>

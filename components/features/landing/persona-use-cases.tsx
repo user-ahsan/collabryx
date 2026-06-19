@@ -6,7 +6,11 @@ import { useIsMobile, usePrefersReducedMotion } from "@/hooks/use-media-query"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Users } from "@/public/icons/Users"
 import { ChartLine } from "@/public/icons/ChartLine"
+import { BadgeDollarSign } from "@/public/icons/BadgeDollarSign"
 import { BadgeCheck } from "@/public/icons/BadgeCheck"
+
+// Verify all persona IDs are unique
+const PERSONA_IDS = ['students', 'founders', 'investors', 'mentors'] as const;
 
 const personas = [
     {
@@ -36,6 +40,20 @@ const personas = [
         ],
         bgColor: "from-purple-500/10 to-pink-500/10",
         accentColor: "text-purple-500"
+    },
+    {
+        id: "investors",
+        label: "Investors",
+        icon: BadgeDollarSign,
+        title: "Discover Your Next Deal",
+        description: "Find promising startups, review AI-matched opportunities, and grow your portfolio.",
+        benefits: [
+            "AI-scored match suggestions with founders",
+            "Filter by stage, sector, and check size",
+            "Build meaningful advisor relationships"
+        ],
+        bgColor: "from-emerald-500/10 to-teal-500/10",
+        accentColor: "text-emerald-500"
     },
     {
         id: "mentors",
@@ -89,7 +107,7 @@ export function PersonaUseCases() {
                 {/* Tabs */}
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-4xl mx-auto">
                     {/* Tab List */}
-                    <TabsList className="grid w-full grid-cols-3 mb-12 h-auto p-0 bg-transparent gap-2">
+                    <TabsList className="grid w-full grid-cols-4 mb-12 h-auto p-0 bg-transparent gap-2">
                         {personas.map((persona) => {
                             const Icon = persona.icon
                             return (
@@ -254,6 +272,35 @@ function PersonaMockup({ persona }: { persona: typeof personas[0] }) {
                     </div>
                     <div className="text-xs text-muted-foreground">
                         Designer • Building portfolio project
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    if (persona.id === "investors") {
+        return (
+            <div className="space-y-3">
+                <div className="p-4 rounded-lg border-2 border-emerald-500/30 bg-background/50 backdrop-blur-sm">
+                    <div className="flex items-center gap-3 mb-3">
+                        <div className="h-12 w-12 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                            <BadgeDollarSign className="h-6 w-6 text-emerald-500" />
+                        </div>
+                        <div className="flex-1">
+                            <div className="h-3 w-28 bg-foreground/80 rounded mb-1" />
+                            <div className="h-2 w-20 bg-muted-foreground/50 rounded" />
+                        </div>
+                        <div className="px-2 py-1 rounded-md bg-emerald-500/20 text-emerald-500 text-xs font-bold">
+                            Match
+                        </div>
+                    </div>
+                    <div className="flex gap-2 mb-2 flex-wrap">
+                        <span className="px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-500 text-xs">Pre-Seed</span>
+                        <span className="px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-500 text-xs">SaaS</span>
+                        <span className="px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-500 text-xs">$50-100K</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                        &quot;AI-scored founder matches in your filter range&quot;
                     </div>
                 </div>
             </div>

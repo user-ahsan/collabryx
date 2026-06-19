@@ -13,6 +13,7 @@ import type { OnboardingData as OnboardingFormValues } from "@/lib/validations/o
 interface StepBasicInfoProps {
     userName?: string
     onNameExtracted?: (displayName: string) => void
+    selectedRoles?: string[]
 }
 
 type LocationField = keyof Pick<OnboardingFormValues, "location">
@@ -41,8 +42,9 @@ type LocationField = keyof Pick<OnboardingFormValues, "location">
  *    a 100ms setTimeout to focus the Full Name input after the AnimatePresence mounts
  *    the new step. 100ms allows the exit animation to complete first.
  */
-export function StepBasicInfo({ userName, onNameExtracted }: StepBasicInfoProps) {
+export function StepBasicInfo({ userName, onNameExtracted, selectedRoles }: StepBasicInfoProps) {
     const { register, setValue, watch, formState: { errors } } = useFormContext<OnboardingFormValues>()
+    const roles = selectedRoles || watch("roles") || []
     const locationInputRef = useRef<HTMLInputElement | null>(null)
     const fullNameInputRef = useRef<HTMLInputElement | null>(null)
     const fullNameValue = watch("fullName")
@@ -258,11 +260,103 @@ export function StepBasicInfo({ userName, onNameExtracted }: StepBasicInfoProps)
                     )}
                 </div>
 
-                {/* University Field - NEW */}
-                <UniversitySelect
-                    value={universityValue}
-                    onChange={(val) => setValue("university", val, { shouldDirty: true })}
-                />
+                {/* University Field - only for students */}
+                {roles.includes('student') && (
+                    <>
+                        <UniversitySelect
+                            value={universityValue}
+                            onChange={(val) => setValue("university", val, { shouldDirty: true })}
+                        />
+                        <div className="grid gap-2">
+                            <Label htmlFor="major" className="text-sm font-semibold text-foreground">
+                                Major <span className="text-muted-foreground font-normal">(Optional)</span>
+                            </Label>
+                            <Input
+                                id="major"
+                                placeholder="e.g. Computer Science"
+                                {...register("major")}
+                                className={cn("h-11 text-sm", glass("input"))}
+                            />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="graduationYear" className="text-sm font-semibold text-foreground">
+                                Graduation Year <span className="text-muted-foreground font-normal">(Optional)</span>
+                            </Label>
+                            <Input
+                                id="graduationYear"
+                                type="number"
+                                placeholder="e.g. 2027"
+                                min={2024}
+                                max={2040}
+                                {...register("graduation_year", { valueAsNumber: true })}
+                                className={cn("h-11 text-sm", glass("input"))}
+                            />
+                        </div>
+                    </>
+                )}
+
+                {/* Investor fields */}
+                {roles.includes('investor') && (
+                    <div className="space-y-4 p-4 rounded-lg border border-emerald-500/20 bg-emerald-500/5">
+                        <p className="text-xs font-semibold text-emerald-500 uppercase tracking-wider">Investment Preferences</p>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="grid gap-2">
+                                <Label htmlFor="checkMin" className="text-sm font-semibold text-foreground">Min Check ($)</Label>
+                                <Input id="checkMin" type="number" placeholder="e.g. 25000" {...register("check_size_min", { valueAsNumber: true })} className={cn("h-11 text-sm", glass("input"))} />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="checkMax" className="text-sm font-semibold text-foreground">Max Check ($)</Label>
+                                <Input id="checkMax" type="number" placeholder="e.g. 500000" {...register("check_size_max", { valueAsNumber: true })} className={cn("h-11 text-sm", glass("input"))} />
+                            </div>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="portfolioUrl" className="text-sm font-semibold text-foreground">Portfolio URL <span className="text-muted-foreground font-normal">(Optional)</span></Label>
+                            <Input id="portfolioUrl" placeholder="e.g. https://angel.co/u/yourname" {...register("portfolio_url")} className={cn("h-11 text-sm", glass("input"))} />
+                        </div>
+                    </div>
+                )}
+
+                {/* Founder / Professional fields */}
+                {(roles.includes('founder') || roles.includes('professional')) && (
+                    <div className="space-y-4 p-4 rounded-lg border border-purple-500/20 bg-purple-500/5">
+                        <p className="text-xs font-semibold text-purple-500 uppercase tracking-wider">Professional Details</p>
+                        <div className="grid gap-2">
+                            <Label htmlFor="companyName" className="text-sm font-semibold text-foreground">
+                                Company / Organization <span className="text-muted-foreground font-normal">(Optional)</span>
+                            </Label>
+                            <Input id="companyName" placeholder="e.g. Acme Corp" {...register("company_name")} className={cn("h-11 text-sm", glass("input"))} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="companyRole" className="text-sm font-semibold text-foreground">
+                                Your Role <span className="text-muted-foreground font-normal">(Optional)</span>
+                            </Label>
+                            <Input id="companyRole" placeholder="e.g. CTO, Co-Founder" {...register("company_role")} className={cn("h-11 text-sm", glass("input"))} />
+                        </div>
+                    </div>
+                )}
+
+                {/* Mentor fields */}
+                {roles.includes('mentor') && (
+                    <div className="space-y-4 p-4 rounded-lg border border-rose-500/20 bg-rose-500/5">
+                        <p className="text-xs font-semibold text-rose-500 uppercase tracking-wider">Mentoring Preferences</p>
+                        <div className="grid gap-2">
+                            <Label htmlFor="mentoringFormat" className="text-sm font-semibold text-foreground">
+                                Preferred Format <span className="text-muted-foreground font-normal">(Optional)</span>
+                            </Label>
+                            <select
+                                id="mentoringFormat"
+                                {...register("mentoring_format")}
+                                className={cn("h-11 text-sm rounded-lg border border-border bg-background px-3", glass("input"))}
+                            >
+                                <option value="">Select format</option>
+                                <option value="one_on_one">One-on-One</option>
+                                <option value="group">Group Sessions</option>
+                                <option value="async">Asynchronous</option>
+                                <option value="any">Any Format</option>
+                            </select>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     )

@@ -18,10 +18,12 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import { StepWelcome } from "@/components/features/onboarding/step-welcome"
+import { StepRoleSelect } from "@/components/features/onboarding/step-role-select"
 import { StepBasicInfo } from "@/components/features/onboarding/step-basic-info"
 import { StepSkills } from "@/components/features/onboarding/step-skills"
 import { StepInterestsAndGoals } from "@/components/features/onboarding/step-interests-goals"
 import { StepExperience } from "@/components/features/onboarding/step-experience"
+import type { OnboardingRole } from "@/lib/validations/onboarding"
 import { GlassCard } from "@/components/shared/glass-card"
 import { createClient } from "@/lib/supabase/client"
 import { completeOnboarding } from "./actions"
@@ -34,6 +36,7 @@ const combinedSchema = onboardingDataSchema
 
 const STEPS = [
     { id: "welcome", title: "Welcome", component: StepWelcome, icon: Sparkles },
+    { id: "role-select", title: "Your Role", component: StepRoleSelect, icon: Sparkles },
     { id: "basic-info", title: "Basic Info", component: StepBasicInfo, icon: User },
     { id: "skills", title: "Skills", component: StepSkills, icon: Code2 },
     { id: "interests-goals", title: "Interests & Goals", component: StepInterestsAndGoals, icon: Target },
@@ -130,11 +133,28 @@ export default function OnboardingPage() {
             avatarUrl: "",
             bio: "",
             collaborationReadiness: "available",
+            roles: [],
             skills: [],
             interests: [],
             goals: [],
             experiences: [],
-            links: []
+            links: [],
+            // Role-specific defaults
+            major: "",
+            project_interests: [],
+            looking_for_team: false,
+            stage_focus: [],
+            sectors: [],
+            portfolio_url: "",
+            investment_history_count: 0,
+            accredited_investor: false,
+            company_name: "",
+            company_role: "",
+            hiring_needs: [],
+            open_to_mentoring: false,
+            mentoring_areas: [],
+            mentoring_format: null,
+            mentoring_availability_hours: null,
         }
     })
 
@@ -318,10 +338,20 @@ export default function OnboardingPage() {
                 return
             }
 
-            // Only validate and move to next step for steps 1-3
+            // Only validate and move to next step for steps 1-4
             let isStepValid = false
             
             if (currentStep === 1) {
+                // Validate role selection
+                const roles = methods.getValues('roles')
+                isStepValid = roles.length >= 1
+                if (!isStepValid) {
+                    toast.error("Please select at least one role")
+                    return
+                }
+                setCurrentStep(2)
+                return
+            } else if (currentStep === 2) {
                 isStepValid = await trigger(['fullName', 'headline', 'displayName', 'location'])
                 if (!isStepValid) {
                     // Scroll to first error field
@@ -330,13 +360,13 @@ export default function OnboardingPage() {
                     toast.error("Please fix the errors before continuing")
                     return
                 }
-            } else if (currentStep === 2) {
+            } else if (currentStep === 3) {
                 isStepValid = await trigger(['skills'])
                 if (!isStepValid) {
                     toast.error("Please add at least 5 skills with proficiency levels")
                     return
                 }
-            } else if (currentStep === 3) {
+            } else if (currentStep === 4) {
                 isStepValid = await trigger(['interests'])
                 if (!isStepValid) {
                     toast.error("Please add at least one interest")
@@ -372,9 +402,18 @@ export default function OnboardingPage() {
         if (isSubmitting) return
         
         // Validate current step before skipping
-        const isCurrentStepValid = currentStep === 3 ? await trigger(['interests']) : true
+        const isCurrentStepValid = currentStep === 4 ? await trigger(['interests']) : true
         if (!isCurrentStepValid) {
             toast.error("Please fix validation errors before continuing")
+            return
+        }
+        
+        // Validate at least one role selected
+        const currentVals = methods.getValues()
+        const userRoles = currentVals?.roles || []
+        if (!userRoles || userRoles.length === 0) {
+            toast.error("Please select at least one role before completing")
+            setIsSubmitting(false)
             return
         }
         
@@ -428,6 +467,7 @@ export default function OnboardingPage() {
             const result = await completeOnboarding(
                 {
                     ...values,
+                    roles: values.roles || userRoles || [],
                     experiences: [],
                     links: []
                 },
@@ -736,6 +776,25 @@ export default function OnboardingPage() {
                                         </motion.div>
                                     ) : currentStep === 1 ? (
                                         <motion.div
+                                            key="step-role"
+                                            custom={direction}
+                                            variants={{
+                                                enter: (dir: number) => ({ opacity: 0, x: shouldReduceMotion ? 0 : dir * 20 }),
+                                                center: { opacity: 1, x: 0 },
+                                                exit: (dir: number) => ({ opacity: 0, x: shouldReduceMotion ? 0 : dir * -20 }),
+                                            }}
+                                            initial="enter"
+                                            animate="center"
+                                            exit="exit"
+                                            transition={shouldReduceMotion ? { duration: 0 } : transition}
+                                        >
+                                            <StepRoleSelect
+                                                selectedRoles={methods.watch('roles') || []}
+                                                onChange={(roles) => methods.setValue('roles', roles, { shouldDirty: true })}
+                                            />
+                                        </motion.div>
+                                    ) : currentStep === 2 ? (
+                                        <motion.div
                                             key="step1"
                                             custom={direction}
                                             variants={{
@@ -750,6 +809,7 @@ export default function OnboardingPage() {
                                         >
                                             <StepBasicInfo
                                                 userName={userName}
+                                                selectedRoles={methods.watch('roles') || []}
                                                 onNameExtracted={(displayName) => {
                                                     const current = methods.getValues("displayName")
                                                     if (!current) {
@@ -761,7 +821,7 @@ export default function OnboardingPage() {
                                                 }}
                                             />
                                         </motion.div>
-                                    ) : currentStep === 2 ? (
+                                    ) : currentStep === 3 ? (
                                         <motion.div
                                             key="step2"
                                             custom={direction}
@@ -777,7 +837,7 @@ export default function OnboardingPage() {
                                         >
                                             <StepSkills />
                                         </motion.div>
-                                    ) : currentStep === 3 ? (
+                                    ) : currentStep === 4 ? (
                                         <motion.div
                                             key="step3"
                                             custom={direction}
@@ -829,8 +889,8 @@ export default function OnboardingPage() {
                                         </Button>
 
                                         <div className="flex gap-3">
-                                            {/* Skip & Complete - Only on step 3 (before experience), not on last step */}
-                                            {currentStep === 3 && (
+                                            {/* Skip & Complete - Only on step 4 (interests, before experience), not on last step */}
+                                            {currentStep === 4 && (
                                             <Button
                                                 type="button"
                                                 variant="outline"

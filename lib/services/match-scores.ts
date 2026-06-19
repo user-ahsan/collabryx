@@ -12,6 +12,8 @@ export interface MatchScoreBreakdown {
   availability: number
   stage: number
   complementary: number
+  skillGap: number
+  roleComplementarity: number
 }
 
 export interface MatchScoreDetail {
@@ -49,9 +51,6 @@ export async function getMatchScore(
       .single()
 
     if (existingMatch) {
-      // Parse existing match data into breakdown
-      // When dimension scores become available from the AI worker,
-      // pass them as the second argument to parseMatchScoreBreakdown
       const breakdown = parseMatchScoreBreakdown(existingMatch.match_percentage)
       
       return {
@@ -104,7 +103,6 @@ export async function getMatchScore(
  * Parse overall match percentage into category breakdown
  * Uses actual dimension scores from the AI engine when available,
  * falling back to weighted distribution seeded by the overall score.
- * Each dimension is weighted differently based on its typical contribution.
  */
 export function parseMatchScoreBreakdown(overallScore: number, dimensionScores?: Partial<MatchScoreBreakdown>): MatchScoreBreakdown {
   if (dimensionScores) {
@@ -115,11 +113,12 @@ export function parseMatchScoreBreakdown(overallScore: number, dimensionScores?:
       availability: dimensionScores.availability ?? clampScore(overallScore),
       stage: dimensionScores.stage ?? clampScore(overallScore),
       complementary: dimensionScores.complementary ?? clampScore(overallScore),
+      skillGap: dimensionScores.skillGap ?? clampScore(overallScore),
+      roleComplementarity: dimensionScores.roleComplementarity ?? clampScore(overallScore),
     }
   }
 
   // Deterministic weighted distribution based on overall score
-  // Uses a seeded offset per dimension for reproducibility
   const seed = Math.round(overallScore)
   const skills = clampScore(seed)
   const interests = clampScore(seed - 2)
@@ -127,8 +126,10 @@ export function parseMatchScoreBreakdown(overallScore: number, dimensionScores?:
   const availability = clampScore(seed + 3)
   const stage = clampScore(seed - 1)
   const complementary = clampScore(seed - 3)
+  const skillGap = clampScore(seed + 5)
+  const roleComplementarity = clampScore(seed + 2)
   
-  return { skills, interests, goals, availability, stage, complementary }
+  return { skills, interests, goals, availability, stage, complementary, skillGap, roleComplementarity }
 }
 
 /** Clamp a score between 0 and 100 */
@@ -173,6 +174,13 @@ export function explainMatchScore(score: MatchScoreDetail): string {
     ``,
     `This match shows excellent potential based on semantic analysis of skills, interests, and project goals.`
   ]
+  
+  if (breakdown.skillGap >= 70) {
+    explanation.push(`High skill gap — they complement your skills well.`)
+  }
+  if (breakdown.roleComplementarity >= 70) {
+    explanation.push(`Strong role complementarity — cross-domain collaboration potential.`)
+  }
   
   if (weakestCategory[1] < 70) {
     const weakLabel = weakestCategory[0].charAt(0).toUpperCase() + weakestCategory[0].slice(1)
