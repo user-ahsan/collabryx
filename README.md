@@ -384,7 +384,9 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 PYTHON_WORKER_URL=http://localhost:8000
 
 # === 4. BACKEND ROUTING ===
-# Auto-detect: Docker first, then Render
+# Production: set BACKEND_DOMAIN → derives all 4 microservice URLs
+#   e.g. BACKEND_DOMAIN=ahsanali.cc → embedding.ahsanali.cc, notify.ahsanali.cc, ...
+# Development: auto-detects Docker or localhost (no var needed)
 BACKEND_MODE=auto
 
 # === 5. AI PROVIDERS (Optional — services degrade gracefully) ===

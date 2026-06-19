@@ -1,25 +1,39 @@
 /**
  * Environment Configuration
- * Centralizes all env var access with dev/prod detection
- */
-
-/**
- * Environment Configuration
- * Resolves microservice URLs based on deployment context:
- *   - Production (NODE_ENV=production) → uses dedicated remote service URLs
- *   - Docker  → uses host.docker.internal:{port}
- *   - Local   → uses localhost:{port}
+ * Centralizes all env var access with dev/prod detection.
  *
- * CRITICAL: Remote service URLs (EMBEDDING_SERVICE_URL, etc.) are
- * ONLY used when NODE_ENV=production. In dev/preview/local mode,
- * the app always uses Docker or localhost — even if the env var is set.
- * This prevents accidental routing to production services during dev.
+ * URL resolution priority (production):
+ *   1. Individual per-service env var (EMBEDDING_SERVICE_URL, etc.)
+ *   2. BACKEND_DOMAIN — derives all 4 service URLs via subdomain pattern
+ *   3. Docker / localhost (development only)
+ *
+ * In dev/preview mode the app ALWAYS uses Docker or localhost — even if
+ * remote URLs are set. This prevents accidental routing to production.
+ *
+ * Usage:
+ *   # Production — set ONE env var:
+ *   BACKEND_DOMAIN=ahsanali.cc
+ *   # → embedding.ahsanali.cc, notify.ahsanali.cc, feed.ahsanali.cc, match.ahsanali.cc
+ *
+ *   # Or override individual services if needed:
+ *   EMBEDDING_SERVICE_URL=https://custom-embedding.example.com
  */
 
 const isProduction = process.env.NODE_ENV === 'production'
 const isDevelopment = !isProduction
 
-// Local fallback ports for each microservice
+/**
+ * Subdomain prefixes for each microservice.
+ * Combined with BACKEND_DOMAIN to form full URLs in production.
+ */
+const SUBDOMAINS = {
+  embedding: 'embedding',
+  notification: 'notify',
+  feed: 'feed',
+  match: 'match',
+} as const
+
+/** Subdomain → port mapping for local/Docker development */
 const PORTS = {
   embedding: process.env.EMBEDDING_SERVICE_PORT || '8000',
   notification: process.env.NOTIFICATION_SERVICE_PORT || '8002',
@@ -27,12 +41,30 @@ const PORTS = {
   match: process.env.MATCH_SERVICE_PORT || '8004',
 } as const
 
-function resolveServiceUrl(envVar: string | undefined, dockerPort: string, localPort: string): string {
-  // Priority: 1. Production env var → 2. Docker → 3. Local
-  // Only read the env var in production — dev always uses Docker/localhost
-  if (isProduction && envVar) return envVar
+function resolveServiceUrl(
+  envVar: string | undefined,
+  subdomain: string,
+  dockerPort: string,
+  localPort: string,
+): string {
+  // Priority: 1. Individual env var override → 2. BACKEND_DOMAIN → 3. Docker → 4. Local
+  if (isProduction) {
+    if (envVar) return envVar
+    const domain = process.env.BACKEND_DOMAIN
+    if (domain) return `https://${subdomain}.${domain}`
+  }
   if (process.env.IN_DOCKER_CONTAINER === 'true') return `http://host.docker.internal:${dockerPort}`
   return `http://localhost:${localPort}`
+}
+
+/** Resolve a health URL with the same priority chain */
+function resolveHealthUrl(envVar: string | undefined, subdomain: string, localUrl: string): string {
+  if (isProduction) {
+    if (envVar) return envVar + '/health'
+    const domain = process.env.BACKEND_DOMAIN
+    if (domain) return `https://${subdomain}.${domain}/health`
+  }
+  return localUrl + '/health'
 }
 
 export const config = {
@@ -51,14 +83,19 @@ export const config = {
     })(),
   },
 
-  /** Embedding service — runs on HF Spaces in production */
+  /** Embedding / vector generation service */
   embedding: {
     url: resolveServiceUrl(
       process.env.EMBEDDING_SERVICE_URL || process.env.NEXT_PUBLIC_WORKER_API_URL,
+      SUBDOMAINS.embedding,
       PORTS.embedding,
       PORTS.embedding,
     ),
-    healthUrl: (process.env.EMBEDDING_SERVICE_URL || process.env.NEXT_PUBLIC_WORKER_API_URL || `http://localhost:${PORTS.embedding}`) + '/health',
+    healthUrl: resolveHealthUrl(
+      process.env.EMBEDDING_SERVICE_URL || process.env.NEXT_PUBLIC_WORKER_API_URL,
+      SUBDOMAINS.embedding,
+      `http://localhost:${PORTS.embedding}`,
+    ),
   },
 
   /** Backward-compat alias: worker → embedding */
@@ -71,39 +108,56 @@ export const config = {
       : ((process.env.IN_DOCKER_CONTAINER === 'true' ? 'http://host.docker.internal:8000' : 'http://localhost:8000') + '/health'),
   },
 
-  /** Notification service — runs on Render free tier in production */
+  /** Notification service */
   notification: {
     url: resolveServiceUrl(
       process.env.NOTIFICATION_SERVICE_URL,
+      SUBDOMAINS.notification,
       PORTS.notification,
       PORTS.notification,
     ),
-    healthUrl: (process.env.NOTIFICATION_SERVICE_URL || `http://localhost:${PORTS.notification}`) + '/health',
+    healthUrl: resolveHealthUrl(
+      process.env.NOTIFICATION_SERVICE_URL,
+      SUBDOMAINS.notification,
+      `http://localhost:${PORTS.notification}`,
+    ),
   },
 
-  /** Feed scoring service — runs on Render free tier in production */
+  /** Feed scoring service (Thompson Sampling) */
   feed: {
     url: resolveServiceUrl(
       process.env.FEED_SERVICE_URL,
+      SUBDOMAINS.feed,
       PORTS.feed,
       PORTS.feed,
     ),
-    healthUrl: (process.env.FEED_SERVICE_URL || `http://localhost:${PORTS.feed}`) + '/health',
+    healthUrl: resolveHealthUrl(
+      process.env.FEED_SERVICE_URL,
+      SUBDOMAINS.feed,
+      `http://localhost:${PORTS.feed}`,
+    ),
   },
 
-  /** Match generation service — runs on Render free tier in production */
+  /** Match generation service */
   match: {
     url: resolveServiceUrl(
       process.env.MATCH_SERVICE_URL,
+      SUBDOMAINS.match,
       PORTS.match,
       PORTS.match,
     ),
-    healthUrl: (process.env.MATCH_SERVICE_URL || `http://localhost:${PORTS.match}`) + '/health',
+    healthUrl: resolveHealthUrl(
+      process.env.MATCH_SERVICE_URL,
+      SUBDOMAINS.match,
+      `http://localhost:${PORTS.match}`,
+    ),
   },
 
   features: {
     enableRealtime: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
-    enableWorker: Boolean(isProduction ? (process.env.EMBEDDING_SERVICE_URL || process.env.NEXT_PUBLIC_WORKER_API_URL) : true),
+    enableWorker: Boolean(isProduction
+      ? (process.env.EMBEDDING_SERVICE_URL || process.env.NEXT_PUBLIC_WORKER_API_URL || process.env.BACKEND_DOMAIN)
+      : true),
   },
 } as const
 

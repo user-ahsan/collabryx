@@ -7,10 +7,13 @@ const EnvSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),
   PYTHON_WORKER_URL: z.string().url().optional(),
   BACKEND_MODE: z.enum(['auto', 'docker', 'render', 'edge-only']).optional(),
+  BACKEND_DOMAIN: z.string().min(3).optional(),
   BACKEND_URL_DOCKER: z.string().url().optional(),
-  BACKEND_URL_RENDER: z.string().url().optional(), // deprecated — use EMBEDDING_SERVICE_URL
-  // EMBEDDING_SERVICE_URL is only used when NODE_ENV=production (Vercel)
-  // In dev/preview, the app always uses Docker or localhost
+  BACKEND_URL_RENDER: z.string().url().optional(), // deprecated — use BACKEND_DOMAIN or individual URLs
+  // In production, service URLs resolve in priority order:
+  //   1. Individual per-service env var (EMBEDDING_SERVICE_URL, etc.)
+  //   2. BACKEND_DOMAIN — derives all 4 URLs (e.g. embedding.ahsanali.cc)
+  //  In dev, always uses Docker/localhost
   EMBEDDING_SERVICE_URL: z.string().url().optional(),
   NOTIFICATION_SERVICE_URL: z.string().url().optional(),
   FEED_SERVICE_URL: z.string().url().optional(),
@@ -57,6 +60,18 @@ export function validateEnv() {
   // Validate Python worker configuration
   const backendMode = process.env.BACKEND_MODE || 'auto'
   
+  // In production on Vercel, we need at least one way to reach microservices
+  const isProduction = process.env.NODE_ENV === 'production'
+  if (isProduction) {
+    const hasMicroserviceConfig = !!(process.env.BACKEND_DOMAIN
+      || process.env.EMBEDDING_SERVICE_URL
+      || process.env.NEXT_PUBLIC_WORKER_API_URL
+      || process.env.BACKEND_URL_RENDER)
+    if (!hasMicroserviceConfig) {
+      console.warn('⚠️ No backend URL configured for production. Set BACKEND_DOMAIN (e.g. ahsanali.cc) or individual EMBEDDING_SERVICE_URL etc.')
+    }
+  }
+
   if (backendMode !== 'edge-only') {
     if (backendMode === 'docker' && !process.env.BACKEND_URL_DOCKER) {
       console.warn('⚠️ BACKEND_MODE=docker but BACKEND_URL_DOCKER not set')
