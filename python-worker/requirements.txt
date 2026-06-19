@@ -13,7 +13,7 @@ pydantic-settings==2.6.1
 httpx>=0.24.0
 
 # Database
-supabase>=2.3.0
+supabase>=2.31.0
 
 # Retry logic
 tenacity==9.0.0

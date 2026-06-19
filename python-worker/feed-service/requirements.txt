@@ -12,7 +12,7 @@ pydantic==2.9.2
 httpx>=0.24.0
 
 # Database
-supabase>=2.3.0
+supabase>=2.31.0
 
 # Environment
 python-dotenv==1.2.2
