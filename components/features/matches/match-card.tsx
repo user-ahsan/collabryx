@@ -196,11 +196,19 @@ export const MatchCard = React.memo(function MatchCard({ match, index = 0, isNew
                             {/* Insights from match reasons */}
                             {match.reasons && match.reasons.length > 0 && (
                                 <div className="flex flex-wrap gap-1 mb-2">
-                                    <MatchReasonBadge
-                                        type="skill"
-                                        label={match.reasons[0]}
-                                        className="text-[10px] py-0 px-2"
-                                    />
+                                    {match.reasons.some(r => r.toLowerCase().includes('skill gap') || r.toLowerCase().includes('complement') || r.toLowerCase().includes('cross-domain')) ? (
+                                        <MatchReasonBadge
+                                            type="complementary"
+                                            label="Complementary"
+                                            className="text-[10px] py-0 px-2"
+                                        />
+                                    ) : (
+                                        <MatchReasonBadge
+                                            type="skill"
+                                            label={match.reasons[0]}
+                                            className="text-[10px] py-0 px-2"
+                                        />
+                                    )}
                                     {match.reasons.length > 1 && (
                                         <span className="text-[10px] text-foreground/50 flex items-center">+{match.reasons.length - 1}</span>
                                     )}

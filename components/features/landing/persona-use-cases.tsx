@@ -9,9 +9,6 @@ import { ChartLine } from "@/public/icons/ChartLine"
 import { BadgeDollarSign } from "@/public/icons/BadgeDollarSign"
 import { BadgeCheck } from "@/public/icons/BadgeCheck"
 
-// Verify all persona IDs are unique
-const PERSONA_IDS = ['students', 'founders', 'investors', 'mentors'] as const;
-
 const personas = [
     {
         id: "students",

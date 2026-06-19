@@ -1,9 +1,8 @@
 "use client"
 
-import { Check, GraduationCap, ChartLine, Rocket, Briefcase, Star, Info } from "lucide-react"
+import { Check, GraduationCap, ChartLine, Rocket, Briefcase, Star } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { ROLES, ROLE_LABELS, ROLE_DESCRIPTIONS, type OnboardingRole } from "@/lib/validations/onboarding"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { ROLE_LABELS, ROLE_DESCRIPTIONS, type OnboardingRole } from "@/lib/validations/onboarding"
 
 interface StepRoleSelectProps {
   selectedRoles: OnboardingRole[]
