@@ -45,6 +45,8 @@ COPY shared/ ./shared/
 # Copy match-service application code
 COPY match-service/main.py ./match-service/main.py
 COPY match-service/generator.py ./match-service/generator.py
+COPY match-service/learner.py ./match-service/learner.py
+COPY match-service/skill_categories.py ./match-service/skill_categories.py
 
 # Create non-root user for security
 RUN useradd --create-home --shell /bin/bash appuser
