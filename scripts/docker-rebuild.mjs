@@ -30,6 +30,7 @@ const SERVICES = [
 // Configuration
 const CONFIG = {
   workerDir: path.join(__dirname, '..', 'python-worker'),
+  composeFile: path.join(__dirname, '..', 'python-worker', 'docker-compose.yml'),
   healthInterval: 3000,
   maxRetries: 40
 };
@@ -89,7 +90,7 @@ function stopContainers() {
   log('\n🛑 Stopping existing containers...', 'cyan');
   
   try {
-    execVerbose(`cd "${CONFIG.workerDir}" && docker compose down --timeout 30`);
+    execVerbose(`docker compose -f "${CONFIG.composeFile}" down --timeout 30`);
     log('✅ Containers stopped', 'green');
     return true;
   } catch (_error) {
@@ -124,7 +125,7 @@ function buildImages() {
     log(`\n   Building ${service.name}...`, 'blue');
     const startTime = Date.now();
     try {
-      execVerbose(`cd "${CONFIG.workerDir}" && docker compose build ${service.name}`);
+      execVerbose(`docker compose -f "${CONFIG.composeFile}" build ${service.name}`);
       const buildTime = ((Date.now() - startTime) / 1000).toFixed(1);
       log(`   ✅ ${service.name} built in ${buildTime}s`, 'green');
     } catch (error) {
@@ -141,7 +142,7 @@ function startContainers() {
   log('\n🚀 Starting Docker containers...', 'cyan');
   
   try {
-    execVerbose(`cd "${CONFIG.workerDir}" && docker compose up -d`);
+    execVerbose(`docker compose -f "${CONFIG.composeFile}" up -d`);
     log('✅ Containers started', 'green');
     return true;
   } catch (error) {

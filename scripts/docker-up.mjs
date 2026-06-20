@@ -31,6 +31,7 @@ const colors = {
   red: '\x1b[31m',
   green: '\x1b[32m',
   yellow: '\x1b[33m',
+  blue: '\x1b[34m',
   cyan: '\x1b[36m'
 };
 
@@ -55,14 +56,13 @@ function execVerbose(cmd) {
 }
 
 function checkDocker() {
-  try {
-    exec('docker --version');
-    exec('docker ps');
-    return true;
-  } catch (_error) {
+  const version = exec('docker --version');
+  if (!version) {
     log('❌ Docker not running. Start Docker Desktop first.', 'red');
+    log('   https://www.docker.com/products/docker-desktop', 'yellow');
     process.exit(1);
   }
+  return true;
 }
 
 function isRunning() {
@@ -72,20 +72,25 @@ function isRunning() {
 
 function start() {
   log('\n🚀 Starting Collabryx Microservices...', 'cyan');
-  execVerbose(`cd "${CONFIG.workerDir}" && docker compose up -d`);
+  const composeFile = path.join(CONFIG.workerDir, 'docker-compose.yml');
+  execVerbose(`docker compose -f "${composeFile}" up -d`);
 }
 
 async function waitForService(service, retries) {
   for (let i = 1; i <= retries; i++) {
     try {
       const res = await new Promise((resolve, reject) => {
-        http.get(service.healthEndpoint, { timeout: 2000 }, resolve).on('error', reject);
+        const req = http.get(service.healthEndpoint, resolve);
+        req.on('error', reject);
+        req.setTimeout(2000, () => { req.destroy(); reject(new Error('timeout')); });
       });
       
       if (res.statusCode === 200) {
+        res.resume();
         log(`   ✅ ${service.name} running on port ${service.port}`, 'green');
         return true;
       }
+      res.resume();
     } catch (_error) {
       if (i % 5 === 0 || i === 1) {
         log(`   ⏳ ${service.name} - attempt ${i}/${retries}`, 'yellow');
@@ -118,11 +123,13 @@ async function showStatusTable() {
   for (const service of SERVICES) {
     try {
       const res = await new Promise((resolve, reject) => {
-        http.get(service.healthEndpoint, { timeout: 2000 }, (r) => {
+        const req = http.get(service.healthEndpoint, (r) => {
           let data = '';
           r.on('data', d => data += d);
           r.on('end', () => resolve({ statusCode: r.statusCode, data }));
-        }).on('error', reject);
+        });
+        req.on('error', reject);
+        req.setTimeout(3000, () => { req.destroy(); reject(new Error('timeout')); });
       });
       
       if (res.statusCode === 200) {
@@ -152,11 +159,20 @@ async function main() {
   checkDocker();
   
   if (isRunning()) {
-    log('✅ Services already running', 'green');
+    log('✅ Containers already running', 'green');
     for (const service of SERVICES) {
       log(`   ${service.name}: port ${service.port}`, 'cyan');
     }
-    log('   Logs: bun run docker:logs', 'cyan');
+    log('');
+    const allHealthy = await waitForAllHealth();
+    await showStatusTable();
+    if (allHealthy) {
+      log('\n✅ All microservices are healthy!', 'green');
+    } else {
+      log('\n⚠️  Some containers running but not healthy yet', 'yellow');
+      log('   Check logs: bun run docker:logs', 'yellow');
+    }
+    log('');
     return;
   }
   

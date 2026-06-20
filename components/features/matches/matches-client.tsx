@@ -2,13 +2,15 @@
 
 import { useState, useMemo, useRef } from "react"
 import * as React from "react"
+import { useQuery } from "@tanstack/react-query"
 import { MatchCard } from "@/components/features/matches/match-card"
 import { MatchCardListView } from "@/components/features/matches/match-card-list-view"
 import { MatchCardSkeleton, MatchCardListViewSkeleton } from "@/components/features/matches/match-card-skeleton"
+import { ExploreProfileCard } from "@/components/features/matches/explore-profile-card"
 import { MatchContextHeader } from "@/components/features/matches/match-context-header"
 import { MatchFilters } from "@/components/features/matches/match-filters"
 import { toast } from "sonner"
-import { Users, Sparkles, AlertTriangle } from "lucide-react"
+import { Users, Sparkles, AlertTriangle, Compass } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { GlassCard } from "@/components/shared/glass-card"
 import { useMatches, useGenerateMatches } from "@/hooks/use-matches-query"
@@ -185,6 +187,34 @@ export function MatchesClient() {
     const [newProfileIds, setNewProfileIds] = useState<Set<string>>(new Set())
     const preGenProfileIds = useRef<Set<string>>(new Set())
 
+    // Fetch explore/discover profiles when no matches exist (cold-start)
+    const hasNoMatches = matches.length === 0 && !isPending && !error
+    const { data: exploreProfiles, isLoading: exploreLoading } = useQuery({
+        queryKey: ['explore-profiles', selectedSkill],
+        queryFn: async () => {
+            const params = new URLSearchParams({ limit: '20' })
+            if (selectedSkill) params.set('skill', selectedSkill)
+            const res = await fetch(`/api/profiles/explore?${params}`)
+            const json = await res.json()
+            if (!json.success) throw new Error(json.error || 'Failed to load discover profiles')
+            return json.data as Array<{
+                id: string
+                name: string
+                headline: string
+                avatar_url: string
+                bio: string
+                location: string
+                collaboration_readiness: string
+                is_verified: boolean
+                profile_completion: number
+                skills: Array<{ name: string; proficiency: string | null; is_primary: boolean | null }>
+            }>
+        },
+        enabled: hasNoMatches,
+        staleTime: 1000 * 60 * 2,
+        gcTime: 1000 * 60 * 5,
+    })
+
     // Filter + sort matches
     const filteredMatches = useMemo(() => {
         let result = matches
@@ -284,34 +314,58 @@ export function MatchesClient() {
                         </p>
                     </GlassCard>
                 ) : matches.length === 0 ? (
-                    <GlassCard className="flex flex-col items-center justify-center py-24 px-4 text-center">
-                        <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-primary/10 flex items-center justify-center mb-4 sm:mb-6">
-                            <Users className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
-                        </div>
-                        <h2 className="text-xl md:text-2xl font-bold tracking-tight mb-2 text-foreground">
-                            No matches found yet
-                        </h2>
-                        <p className="text-sm md:text-base text-muted-foreground max-w-md mx-auto mb-6">
-                            Generate matches to discover collaborators who complement your skills and goals.
-                        </p>
-                        <Button
-                            variant="default"
-                            onClick={handleGenerateMatches}
-                            disabled={generateMatchesMutation.isPending}
-                        >
-                            {generateMatchesMutation.isPending ? (
-                                <>
-                                    <Sparkles className="h-4 w-4 mr-2 animate-spin" />
-                                    Generating...
-                                </>
+                    <>
+                        {/* Discover People grid — shown when no algorithmic matches exist yet */}
+                        <div className="mb-8">
+                            <div className="flex items-center justify-between mb-6">
+                                <div>
+                                    <h2 className="text-xl md:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                                        <Compass className="h-6 w-6 text-primary" />
+                                        Discover People
+                                    </h2>
+                                    <p className="text-sm text-muted-foreground mt-1">
+                                        Explore profiles to find collaborators while your match profile builds
+                                    </p>
+                                </div>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleGenerateMatches}
+                                    disabled={generateMatchesMutation.isPending}
+                                    className="shrink-0"
+                                >
+                                    {generateMatchesMutation.isPending ? (
+                                        <Sparkles className="h-4 w-4 mr-2 animate-spin" />
+                                    ) : (
+                                        <Sparkles className="h-4 w-4 mr-2" />
+                                    )}
+                                    {generateMatchesMutation.isPending ? 'Generating...' : 'Generate AI Matches'}
+                                </Button>
+                            </div>
+
+                            {exploreLoading ? (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
+                                    <MatchCardSkeleton count={8} />
+                                </div>
+                            ) : exploreProfiles && exploreProfiles.length > 0 ? (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
+                                    {exploreProfiles.map((profile) => (
+                                        <ExploreProfileCard key={profile.id} profile={profile} />
+                                    ))}
+                                </div>
                             ) : (
-                                <>
-                                    <Sparkles className="h-4 w-4 mr-2" />
-                                    Generate Matches
-                                </>
+                                <GlassCard className="flex flex-col items-center justify-center py-16 px-4 text-center">
+                                    <Users className="h-12 w-12 text-muted-foreground mb-4" />
+                                    <h3 className="text-lg font-semibold text-foreground mb-2">
+                                        No profiles to discover yet
+                                    </h3>
+                                    <p className="text-sm text-muted-foreground max-w-md">
+                                        Be the first! Complete your profile to show up in other people&apos;s discover feed.
+                                    </p>
+                                </GlassCard>
                             )}
-                        </Button>
-                    </GlassCard>
+                        </div>
+                    </>
                 ) : filteredMatches.length === 0 ? (
                     <GlassCard className="flex flex-col items-center justify-center py-24 px-4 text-center">
                         <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-muted flex items-center justify-center mb-4 sm:mb-6">

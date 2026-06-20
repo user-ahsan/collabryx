@@ -114,8 +114,9 @@ function showRecentLogs() {
   log('='.repeat(60) + '\n', 'cyan');
   
   try {
+    const composeFile = path.join(CONFIG.workerDir, 'docker-compose.yml');
     const logs = execSync(
-      `cd "${CONFIG.workerDir}" && docker compose logs --tail=50`,
+      `docker compose -f "${composeFile}" logs --tail=50`,
       { encoding: 'utf-8' }
     );
     log(logs, 'reset');

@@ -97,6 +97,60 @@ export async function fetchProfileById(userId: string): Promise<{
 }
 
 /**
+ * Fetch explore/discover profiles — other users to browse
+ * Used for the cold-start experience when a new user has no matches yet
+ */
+export async function fetchExploreProfiles(options: {
+  excludeUserId?: string
+  limit?: number
+  skillFilter?: string
+} = {}): Promise<{
+  data: ProfileWithDetails[]
+  error: Error | null
+}> {
+  try {
+    const supabase = await createClient()
+    const { excludeUserId, limit = 20, skillFilter } = options
+
+    let query = supabase
+      .from("profiles")
+      .select(`
+        id, email, full_name, display_name, headline, bio, location, avatar_url, banner_url,
+        collaboration_readiness, is_verified, profile_completion, looking_for, onboarding_completed, created_at, updated_at,
+        skills:user_skills(id, user_id, skill_name, proficiency, is_primary, created_at),
+        interests:user_interests(id, user_id, interest, created_at)
+      `)
+      .not("id", "eq", excludeUserId || "")
+      .gte("profile_completion", 20)
+      .order("profile_completion", { ascending: false })
+      .limit(limit)
+
+    if (skillFilter) {
+      // Filter by skill via the user_skills join
+      query = query.contains("skills.skill_name", [skillFilter])
+    }
+
+    const { data, error } = await query
+
+    if (error) throw error
+
+    return {
+      data: (data || []).map(p => ({
+        ...p,
+        skills: p.skills || [],
+        interests: p.interests || [],
+        experiences: [],
+        projects: [],
+      })),
+      error: null,
+    }
+  } catch (error) {
+    logger.db.error("Error fetching explore profiles:", error)
+    return { data: [], error: error instanceof Error ? error : new Error("Unknown error") }
+  }
+}
+
+/**
  * Update the current user's profile
  */
 export async function updateProfile(

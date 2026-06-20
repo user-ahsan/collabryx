@@ -59,41 +59,15 @@ function exec(command, options = {}) {
 
 function getContainerStatus() {
   try {
-    const status = exec(`cd "${CONFIG.workerDir}" && docker compose ps`);
+    const composeFile = path.join(CONFIG.workerDir, 'docker-compose.yml');
+    const status = exec(`docker compose -f "${composeFile}" ps`);
     return status.trim();
   } catch (_error) {
     return '';
   }
 }
 
-function _getImageInfo() {
-  try {
-    const info = exec(`docker images ${CONFIG.imageName} --format "{{.Repository}}:{{.Tag}} - Created: {{.CreatedAt}} - Size: {{.Size}}"`);
-    return info.trim();
-  } catch (_error) {
-    return null;
-  }
-}
-
-function _getContainerStats() {
-  try {
-    const stats = exec(`docker stats ${CONFIG.serviceName} --no-stream --format "CPU: {{.CPUPerc}}, Memory: {{.MemUsage}}, Network I/O: {{.NetIO}}"`);
-    return stats.trim();
-  } catch (_error) {
-    return null;
-  }
-}
-
-function _getNetworkInfo() {
-  try {
-    const networks = exec(`cd "${CONFIG.workerDir}" && docker compose ps --format json`);
-    return networks.trim();
-  } catch (_error) {
-    return null;
-  }
-}
-
-function _getVolumeInfo() {
+function getVolumeInfo() {
   try {
     const volumes = exec('docker volume ls --format "{{.Name}}"');
     return volumes.trim().split('\n').filter(v => v.includes('collabryx') || v.includes('python-worker'));

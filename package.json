@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "bun scripts/check-docker.mjs && bun next dev --webpack",
     "dev:skip-docker": "bun next dev --webpack",
-    "build": "bun next build",
+    "build": "bun next build --webpack",
     "start": "bun next start",
     "lint": "bun eslint",
     "typecheck": "bun tsc --noEmit",

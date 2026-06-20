@@ -57,14 +57,13 @@ function exec(command) {
 }
 
 function checkDocker() {
-  try {
-    exec('docker --version');
-    exec('docker ps');
-    return true;
-  } catch (_error) {
+  const version = exec('docker --version');
+  if (!version) {
     log('❌ Docker is not installed or not running', 'red');
+    log('   Please start Docker Desktop first', 'yellow');
     process.exit(1);
   }
+  return true;
 }
 
 function showContainers() {
@@ -72,13 +71,13 @@ function showContainers() {
   log('📦 CONTAINERS', 'cyan');
   log('='.repeat(70), 'cyan');
   
-  const containers = exec(`docker ps -a --filter "name=collabryx" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}\t{{.State}}"`);
+  const containers = exec(`docker ps -a --filter "name=${CONFIG.projectName}" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}\t{{.State}}"`);
   
   if (containers) {
     log(containers, 'blue');
     
     // Detailed info for each container
-    const containerIds = exec(`docker ps -a --filter "name=collabryx" --format "{{.ID}}"`).split('\n').filter(id => id);
+    const containerIds = exec(`docker ps -a --filter "name=${CONFIG.projectName}" --format "{{.ID}}"`).split('\n').filter(id => id);
     
     if (containerIds.length > 0) {
       log('\n📋 Detailed Information:', 'magenta');
@@ -144,13 +143,14 @@ function showNetworks() {
   log('🌐 NETWORKS', 'cyan');
   log('='.repeat(70), 'cyan');
   
-  const networks = exec(`docker network ls --filter "name=${CONFIG.networkName}" --format "table {{.Name}}\t{{.Driver}}\t{{.Scope}}"`);
+  const fullNetworkName = `${CONFIG.projectName}_${CONFIG.networkName}`;
+  const networks = exec(`docker network ls --filter "name=${fullNetworkName}" --format "table {{.Name}}\t{{.Driver}}\t{{.Scope}}"`);
   
   if (networks) {
     log(networks, 'blue');
     
     // Show connected containers
-    const networkIds = exec(`docker network ls --filter "name=${CONFIG.networkName}" --format "{{.ID}}"`).split('\n').filter(id => id);
+    const networkIds = exec(`docker network ls --filter "name=${fullNetworkName}" --format "{{.ID}}"`).split('\n').filter(id => id);
     
     if (networkIds.length > 0) {
       log('\n🔗 Connected Containers:', 'magenta');
@@ -188,7 +188,7 @@ async function showHealthChecks() {
   log('🏥 HEALTH CHECKS', 'cyan');
   log('='.repeat(70), 'cyan');
   
-  const containerIds = exec(`docker ps --filter "name=collabryx" --format "{{.ID}}"`).split('\n').filter(id => id);
+  const containerIds = exec(`docker ps --filter "name=${CONFIG.projectName}" --format "{{.ID}}"`).split('\n').filter(id => id);
   
   if (containerIds.length === 0) {
     log('   No running containers', 'yellow');
@@ -220,11 +220,13 @@ async function showHealthChecks() {
   for (const svc of healthServices) {
     try {
       const health = await new Promise((resolve, reject) => {
-        http.get(`http://localhost:${svc.port}/health`, { timeout: 3000 }, (res) => {
+        const req = http.get(`http://localhost:${svc.port}/health`, (res) => {
           let data = '';
           res.on('data', (chunk) => { data += chunk; });
           res.on('end', () => resolve(data));
-        }).on('error', reject).on('timeout', function () { this.destroy(); reject(new Error('timeout')); });
+        });
+        req.on('error', reject);
+        req.setTimeout(3000, () => { req.destroy(); reject(new Error('timeout')); });
       });
       if (health) {
         try {

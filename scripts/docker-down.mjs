@@ -40,14 +40,15 @@ function main() {
   log('🛑 Stopping Collabryx Worker', 'cyan');
   log('='.repeat(50), 'cyan');
   
+  const composeFile = path.join(CONFIG.workerDir, 'docker-compose.yml');
   const clean = process.argv.includes('--clean') || process.argv.includes('-c');
   
   if (clean) {
     log('\n🧹 Full cleanup (containers + volumes)...', 'cyan');
-    execVerbose(`cd "${CONFIG.workerDir}" && docker compose down -v`);
+    execVerbose(`docker compose -f "${composeFile}" down -v`);
   } else {
     log('\n⏹️  Stopping containers...', 'cyan');
-    execVerbose(`cd "${CONFIG.workerDir}" && docker compose down`);
+    execVerbose(`docker compose -f "${composeFile}" down`);
   }
   
   log('\n✅ Stopped', 'green');
