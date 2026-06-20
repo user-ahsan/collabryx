@@ -10,28 +10,22 @@ import { skillsDatabase, type Skill } from "@/lib/data/skills-database"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
 import { Input } from "@/components/ui/input"
+import { getRoleSkillSuggestions } from "@/lib/data/role-skills"
 import { Badge } from "@/components/ui/badge"
 import { TagSelectorCard } from "@/components/features/onboarding/tag-selector-card"
 import type { ComboboxOption } from "@/components/ui/searchable-combobox"
 
-// Role-based skill suggestions database
-const ROLE_SKILL_SUGGESTIONS: Record<string, string[]> = {
-  "Mobile Developer": ["Swift", "SwiftUI", "Kotlin", "React Native", "Flutter", "iOS Development", "Android Development"],
-  "Frontend Developer": ["React", "TypeScript", "JavaScript", "Next.js", "Tailwind CSS", "Vue.js", "Angular"],
-  "Backend Developer": ["Node.js", "Python", "PostgreSQL", "Docker", "AWS", "Express", "FastAPI"],
-  "Full Stack Developer": ["React", "Node.js", "TypeScript", "PostgreSQL", "AWS", "Next.js", "Docker"],
-  "DevOps Engineer": ["Docker", "Kubernetes", "AWS", "CI/CD", "Terraform", "Linux", "Python"],
-  "Data Scientist": ["Python", "Machine Learning", "SQL", "TensorFlow", "R", "Data Analysis", "Statistics"],
-  "Designer": ["Figma", "Adobe XD", "Sketch", "UI/UX Design", "Prototyping", "Design Systems", "Illustrator"],
-  "Product Manager": ["Product Strategy", "Agile", "User Research", "Data Analysis", "Roadmapping", "Stakeholder Management"],
-}
 
-const POPULAR_SKILLS = ["React", "TypeScript", "Node.js", "Python", "AWS", "Docker", "Figma", "SQL"]
 
 interface SkillWithProficiency {
   id: string
   label: string
   proficiency?: string
+}
+
+interface StepSkillsProps {
+  selectedRoles?: string[]
+  autoFillSkills?: string[]
 }
 
 // Memoized skills list component to prevent re-renders
@@ -169,15 +163,38 @@ SkillsList.displayName = 'SkillsList'
  *    measured. The badge now shows "✓ Complete" instead of "5/5 ✨" when the minimum
  *    is met, and "2/5 needed" instead of "2/5 ✨" when not — clearer status communication.
  */
-export function StepSkills() {
-  const { control, formState: { errors }, watch } = useFormContext()
+export function StepSkills({ selectedRoles = [], autoFillSkills = [] }: StepSkillsProps) {
+  const { control, formState: { errors }, watch, setValue } = useFormContext()
   const [search, setSearch] = React.useState("")
   const [showAddSection, setShowAddSection] = React.useState(false)
   
-  // Get role from form context
-    const headline = watch("headline") || ""
-  const detectedRole = Object.keys(ROLE_SKILL_SUGGESTIONS).find(r => headline.toLowerCase().includes(r.toLowerCase())) || null
-  const roleSuggestions = detectedRole ? ROLE_SKILL_SUGGESTIONS[detectedRole] : POPULAR_SKILLS
+  // Get suggestions from role-based data
+  const roleSkillNames = React.useMemo(() => {
+    return getRoleSkillSuggestions(selectedRoles, [])
+  }, [selectedRoles])
+
+  // Auto-fill effect: when autoFillSkills prop changes, add skills not already selected
+  React.useEffect(() => {
+    if (autoFillSkills.length > 0) {
+      const currentSkills: SkillWithProficiency[] = watch("skills") || []
+      const currentNames = new Set(currentSkills.map(s => s.label.toLowerCase()))
+      const skillsToAdd = autoFillSkills
+        .filter(name => !currentNames.has(name.toLowerCase()))
+        .map(name => {
+          const dbSkill = skillsDatabase.find(s => s.name.toLowerCase() === name.toLowerCase())
+          return {
+            id: dbSkill?.id || `custom-${name.toLowerCase().replace(/\s+/g, '-')}`,
+            label: name,
+            proficiency: 'intermediate',
+          }
+        })
+
+      if (skillsToAdd.length > 0) {
+        const updated = [...currentSkills, ...skillsToAdd]
+        setValue('skills', updated)
+      }
+    }
+  }, [autoFillSkills]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const skillOptions: ComboboxOption[] = React.useMemo(() => 
     skillsDatabase.map((skill: Skill) => ({
@@ -223,8 +240,8 @@ export function StepSkills() {
         render={({ field }) => {
           const skills: SkillWithProficiency[] = field.value || []
           
-          // Filter out skills already added
-          const suggestedSkills = roleSuggestions.filter(
+          // Filter out skills already added from role-based suggestions
+          const suggestedSkills = roleSkillNames.filter(
             suggestion => !skills.find(s => s.label.toLowerCase() === suggestion.toLowerCase())
           ).slice(0, 5) // Show max 5 suggestions
 
@@ -431,8 +448,8 @@ export function StepSkills() {
                   <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
                     <Sparkles className="w-4 h-4 md:w-5 md:h-5 text-amber-500" />
                     <span>
-                      {detectedRole 
-                        ? `Based on your role (${detectedRole}), consider adding:`
+                      {selectedRoles.length > 0 
+                        ? `Based on your role${selectedRoles.length > 1 ? 's' : ''} (${selectedRoles.join(', ')}), consider adding:`
                         : "Quick add popular skills:"
                       }
                     </span>

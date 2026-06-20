@@ -34,6 +34,13 @@ export type IndustryCategory =
   | 'utilities'
   | 'mining'
   | 'logistics'
+  | 'industrial'
+  | 'primary'
+  | 'commercial'
+  | 'services'
+  | 'public'
+  | 'professional'
+  | 'creative'
 
 export const industriesDatabase: Industry[] = [
   // ==================== TECHNOLOGY ====================
@@ -349,6 +356,26 @@ export const industriesDatabase: Industry[] = [
   { id: 'elevators', name: 'Elevator Installation', category: 'construction', subcategory: 'Specialty Trades', keywords: ['elevators', 'lifts', 'escalators', 'vertical'] },
   
   // Continuing with trades, hospitality, agriculture, etc. (would continue to 500+ total)
+
+  // === GLOBAL INDUSTRIES ===
+  { id: 'manufacturing', name: 'Manufacturing & Industrial', category: 'industrial', subcategory: 'Production', keywords: ['manufacturing', 'production', 'factory', 'industrial', 'supply-chain', 'lean'] },
+  { id: 'agriculture', name: 'Agriculture & Farming', category: 'primary', subcategory: 'Agriculture', keywords: ['agriculture', 'farming', 'crops', 'livestock', 'agronomy', 'sustainable'] },
+  { id: 'construction', name: 'Construction & Engineering', category: 'industrial', subcategory: 'Construction', keywords: ['construction', 'engineering', 'architecture', 'building', 'infrastructure', 'civil'] },
+  { id: 'energy', name: 'Energy & Utilities', category: 'industrial', subcategory: 'Energy', keywords: ['energy', 'utilities', 'oil', 'gas', 'renewable', 'solar', 'wind', 'nuclear'] },
+  { id: 'transportation', name: 'Transportation & Logistics', category: 'industrial', subcategory: 'Transportation', keywords: ['transportation', 'logistics', 'shipping', 'freight', 'aviation', 'automotive', 'rail'] },
+  { id: 'retail', name: 'Retail & Consumer Goods', category: 'commercial', subcategory: 'Retail', keywords: ['retail', 'consumer-goods', 'ecommerce', 'wholesale', 'merchandising', 'omnichannel'] },
+  { id: 'hospitality', name: 'Hospitality & Tourism', category: 'services', subcategory: 'Hospitality', keywords: ['hospitality', 'tourism', 'hotel', 'restaurant', 'travel', 'catering', 'events'] },
+  { id: 'media', name: 'Media & Entertainment', category: 'creative', subcategory: 'Media', keywords: ['media', 'entertainment', 'film', 'television', 'music', 'publishing', 'broadcasting', 'streaming'] },
+  { id: 'government', name: 'Government & Public Sector', category: 'public', subcategory: 'Government', keywords: ['government', 'public-sector', 'policy', 'regulation', 'civic', 'public-administration'] },
+  { id: 'nonprofit', name: 'Non-Profit & Social Impact', category: 'public', subcategory: 'Non-Profit', keywords: ['nonprofit', 'social-impact', 'ngo', 'charity', 'philanthropy', 'community'] },
+  { id: 'real-estate', name: 'Real Estate & Property', category: 'commercial', subcategory: 'Real Estate', keywords: ['real-estate', 'property', 'commercial-real-estate', 'residential', 'proptech'] },
+  { id: 'legal', name: 'Legal & Compliance', category: 'professional', subcategory: 'Legal', keywords: ['legal', 'law', 'compliance', 'regulation', 'attorney', 'corporate-law'] },
+  { id: 'consulting', name: 'Consulting & Professional Services', category: 'professional', subcategory: 'Consulting', keywords: ['consulting', 'management-consulting', 'strategy', 'advisory', 'professional-services'] },
+  { id: 'education', name: 'Education & Training', category: 'public', subcategory: 'Education', keywords: ['education', 'training', 'teaching', 'school', 'university', 'e-learning', 'higher-education'] },
+  { id: 'healthcare', name: 'Healthcare & Medical', category: 'healthcare', subcategory: 'Healthcare', keywords: ['healthcare', 'medical', 'hospital', 'clinical', 'nursing', 'health', 'telemedicine'] },
+  { id: 'defense', name: 'Defense & Aerospace', category: 'industrial', subcategory: 'Defense', keywords: ['defense', 'aerospace', 'military', 'aviation', 'security', 'space'] },
+  { id: 'telecommunications', name: 'Telecommunications', category: 'technology', subcategory: 'Telecom', keywords: ['telecom', 'telecommunications', '5g', 'networking', 'broadband', 'mobile'] },
+  { id: 'insurance', name: 'Insurance & Risk Management', category: 'finance', subcategory: 'Insurance', keywords: ['insurance', 'underwriting', 'actuarial', 'claims', 'risk-management'] },
 ]
 
 // Helper functions

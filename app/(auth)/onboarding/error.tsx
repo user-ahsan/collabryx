@@ -17,6 +17,7 @@ export default function Error({
 
 	useEffect(() => {
 		console.error("Onboarding error:", error)
+		console.error("Error digest:", error.digest)
 	}, [error])
 
 	const handleTryAgain = () => {

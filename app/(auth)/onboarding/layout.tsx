@@ -69,11 +69,13 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
                     .eq("id", user.id)
                     .maybeSingle()
 
-                // New user if profile doesn't exist or onboarding not completed
-                if (user && !profile?.onboarding_completed) {
-                    redirect('/onboarding')
+                // If onboarding is already complete, redirect away
+                if (profile?.onboarding_completed) {
+                    redirect('/dashboard')
+                    return
                 }
-                if (mounted) setIsNewUser(!profile || profile.onboarding_completed !== true)
+                // New user - show onboarding without sidebar
+                if (mounted) setIsNewUser(true)
             } catch (error) {
                 console.error("Error checking onboarding status:", error)
                 if (mounted) setIsNewUser(false)

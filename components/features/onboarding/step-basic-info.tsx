@@ -4,6 +4,7 @@ import React, { useEffect, useRef } from "react"
 import { useFormContext, RegisterOptions } from "react-hook-form"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { Rocket, ChartLine, Star } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { glass } from "@/lib/utils/glass-variants"
 import { AvatarUploader } from "@/components/shared/avatar-uploader"
@@ -42,7 +43,7 @@ type LocationField = keyof Pick<OnboardingFormValues, "location">
  *    a 100ms setTimeout to focus the Full Name input after the AnimatePresence mounts
  *    the new step. 100ms allows the exit animation to complete first.
  */
-export function StepBasicInfo({ userName, onNameExtracted, selectedRoles }: StepBasicInfoProps) {
+export function StepBasicInfo({ userName, onNameExtracted, selectedRoles = [] }: StepBasicInfoProps) {
     const { register, setValue, watch, formState: { errors } } = useFormContext<OnboardingFormValues>()
     const roles = selectedRoles || watch("roles") || []
     const locationInputRef = useRef<HTMLInputElement | null>(null)
@@ -297,97 +298,118 @@ export function StepBasicInfo({ userName, onNameExtracted, selectedRoles }: Step
 
                 {/* Investor fields */}
                 {roles.includes('investor') && (
-                    <div className="space-y-4 p-4 rounded-lg border border-emerald-500/20 bg-emerald-500/5">
-                        <p className="text-xs font-semibold text-emerald-500 uppercase tracking-wider">Investment Preferences</p>
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="grid gap-2 col-span-2 sm:col-span-1">
-                                <Label htmlFor="checkMin" className="text-sm font-semibold text-foreground">Min Check ($)</Label>
-                                <Input 
-                                    id="checkMin" 
-                                    type="number" 
-                                    placeholder="e.g. 25000" 
-                                    {...register("check_size_min", { valueAsNumber: true })} 
-                                    className={cn(
-                                        "h-11 text-sm", 
-                                        glass("input"),
-                                        errors.check_size_min && "border-destructive focus:border-destructive"
-                                    )} 
-                                    aria-invalid={!!errors.check_size_min}
-                                    aria-describedby={errors.check_size_min ? "checkMin-error" : undefined}
-                                />
-                                {errors.check_size_min?.message && (
-                                    <p id="checkMin-error" className="text-xs text-destructive font-medium" role="alert">
-                                        {errors.check_size_min.message as string}
-                                    </p>
-                                )}
-                            </div>
-                            <div className="grid gap-2 col-span-2 sm:col-span-1">
-                                <Label htmlFor="checkMax" className="text-sm font-semibold text-foreground">Max Check ($)</Label>
-                                <Input 
-                                    id="checkMax" 
-                                    type="number" 
-                                    placeholder="e.g. 500000" 
-                                    {...register("check_size_max", { valueAsNumber: true })} 
-                                    className={cn(
-                                        "h-11 text-sm", 
-                                        glass("input"),
-                                        errors.check_size_max && "border-destructive focus:border-destructive"
-                                    )} 
-                                    aria-invalid={!!errors.check_size_max}
-                                    aria-describedby={errors.check_size_max ? "checkMax-error" : undefined}
-                                />
-                                {errors.check_size_max?.message && (
-                                    <p id="checkMax-error" className="text-xs text-destructive font-medium" role="alert">
-                                        {errors.check_size_max.message as string}
-                                    </p>
-                                )}
-                            </div>
+                    <div className="space-y-4 p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-emerald-500">
+                            <ChartLine className="w-4 h-4" />
+                            Investor Profile
                         </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="portfolioUrl" className="text-sm font-semibold text-foreground">Portfolio URL <span className="text-muted-foreground font-normal">(Optional)</span></Label>
-                            <Input id="portfolioUrl" placeholder="e.g. https://angel.co/u/yourname" {...register("portfolio_url")} className={cn("h-11 text-sm", glass("input"))} />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="check_size_min">Min Check Size ($)</Label>
+                                <Input id="check_size_min" type="number" {...register('check_size_min')} placeholder="e.g., 10000" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="check_size_max">Max Check Size ($)</Label>
+                                <Input id="check_size_max" type="number" {...register('check_size_max')} placeholder="e.g., 100000" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="stage_focus">Stage Focus</Label>
+                                <select multiple id="stage_focus" {...register('stage_focus')} className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                                    <option value="pre_seed">Pre-Seed</option>
+                                    <option value="seed">Seed</option>
+                                    <option value="series_a">Series A</option>
+                                    <option value="series_b">Series B</option>
+                                    <option value="growth">Growth</option>
+                                    <option value="late_stage">Late Stage</option>
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Accredited Investor</Label>
+                                <label className="flex items-center gap-2 text-sm mt-2">
+                                    <input type="checkbox" {...register('accredited_investor')} />
+                                    I am an accredited investor
+                                </label>
+                            </div>
                         </div>
                     </div>
                 )}
 
-                {/* Founder / Professional fields */}
-                {(roles.includes('founder') || roles.includes('professional')) && (
-                    <div className="space-y-4 p-4 rounded-lg border border-purple-500/20 bg-purple-500/5">
-                        <p className="text-xs font-semibold text-purple-500 uppercase tracking-wider">Professional Details</p>
-                        <div className="grid gap-2">
-                            <Label htmlFor="companyName" className="text-sm font-semibold text-foreground">
-                                Company / Organization <span className="text-muted-foreground font-normal">(Optional)</span>
-                            </Label>
-                            <Input id="companyName" placeholder="e.g. Acme Corp" {...register("company_name")} className={cn("h-11 text-sm", glass("input"))} />
+                {/* Founder fields */}
+                {roles.includes('founder') && (
+                    <div className="space-y-4 p-4 rounded-xl border border-purple-500/20 bg-purple-500/5">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-purple-500">
+                            <Rocket className="w-4 h-4" />
+                            Founder Details
                         </div>
-                        <div className="grid gap-2">
-                            <Label htmlFor="companyRole" className="text-sm font-semibold text-foreground">
-                                Your Role <span className="text-muted-foreground font-normal">(Optional)</span>
-                            </Label>
-                            <Input id="companyRole" placeholder="e.g. CTO, Co-Founder" {...register("company_role")} className={cn("h-11 text-sm", glass("input"))} />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="company_name">Company Name</Label>
+                                <Input id="company_name" {...register('company_name')} placeholder="e.g., Acme Inc." />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="company_stage">Company Stage</Label>
+                                <select id="company_stage" {...register('company_stage')} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                                    <option value="">Select stage...</option>
+                                    <option value="idea">Idea</option>
+                                    <option value="pre_seed">Pre-Seed</option>
+                                    <option value="seed">Seed</option>
+                                    <option value="early">Early Stage</option>
+                                    <option value="growth">Growth</option>
+                                    <option value="established">Established</option>
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="company_role">Your Role</Label>
+                                <Input id="company_role" {...register('company_role')} placeholder="e.g., CEO, CTO" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="team_size">Team Size</Label>
+                                <Input id="team_size" type="number" {...register('team_size')} placeholder="e.g., 5" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="fundraising_stage">Fundraising Stage</Label>
+                                <select id="fundraising_stage" {...register('fundraising_stage')} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                                    <option value="">Select...</option>
+                                    <option value="not_raising">Not Raising</option>
+                                    <option value="pre_seed">Pre-Seed</option>
+                                    <option value="seed">Seed</option>
+                                    <option value="series_a">Series A</option>
+                                    <option value="series_b">Series B</option>
+                                    <option value="series_c_plus">Series C+</option>
+                                </select>
+                            </div>
+                            <div className="space-y-2 flex items-end">
+                                <label className="flex items-center gap-2 text-sm">
+                                    <input type="checkbox" {...register('open_to_mentoring')} />
+                                    Open to mentoring
+                                </label>
+                            </div>
                         </div>
                     </div>
                 )}
 
                 {/* Mentor fields */}
                 {roles.includes('mentor') && (
-                    <div className="space-y-4 p-4 rounded-lg border border-rose-500/20 bg-rose-500/5">
-                        <p className="text-xs font-semibold text-rose-500 uppercase tracking-wider">Mentoring Preferences</p>
-                        <div className="grid gap-2">
-                            <Label htmlFor="mentoringFormat" className="text-sm font-semibold text-foreground">
-                                Preferred Format <span className="text-muted-foreground font-normal">(Optional)</span>
-                            </Label>
-                            <select
-                                id="mentoringFormat"
-                                {...register("mentoring_format")}
-                                className={cn("h-11 text-sm rounded-lg border border-border bg-background px-3", glass("input"))}
-                            >
-                                <option value="">Select format</option>
-                                <option value="one_on_one">One-on-One</option>
-                                <option value="group">Group Sessions</option>
-                                <option value="async">Asynchronous</option>
-                                <option value="any">Any Format</option>
-                            </select>
+                    <div className="space-y-4 p-4 rounded-xl border border-rose-500/20 bg-rose-500/5">
+                        <div className="flex items-center gap-2 text-sm font-semibold text-rose-500">
+                            <Star className="w-4 h-4" />
+                            Mentoring Preferences
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="mentoring_format">Preferred Format</Label>
+                                <select id="mentoring_format" {...register('mentoring_format')} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                                    <option value="">Select...</option>
+                                    <option value="one_on_one">One-on-One</option>
+                                    <option value="group">Group Sessions</option>
+                                    <option value="async">Asynchronous</option>
+                                    <option value="any">Any Format</option>
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="mentoring_availability_hours">Available Hours/Week</Label>
+                                <Input id="mentoring_availability_hours" type="number" {...register('mentoring_availability_hours')} placeholder="e.g., 4" />
+                            </div>
                         </div>
                     </div>
                 )}

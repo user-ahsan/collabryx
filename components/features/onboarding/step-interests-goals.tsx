@@ -5,7 +5,7 @@ import { useFormContext, Controller } from "react-hook-form"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { X, Plus } from "lucide-react"
+import { X, Plus, ChartLine } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { collaborationGoals } from "@/lib/data/collaboration-goals"
 import { industriesDatabase } from "@/lib/data/industries-database"
@@ -30,14 +30,35 @@ import type { ComboboxOption } from "@/components/ui/searchable-combobox"
  *    about the value: "Your interests help us match you with relevant opportunities"
  *    instead of vague "Or add custom industries."
  */
-export function StepInterestsAndGoals() {
-  const { control, formState: { errors } } = useFormContext()
+interface StepInterestsAndGoalsProps {
+  selectedRoles?: string[]
+}
+
+export function StepInterestsAndGoals({ selectedRoles = [] }: StepInterestsAndGoalsProps) {
+  const { control, watch, setValue, formState: { errors } } = useFormContext()
   const [goalsSearch, setGoalsSearch] = React.useState("")
   const [interestsSearch, setInterestsSearch] = React.useState("")
   const [showAddGoals, setShowAddGoals] = React.useState(false)
   const [showAddInterests, setShowAddInterests] = React.useState(false)
+  const [showSectorSelector, setShowSectorSelector] = React.useState(false)
+  const [sectorSearch, setSectorSearch] = React.useState("")
 
+  const watchInterests = watch("interests")
+  const watchSectors = watch("sectors")
 
+  // Auto-populate investor sectors from selected interests
+  React.useEffect(() => {
+    if (selectedRoles?.includes("investor")) {
+      const currentInterests: string[] = watchInterests || []
+      const currentSectors: string[] = watchSectors || []
+      const newSectors = currentInterests.filter(
+        interest => !currentSectors.includes(interest)
+      )
+      if (newSectors.length > 0) {
+        setValue("sectors", [...currentSectors, ...newSectors])
+      }
+    }
+  }, [selectedRoles]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Convert goals database to combobox options
   const goalOptions: ComboboxOption[] = React.useMemo(() => 
@@ -290,6 +311,77 @@ export function StepInterestsAndGoals() {
           )}
         />
       </div>
+
+      {/* Investor Sectors — shown only when user has investor role */}
+      {selectedRoles?.includes("investor") && (
+        <Controller
+          control={control}
+          name="sectors"
+          render={({ field }) => {
+            const currentSectors: string[] = field.value || []
+            const handleRemoveSector = (id: string) => {
+              field.onChange(currentSectors.filter(s => s !== id))
+            }
+            return (
+              <div className="space-y-4 pt-6 border-t border-border/20">
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                    <ChartLine className="w-4 h-4 inline mr-1.5" />
+                    Sectors You Invest In
+                  </Label>
+                  <p className="text-sm text-muted-foreground">Select the sectors where you actively invest or want to invest.</p>
+                </div>
+
+                {currentSectors.length > 0 && (
+                  <div className="flex flex-wrap gap-2 p-3 rounded-lg min-h-[48px] bg-muted/30" role="list" aria-label="Selected sectors">
+                    {currentSectors.map((sectorId) => {
+                      const sector = industryOptions.find(i => i.id === sectorId)
+                      return (
+                        <Badge key={sectorId} variant="secondary" className="px-3 py-1.5 text-sm gap-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-none">
+                          {sector?.label || sectorId}
+                          <button type="button" onClick={() => handleRemoveSector(sectorId)} className="p-0.5 rounded-full hover:bg-emerald-500/20 transition-colors" aria-label={`Remove sector`}>
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </Badge>
+                      )
+                    })}
+                  </div>
+                )}
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowSectorSelector(!showSectorSelector)
+                  }}
+                  className="w-full sm:w-auto"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  {currentSectors.length > 0 ? "Add More Sectors" : "Select Investment Sectors"}
+                </Button>
+
+                {showSectorSelector && (
+                  <div className="border border-border/20 rounded-2xl p-4 bg-card/25">
+                    <TagSelectorCard
+                      options={industryOptions}
+                      selected={currentSectors}
+                      onChange={(selected) => field.onChange(selected)}
+                      searchValue={sectorSearch}
+                      onSearchChange={setSectorSearch}
+                      searchPlaceholder="Search sectors..."
+                      emptyMessage="No sectors match your search."
+                      title="Investment Sectors"
+                      showCategories={true}
+                      maxHeight={300}
+                    />
+                  </div>
+                )}
+              </div>
+            )
+          }}
+        />
+      )}
     </div>
   )
 }

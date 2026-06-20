@@ -32,6 +32,7 @@ import { useDebounce } from "@/hooks/use-debounce"
 // Instead, the skipEmailVerification prop is passed from the server page component
 // which reads the env var correctly at runtime.
 import { onboardingDataSchemaObject, OnboardingData } from "@/lib/validations/onboarding"
+import { getAutoFillSkills } from "@/lib/data/role-skills"
 
 const combinedSchema = onboardingDataSchemaObject
 
@@ -117,6 +118,7 @@ export default function OnboardingPage({ skipEmailVerification = false }: { skip
     const [hasAcknowledgedWarning, setHasAcknowledgedWarning] = useState(false)
     const [isTransitioning, setIsTransitioning] = useState(false)
     const [direction, setDirection] = useState<1 | -1>(1) // 1=forward, -1=back
+    const [autoFillSkills, setAutoFillSkills] = useState<string[]>([])
     const router = useRouter()
     const shouldReduceMotion = useReducedMotion()
     const recoveryShownRef = useRef(false)
@@ -166,9 +168,9 @@ export default function OnboardingPage({ skipEmailVerification = false }: { skip
     
     // Track form changes for unsaved warning
     const formValues = watch()
+    const watchRoles = watch('roles')
     const debouncedValues = useDebounce(formValues, 800)
 
-    
     // Detect form changes
     useEffect(() => {
         if (isDirty && currentStep > 0) {
@@ -829,8 +831,13 @@ export default function OnboardingPage({ skipEmailVerification = false }: { skip
                                             transition={shouldReduceMotion ? { duration: 0 } : transition}
                                         >
                                             <StepRoleSelect
-                                                selectedRoles={methods.watch('roles') || []}
-                                                onChange={(roles) => methods.setValue('roles', roles, { shouldDirty: true })}
+                                                selectedRoles={watchRoles || []}
+                                                onChange={(roles) => {
+                                                    methods.setValue('roles', roles, { shouldDirty: true })
+                                                    const fillSkills = getAutoFillSkills(roles, 9)
+                                                    setAutoFillSkills(fillSkills)
+                                                }}
+                                                error={methods.formState.errors.roles?.message as string | undefined}
                                             />
                                         </motion.div>
                                     ) : currentStep === 2 ? (
@@ -849,7 +856,7 @@ export default function OnboardingPage({ skipEmailVerification = false }: { skip
                                         >
                                             <StepBasicInfo
                                                 userName={userName}
-                                                selectedRoles={methods.watch('roles') || []}
+                                                selectedRoles={watchRoles || []}
                                                 onNameExtracted={(displayName) => {
                                                     const current = methods.getValues("displayName")
                                                     if (!current) {
@@ -875,7 +882,10 @@ export default function OnboardingPage({ skipEmailVerification = false }: { skip
                                             exit="exit"
                                             transition={shouldReduceMotion ? { duration: 0 } : transition}
                                         >
-                                            <StepSkills />
+                                            <StepSkills
+                                                selectedRoles={watchRoles || []}
+                                                autoFillSkills={autoFillSkills}
+                                            />
                                         </motion.div>
                                     ) : currentStep === 4 ? (
                                         <motion.div
@@ -891,7 +901,7 @@ export default function OnboardingPage({ skipEmailVerification = false }: { skip
                                             exit="exit"
                                             transition={shouldReduceMotion ? { duration: 0 } : transition}
                                         >
-                                            <StepInterestsAndGoals />
+                                            <StepInterestsAndGoals selectedRoles={watchRoles || []} />
                                         </motion.div>
                                     ) : (
                                         <motion.div
