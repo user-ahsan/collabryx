@@ -6,7 +6,8 @@ import { createClient } from "@/lib/supabase/client"
 import { GlassCard } from "@/components/shared/glass-card"
 import { Loader2, CheckCircle2, Sparkles, AlertTriangle } from "lucide-react"
 import { motion } from "framer-motion"
-import { isDevelopmentMode } from "@/lib/services/development"
+// Inline: NODE_ENV is inlined by Next.js, but this is only used for dev UI badges
+function isDevelopmentMode(): boolean { return process.env.NODE_ENV !== 'production' }
 import { Button } from "@/components/ui/button"
 
 interface AuthSyncClientProps {

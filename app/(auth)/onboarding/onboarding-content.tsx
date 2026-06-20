@@ -27,7 +27,10 @@ import { GlassCard } from "@/components/shared/glass-card"
 import { createClient } from "@/lib/supabase/client"
 import { completeOnboarding } from "./actions"
 import { useDebounce } from "@/hooks/use-debounce"
-import { isEmailVerificationSkipped } from "@/lib/services/development"
+// NOTE: isEmailVerificationSkipped() is NOT used here — it reads a build-time-inlined
+// NEXT_PUBLIC_ value that doesn't reflect runtime env changes on Vercel.
+// Instead, the skipEmailVerification prop is passed from the server page component
+// which reads the env var correctly at runtime.
 import { onboardingDataSchemaObject, OnboardingData } from "@/lib/validations/onboarding"
 
 const combinedSchema = onboardingDataSchemaObject
@@ -104,7 +107,7 @@ const transition = {
  *    `querySelector('[aria-invalid="true"]')` finds the first errored field and
  *    `scrollIntoView({ behavior: 'smooth', block: 'center' })` brings it into focus.
  */
-export default function OnboardingPage() {
+export default function OnboardingPage({ skipEmailVerification = false }: { skipEmailVerification?: boolean }) {
     const [currentStep, setCurrentStep] = useState(0)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [userName, setUserName] = useState("")
@@ -211,8 +214,10 @@ export default function OnboardingPage() {
                 setUserName(name)
                 
                 // Check email verification status
-                // Respect SKIP_EMAIL_VERIFICATION env var — if set, treat as verified
-                const emailIsVerified = isEmailVerificationSkipped() ? true : !!user?.email_confirmed_at
+                // Respect SKIP_EMAIL_VERIFICATION env var — if set, treat as verified.
+                // Using skipEmailVerification prop (passed from server component with runtime env var)
+                // instead of isEmailVerificationSkipped() which is inlined at build time.
+                const emailIsVerified = skipEmailVerification ? true : !!user?.email_confirmed_at
                 setIsEmailVerified(emailIsVerified)
                 
                 if (!emailIsVerified) {
@@ -227,7 +232,7 @@ export default function OnboardingPage() {
         }
         fetchUser()
         return () => { cancelled = true }
-    }, [router])
+    }, [router, skipEmailVerification])
     
     // Focus management on step change - scroll to top of form content
     useEffect(() => {

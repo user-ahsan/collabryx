@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
+import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js"
 import { completeTestUserOnboarding, isDevelopmentMode } from "@/lib/services/development"
 import { AuthSyncClient } from "./client"
 import { redirect } from 'next/navigation'
@@ -27,10 +28,36 @@ export default async function AuthSyncPage() {
         // ===========================================
         // EMAIL VERIFICATION CHECK
         // Respect SKIP_EMAIL_VERIFICATION env var
+        // Server components read runtime env vars correctly,
+        // so this check is reliable. The skip state is also
+        // passed as a search param to client components
+        // to avoid build-time inlining issues with NEXT_PUBLIC_ vars.
         // ===========================================
         const skipEmailVerification = process.env.NEXT_PUBLIC_SKIP_EMAIL_VERIFICATION === "true"
         if (!skipEmailVerification && !user.email_confirmed_at) {
             return redirect("/verify-email")
+        }
+        
+        // When SKIP_EMAIL_VERIFICATION is active, auto-confirm the user's email
+        // via Supabase Admin API. This ensures email_confirmed_at is set so that
+        // any API route or service that checks it directly also works correctly.
+        if (skipEmailVerification && !user.email_confirmed_at) {
+            try {
+                const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+                if (serviceRoleKey) {
+                    const adminClient = createSupabaseAdminClient(
+                        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+                        serviceRoleKey
+                    )
+                    await adminClient.auth.admin.updateUserById(user.id, {
+                        email_confirm: true,
+                    })
+                }
+            } catch (confirmError) {
+                // Non-fatal: if auto-confirm fails, the app-level skip flag will
+                // still prevent verification redirects for the current session
+                console.error('Auto email confirm failed:', confirmError)
+            }
         }
         
         // Check profile — use maybeSingle() to avoid PGRST116 crash
@@ -63,7 +90,8 @@ export default async function AuthSyncPage() {
                     destination = "/onboarding"
                 }
             } else {
-                destination = "/onboarding"
+                const skipParam = skipEmailVerification ? "?skipEmail=1" : ""
+                destination = `/onboarding${skipParam}`
             }
         }
     } catch (error) {

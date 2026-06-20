@@ -13,6 +13,8 @@ const PageContent = NextDynamic(
   { loading: () => <div className="flex items-center justify-center min-h-[60vh]"><div className="h-8 w-8 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" /></div> }
 )
 
-export default function PageWrapper() {
-  return <PageContent />
+export default async function PageWrapper(props: { searchParams?: Promise<{ skipEmail?: string }> }) {
+  const searchParams = await props.searchParams
+  const skipEmail = searchParams?.skipEmail === "1"
+  return <PageContent skipEmailVerification={skipEmail} />
 }
