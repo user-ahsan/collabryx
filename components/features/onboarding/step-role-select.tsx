@@ -26,7 +26,15 @@ export function StepRoleSelect({ selectedRoles, onChange, error }: StepRoleSelec
       if (selectedRoles.length <= 1) return
       onChange(selectedRoles.filter(r => r !== role))
     } else {
-      onChange([...selectedRoles, role])
+      let updatedRoles = [...selectedRoles]
+      if (role === 'student') {
+        // A student cannot be a professional, mentor, or investor
+        updatedRoles = updatedRoles.filter(r => r !== 'professional' && r !== 'mentor' && r !== 'investor')
+      } else if (role === 'professional' || role === 'mentor' || role === 'investor') {
+        // A professional, mentor, or investor cannot be a student
+        updatedRoles = updatedRoles.filter(r => r !== 'student')
+      }
+      onChange([...updatedRoles, role])
     }
   }
 

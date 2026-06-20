@@ -42,7 +42,7 @@ interface OnboardingData {
     stage_focus?: string[];
     sectors?: string[];
     portfolio_url?: string;
-    investment_history_count?: number;
+    investment_history_count?: number | null;
     accredited_investor?: boolean;
     company_name?: string;
     company_stage?: string | null;
@@ -213,6 +213,31 @@ export async function completeOnboarding(data: OnboardingData, completionPercent
     const linkedinLink = links.find(l => l.platform === "linkedin")
     const twitterLink = links.find(l => l.platform === "twitter" || l.platform === "instagram")
     const portfolioLink = links.find(l => l.platform === "portfolio")
+
+    // Validate role compatibility
+    if (data.roles?.includes('student')) {
+        const hasIncompatible = data.roles.some(r => r === 'professional' || r === 'mentor' || r === 'investor')
+        if (hasIncompatible) {
+            return {
+                success: false,
+                error: "roles: A student cannot also be a professional, mentor, or investor"
+            }
+        }
+    }
+
+    // Validate check sizes for investors
+    if (data.roles?.includes('investor')) {
+        const checkMin = data.check_size_min
+        const checkMax = data.check_size_max
+        if (checkMin !== undefined && checkMin !== null && checkMax !== undefined && checkMax !== null) {
+            if (checkMax <= checkMin) {
+                return {
+                    success: false,
+                    error: "check_size_max: Maximum check size must be higher than the minimum check size"
+                }
+            }
+        }
+    }
 
     // 2. Update Profile
     let profileError = null

@@ -300,13 +300,47 @@ export function StepBasicInfo({ userName, onNameExtracted, selectedRoles }: Step
                     <div className="space-y-4 p-4 rounded-lg border border-emerald-500/20 bg-emerald-500/5">
                         <p className="text-xs font-semibold text-emerald-500 uppercase tracking-wider">Investment Preferences</p>
                         <div className="grid grid-cols-2 gap-3">
-                            <div className="grid gap-2">
+                            <div className="grid gap-2 col-span-2 sm:col-span-1">
                                 <Label htmlFor="checkMin" className="text-sm font-semibold text-foreground">Min Check ($)</Label>
-                                <Input id="checkMin" type="number" placeholder="e.g. 25000" {...register("check_size_min", { valueAsNumber: true })} className={cn("h-11 text-sm", glass("input"))} />
+                                <Input 
+                                    id="checkMin" 
+                                    type="number" 
+                                    placeholder="e.g. 25000" 
+                                    {...register("check_size_min", { valueAsNumber: true })} 
+                                    className={cn(
+                                        "h-11 text-sm", 
+                                        glass("input"),
+                                        errors.check_size_min && "border-destructive focus:border-destructive"
+                                    )} 
+                                    aria-invalid={!!errors.check_size_min}
+                                    aria-describedby={errors.check_size_min ? "checkMin-error" : undefined}
+                                />
+                                {errors.check_size_min?.message && (
+                                    <p id="checkMin-error" className="text-xs text-destructive font-medium" role="alert">
+                                        {errors.check_size_min.message as string}
+                                    </p>
+                                )}
                             </div>
-                            <div className="grid gap-2">
+                            <div className="grid gap-2 col-span-2 sm:col-span-1">
                                 <Label htmlFor="checkMax" className="text-sm font-semibold text-foreground">Max Check ($)</Label>
-                                <Input id="checkMax" type="number" placeholder="e.g. 500000" {...register("check_size_max", { valueAsNumber: true })} className={cn("h-11 text-sm", glass("input"))} />
+                                <Input 
+                                    id="checkMax" 
+                                    type="number" 
+                                    placeholder="e.g. 500000" 
+                                    {...register("check_size_max", { valueAsNumber: true })} 
+                                    className={cn(
+                                        "h-11 text-sm", 
+                                        glass("input"),
+                                        errors.check_size_max && "border-destructive focus:border-destructive"
+                                    )} 
+                                    aria-invalid={!!errors.check_size_max}
+                                    aria-describedby={errors.check_size_max ? "checkMax-error" : undefined}
+                                />
+                                {errors.check_size_max?.message && (
+                                    <p id="checkMax-error" className="text-xs text-destructive font-medium" role="alert">
+                                        {errors.check_size_max.message as string}
+                                    </p>
+                                )}
                             </div>
                         </div>
                         <div className="grid gap-2">
