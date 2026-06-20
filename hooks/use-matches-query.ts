@@ -119,8 +119,29 @@ export function useGenerateMatches() {
   const queryClient = useQueryClient()
   
   return useMutation({
-    mutationFn: ({ userId, limit }: { userId: string; limit?: number }) => 
-      matchClient.generate({ user_id: userId, limit }),
+    mutationFn: async ({ userId, limit }: { userId: string; limit?: number }) => {
+      const csrfToken = (() => {
+        try {
+          return document.cookie.split('; ').find(row => row.startsWith('csrf_token='))?.split('=')[1] || ''
+        } catch { return '' }
+      })()
+
+      const response = await fetch('/api/matches/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRF-Token': csrfToken,
+        },
+        body: JSON.stringify({ user_id: userId, limit: limit ?? 20 }),
+      })
+
+      const result = await response.json()
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || result.message || 'Failed to generate matches')
+      }
+
+      return result.data?.suggestions || []
+    },
     onSuccess: (result) => {
       if (result && result.length > 0) {
         // Invalidate matches list to refresh UI

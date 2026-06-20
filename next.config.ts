@@ -63,7 +63,7 @@ const nextConfig: NextConfig = {
               "font-src 'self' https://fonts.gstatic.com https://cdn.fontshare.com",
               // Tightened image remote domains to Supabase, Unsplash, and Amazon CDN only
               "img-src 'self' data: blob: https://images.unsplash.com https://*.supabase.co https://*.amazonaws.com",
-              "connect-src 'self' https://*.supabase.co",
+              "connect-src 'self' https://*.supabase.co wss://*.supabase.co http://localhost:* ws://localhost:*",
               "media-src 'self' blob:",
               "object-src 'none'",
               "frame-ancestors 'self'",
