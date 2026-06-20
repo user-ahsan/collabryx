@@ -85,8 +85,6 @@ services:
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
       - WORKER_API_KEY=${WORKER_API_KEY}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
-    volumes:
-      - collabryx-model-cache:/app/.cache/huggingface
     security_opt:
       - no-new-privileges:true
     cap_drop:
@@ -96,6 +94,7 @@ services:
     read_only: true
     tmpfs:
       - /tmp:noexec,nosuid,size=256m
+      - /app/.cache:noexec,nosuid,size=512m
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -241,14 +240,6 @@ services:
           memory: 256M
     networks:
       - dokploy-network
-
-
-# ===================================================
-# VOLUMES — Docker auto-creates on first deploy
-# ===================================================
-volumes:
-  collabryx-model-cache:
-    driver: local
 
 
 # ===================================================
