@@ -1,5 +1,12 @@
 import { z } from "zod"
 
+const numericPreprocess = (val: unknown) => {
+  if (val === "" || val === null || val === undefined) return null;
+  if (typeof val === "number" && isNaN(val)) return null;
+  const num = Number(val);
+  return isNaN(num) ? null : num;
+};
+
 // ===========================================
 // ONBOARDING VALIDATION SCHEMAS — Role-Based
 // ===========================================
@@ -51,38 +58,55 @@ export const ROLE_ICONS: Record<OnboardingRole, string> = {
 export const studentSchema = z.object({
   university: z.string().max(200).optional().or(z.literal("")),
   major: z.string().max(200).optional().or(z.literal("")),
-  graduation_year: z
-    .number()
-    .int()
-    .min(2024, "Graduation year must be 2024 or later")
-    .max(2040, "Graduation year must be 2040 or earlier")
-    .optional()
-    .nullable(),
+  graduation_year: z.preprocess(
+    numericPreprocess,
+    z.number()
+      .int()
+      .min(2024, "Graduation year must be 2024 or later")
+      .max(2040, "Graduation year must be 2040 or earlier")
+      .nullable()
+      .optional()
+  ),
   looking_for_team: z.boolean().optional(),
   project_interests: z.array(z.string().min(1).max(50)).max(10).optional(),
 })
 
 export const investorSchema = z.object({
-  check_size_min: z
-    .number()
-    .min(0, "Minimum check size must be 0 or more")
-    .max(100_000_000, "Maximum check size is $100M")
-    .optional()
-    .nullable(),
-  check_size_max: z
-    .number()
-    .min(0, "Maximum check size must be 0 or more")
-    .max(100_000_000, "Maximum check size is $100M")
-    .optional()
-    .nullable(),
+  check_size_min: z.preprocess(
+    numericPreprocess,
+    z.number()
+      .min(0, "Minimum check size must be 0 or more")
+      .max(100_000_000, "Maximum check size is $100M")
+      .nullable()
+      .optional()
+  ),
+  check_size_max: z.preprocess(
+    numericPreprocess,
+    z.number()
+      .min(0, "Maximum check size must be 0 or more")
+      .max(100_000_000, "Maximum check size is $100M")
+      .nullable()
+      .optional()
+  ),
   stage_focus: z
     .array(z.enum(['pre_seed', 'seed', 'series_a', 'series_b', 'growth', 'late_stage']))
     .min(1, "Select at least one stage focus")
     .optional(),
   sectors: z.array(z.string().min(1).max(50)).max(10, "Maximum 10 sectors").optional(),
   portfolio_url: z.string().url("Invalid portfolio URL").optional().or(z.literal("")),
-  investment_history_count: z.number().int().min(0).optional(),
+  investment_history_count: z.preprocess(
+    numericPreprocess,
+    z.number().int().min(0).nullable().optional()
+  ),
   accredited_investor: z.boolean().optional(),
+}).refine((data) => {
+  if (data.check_size_min !== undefined && data.check_size_min !== null && data.check_size_max !== undefined && data.check_size_max !== null && !isNaN(data.check_size_min) && !isNaN(data.check_size_max)) {
+    return data.check_size_max > data.check_size_min
+  }
+  return true;
+}, {
+  message: "Maximum check size must be higher than the minimum check size",
+  path: ["check_size_max"]
 })
 
 export const founderSchema = z.object({
@@ -92,7 +116,10 @@ export const founderSchema = z.object({
     .optional()
     .nullable(),
   company_role: z.string().max(200).optional().or(z.literal("")),
-  team_size: z.number().int().min(1, "Team size must be at least 1").max(10000).optional().nullable(),
+  team_size: z.preprocess(
+    numericPreprocess,
+    z.number().int().min(1, "Team size must be at least 1").max(10000).nullable().optional()
+  ),
   fundraising_stage: z
     .enum(['not_raising', 'pre_seed', 'seed', 'series_a', 'series_b', 'series_c_plus'])
     .optional()
@@ -114,13 +141,15 @@ export const mentorSchema = z.object({
     .max(10, "Maximum 10 mentoring areas")
     .optional(),
   mentoring_format: z.enum(['one_on_one', 'group', 'async', 'any']).optional().nullable(),
-  mentoring_availability_hours: z
-    .number()
-    .int()
-    .min(0, "Hours must be 0 or more")
-    .max(168, "Hours cannot exceed 168 (24/7)")
-    .optional()
-    .nullable(),
+  mentoring_availability_hours: z.preprocess(
+    numericPreprocess,
+    z.number()
+      .int()
+      .min(0, "Hours must be 0 or more")
+      .max(168, "Hours cannot exceed 168 (24/7)")
+      .nullable()
+      .optional()
+  ),
 })
 
 // --- Role selection schema ---
@@ -139,7 +168,7 @@ export type RoleSelectionData = z.infer<typeof roleSelectionSchema>
 // This validates the complete onboarding form data
 // Role-specific fields are conditionally validated
 
-export const onboardingDataSchema = z.object({
+export const onboardingDataSchemaObject = z.object({
   // --- Base fields (always collected) ---
   fullName: z
     .string()
@@ -188,29 +217,29 @@ export const onboardingDataSchema = z.object({
   // --- Role-specific fields (all optional at top level — validated per-role in actions) ---
   university: z.string().max(200).optional().or(z.literal("")),
   major: z.string().max(200).optional().or(z.literal("")),
-  graduation_year: z.number().int().min(2024).max(2040).optional().nullable(),
+  graduation_year: z.preprocess(numericPreprocess, z.number().int().min(2024).max(2040).nullable().optional()),
   looking_for_team: z.boolean().optional(),
   project_interests: z.array(z.string().min(1).max(50)).max(10).optional(),
-
-  check_size_min: z.number().min(0).max(100_000_000).optional().nullable(),
-  check_size_max: z.number().min(0).max(100_000_000).optional().nullable(),
+ 
+  check_size_min: z.preprocess(numericPreprocess, z.number().min(0).max(100_000_000).nullable().optional()),
+  check_size_max: z.preprocess(numericPreprocess, z.number().min(0).max(100_000_000).nullable().optional()),
   stage_focus: z.array(z.enum(['pre_seed', 'seed', 'series_a', 'series_b', 'growth', 'late_stage'])).optional(),
   sectors: z.array(z.string().min(1).max(50)).max(10).optional(),
   portfolio_url: z.string().url().optional().or(z.literal("")),
-  investment_history_count: z.number().int().min(0).optional(),
+  investment_history_count: z.preprocess(numericPreprocess, z.number().int().min(0).nullable().optional()),
   accredited_investor: z.boolean().optional(),
-
+ 
   company_name: z.string().max(200).optional().or(z.literal("")),
   company_stage: z.enum(['idea', 'pre_seed', 'seed', 'early', 'growth', 'established']).optional().nullable(),
   company_role: z.string().max(200).optional().or(z.literal("")),
-  team_size: z.number().int().min(1).max(10000).optional().nullable(),
+  team_size: z.preprocess(numericPreprocess, z.number().int().min(1).max(10000).nullable().optional()),
   fundraising_stage: z.enum(['not_raising', 'pre_seed', 'seed', 'series_a', 'series_b', 'series_c_plus']).optional().nullable(),
   hiring_needs: z.array(z.string().min(1).max(100)).max(20).optional(),
   open_to_mentoring: z.boolean().optional(),
-
+ 
   mentoring_areas: z.array(z.string().min(1).max(50)).max(10).optional(),
   mentoring_format: z.enum(['one_on_one', 'group', 'async', 'any']).optional().nullable(),
-  mentoring_availability_hours: z.number().int().min(0).max(168).optional().nullable(),
+  mentoring_availability_hours: z.preprocess(numericPreprocess, z.number().int().min(0).max(168).nullable().optional()),
 
   // --- Cross-category fields ---
   skills: z.array(z.object({
@@ -238,6 +267,20 @@ export const onboardingDataSchema = z.object({
     .array(onboardingLinkSchema)
     .max(5, "Maximum 5 links allowed")
     .optional(),
+})
+
+export const onboardingDataSchema = onboardingDataSchemaObject.refine((data) => {
+  if (data.roles?.includes('investor')) {
+    const checkMin = data.check_size_min
+    const checkMax = data.check_size_max
+    if (checkMin !== undefined && checkMin !== null && checkMax !== undefined && checkMax !== null && !isNaN(checkMin) && !isNaN(checkMax)) {
+      return checkMax > checkMin
+    }
+  }
+  return true
+}, {
+  message: "Maximum check size must be higher than the minimum check size",
+  path: ["check_size_max"]
 })
 
 // Infer the full type
@@ -275,7 +318,21 @@ export function validateOnboardingData(
     return { success: false, errors }
   }
 
-  return { success: true, data: result.data }
+  const data = result.data
+  if (data.roles?.includes('investor')) {
+    const checkMin = data.check_size_min
+    const checkMax = data.check_size_max
+    if (checkMin !== undefined && checkMin !== null && checkMax !== undefined && checkMax !== null) {
+      if (checkMax <= checkMin) {
+        return {
+          success: false,
+          errors: ["check_size_max: Maximum check size must be higher than the minimum check size"]
+        }
+      }
+    }
+  }
+
+  return { success: true, data }
 }
 
 /**

@@ -28,9 +28,9 @@ import { createClient } from "@/lib/supabase/client"
 import { completeOnboarding } from "./actions"
 import { useDebounce } from "@/hooks/use-debounce"
 import { isEmailVerificationSkipped } from "@/lib/services/development"
-import { onboardingDataSchema, OnboardingData } from "@/lib/validations/onboarding"
+import { onboardingDataSchemaObject, OnboardingData } from "@/lib/validations/onboarding"
 
-const combinedSchema = onboardingDataSchema
+const combinedSchema = onboardingDataSchemaObject
 
 
 const STEPS = [
@@ -120,7 +120,8 @@ export default function OnboardingPage() {
     const mainContentRef = useRef<HTMLDivElement>(null)
 
     const methods = useForm<OnboardingData>({
-        resolver: zodResolver(combinedSchema),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        resolver: zodResolver(combinedSchema) as any,
         mode: "onBlur",
         reValidateMode: "onChange",
         defaultValues: {
@@ -301,7 +302,7 @@ export default function OnboardingPage() {
             if (saved) {
                 const parsed = JSON.parse(saved)
                 const { values: rawValues, step, timestamp } = parsed
-                const validated = onboardingDataSchema.partial().safeParse(rawValues)
+                const validated = onboardingDataSchemaObject.partial().safeParse(rawValues)
                 if (!validated.success) {
                     sessionStorage.removeItem('onboarding_draft')
                     return
@@ -351,11 +352,36 @@ export default function OnboardingPage() {
                 setCurrentStep(2)
                 return
             } else if (currentStep === 2) {
-                isStepValid = await trigger(['fullName', 'headline', 'displayName', 'location'])
+                const fieldsToValidate = ['fullName', 'headline', 'displayName', 'location'] as const
+                const userRoles = watch('roles') || []
+                const isInvestor = userRoles.includes('investor')
+                
+                const validationFields = isInvestor 
+                    ? [...fieldsToValidate, 'check_size_min', 'check_size_max']
+                    : fieldsToValidate
+
+                isStepValid = await trigger(validationFields as (keyof OnboardingData)[])
+
+                if (isStepValid && isInvestor) {
+                    const checkMin = watch('check_size_min')
+                    const checkMax = watch('check_size_max')
+                    if (checkMin !== undefined && checkMin !== null && checkMax !== undefined && checkMax !== null && !isNaN(checkMin) && !isNaN(checkMax)) {
+                        if (checkMax <= checkMin) {
+                            methods.setError('check_size_max', {
+                                type: 'custom',
+                                message: 'Maximum check size must be higher than the minimum check size'
+                            })
+                            isStepValid = false
+                        }
+                    }
+                }
+
                 if (!isStepValid) {
-                    // Scroll to first error field
-                    const firstError = document.querySelector('[aria-invalid="true"]')
-                    firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                    // Scroll to first error field after DOM updates
+                    setTimeout(() => {
+                        const firstError = document.querySelector('[aria-invalid="true"]')
+                        firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+                    }, 50)
                     toast.error("Please fix the errors before continuing")
                     return
                 }
@@ -498,7 +524,7 @@ export default function OnboardingPage() {
                     router.push("/dashboard")
                 }
             } else {
-                toast.error("Failed to complete onboarding. Please try again.")
+                toast.error(result.error || "Failed to complete onboarding. Please try again.")
             }
         } catch (error: unknown) {
             console.error("Onboarding skip failed:", error)
@@ -619,7 +645,7 @@ export default function OnboardingPage() {
                     router.push("/dashboard");
                 }
             } else {
-                toast.error("Failed to complete onboarding. Please try again.")
+                toast.error(result.error || "Failed to complete onboarding. Please try again.")
                 setIsSubmitting(false)
             }
 

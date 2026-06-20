@@ -21,9 +21,9 @@ services:
     read_only: true
     tmpfs:
       - /tmp:noexec,nosuid,size=256m
-      - /home/appuser/.cache:noexec,nosuid,size=512m
-      - /app/.cache:noexec,nosuid,size=256m
-      - /app/.pytest_cache:noexec,nosuid,size=64m
+      - /home/appuser/.cache:noexec,nosuid,size=512m,uid=1000,gid=1000,mode=1777
+      - /app/.cache:noexec,nosuid,size=256m,uid=1000,gid=1000,mode=1777
+      - /app/.pytest_cache:noexec,nosuid,size=64m,uid=1000,gid=1000,mode=1777
     deploy:
       resources:
         limits:
@@ -68,9 +68,9 @@ services:
     read_only: true
     tmpfs:
       - /tmp:noexec,nosuid,size=256m
-      - /home/appuser/.cache:noexec,nosuid,size=512m
-      - /app/.cache:noexec,nosuid,size=256m
-      - /app/.pytest_cache:noexec,nosuid,size=64m
+      - /home/appuser/.cache:noexec,nosuid,size=512m,uid=1000,gid=1000,mode=1777
+      - /app/.cache:noexec,nosuid,size=256m,uid=1000,gid=1000,mode=1777
+      - /app/.pytest_cache:noexec,nosuid,size=64m,uid=1000,gid=1000,mode=1777
     deploy:
       resources:
         limits:
@@ -115,9 +115,9 @@ services:
     read_only: true
     tmpfs:
       - /tmp:noexec,nosuid,size=256m
-      - /home/appuser/.cache:noexec,nosuid,size=512m
-      - /app/.cache:noexec,nosuid,size=256m
-      - /app/.pytest_cache:noexec,nosuid,size=64m
+      - /home/appuser/.cache:noexec,nosuid,size=512m,uid=1000,gid=1000,mode=1777
+      - /app/.cache:noexec,nosuid,size=256m,uid=1000,gid=1000,mode=1777
+      - /app/.pytest_cache:noexec,nosuid,size=64m,uid=1000,gid=1000,mode=1777
     deploy:
       resources:
         limits:
@@ -162,9 +162,9 @@ services:
     read_only: true
     tmpfs:
       - /tmp:noexec,nosuid,size=256m
-      - /home/appuser/.cache:noexec,nosuid,size=512m
-      - /app/.cache:noexec,nosuid,size=256m
-      - /app/.pytest_cache:noexec,nosuid,size=64m
+      - /home/appuser/.cache:noexec,nosuid,size=512m,uid=1000,gid=1000,mode=1777
+      - /app/.cache:noexec,nosuid,size=256m,uid=1000,gid=1000,mode=1777
+      - /app/.pytest_cache:noexec,nosuid,size=64m,uid=1000,gid=1000,mode=1777
     deploy:
       resources:
         limits:
