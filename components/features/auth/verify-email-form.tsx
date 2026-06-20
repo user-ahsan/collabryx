@@ -50,12 +50,16 @@ export function VerifyEmailForm() {
                 const { data: { user }, error } = await supabase.auth.getUser()
 
                 if (error) {
-                    devLog("auth", "❌ Email verification failed - getUser error", {
+                    devLog("auth", "⚠️ No session found - showing pending state", {
                         errorCode: error.code,
                         errorMessage: error.message,
                     })
-                    setStatus("error")
-                    setMessage("Invalid or expired verification link. Please request a new verification email.")
+                    // No session means the user hasn't signed in after signup,
+                    // which is expected when email verification is required.
+                    // Show "pending" state, not "error" — the user just needs
+                    // to check their inbox and click the verification link.
+                    setStatus("pending")
+                    setMessage("Your email is not yet verified. Please check your inbox and click the verification link.")
                     return
                 }
 
@@ -115,6 +119,13 @@ export function VerifyEmailForm() {
                         setStatus("pending")
                         setMessage("Your email is not yet verified. Please check your inbox.")
                     }
+                } else {
+                    // No user returned and no error from getUser() — no active session.
+                    // This happens when the user just signed up and auto sign-in didn't
+                    // establish a session (email confirmation required). Show pending.
+                    devLog("auth", "⚠️ No user session returned from getUser - showing pending state")
+                    setStatus("pending")
+                    setMessage("Your email is not yet verified. Please check your inbox and click the verification link.")
                 }
                 
                 // Log performance
