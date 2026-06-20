@@ -12,28 +12,28 @@
 #   1. Create Compose service (git repo, path above)
 #   2. Paste ALL env vars in Environment tab (from env-template.dokploy)
 #   3. Set DOMAIN=yourdomain.com — that's it for domain config
-#      (Traefik auto-handles SSL via Let's Encrypt + dokploy-network)
 #   4. Click Deploy
 #
 # EVERYTHING ELSE IS AUTOMATIC:
-#   - ✅ Volume auto-created (collabryx-model-cache defined below)
-#   - ✅ Domain routing via ${DOMAIN} env var in Traefik labels
-#   - ✅ HTTPS/SSL auto via Let's Encrypt (websecure entrypoint)
-#   - ✅ All service URLs resolve via Docker internal DNS
-#   - ✅ Env vars injected via env_file: .env + environment: block
+#   - Domain routing via ${DOMAIN} env var in Traefik labels
+#   - HTTPS/SSL auto via Let's Encrypt (websecure entrypoint)
+#   - Volume auto-created (collabryx-model-cache)
+#   - All service URLs resolve via Docker internal DNS
+#
+# IMPORTANT: Build contexts use "../../" because compose file is at
+# deploy/dokploy/docker-compose.yml — need to go up 2 dirs to reach repo root.
 # =============================================================================
 
 services:
 
   # ===================================================
-  # NEXT.JS APPLICATION — main web app
+  # NEXT.JS APPLICATION
   # ===================================================
   nextjs:
     build:
-      context: .
+      context: ../../
       dockerfile: deploy/dokploy/Dockerfile.nextjs
       args:
-        # Build-time: Next.js inlines NEXT_PUBLIC_* vars at build time
         NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
         NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
@@ -44,13 +44,12 @@ services:
     environment:
       - NODE_ENV=production
       - IN_DOCKER_CONTAINER=true
-      # Internal service URLs (Docker DNS names — not host ports)
       - EMBEDDING_SERVICE_URL=http://embedding:8000
       - NOTIFICATION_SERVICE_URL=http://notification:8000
       - FEED_SERVICE_URL=http://feed:8000
       - MATCH_SERVICE_URL=http://match:8000
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/health', {timeout:5000}, r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error',()=>process.exit(1))"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/health',{timeout:5000},r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -59,7 +58,6 @@ services:
       - dokploy-network
     labels:
       - "traefik.enable=true"
-      # Domain comes from ${DOMAIN} env var — set once in Dokploy UI
       - "traefik.http.routers.collabryx-nextjs.rule=Host(`${DOMAIN}`)"
       - "traefik.http.routers.collabryx-nextjs.entrypoints=websecure"
       - "traefik.http.routers.collabryx-nextjs.tls.certResolver=letsencrypt"
@@ -74,12 +72,11 @@ services:
           memory: 512M
 
   # ===================================================
-  # EMBEDDING SERVICE — Sentence Transformers
-  # ~2.1GB image, pre-downloads HF model at build time
+  # EMBEDDING SERVICE — Sentence Transformers (~2.1GB)
   # ===================================================
   embedding:
     build:
-      context: ./python-worker
+      context: ../../python-worker
       dockerfile: Dockerfile
     restart: unless-stopped
     env_file:
@@ -91,7 +88,6 @@ services:
       - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
       - WORKER_API_KEY=${WORKER_API_KEY}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
-    # Volume auto-created by Docker — persists model across deployments
     volumes:
       - collabryx-model-cache:/app/.cache/huggingface
     security_opt:
@@ -121,12 +117,11 @@ services:
       - dokploy-network
 
   # ===================================================
-  # NOTIFICATION SERVICE — lightweight FastAPI
-  # ~180MB image, no ML deps
+  # NOTIFICATION SERVICE — lightweight FastAPI (~180MB)
   # ===================================================
   notification:
     build:
-      context: ./python-worker
+      context: ../../python-worker
       dockerfile: notification-service/Dockerfile
     restart: unless-stopped
     env_file:
@@ -165,12 +160,11 @@ services:
       - dokploy-network
 
   # ===================================================
-  # FEED SERVICE — Thompson Sampling ranking
-  # ~180MB image, numpy only
+  # FEED SERVICE — Thompson Sampling (~180MB)
   # ===================================================
   feed:
     build:
-      context: ./python-worker
+      context: ../../python-worker
       dockerfile: feed-service/Dockerfile
     restart: unless-stopped
     env_file:
@@ -209,12 +203,11 @@ services:
       - dokploy-network
 
   # ===================================================
-  # MATCH SERVICE — skill-gap matching algorithm
-  # ~180MB image, numpy + Supabase only
+  # MATCH SERVICE — skill-gap matching (~180MB)
   # ===================================================
   match:
     build:
-      context: ./python-worker
+      context: ../../python-worker
       dockerfile: match-service/Dockerfile
     restart: unless-stopped
     env_file:
@@ -254,8 +247,7 @@ services:
 
 
 # ===================================================
-# VOLUMES — Docker auto-creates these on first deploy
-# No Dokploy UI setup needed
+# VOLUMES — Docker auto-creates on first deploy
 # ===================================================
 volumes:
   collabryx-model-cache:
@@ -263,8 +255,7 @@ volumes:
 
 
 # ===================================================
-# NETWORKS — dokploy-network is created by Dokploy itself
-# during installation. DO NOT create it manually.
+# NETWORKS — created by Dokploy during installation
 # ===================================================
 networks:
   dokploy-network:
