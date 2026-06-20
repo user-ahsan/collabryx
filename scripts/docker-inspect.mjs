@@ -15,6 +15,7 @@
 import { execSync } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import http from 'http';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -210,15 +211,21 @@ async function showHealthChecks() {
   // Try to fetch all health endpoints
   log('\n🌐 Health Endpoints:', 'magenta');
   const healthServices = [
-    { name: 'embedding-service',    url: 'http://localhost:8000/health' },
-    { name: 'notification-service', url: 'http://localhost:8002/health' },
-    { name: 'feed-service',         url: 'http://localhost:8003/health' },
-    { name: 'match-service',        url: 'http://localhost:8004/health' }
+    { name: 'embedding-service',    port: 8000 },
+    { name: 'notification-service', port: 8002 },
+    { name: 'feed-service',         port: 8003 },
+    { name: 'match-service',        port: 8004 }
   ];
-  
-  healthServices.forEach(svc => {
+
+  for (const svc of healthServices) {
     try {
-      const health = exec(`curl -s ${svc.url}`);
+      const health = await new Promise((resolve, reject) => {
+        http.get(`http://localhost:${svc.port}/health`, { timeout: 3000 }, (res) => {
+          let data = '';
+          res.on('data', (chunk) => { data += chunk; });
+          res.on('end', () => resolve(data));
+        }).on('error', reject).on('timeout', function () { this.destroy(); reject(new Error('timeout')); });
+      });
       if (health) {
         try {
           const parsed = JSON.parse(health);
@@ -233,7 +240,7 @@ async function showHealthChecks() {
     } catch {
       log(`   ${svc.name.padEnd(22)} ❌ Not responding`, 'red');
     }
-  });
+  }
 }
 
 async function showEnvironment() {

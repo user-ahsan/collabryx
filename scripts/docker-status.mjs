@@ -102,28 +102,26 @@ function _getVolumeInfo() {
   }
 }
 
-function _checkPort() {
+function checkPort(port) {
   return new Promise((resolve) => {
     const socket = new net.Socket();
-    
     socket.setTimeout(1000);
-    
     socket.on('connect', () => {
       socket.destroy();
       resolve(true);
     });
-    
     socket.on('error', () => {
       resolve(false);
     });
-    
-    socket.connect(8000, 'localhost');
+    socket.on('timeout', () => {
+      socket.destroy();
+      resolve(false);
+    });
+    socket.connect(port, 'localhost');
   });
 }
 
-
-
-function main() {
+async function main() {
   log('\n' + '='.repeat(60), 'cyan');
   log('🐳 Docker Status - Collabryx Microservices', 'cyan');
   log('='.repeat(60) + '\n', 'cyan');
@@ -139,24 +137,18 @@ function main() {
   
   // Port status
   log('\n🔌 Port Status:', 'blue');
-  SERVICES.forEach(service => {
-    const socket = new net.Socket();
-    let checked = false;
-    socket.setTimeout(1000);
-    socket.on('connect', () => {
-      if (!checked) {
-        checked = true;
-        log(`   ${service.name.padEnd(25)} ${String(service.port).padEnd(8)} ✅ Open`, 'green');
-        socket.destroy();
-      }
-    });
-    socket.on('error', () => {
-      if (!checked) {
-        checked = true;
-        log(`   ${service.name.padEnd(25)} ${String(service.port).padEnd(8)} ❌ Closed`, 'red');
-      }
-    });
-    socket.connect(service.port, 'localhost');
+  const portResults = await Promise.all(
+    SERVICES.map(async (service) => {
+      const open = await checkPort(service.port);
+      return { service, open };
+    })
+  );
+  portResults.forEach(({ service, open }) => {
+    if (open) {
+      log(`   ${service.name.padEnd(25)} ${String(service.port).padEnd(8)} ✅ Open`, 'green');
+    } else {
+      log(`   ${service.name.padEnd(25)} ${String(service.port).padEnd(8)} ❌ Closed`, 'red');
+    }
   });
   
   log('\n' + '='.repeat(60) + '\n', 'cyan');
