@@ -390,7 +390,7 @@ export async function createNotification(
     if (!validation.success) {
       return { 
         data: null, 
-        error: new Error(validation.error.errors[0]?.message || "Invalid notification data") 
+        error: new Error(validation.error.issues[0]?.message || "Invalid notification data") 
       }
     }
 

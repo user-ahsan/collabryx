@@ -52,7 +52,7 @@ export async function sendMessage(
     attachment_type: input.attachmentType,
   })
   if (!validation.success) {
-    return { data: null, error: new Error(validation.error.errors[0]?.message) }
+    return { data: null, error: new Error(validation.error.issues[0]?.message) }
   }
 
   try {
@@ -131,7 +131,7 @@ export async function fetchMessages(
     cursor: input.cursor,
   })
   if (!validation.success) {
-    return { data: [], error: new Error(validation.error.errors[0]?.message) }
+    return { data: [], error: new Error(validation.error.issues[0]?.message) }
   }
 
   try {

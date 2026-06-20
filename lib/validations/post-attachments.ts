@@ -33,7 +33,7 @@ export const postAttachmentSchema = z.object({
       "Invalid file name"
     ),
   file_type: z.enum(["image", "video"], {
-    errorMap: () => ({ message: "File type must be image or video" })
+    message: "File type must be image or video"
   }),
   file_size: z
     .number()

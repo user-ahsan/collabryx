@@ -11,7 +11,6 @@ const MOVEMENT_DAMPING = 1400
 const GLOBE_CONFIG: COBEOptions = {
   width: 800,
   height: 800,
-  onRender: () => { },
   devicePixelRatio: 2,
   phi: 0,
   theta: 0.3,
@@ -83,6 +82,7 @@ export function Globe({
     }
 
     let globe: ReturnType<typeof createGlobe> | null = null
+    let animationId: number | null = null
 
     try {
       window.addEventListener("resize", onResize)
@@ -92,13 +92,21 @@ export function Globe({
         ...config,
         width: widthRef.current * 2,
         height: widthRef.current * 2,
-        onRender: (state) => {
-          if (!pointerInteracting.current && isVisibleRef.current) phiRef.current += 0.005
-          state.phi = phiRef.current + rs.get()
-          state.width = widthRef.current * 2
-          state.height = widthRef.current * 2
-        },
       })
+
+      const animate = () => {
+        if (globe) {
+          if (!pointerInteracting.current && isVisibleRef.current) phiRef.current += 0.005
+          globe.update({
+            phi: phiRef.current + rs.get(),
+            width: widthRef.current * 2,
+            height: widthRef.current * 2,
+          })
+        }
+        animationId = requestAnimationFrame(animate)
+      }
+
+      animationId = requestAnimationFrame(animate)
     } catch (err) {
       console.error('Failed to create globe:', err)
       // Defer setState to avoid cascading renders within effect body
@@ -128,6 +136,7 @@ export function Globe({
     }
 
     return () => {
+      if (animationId !== null) cancelAnimationFrame(animationId)
       if (globe) globe.destroy()
       window.removeEventListener("resize", onResize)
       observer.disconnect()

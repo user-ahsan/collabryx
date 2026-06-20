@@ -326,7 +326,7 @@ export async function getOrCreateActiveSession() {
 export async function sendMessage(sessionId: string, content: string) {
   const validation = SendMessageSchema.safeParse({ sessionId, content })
   if (!validation.success) {
-    return { error: new Error(validation.error.errors[0]?.message || 'Invalid input') }
+    return { error: new Error(validation.error.issues[0]?.message || 'Invalid input') }
   }
 
   const supabase = await createClient()
@@ -604,7 +604,7 @@ export async function deleteSession(sessionId: string) {
 export async function saveMessageToProfile(messageId: string, insight: string) {
   const validation = SaveMessageToProfileSchema.safeParse({ messageId, insight })
   if (!validation.success) {
-    return { error: new Error(validation.error.errors[0]?.message || 'Invalid input') }
+    return { error: new Error(validation.error.issues[0]?.message || 'Invalid input') }
   }
 
   const supabase = await createClient()

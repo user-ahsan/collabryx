@@ -324,7 +324,7 @@ export async function createComment(
     if (!validation.success) {
       return { 
         data: null, 
-        error: new Error(validation.error.errors[0]?.message || "Invalid comment data") 
+        error: new Error(validation.error.issues[0]?.message || "Invalid comment data") 
       }
     }
 
@@ -383,7 +383,7 @@ export async function updateComment(
     if (!validation.success) {
       return { 
         data: null, 
-        error: new Error(validation.error.errors[0]?.message || "Invalid comment data") 
+        error: new Error(validation.error.issues[0]?.message || "Invalid comment data") 
       }
     }
 
