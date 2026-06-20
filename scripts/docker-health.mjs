@@ -100,7 +100,7 @@ function checkHttp(url) {
 function getContainerStatus() {
   const workerDir = path.join(__dirname, '..', 'python-worker');
   try {
-    const status = exec(`cd "${workerDir}" && docker-compose ps`);
+    const status = exec(`cd "${workerDir}" && docker compose ps`);
     return status.trim();
   } catch (_error) {
     return 'Container not running';

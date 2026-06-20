@@ -115,7 +115,7 @@ function showRecentLogs() {
   
   try {
     const logs = execSync(
-      `cd "${CONFIG.workerDir}" && docker-compose logs --tail=50`,
+      `cd "${CONFIG.workerDir}" && docker compose logs --tail=50`,
       { encoding: 'utf-8' }
     );
     log(logs, 'reset');

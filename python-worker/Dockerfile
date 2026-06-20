@@ -34,13 +34,13 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-reco
 COPY --from=builder /app/.venv /app/.venv
 COPY --from=builder /app/requirements.txt /app/
 
-# Pre-download the model during build (as root to avoid permission issues)
+# Pre-download the model during build to a persistent folder (as root to avoid permission issues)
 ENV PATH="/app/.venv/bin:$PATH"
-ENV TRANSFORMERS_CACHE=/app/.cache/huggingface
-ENV HF_HOME=/app/.cache/huggingface
-RUN mkdir -p /app/.cache/huggingface && \
+ENV TRANSFORMERS_CACHE=/app/model_cache/huggingface
+ENV HF_HOME=/app/model_cache/huggingface
+RUN mkdir -p /app/model_cache/huggingface && \
     python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')" && \
-    chmod -R 777 /app/.cache/huggingface
+    chmod -R 777 /app/model_cache/huggingface
 
 # Copy application code
 COPY main.py .
@@ -68,6 +68,8 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV TRANSFORMERS_CACHE=/app/.cache/huggingface
 ENV HF_HOME=/app/.cache/huggingface
+ENV HF_HUB_OFFLINE=1
+ENV TRANSFORMERS_OFFLINE=1
 
 # Expose port
 EXPOSE 8000
@@ -76,5 +78,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Run with single worker (background tasks run per-process)
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--limit-concurrency", "100"]
+# Run with single worker after copying cached model to writable tmpfs
+CMD ["sh", "-c", "mkdir -p /app/.cache/huggingface && cp -rf /app/model_cache/huggingface/* /app/.cache/huggingface/ 2>/dev/null || true && uvicorn main:app --host 0.0.0.0 --port 8000 --workers 1 --limit-concurrency 100"]

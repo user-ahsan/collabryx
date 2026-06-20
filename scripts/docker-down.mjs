@@ -44,10 +44,10 @@ function main() {
   
   if (clean) {
     log('\n🧹 Full cleanup (containers + volumes)...', 'cyan');
-    execVerbose(`cd "${CONFIG.workerDir}" && docker-compose down -v`);
+    execVerbose(`cd "${CONFIG.workerDir}" && docker compose down -v`);
   } else {
     log('\n⏹️  Stopping containers...', 'cyan');
-    execVerbose(`cd "${CONFIG.workerDir}" && docker-compose down`);
+    execVerbose(`cd "${CONFIG.workerDir}" && docker compose down`);
   }
   
   log('\n✅ Stopped', 'green');
