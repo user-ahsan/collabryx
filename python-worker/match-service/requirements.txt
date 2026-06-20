@@ -1,6 +1,6 @@
 fastapi==0.115.6
 uvicorn[standard]==0.32.0
-numpy>=1.26.0
+numpy>=2.4.6
 pydantic==2.9.2
 httpx>=0.24.0
 supabase>=2.3.0

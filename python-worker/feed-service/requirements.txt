@@ -3,7 +3,7 @@ fastapi==0.115.6
 uvicorn[standard]==0.32.0
 
 # Scientific computing (Thompson Sampling via Beta distribution, exp decay)
-numpy>=1.26.0
+numpy>=2.4.6
 
 # Validation
 pydantic==2.9.2
