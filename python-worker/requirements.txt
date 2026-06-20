@@ -1,6 +1,6 @@
 # Web framework
 fastapi==0.137.2
-uvicorn[standard]==0.32.0
+uvicorn[standard]==0.49.0
 
 # ML/AI - sentence-transformers (torch installed separately with CPU index)
 sentence-transformers==3.3.1
