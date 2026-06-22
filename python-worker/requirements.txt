@@ -24,6 +24,6 @@ python-dotenv==1.2.2
 # Testing (dev only)
 pytest==9.1.1
 pytest-asyncio==1.4.0
-pytest-cov==6.0.0
+pytest-cov==7.1.0
 
 
