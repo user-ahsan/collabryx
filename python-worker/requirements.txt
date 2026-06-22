@@ -7,7 +7,7 @@ sentence-transformers==3.3.1
 
 # Validation
 pydantic>=2.11.7
-pydantic-settings>=2.6.1
+pydantic-settings>=2.14.2
 
 # HTTP client
 httpx>=0.24.0
